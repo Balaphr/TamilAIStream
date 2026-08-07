@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Tamil AI FM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="builder.css">
+</head>
+<body>
+    <div class="noise-overlay"></div>
+    
+    <!-- Animated Background -->
+    <div class="bg-container">
+        <div class="gradient-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div class="builder-login-screen" id="loginScreen">
+        <div class="login-card">
+            <div class="login-logo">
+                <div class="logo-icon"><i class="fas fa-microphone-alt"></i></div>
+                <h1>Tamil AI FM</h1>
+                <span>Admin Panel</span>
+            </div>
+            <div class="login-tabs">
+                <button class="login-tab active" data-tab="signin">Sign In</button>
+                <button class="login-tab" data-tab="signup">Sign Up</button>
+            </div>
+            <!-- Sign In Form -->
+            <form class="login-form" id="signinForm">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="signinEmail" placeholder="admin@tamilaifm.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="signinPassword" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="builder-btn primary full-width">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+                <div class="login-divider"><span>or</span></div>
+                <button type="button" class="builder-btn google-btn" id="googleSignIn" style="display:none;">
+                    <i class="fab fa-google"></i> Continue with Google
+                </button>
+                <button type="button" class="builder-btn guest-btn" id="guestSignIn" style="display:none;">
+                    <i class="fas fa-user-secret"></i> Continue as Guest
+                </button>
+                <div class="login-footer">
+                    <p>Don't have an account? <a href="#" id="signupTab">Create Account</a></p>
+                </div>
+            </form>
+            <!-- Sign Up Form -->
+            <form class="login-form" id="signupForm" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">Display Name</label>
+                    <input type="text" class="form-input" id="signupName" placeholder="Your name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="signupEmail" placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="signupPassword" placeholder="Min 6 characters" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" class="form-input" id="signupConfirm" placeholder="Confirm password" required>
+                </div>
+                <button type="submit" class="builder-btn primary full-width">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+                <div class="login-footer">
+                    <p>Already have an account? <a href="#" id="signinTab">Sign In</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Builder Dashboard (hidden until login) -->
+    <div class="builder-dashboard" id="builderDashboard" style="display:none;">
+        <!-- Builder Navigation -->
+        <header class="builder-nav">
+            <div class="builder-nav-container">
+                <div class="builder-nav-left">
+                    <button class="mobile-menu-toggle" id="builderMobileToggle" aria-label="Toggle menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="builder-nav-logo">
+                        <div class="logo-icon"><i class="fas fa-microphone-alt"></i></div>
+                        <div>
+                            <h1>Tamil AI FM</h1>
+                            <span>Admin Panel</span>
+                        </div>
+                    </div>
+                    <nav class="builder-nav-menu">
+                        <button class="builder-nav-item active" data-page="dashboard">
+                            <i class="fas fa-home"></i> Dashboard
+                        </button>
+                        <button class="builder-nav-item" data-page="stations">
+                            <i class="fas fa-broadcast-tower"></i> Stations
+                        </button>
+                        <button class="builder-nav-item" data-page="songs">
+                            <i class="fas fa-music"></i> Songs
+                        </button>
+                        <button class="builder-nav-item" data-page="content">
+                            <i class="fas fa-layer-group"></i> Content
+                        </button>
+                        <button class="builder-nav-item" data-page="images">
+                            <i class="fas fa-images"></i> Images
+                        </button>
+                        <button class="builder-nav-item" data-page="settings">
+                            <i class="fas fa-cog"></i> Settings
+                        </button>
+                        <button class="builder-nav-item" data-page="preview">
+                            <i class="fas fa-eye"></i> Preview
+                        </button>
+                    </nav>
+                </div>
+                <div class="builder-nav-right">
+                    <div class="publish-status">
+                        <span class="publish-state-badge draft" id="publishStatusBadge">DRAFT</span>
+                    </div>
+                    <div class="builder-user-info">
+                        <div class="builder-user-avatar" id="builderUserAvatar">U</div>
+                        <span class="builder-user-name" id="builderUserName">User</span>
+                    </div>
+                    <button class="builder-logout-btn" id="builderLogout">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Builder Main Content -->
+        <main class="builder-main">
+            <div class="builder-container">
+                <!-- Sidebar -->
+                <aside class="builder-sidebar">
+                    <div class="builder-sidebar-section">
+                        <div class="builder-sidebar-title">Admin Tools</div>
+                        <div class="builder-sidebar-menu">
+                            <button class="builder-sidebar-item active" data-page="dashboard">
+                                <i class="fas fa-home"></i> Dashboard
+                            </button>
+                            <button class="builder-sidebar-item" data-page="stations">
+                                <i class="fas fa-broadcast-tower"></i> Radio Stations
+                            </button>
+                            <button class="builder-sidebar-item" data-page="songs">
+                                <i class="fas fa-music"></i> Add Songs
+                            </button>
+                            <button class="builder-sidebar-item" data-page="content">
+                                <i class="fas fa-layer-group"></i> Content
+                            </button>
+                            <button class="builder-sidebar-item" data-page="images">
+                                <i class="fas fa-images"></i> Manage Images
+                            </button>
+                            <button class="builder-sidebar-item" data-page="settings">
+                                <i class="fas fa-cog"></i> Site Settings
+                            </button>
+                            <button class="builder-sidebar-item" data-page="preview">
+                                <i class="fas fa-eye"></i> Live Preview
+                            </button>
+                        </div>
+                    </div>
+                    <div class="builder-sidebar-section">
+                        <div class="builder-sidebar-title">Publish</div>
+                        <div class="builder-sidebar-menu">
+                            <button class="builder-sidebar-item" id="quickPublishBtn" onclick="publishChanges()">
+                                <i class="fas fa-rocket"></i> Publish Changes
+                            </button>
+                            <button class="builder-sidebar-item" id="quickUnpublishBtn" onclick="unpublish()" style="display:none;">
+                                <i class="fas fa-pause-circle"></i> Unpublish
+                            </button>
+                            <button class="builder-sidebar-item" id="quickSaveDraftBtn" onclick="saveDraft()">
+                                <i class="fas fa-save"></i> Save Draft
+                            </button>
+                            <button class="builder-sidebar-item" id="quickDiscardBtn" onclick="discardChanges()">
+                                <i class="fas fa-undo"></i> Discard Changes
+                            </button>
+                            <button class="builder-sidebar-item" id="quickHistoryBtn" onclick="showPublishHistory()">
+                                <i class="fas fa-history"></i> Publish History
+                            </button>
+                        </div>
+                    </div>
+                    <div class="builder-sidebar-section">
+                        <div class="builder-sidebar-title">Quick Actions</div>
+                        <div class="builder-sidebar-menu">
+                            <button class="builder-sidebar-item" onclick="openAddSongModal()">
+                                <i class="fas fa-plus-circle"></i> Quick Add Song
+                            </button>
+                            <button class="builder-sidebar-item" onclick="openUploadImageModal()">
+                                <i class="fas fa-cloud-upload-alt"></i> Upload Image
+                            </button>
+                            <button class="builder-sidebar-item" onclick="exportWebsite()">
+                                <i class="fas fa-download"></i> Export Website
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Content Area -->
+                <div class="builder-content">
+                    <!-- Dashboard Page -->
+                    <div class="builder-page" id="dashboardPage">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Admin Dashboard</h1>
+                            <p class="builder-page-subtitle">Manage your website content</p>
+                        </div>
+                        
+                        <!-- Stats Grid -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-music"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="totalSongs">0</span>
+                                    <span class="stat-label">Total Songs</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-images"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="totalImages">0</span>
+                                    <span class="stat-label">Images</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="totalSections">0</span>
+                                    <span class="stat-label">Sections</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-eye"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="totalViews">0</span>
+                                    <span class="stat-label">Preview Views</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Builder Tools -->
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">Admin Tools</h2>
+                            </div>
+                            <div class="builder-tools-grid">
+                                <div class="builder-tool-card" onclick="openAddSongModal()">
+                                    <div class="tool-icon"><i class="fas fa-music"></i></div>
+                                    <h3>Add New Song</h3>
+                                    <p>Manually add songs to your library</p>
+                                </div>
+                                <div class="builder-tool-card" onclick="openUploadImageModal()">
+                                    <div class="tool-icon"><i class="fas fa-image"></i></div>
+                                    <h3>Upload Image</h3>
+                                    <p>Add images, album covers, banners</p>
+                                </div>
+                                <div class="builder-tool-card" onclick="navigateTo('sections')">
+                                    <div class="tool-icon"><i class="fas fa-layer-group"></i></div>
+                                    <h3>Build Sections</h3>
+                                    <p>Create and arrange website sections</p>
+                                </div>
+                                <div class="builder-tool-card" onclick="navigateTo('preview')">
+                                    <div class="tool-icon"><i class="fas fa-eye"></i></div>
+                                    <h3>Live Preview</h3>
+                                    <p>Preview your website in real-time</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">Recent Activity</h2>
+                            </div>
+                            <div class="activity-list" id="activityList">
+                                <div class="activity-item">
+                                    <div class="activity-icon"><i class="fas fa-plus-circle"></i></div>
+                                    <div class="activity-info">
+                                        <h4>Builder Initialized</h4>
+                                        <p>Website builder is ready to use</p>
+                                    </div>
+                                    <span class="activity-time">Just now</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Songs Management Page -->
+                    <div class="builder-page" id="songsPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Add Songs Manually</h1>
+                            <p class="builder-page-subtitle">Add songs to your website with detailed information</p>
+                        </div>
+
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">Song Form</h2>
+                                <button class="builder-btn primary" onclick="openAddSongModal()">
+                                    <i class="fas fa-plus"></i> Quick Add
+                                </button>
+                            </div>
+                            <form id="songForm" class="song-form">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Song Title *</label>
+                                        <input type="text" class="form-input" id="songTitle" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Artist *</label>
+                                        <input type="text" class="form-input" id="songArtist" placeholder="Enter artist name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Movie *</label>
+                                        <input type="text" class="form-input" id="songMovie" placeholder="Enter movie name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Music Director</label>
+                                        <input type="text" class="form-input" id="songDirector" placeholder="Enter music director name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Singer</label>
+                                        <input type="text" class="form-input" id="songSinger">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Language</label>
+                                        <select class="form-select" id="songLanguage">
+                                            <option value="Tamil">Tamil</option>
+                                            <option value="Hindi">Hindi</option>
+                                            <option value="Telugu">Telugu</option>
+                                            <option value="Malayalam">Malayalam</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Genre</label>
+                                        <select class="form-select" id="songGenre">
+                                            <option value="Love">Love</option>
+                                            <option value="Action">Action</option>
+                                            <option value="Comedy">Comedy</option>
+                                            <option value="Emotional">Emotional</option>
+                                            <option value="Devotional">Devotional</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Duration (mm:ss)</label>
+                                        <input type="text" class="form-input" id="songDuration" placeholder="3:45">
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Album Cover Image</label>
+                                        <div class="file-upload" id="albumUpload">
+                                            <input type="file" id="albumImage" accept="image/*">
+                                            <div class="file-upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                                            <div class="file-upload-text">Drop album cover here or click to browse</div>
+                                            <div class="file-upload-hint">PNG, JPG up to 5MB</div>
+                                        </div>
+                                        <div class="file-preview" id="albumPreview" style="display:none;">
+                                            <img id="albumPreviewImg" src="" alt="Preview">
+                                            <div class="file-preview-info">
+                                                <div class="file-preview-name" id="albumFileName">filename.jpg</div>
+                                                <div class="file-preview-size" id="albumFileSize">0 MB</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Audio File (MP3) *</label>
+                                        <div class="file-upload" id="audioUpload">
+                                            <input type="file" id="audioFile" accept="audio/mp3,audio/mpeg">
+                                            <div class="file-upload-icon"><i class="fas fa-music"></i></div>
+                                            <div class="file-upload-text">Drop MP3 file here or click to browse</div>
+                                            <div class="file-upload-hint">MP3 format, max 10MB</div>
+                                        </div>
+                                        <div class="file-preview" id="audioPreview" style="display:none;">
+                                            <div class="file-preview-info">
+                                                <div class="file-preview-name" id="audioFileName">song.mp3</div>
+                                                <div class="file-preview-size" id="audioFileSize">0 MB</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Description</label>
+                                        <textarea class="form-textarea" id="songDescription" placeholder="Enter song description..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="builder-btn primary">
+                                        <i class="fas fa-save"></i> Save Song
+                                    </button>
+                                    <button type="button" class="builder-btn" onclick="resetSongForm()">
+                                        <i class="fas fa-times"></i> Clear Form
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Songs List -->
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">All Songs</h2>
+                                <input type="text" class="form-input" id="songSearch" placeholder="Search songs..." style="width:300px;">
+                            </div>
+                            <div class="data-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Cover</th>
+                                            <th>Title</th>
+                                            <th>Artist</th>
+                                            <th>Movie</th>
+                                            <th>Duration</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="allSongsTable">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Images Management Page -->
+                    <div class="builder-page" id="imagesPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Manage Images</h1>
+                            <p class="builder-page-subtitle">Upload, organize and delete images for your website</p>
+                        </div>
+
+                        <!-- Upload Area -->
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">Upload New Image</h2>
+                            </div>
+                            <div class="image-upload-zone" id="imageUploadZone">
+                                <input type="file" id="imageFileInput" accept="image/*" multiple>
+                                <div class="upload-zone-content">
+                                    <div class="upload-zone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                                    <h3>Drag & Drop Images Here</h3>
+                                    <p>or click to browse files</p>
+                                    <span class="upload-zone-hint">Supports: JPG, PNG, GIF, WebP - Max 10MB each</span>
+                                </div>
+                            </div>
+                            <div class="upload-progress" id="uploadProgress" style="display:none;">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="progressFill"></div>
+                                </div>
+                                <span class="progress-text" id="progressText">Uploading...</span>
+                            </div>
+                        </div>
+
+                        <!-- Image Gallery -->
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">Image Gallery</h2>
+                                <div class="gallery-actions">
+                                    <input type="text" class="form-input" id="imageSearch" placeholder="Search images..." style="width:250px;">
+                                    <select class="form-select" id="imageFilter" style="width:150px;">
+                                        <option value="all">All Images</option>
+                                        <option value="album">Album Covers</option>
+                                        <option value="banner">Banners</option>
+                                        <option value="artist">Artist Photos</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="image-gallery" id="imageGallery">
+                                <!-- Dynamic gallery content -->
+                            </div>
+                            <div class="gallery-empty" id="galleryEmpty" style="display:none;">
+                                <i class="fas fa-images"></i>
+                                <h3>No images uploaded yet</h3>
+                                <p>Upload your first image to get started</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stations Management Page -->
+                    <div class="builder-page" id="stationsPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Radio Stations</h1>
+                            <p class="builder-page-subtitle">Manage all radio stations on your website</p>
+                        </div>
+
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">Add/Edit Station</h2>
+                            </div>
+                            <form id="stationForm" class="song-form">
+                                <input type="hidden" id="stationId">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Station Name *</label>
+                                        <input type="text" class="form-input" id="stationName" placeholder="e.g. Radio Mirchi Tamil" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Frequency *</label>
+                                        <input type="text" class="form-input" id="stationFreq" placeholder="e.g. 98.3 FM" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Genre *</label>
+                                        <select class="form-select" id="stationGenre">
+                                            <option value="Music">Music</option>
+                                            <option value="News">News</option>
+                                            <option value="Talk">Talk</option>
+                                            <option value="Entertainment">Entertainment</option>
+                                            <option value="Devotional">Devotional</option>
+                                            <option value="Comedy">Comedy</option>
+                                            <option value="Sports">Sports</option>
+                                            <option value="Education">Education</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">City</label>
+                                        <input type="text" class="form-input" id="stationCity" placeholder="e.g. Chennai" value="Chennai">
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Stream URL *</label>
+                                        <input type="url" class="form-input" id="stationStreamUrl" placeholder="https://stream.example.com/live" required>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Thumbnail Image URL</label>
+                                        <input type="url" class="form-input" id="stationThumbnail" placeholder="https://example.com/image.jpg">
+                                        <div class="file-preview" id="stationThumbnailPreview" style="display:none;margin-top:8px;">
+                                            <img id="stationThumbnailImg" src="" alt="Preview" style="max-height:80px;border-radius:8px;">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" id="stationStatus">
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="builder-btn primary">
+                                        <i class="fas fa-save"></i> Save Station
+                                    </button>
+                                    <button type="button" class="builder-btn" onclick="resetStationForm()">
+                                        <i class="fas fa-times"></i> Clear
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">All Stations</h2>
+                                <input type="text" class="form-input" id="stationSearch" placeholder="Search stations..." style="width:250px;">
+                            </div>
+                            <div class="data-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Station</th>
+                                            <th>Frequency</th>
+                                            <th>Genre</th>
+                                            <th>City</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="stationsTable"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Management Page -->
+                    <div class="builder-page" id="contentPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Content Management</h1>
+                            <p class="builder-page-subtitle">Manage Featured, Trending, Categories, Artist Hits, and Quotes</p>
+                        </div>
+
+                        <!-- Content Tabs -->
+                        <div class="content-tabs">
+                            <button class="content-tab active" data-tab="featured">Featured</button>
+                            <button class="content-tab" data-tab="trending">Trending</button>
+                            <button class="content-tab" data-tab="categories">Categories</button>
+                            <button class="content-tab" data-tab="artistHits">Artist Hits</button>
+                            <button class="content-tab" data-tab="quotes">Quotes</button>
+                        </div>
+
+                        <!-- Featured Tab -->
+                        <div class="content-tab-panel active" id="featuredTab">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h2 class="content-card-title">Featured Stations</h2>
+                                    <button class="builder-btn primary" onclick="openAddFeaturedModal()">
+                                        <i class="fas fa-plus"></i> Add Featured
+                                    </button>
+                                </div>
+                                <div class="data-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Title</th>
+                                                <th>Station</th>
+                                                <th>Listeners</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="featuredTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Trending Tab -->
+                        <div class="content-tab-panel" id="trendingTab" style="display:none;">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h2 class="content-card-title">Trending Stations</h2>
+                                    <button class="builder-btn primary" onclick="openAddTrendingModal()">
+                                        <i class="fas fa-plus"></i> Add Trending
+                                    </button>
+                                </div>
+                                <div class="data-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Station</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="trendingTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Categories Tab -->
+                        <div class="content-tab-panel" id="categoriesTab" style="display:none;">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h2 class="content-card-title">Categories</h2>
+                                    <button class="builder-btn primary" onclick="openAddCategoryModal()">
+                                        <i class="fas fa-plus"></i> Add Category
+                                    </button>
+                                </div>
+                                <div class="data-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Icon</th>
+                                                <th>Name</th>
+                                                <th>Count</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="categoriesTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Artist Hits Tab -->
+                        <div class="content-tab-panel" id="artistHitsTab" style="display:none;">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h2 class="content-card-title">Artist Hits Collections</h2>
+                                    <button class="builder-btn primary" onclick="openAddArtistHitModal()">
+                                        <i class="fas fa-plus"></i> Add Artist
+                                    </button>
+                                </div>
+                                <!-- Artist Hits Sub-Tabs -->
+                                <div class="artist-hit-sub-tabs" style="margin-top:16px;">
+                                    <button class="artist-hit-sub-tab active" data-artist-tab="artistList">Artist List</button>
+                                    <button class="artist-hit-sub-tab" data-artist-tab="artistSongs">Songs</button>
+                                </div>
+                                <!-- Artist List Sub-Tab -->
+                                <div class="artist-hit-sub-panel active" id="artistListTab" style="margin-top:16px;">
+                                    <div class="data-table">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Artist</th>
+                                                    <th>Display Name</th>
+                                                    <th>Songs</th>
+                                                    <th>Status</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="artistHitsTable"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <!-- Songs Sub-Tab -->
+                                <div class="artist-hit-sub-panel" id="artistSongsTab" style="display:none;margin-top:16px;">
+                                    <div class="content-card">
+                                        <div class="content-card-header">
+                                            <h2 class="content-card-title">Manage Artist Songs</h2>
+                                            <button class="builder-btn primary" onclick="openAddArtistSongModal()">
+                                                <i class="fas fa-plus"></i> Add Song
+                                            </button>
+                                        </div>
+                                        <div class="form-group" style="margin-bottom:16px;">
+                                            <label class="form-label">Select Artist Collection</label>
+                                            <select class="form-input" id="artistSongCollection">
+                                                <option value="">-- Select Artist --</option>
+                                            </select>
+                                        </div>
+                                        <div class="data-table">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Title</th>
+                                                        <th>Artist</th>
+                                                        <th>Movie</th>
+                                                        <th>Duration</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="artistSongsTable"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quotes Tab -->
+                        <div class="content-tab-panel" id="quotesTab" style="display:none;">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h2 class="content-card-title">Tamil Quotes</h2>
+                                    <button class="builder-btn primary" onclick="openAddQuoteModal()">
+                                        <i class="fas fa-plus"></i> Add Quote
+                                    </button>
+                                </div>
+                                <div class="data-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Quote</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="quotesTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Settings Page -->
+                    <div class="builder-page" id="settingsPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Site Settings</h1>
+                            <p class="builder-page-subtitle">Configure your website metadata and settings</p>
+                        </div>
+
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">SEO & Metadata</h2>
+                            </div>
+                            <form id="settingsForm" class="song-form">
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Site Title</label>
+                                        <input type="text" class="form-input" id="settingsTitle" placeholder="Tamil AI FM">
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Description</label>
+                                        <textarea class="form-textarea" id="settingsDescription" placeholder="Site description..." rows="3"></textarea>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Keywords</label>
+                                        <input type="text" class="form-input" id="settingsKeywords" placeholder="Tamil FM, Tamil radio, AI radio">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">OG Title</label>
+                                        <input type="text" class="form-input" id="settingsOgTitle" placeholder="Tamil AI FM">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">OG URL</label>
+                                        <input type="url" class="form-input" id="settingsOgUrl" placeholder="https://tamilaifm.com">
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">OG Description</label>
+                                        <textarea class="form-textarea" id="settingsOgDescription" placeholder="OG description..." rows="2"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Theme Color</label>
+                                        <input type="color" class="form-input" id="settingsThemeColor" value="#000000" style="height:45px;">
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Footer Text</label>
+                                        <input type="text" class="form-input" id="settingsFooterText" placeholder="© 2024 Tamil AI FM">
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="builder-btn primary">
+                                        <i class="fas fa-save"></i> Save Settings
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Preview Page -->
+                    <div class="builder-page" id="previewPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Live Preview</h1>
+                            <p class="builder-page-subtitle">Preview your website in real-time</p>
+                        </div>
+
+                        <div class="preview-container">
+                            <div class="preview-toolbar">
+                                <div class="device-buttons">
+                                    <button class="device-btn active" data-device="desktop">
+                                        <i class="fas fa-desktop"></i> Desktop
+                                    </button>
+                                    <button class="device-btn" data-device="tablet">
+                                        <i class="fas fa-tablet-alt"></i> Tablet
+                                    </button>
+                                    <button class="device-btn" data-device="mobile">
+                                        <i class="fas fa-mobile-alt"></i> Mobile
+                                    </button>
+                                </div>
+                                <div class="preview-actions">
+                                    <button class="builder-btn" onclick="refreshPreview()">
+                                        <i class="fas fa-sync-alt"></i> Refresh
+                                    </button>
+                                    <button class="builder-btn primary" onclick="openInNewTab()">
+                                        <i class="fas fa-external-link-alt"></i> Open in New Tab
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="preview-frame-container">
+                                <iframe id="previewFrame" class="preview-frame" src="index.html"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Song Modal -->
+    <div class="modal" id="addSongModal" style="display:none;">
+        <div class="modal-overlay" onclick="closeAddSongModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Quick Add Song</h2>
+                <button class="modal-close" onclick="closeAddSongModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="quickSongForm">
+                    <div class="form-group">
+                        <label class="form-label">Song Title *</label>
+                        <input type="text" class="form-input" id="quickSongTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Artist *</label>
+                        <input type="text" class="form-input" id="quickSongArtist" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Movie *</label>
+                        <input type="text" class="form-input" id="quickSongMovie" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Audio URL *</label>
+                        <input type="url" class="form-input" id="quickSongAudioUrl" required placeholder="https://example.com/song.mp3">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Album Cover URL</label>
+                        <input type="url" class="form-input" id="quickSongCoverUrl" placeholder="https://example.com/cover.jpg">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="builder-btn primary">
+                            <i class="fas fa-plus"></i> Add Song
+                        </button>
+                        <button type="button" class="builder-btn" onclick="closeAddSongModal()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Image Modal -->
+    <div class="modal" id="uploadImageModal" style="display:none;">
+        <div class="modal-overlay" onclick="closeUploadImageModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Upload Image</h2>
+                <button class="modal-close" onclick="closeUploadImageModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadImageForm">
+                    <div class="form-group">
+                        <label class="form-label">Image Category</label>
+                        <select class="form-select" id="imageCategory">
+                            <option value="album">Album Cover</option>
+                            <option value="banner">Banner</option>
+                            <option value="artist">Artist Photo</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Image Title</label>
+                        <input type="text" class="form-input" id="imageTitle" placeholder="e.g. Album cover for...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Select Image *</label>
+                        <div class="file-upload" id="modalImageUpload">
+                            <input type="file" id="modalImageFile" accept="image/*" required>
+                            <div class="file-upload-icon"><i class="fas fa-image"></i></div>
+                            <div class="file-upload-text">Click to select image</div>
+                            <div class="file-upload-hint">PNG, JPG, GIF, WebP up to 10MB</div>
+                        </div>
+                        <div class="file-preview" id="modalImagePreview" style="display:none;">
+                            <img id="modalPreviewImg" src="" alt="Preview">
+                            <div class="file-preview-info">
+                                <div class="file-preview-name" id="modalImageName">image.jpg</div>
+                                <div class="file-preview-size" id="modalImageSize">0 MB</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="builder-btn primary">
+                            <i class="fas fa-upload"></i> Upload
+                        </button>
+                        <button type="button" class="builder-btn" onclick="closeUploadImageModal()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div class="modal" id="imagePreviewModal" style="display:none;">
+        <div class="modal-overlay" onclick="closeImagePreviewModal()"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h2 id="previewImageTitle">Image Preview</h2>
+                <button class="modal-close" onclick="closeImagePreviewModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="image-preview-large">
+                    <img id="previewImageSrc" src="" alt="Preview">
+                </div>
+                <div class="image-preview-info">
+                    <div class="info-row">
+                        <span class="info-label">Category:</span>
+                        <span class="info-value" id="previewImageCategory">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Size:</span>
+                        <span class="info-value" id="previewImageSizeInfo">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">URL:</span>
+                        <span class="info-value url-value" id="previewImageUrl">-</span>
+                    </div>
+                </div>
+                <div class="image-preview-actions">
+                    <button class="builder-btn" onclick="copyImageUrl()">
+                        <i class="fas fa-copy"></i> Copy URL
+                    </button>
+                    <button class="builder-btn" onclick="downloadImage()">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                    <button class="builder-btn delete-btn" onclick="deleteImageFromPreview()">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Song Preview Player -->
+    <div class="preview-player" id="previewPlayer" style="display:none;">
+        <div class="preview-player-info">
+            <div class="preview-player-thumb" id="previewThumb"></div>
+            <div class="preview-player-text">
+                <span class="preview-player-title" id="previewTitle">-</span>
+                <span class="preview-player-artist" id="previewArtist">-</span>
+            </div>
+        </div>
+        <div class="preview-player-controls">
+            <button class="preview-ctrl-btn" id="previewPrev"><i class="fas fa-backward-step"></i></button>
+            <button class="preview-ctrl-btn preview-play-btn" id="previewPlayPause"><i class="fas fa-play"></i></button>
+            <button class="preview-ctrl-btn" id="previewNext"><i class="fas fa-forward-step"></i></button>
+        </div>
+        <div class="preview-player-progress">
+            <span class="preview-time" id="previewCurrentTime">0:00</span>
+            <input type="range" class="preview-progress-bar" id="previewProgressBar" min="0" max="100" value="0">
+            <span class="preview-time" id="previewDuration">0:00</span>
+        </div>
+        <div class="preview-player-volume">
+            <i class="fas fa-volume-high"></i>
+            <input type="range" class="preview-volume-bar" id="previewVolumeBar" min="0" max="100" value="70">
+        </div>
+        <button class="preview-close-btn" id="previewClose"><i class="fas fa-times"></i></button>
+    </div>
+    <audio id="previewAudio"></audio>
+
+    <!-- R2 Upload -->
+    <script src="data-store.js"></script>
+    <script src="r2-config.js"></script>
+    <script src="r2-upload.js"></script>
+    <script src="r2-content-sync.js"></script>
+    <script src="builder.js"></script>
+</body>
+</html>

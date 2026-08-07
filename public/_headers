@@ -1,0 +1,98 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+  Vary: Accept-Encoding
+
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: '0'
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: '0'
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.css
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: '0'
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.png
+  Cache-Control: no-cache, no-store, must-revalidate
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.jpg
+  Cache-Control: no-cache, no-store, must-revalidate
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.jpeg
+  Cache-Control: no-cache, no-store, must-revalidate
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.gif
+  Cache-Control: no-cache, no-store, must-revalidate
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.svg
+  Cache-Control: no-cache, no-store, must-revalidate
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.webp
+  Cache-Control: no-cache, no-store, must-revalidate
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.ico
+  Cache-Control: no-cache, no-store, must-revalidate
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.woff
+  Cache-Control: no-cache, no-store, must-revalidate
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.woff2
+  Cache-Control: no-cache, no-store, must-revalidate
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.ttf
+  Cache-Control: no-cache, no-store, must-revalidate
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.eot
+  Cache-Control: no-cache, no-store, must-revalidate
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/*.json
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: '0'
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+
+/api/*
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: '0'
+  CDN-Cache-Control: no-store
+  Surrogate-Control: no-cache
+  Access-Control-Allow-Origin: *

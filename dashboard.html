@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Tamil AI FM | AI-Powered Tamil Radio</title>
+    <meta name="description" content="Tamil AI FM Dashboard - Your personalized AI-powered Tamil radio experience.">
+    <meta name="theme-color" content="#000000">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="noise-overlay"></div>
+    <div class="bg-container">
+        <div class="gradient-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+            <div class="orb orb-4"></div>
+            <div class="orb orb-5"></div>
+        </div>
+        <canvas id="particles-canvas"></canvas>
+    </div>
+
+    <!-- Top Navigation -->
+    <header class="top-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <div class="nav-logo">
+                    <div class="logo-icon"><i class="fas fa-microphone-alt"></i></div>
+                    <div class="logo-text">
+                        <h1>Tamil AI FM</h1>
+                        <span>AI-Powered Radio</span>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-right">
+                <button class="nav-icon-btn" aria-label="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="nav-badge">3</span>
+                </button>
+                <button class="nav-icon-btn" aria-label="Favorites">
+                    <i class="fas fa-heart"></i>
+                </button>
+                <div class="nav-avatar" id="userAvatar">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2334d399' opacity='0.2'/%3E%3Ccircle cx='50' cy='35' r='20' fill='%2334d399' opacity='0.6'/%3E%3Ccircle cx='50' cy='80' r='30' fill='%2334d399' opacity='0.4'/%3E%3C/svg%3E" alt="Profile">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="home-main">
+        <div class="home-container">
+            <!-- Welcome Section -->
+            <section class="section">
+                <div class="welcome-banner">
+                    <div class="welcome-content">
+                        <h2 class="welcome-heading">Welcome back, <span id="userName">Admin</span>! 🎙️</h2>
+                        <p class="welcome-text">Your AI-powered Tamil radio experience awaits. Discover new stations and enjoy your favorite music.</p>
+                    </div>
+                    <div class="welcome-actions">
+                        <button class="action-btn primary-btn" id="startListening">
+                            <i class="fas fa-play"></i> Start Listening
+                        </button>
+                        <button class="action-btn secondary-btn" id="exploreStations">
+                            <i class="fas fa-compass"></i> Explore Stations
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Stats -->
+            <section class="section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value">24.5h</span>
+                            <span class="stat-label">Listening Time</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-heart"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value">12</span>
+                            <span class="stat-label">Favorites</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-tower-broadcast"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value">8</span>
+                            <span class="stat-label">Stations Played</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-brain"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-value">15</span>
+                            <span class="stat-label">AI Recommendations</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Continue Listening -->
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fas fa-play-circle" style="color:#34d399;margin-right:8px;"></i>Continue Listening</h2>
+                </div>
+                <div class="continue-listening">
+                    <div class="station-card" data-genre="music">
+                        <div class="station-art" style="background:linear-gradient(135deg,#0f3b2e,#064e3b);">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='50' fill='%2334d399' opacity='0.2'/%3E%3Ccircle cx='60' cy='60' r='30' fill='%2334d399' opacity='0.35'/%3E%3Cpath d='M50 45 L50 80 L80 62.5 Z' fill='%2334d399' opacity='0.5'/%3E%3C/svg%3E" alt="Radio Mirchi">
+                            <div class="station-play-overlay"><i class="fas fa-play"></i></div>
+                        </div>
+                        <div class="station-info">
+                            <h3>Radio Mirchi Tamil</h3>
+                            <p>Music • 98.3 FM</p>
+                            <span class="station-listeners"><i class="fas fa-headphones"></i> 12.4K</span>
+                        </div>
+                    </div>
+                    <div class="station-card" data-genre="news">
+                        <div class="station-art" style="background:linear-gradient(135deg,#1a1a3e,#0a1628);">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='50' fill='%236ee7b7' opacity='0.2'/%3E%3Crect x='35' y='40' width='50' height='40' rx='4' fill='%236ee7b7' opacity='0.3'/%3E%3C/svg%3E" alt="Hello FM">
+                            <div class="station-play-overlay"><i class="fas fa-play"></i></div>
+                        </div>
+                        <div class="station-info">
+                            <h3>Hello FM Tamil</h3>
+                            <p>News • 106.4 FM</p>
+                            <span class="station-listeners"><i class="fas fa-headphones"></i> 8.7K</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI Recommendations -->
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fas fa-brain" style="color:#34d399;margin-right:8px;"></i>Recommended For You</h2>
+                    <span class="ai-badge"><i class="fas fa-robot"></i> Powered by AI</span>
+                </div>
+                <div class="stations-scroll">
+                    <div class="stations-track">
+                        <div class="station-card recommended" data-genre="music">
+                            <div class="station-art" style="background:linear-gradient(135deg,#0f2b3e,#062b4e);">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='50' fill='%2334d399' opacity='0.2'/%3E%3Crect x='35' y='40' width='50' height='40' rx='4' fill='%2334d399' opacity='0.3'/%3E%3C/svg%3E" alt="Suryan FM">
+                                <div class="station-play-overlay"><i class="fas fa-play"></i></div>
+                                <div class="ai-recommend-badge"><i class="fas fa-brain"></i> 92% Match</div>
+                            </div>
+                            <div class="station-info">
+                                <h3>Suryan FM</h3>
+                                <p>Music • 93.5 FM</p>
+                                <span class="station-listeners"><i class="fas fa-headphones"></i> 6.3K</span>
+                            </div>
+                        </div>
+                        <div class="station-card recommended" data-genre="entertainment">
+                            <div class="station-art" style="background:linear-gradient(135deg,#2e0f3b,#3b0650);">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='50' fill='%23a7f3d0' opacity='0.2'/%3E%3Cpath d='M40 50 L60 40 L80 50 L80 80 L60 90 L40 80 Z' fill='%23a7f3d0' opacity='0.3'/%3E%3C/svg%3E" alt="Rainbow FM">
+                                <div class="station-play-overlay"><i class="fas fa-play"></i></div>
+                                <div class="ai-recommend-badge"><i class="fas fa-brain"></i> 95% Match</div>
+                            </div>
+                            <div class="station-info">
+                                <h3>Rainbow FM</h3>
+                                <p>Entertainment • 101.5 FM</p>
+                                <span class="station-listeners"><i class="fas fa-headphones"></i> 5.9K</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="bottom-nav-item active" data-tab="home">
+            <i class="fas fa-house"></i>
+            <span>Home</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="search">
+            <i class="fas fa-search"></i>
+            <span>Search</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="favorites">
+            <i class="fas fa-heart"></i>
+            <span>Favorites</span>
+        </button>
+        <button class="bottom-nav-item" data-tab="profile">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </button>
+    </nav>
+
+    <!-- Now Playing Bar -->
+    <div class="now-playing-bar">
+        <div class="now-playing-info">
+            <div class="now-playing-thumb" style="background:linear-gradient(135deg,#0f3b2e,#064e3b);"></div>
+            <div class="now-playing-text">
+                <span class="now-playing-title">Radio Mirchi Tamil</span>
+                <span class="now-playing-station">98.3 FM • Music</span>
+            </div>
+        </div>
+        <div class="now-playing-controls">
+            <button class="np-btn"><i class="fas fa-backward-step"></i></button>
+            <button class="np-btn np-play-btn"><i class="fas fa-play"></i></button>
+            <button class="np-btn"><i class="fas fa-forward-step"></i></button>
+        </div>
+        <div class="now-playing-volume">
+            <button class="np-btn"><i class="fas fa-volume-high"></i></button>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

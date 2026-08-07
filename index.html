@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tamil AI FM - AI-Powered Tamil Radio | Home</title>
+    <meta name="description" content="Listen to your favorite Tamil FM stations with AI-powered recommendations. Discover 100+ live Tamil radio stations curated by artificial intelligence.">
+    <meta name="keywords" content="Tamil FM, Tamil radio, AI radio, Tamil music, online radio, Tamil AI FM, live radio">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="Tamil AI FM - AI-Powered Tamil Radio">
+    <meta property="og:description" content="Listen to your favorite Tamil FM stations with AI-powered recommendations.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tamilaifm.com">
+    <meta name="theme-color" content="#000000">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="yt-music.css">
+    <link rel="stylesheet" href="ai-assistant.css">
+    <link rel="stylesheet" href="player.css">
+    <link rel="stylesheet" href="mini-audio-player.css">
+    <link rel="stylesheet" href="search-ui.css">
+    <link rel="stylesheet" href="responsive.css">
+</head>
+<body>
+    <!-- Background Container with Gradient Orbs -->
+    <div class="bg-container">
+        <div class="gradient-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+            <div class="orb orb-4"></div>
+            <div class="orb orb-5"></div>
+        </div>
+        <canvas id="particles-canvas"></canvas>
+    </div>
+
+    <div class="noise-overlay"></div>
+
+    <!-- YouTube Music-like App Container -->
+    <div class="ytm-app">
+        <!-- Sidebar Navigation -->
+        <nav class="ytm-sidebar">
+            <div class="ytm-sidebar-header">
+                <div class="ytm-sidebar-logo"><i class="fas fa-microphone-alt"></i></div>
+                <span class="ytm-sidebar-title">Tamil AI FM</span>
+            </div>
+            
+            <div class="ytm-sidebar-nav">
+                <div class="ytm-sidebar-section">
+                    <button class="ytm-sidebar-item active" data-page="home">
+                        <i class="fas fa-house"></i>
+                        <span>Home</span>
+                    </button>
+                    <button class="ytm-sidebar-item" data-page="explore">
+                        <i class="fas fa-compass"></i>
+                        <span>Explore</span>
+                    </button>
+                    <button class="ytm-sidebar-item" data-page="library">
+                        <i class="fas fa-book-open"></i>
+                        <span>Library</span>
+                    </button>
+                    <button class="ytm-sidebar-item" data-page="search">
+                        <i class="fas fa-search"></i>
+                        <span>Search</span>
+                    </button>
+                </div>
+                
+                <div class="ytm-sidebar-divider"></div>
+                
+                <div class="ytm-sidebar-section">
+                    <div class="ytm-sidebar-section-title">Library</div>
+                    <button class="ytm-sidebar-item" data-page="liked">
+                        <i class="fas fa-heart"></i>
+                        <span>Liked Songs</span>
+                        <span class="badge" id="likedBadge">0</span>
+                    </button>
+                    <button class="ytm-sidebar-item" data-page="playlists">
+                        <i class="fas fa-list"></i>
+                        <span>Playlists</span>
+                    </button>
+                    <button class="ytm-sidebar-item" data-page="history">
+                        <i class="fas fa-clock-rotate-left"></i>
+                        <span>History</span>
+                    </button>
+                    <button class="ytm-sidebar-item" data-page="stations">
+                        <i class="fas fa-radio"></i>
+                        <span>Stations</span>
+                    </button>
+                    <button class="ytm-sidebar-item" data-page="artists">
+                        <i class="fas fa-users"></i>
+                        <span>Artists</span>
+                    </button>
+                </div>
+                
+                <div class="ytm-sidebar-divider"></div>
+                
+                <div class="ytm-sidebar-section">
+                    <div class="ytm-sidebar-section-title">Playlists</div>
+                    <button class="ytm-sidebar-item" onclick="YTMusic.openCreatePlaylistModal()">
+                        <i class="fas fa-plus"></i>
+                        <span>New Playlist</span>
+                    </button>
+                </div>
+                
+                <div class="ytm-sidebar-playlists" id="sidebarPlaylists"></div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <div class="ytm-main-content">
+            <!-- Enhanced Top Navigation -->
+            <header class="ytm-top-nav">
+                <button class="ytm-nav-back" onclick="history.back()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="ytm-nav-forward" onclick="history.forward()">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                
+                <div class="ytm-search-container">
+                    <div class="ytm-search-box">
+                        <i class="fas fa-search ytm-search-icon"></i>
+                        <input type="text" class="ytm-search-input" id="ytmSearchInput" placeholder="Search stations, songs, artists..." autocomplete="off">
+                        <button class="ytm-search-clear" id="ytmSearchClear"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                
+                <div class="ytm-nav-actions">
+                    <button class="ytm-nav-btn" onclick="YTMusic.toggleNotificationsPanel()" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </button>
+                    <button class="ytm-nav-btn" onclick="YTMusic.toggleSettingsPanel()" title="Settings">
+                        <i class="fas fa-gear"></i>
+                    </button>
+                    <a href="builder.html" target="_blank" class="ytm-nav-btn builder-nav-link" id="builderNavLink" style="display:none;" title="Admin Panel">
+                        <i class="fas fa-tools"></i>
+                    </a>
+                    <div class="ytm-user-avatar" onclick="YTMusic.toggleProfileDropdown()">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2334d399' opacity='0.2'/%3E%3Ccircle cx='50' cy='35' r='20' fill='%2334d399' opacity='0.6'/%3E%3Ccircle cx='50' cy='80' r='30' fill='%2334d399' opacity='0.4'/%3E%3C/svg%3E" alt="Profile">
+                    </div>
+                </div>
+            </header>
+
+            <!-- ============ PAGE: HOME ============ -->
+            <div class="ytm-page ytm-page-home active" id="page-home">
+                <!-- Premium Top Header Bar -->
+                <div class="top-header-bar">
+                    <div class="top-header-container">
+                        <div class="top-header-item">
+                            <i class="fas fa-calendar-alt top-header-icon"></i>
+                            <span class="top-header-label">Today</span>
+                            <span class="top-header-value" id="liveDate">Loading...</span>
+                        </div>
+                        <div class="top-header-divider"></div>
+                        <div class="top-header-item">
+                            <i class="fas fa-clock top-header-icon"></i>
+                            <span class="top-header-label">Live</span>
+                            <span class="top-header-value" id="liveTime">Loading...</span>
+                        </div>
+                        <div class="top-header-divider"></div>
+                        <div class="top-header-item top-header-quote">
+                            <i class="fas fa-quote-right top-header-icon"></i>
+                            <span class="top-header-value" id="tamilQuote">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Featured Banner Slider -->
+                <section class="section featured-section" data-section="featured">
+                    <div class="section-header">
+                        <h2 class="section-title">Featured Stations</h2>
+                        <div class="slider-controls">
+                            <button class="slider-btn slider-prev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+                            <button class="slider-btn slider-next" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="featured-slider" id="featuredSlider">
+                        <div class="slider-track" id="sliderTrack"></div>
+                    </div>
+                </section>
+
+                <!-- Trending Now -->
+                <section class="section trending-section" data-section="trending" id="trendingScroll">
+                    <div class="section-header">
+                        <h2 class="section-title">Trending Now</h2>
+                        <div class="slider-controls">
+                            <button class="slider-btn scroll-left" aria-label="Scroll left"><i class="fas fa-chevron-left"></i></button>
+                            <button class="slider-btn scroll-right" aria-label="Scroll right"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="stations-track"></div>
+                </section>
+
+                <!-- AI Recommended -->
+                <section class="section ai-section" data-section="ai-recommended">
+                    <div class="section-header">
+                        <h2 class="section-title"><i class="fas fa-brain"></i> AI Recommended</h2>
+                        <div class="slider-controls">
+                            <button class="slider-btn scroll-left" aria-label="Scroll left"><i class="fas fa-chevron-left"></i></button>
+                            <button class="slider-btn scroll-right" aria-label="Scroll right"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="stations-track"></div>
+                </section>
+
+                <!-- Browse Categories -->
+                <section class="section categories-section" data-section="categories">
+                    <div class="section-header">
+                        <h2 class="section-title">Browse Categories</h2>
+                    </div>
+                    <div class="categories-grid" id="categoriesGrid"></div>
+                </section>
+
+                <!-- Tamil Hits Songs (Artist Hits) -->
+                <section class="section tamil-hits-section" data-section="tamil-hits">
+                    <div class="section-header">
+                        <h2 class="section-title">Tamil Hits Collections</h2>
+                        <button class="see-all-btn" onclick="document.querySelector('[data-page=\'artists\']').click()">See All</button>
+                    </div>
+                    <div class="tamil-hits-grid" id="tamilHitsGrid"></div>
+                </section>
+
+                <!-- Recently Played -->
+                <section class="section recent-section" data-section="recent">
+                    <div class="section-header">
+                        <h2 class="section-title">Recently Played</h2>
+                    </div>
+                    <div class="recent-list" id="recentList"></div>
+                </section>
+
+                <!-- All Tamil FM Stations -->
+                <section class="section stations-section" data-section="stations">
+                    <div class="section-header">
+                        <h2 class="section-title">All Tamil FM Stations</h2>
+                        <span class="stations-count" id="stationsCount">18 stations</span>
+                    </div>
+                    <div class="filter-bar">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="music">Music</button>
+                        <button class="filter-btn" data-filter="news">News</button>
+                        <button class="filter-btn" data-filter="entertainment">Entertainment</button>
+                        <button class="filter-btn" data-filter="devotional">Devotional</button>
+                        <button class="filter-btn" data-filter="comedy">Comedy</button>
+                        <button class="filter-btn" data-filter="talk">Talk</button>
+                        <button class="filter-btn" data-filter="sports">Sports</button>
+                        <button class="filter-btn" data-filter="education">Education</button>
+                    </div>
+                    <div class="stations-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="stationsSearch" placeholder="Search stations...">
+                    </div>
+                    <div class="stations-grid" id="stationsGrid"></div>
+                    <div class="stations-pagination" id="stationsPagination"></div>
+                </section>
+            </div><!-- /page-home -->
+
+            <!-- ============ PAGE: SEARCH ============ -->
+            <div class="ytm-page ytm-page-search" id="page-search">
+                <div class="ytm-search-filters">
+                    <button class="ytm-search-filter active" data-filter="all" onclick="YTMusic.setSearchFilter('all')">All</button>
+                    <button class="ytm-search-filter" data-filter="stations" onclick="YTMusic.setSearchFilter('stations')">Stations</button>
+                    <button class="ytm-search-filter" data-filter="songs" onclick="YTMusic.setSearchFilter('songs')">Songs</button>
+                    <button class="ytm-search-filter" data-filter="artists" onclick="YTMusic.setSearchFilter('artists')">Artists</button>
+                </div>
+                <div class="ytm-search-results" id="ytmSearchResults"></div>
+            </div>
+
+            <!-- ============ PAGE: EXPLORE ============ -->
+            <div class="ytm-page ytm-page-explore" id="page-explore">
+                <div class="ytm-explore-content" id="ytmExploreContent"></div>
+            </div>
+
+            <!-- ============ PAGE: LIBRARY ============ -->
+            <div class="ytm-page ytm-page-library" id="page-library">
+                <div class="ytm-library-content" id="ytmLibraryContent"></div>
+            </div>
+
+            <!-- ============ PAGE: LIKED ============ -->
+            <div class="ytm-page ytm-page-liked" id="page-liked">
+                <div class="ytm-liked-content" id="ytmLikedContent"></div>
+            </div>
+
+            <!-- ============ PAGE: PLAYLISTS ============ -->
+            <div class="ytm-page ytm-page-playlists" id="page-playlists">
+                <div class="ytm-playlists-content" id="ytmPlaylistsContent"></div>
+            </div>
+
+            <!-- ============ PAGE: HISTORY ============ -->
+            <div class="ytm-page ytm-page-history" id="page-history">
+                <div class="ytm-history-content" id="ytmHistoryContent"></div>
+            </div>
+
+            <!-- ============ PAGE: STATIONS (full list) ============ -->
+            <div class="ytm-page ytm-page-stations" id="page-stations">
+                <div class="ytm-stations-content" id="ytmStationsContent"></div>
+            </div>
+
+            <!-- ============ PAGE: ARTISTS ============ -->
+            <div class="ytm-page ytm-page-artists" id="page-artists">
+                <div class="ytm-artists-content" id="ytmArtistsContent"></div>
+            </div>
+
+        </div><!-- /ytm-main-content -->
+    </div><!-- /ytm-app -->
+
+    <!-- ============ ENHANCED BOTTOM PLAYER ============ -->
+    <div class="ytm-player" id="ytmPlayer">
+        <div class="ytm-player-progress" id="ytmPlayerProgress">
+            <div class="ytm-player-progress-buffered"></div>
+            <div class="ytm-player-progress-filled" id="ytmPlayerProgressFilled"></div>
+        </div>
+        
+        <div class="ytm-player-info">
+            <div class="ytm-player-thumb" onclick="YTMusic.toggleFullscreenPlayer()">
+                <img id="ytmPlayerThumb" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' fill='%231a3b2e'/%3E%3Ccircle cx='24' cy='24' r='16' fill='%2334d399' opacity='0.3'/%3E%3C/svg%3E" alt="Now Playing">
+                <canvas class="ytm-player-wave-canvas" id="ytmPlayerWaveCanvas"></canvas>
+            </div>
+            <div class="ytm-player-meta">
+                <div class="ytm-player-title" id="ytmPlayerTitle" onclick="YTMusic.toggleFullscreenPlayer()">No track playing</div>
+                <div class="ytm-player-artist" id="ytmPlayerArtist">Select a station or song</div>
+            </div>
+        </div>
+        
+        <button class="ytm-player-like" id="ytmPlayerLikeBtn" onclick="YTMusic.toggleLike()">
+            <i class="far fa-heart"></i>
+        </button>
+        
+        <div class="ytm-player-controls">
+            <button class="ytm-player-btn" id="ytmShuffleBtn" data-action="shuffle" onclick="YTMusic.toggleShuffle()" title="Shuffle">
+                <i class="fas fa-shuffle"></i>
+            </button>
+            <button class="ytm-player-btn" onclick="YTMusic.previousTrack()" title="Previous">
+                <i class="fas fa-backward-step"></i>
+            </button>
+            <button class="ytm-player-btn ytm-player-btn-play" id="ytmPlayBtn" onclick="YTMusic.togglePlay()" title="Play/Pause">
+                <i class="fas fa-play"></i>
+            </button>
+            <button class="ytm-player-btn" onclick="YTMusic.nextTrack()" title="Next">
+                <i class="fas fa-forward-step"></i>
+            </button>
+            <button class="ytm-player-btn" id="ytmRepeatBtn" data-action="repeat" onclick="YTMusic.cycleRepeat()" title="Repeat">
+                <i class="fas fa-repeat"></i>
+            </button>
+        </div>
+        
+        <div class="ytm-player-extra">
+            <div class="ytm-player-time">
+                <span class="current" id="ytmCurrentTime">0:00</span> / <span class="total" id="ytmTotalTime">0:00</span>
+            </div>
+            
+            <div class="ytm-player-volume">
+                <button class="ytm-player-btn" id="ytmVolumeBtn" onclick="YTMusic.toggleMute()" title="Volume">
+                    <i class="fas fa-volume-high"></i>
+                </button>
+                <div class="ytm-volume-slider" id="ytmVolumeSlider">
+                    <div class="ytm-volume-filled" id="ytmVolumeFilled" style="width: 70%"></div>
+                </div>
+            </div>
+            
+            <button class="ytm-player-btn ytm-player-queue-btn" onclick="YTMusic.toggleQueuePanel()" title="Queue">
+                <i class="fas fa-bars-staggered"></i>
+            </button>
+            
+            <button class="ytm-player-btn" onclick="YTMusic.toggleMiniPlayer()" title="Mini Player">
+                <i class="fas fa-down-left-and-up-right-to-center"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ============ MINI PLAYER ============ -->
+    <div class="ytm-mini-player" id="ytmMiniPlayer">
+        <button class="ytm-mini-player-close" onclick="YTMusic.closeMiniPlayer()">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="ytm-mini-player-content">
+            <div class="ytm-mini-player-thumb">
+                <img id="ytmMiniThumb" src="" alt="Now Playing">
+            </div>
+            <div class="ytm-mini-player-info">
+                <div class="ytm-mini-player-title" id="ytmMiniTitle">No track</div>
+                <div class="ytm-mini-player-artist" id="ytmMiniArtist"></div>
+            </div>
+            <div class="ytm-mini-player-controls">
+                <button class="ytm-mini-player-btn" onclick="YTMusic.previousTrack()">
+                    <i class="fas fa-backward-step"></i>
+                </button>
+                <button class="ytm-mini-player-btn" id="ytmMiniPlayBtn" onclick="YTMusic.togglePlay()">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="ytm-mini-player-btn" onclick="YTMusic.nextTrack()">
+                    <i class="fas fa-forward-step"></i>
+                </button>
+            </div>
+        </div>
+        <div class="ytm-mini-player-progress">
+            <div class="ytm-mini-player-progress-filled" id="ytmMiniProgressFilled"></div>
+        </div>
+    </div>
+
+    <!-- ============ FULL-SCREEN PLAYER ============ -->
+    <div class="ytm-fullscreen-player" id="ytmFullscreenPlayer">
+        <div class="ytm-fs-header">
+            <button class="ytm-fs-close" onclick="YTMusic.closeFullscreenPlayer()">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="ytm-fs-title">Now Playing</div>
+            <button class="ytm-fs-options" onclick="YTMusic.toggleQueuePanel()">
+                <i class="fas fa-bars-staggered"></i>
+            </button>
+        </div>
+        
+        <div class="ytm-fs-body">
+            <div class="ytm-fs-artwork">
+                <img id="ytmFsArtwork" src="" alt="Album Art" style="display:none;">
+                <div class="ytm-fs-artwork-placeholder" id="ytmFsPlaceholder">
+                    <i class="fas fa-music"></i>
+                </div>
+            </div>
+            
+            <div class="ytm-fs-info">
+                <div class="ytm-fs-song-title" id="ytmFsTitle">No track playing</div>
+                <div class="ytm-fs-artist" id="ytmFsArtist">Select a station or song</div>
+                <button class="ytm-fs-like-btn" id="ytmFsLikeBtn" onclick="YTMusic.toggleLike()">
+                    <i class="far fa-heart"></i>
+                </button>
+            </div>
+
+            <div class="ytm-fs-visualizer">
+                <div class="ytm-fs-meta">
+                    <span class="ytm-fs-badge" id="ytmQualityBadge">AAC 320 kbps</span>
+                    <span class="ytm-fs-badge ytm-fs-badge-live" id="ytmNowPlayingBadge">Now Playing</span>
+                </div>
+                <canvas id="ytmWaveformCanvas" class="ytm-waveform-canvas"></canvas>
+                <div class="ytm-eq-bars" id="ytmEqBars"></div>
+            </div>
+            
+            <div class="ytm-fs-controls">
+                <div class="ytm-fs-progress-container">
+                    <div class="ytm-fs-progress-bar" id="ytmFsProgressBar">
+                        <div class="ytm-fs-progress-buffered"></div>
+                        <div class="ytm-fs-progress-filled" id="ytmFsProgressFilled"></div>
+                        <div class="ytm-fs-progress-thumb" id="ytmFsProgressThumb"></div>
+                    </div>
+                    <div class="ytm-fs-time">
+                        <span class="current" id="ytmFsCurrentTime">0:00</span>
+                        <span class="total" id="ytmFsTotalTime">0:00</span>
+                    </div>
+                </div>
+                
+                <div class="ytm-fs-buttons">
+                    <button class="ytm-fs-btn" id="ytmFsShuffleBtn" data-action="shuffle" onclick="YTMusic.toggleShuffle()" title="Shuffle">
+                        <i class="fas fa-shuffle"></i>
+                    </button>
+                    <button class="ytm-fs-btn" onclick="YTMusic.previousTrack()" title="Previous">
+                        <i class="fas fa-backward-step"></i>
+                    </button>
+                    <button class="ytm-fs-btn ytm-fs-btn-play" id="ytmFsPlayBtn" onclick="YTMusic.togglePlay()" title="Play/Pause">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="ytm-fs-btn" onclick="YTMusic.nextTrack()" title="Next">
+                        <i class="fas fa-forward-step"></i>
+                    </button>
+                    <button class="ytm-fs-btn" id="ytmFsRepeatBtn" data-action="repeat" onclick="YTMusic.cycleRepeat()" title="Repeat">
+                        <i class="fas fa-repeat"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="ytm-fs-extra">
+                <button class="ytm-fs-extra-btn" title="Lyrics" onclick="YTMusic.toggleLyrics()">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <button class="ytm-fs-extra-btn" title="Queue" onclick="YTMusic.toggleQueuePanel()">
+                    <i class="fas fa-bars-staggered"></i>
+                </button>
+                <button class="ytm-fs-extra-btn" title="Add to playlist" onclick="YTMusic.openAddToPlaylistModal()">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button class="ytm-fs-extra-btn" title="Share" onclick="YTMusic.shareTrack()">
+                    <i class="fas fa-share-nodes"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="ytm-lyrics-panel" id="ytmLyricsPanel">
+            <div class="ytm-lyrics-title">Lyrics</div>
+            <div class="ytm-lyrics-content" id="ytmLyricsContent">
+                <div class="ytm-lyrics-unavailable">Lyrics not available for this track</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ QUEUE PANEL ============ -->
+    <div class="ytm-queue-panel" id="ytmQueuePanel">
+        <div class="ytm-queue-header">
+            <div class="ytm-queue-title">Queue</div>
+            <div class="ytm-queue-actions">
+                <button class="ytm-queue-action-btn" onclick="YTMusic.saveQueue()" title="Save queue"><i class="fas fa-floppy-disk"></i></button>
+                <button class="ytm-queue-action-btn" onclick="YTMusic.restoreQueue()" title="Restore queue"><i class="fas fa-rotate-left"></i></button>
+                <button class="ytm-queue-action-btn" onclick="YTMusic.clearQueue()" title="Clear queue"><i class="fas fa-trash"></i></button>
+                <button class="ytm-queue-close" onclick="YTMusic.closeQueuePanel()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="ytm-queue-tabs">
+            <button class="ytm-queue-tab active" data-tab="queue" onclick="YTMusic.setQueueTab('queue')">Queue</button>
+            <button class="ytm-queue-tab" data-tab="history" onclick="YTMusic.setQueueTab('history')">History</button>
+        </div>
+        <div class="ytm-queue-list" id="ytmQueueList"></div>
+    </div>
+
+    <!-- ============ SETTINGS PANEL ============ -->
+    <div class="ytm-settings-panel" id="ytmSettingsPanel">
+        <div class="ytm-settings-header">
+            <div class="ytm-settings-title">Settings</div>
+            <button class="ytm-settings-close" onclick="YTMusic.closeSettingsPanel()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ytm-settings-content" id="ytmSettingsContent"></div>
+    </div>
+
+    <!-- ============ NOTIFICATIONS PANEL ============ -->
+    <div class="ytm-notifications-panel" id="ytmNotificationsPanel">
+        <div class="ytm-notifications-header">
+            <div class="ytm-notifications-title">Notifications</div>
+            <button class="ytm-notifications-close" onclick="YTMusic.closeNotificationsPanel()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ytm-notifications-list" id="ytmNotificationsList"></div>
+    </div>
+
+    <!-- ============ PROFILE DROPDOWN ============ -->
+    <div class="ytm-profile-dropdown" id="ytmProfileDropdown"></div>
+
+    <!-- Hidden logout button (used by profile dropdown sign out) -->
+    <button class="logout-btn" id="logoutBtn" style="display:none;" aria-label="Logout"></button>
+
+    <!-- ============ CREATE PLAYLIST MODAL ============ -->
+    <div class="ytm-modal-overlay" id="ytmModalOverlay">
+        <div class="ytm-modal">
+            <div class="ytm-modal-header">
+                <h3 class="ytm-modal-title" id="ytmModalTitle">New Playlist</h3>
+                <button class="ytm-modal-close" onclick="YTMusic.closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="ytm-modal-body">
+                <input type="text" class="ytm-modal-input" id="ytmModalInput" placeholder="Playlist name" maxlength="100">
+            </div>
+            <div class="ytm-modal-footer">
+                <button class="ytm-modal-btn ytm-modal-btn-cancel" onclick="YTMusic.closeModal()">Cancel</button>
+                <button class="ytm-modal-btn ytm-modal-btn-primary" id="ytmModalConfirm" onclick="YTMusic.confirmModal()">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ TOAST CONTAINER ============ -->
+    <div class="ytm-toast-container" id="ytmToastContainer"></div>
+
+    <!-- ============ MOBILE BOTTOM NAV ============ -->
+    <nav class="ytm-bottom-nav" id="ytmBottomNav">
+        <button class="ytm-bottom-nav-item active" data-page="home">
+            <i class="fas fa-house"></i>
+            <span>Home</span>
+        </button>
+        <button class="ytm-bottom-nav-item" data-page="explore">
+            <i class="fas fa-compass"></i>
+            <span>Explore</span>
+        </button>
+        <button class="ytm-bottom-nav-item" data-page="library">
+            <i class="fas fa-book-open"></i>
+            <span>Library</span>
+        </button>
+        <button class="ytm-bottom-nav-item" data-page="search">
+            <i class="fas fa-search"></i>
+            <span>Search</span>
+        </button>
+        <button class="ytm-bottom-nav-item" data-page="liked">
+            <i class="fas fa-heart"></i>
+            <span>Liked</span>
+        </button>
+    </nav>
+
+    <!-- ============ RECENTLY ADDED SONGS TICKER ============ -->
+    <div class="ytm-ticker" id="ytmTicker">
+        <div class="ytm-ticker-label">
+            <i class="fas fa-music"></i>
+            <span>Recently Added</span>
+        </div>
+        <div class="ytm-ticker-viewport" id="ytmTickerViewport">
+            <div class="ytm-ticker-track" id="ytmTickerTrack"></div>
+        </div>
+    </div>
+
+    <!-- ============ AI ASSISTANT ============ -->
+    <button class="ytm-ai-fab" id="ytmAiFab" title="AI Assistant">
+        <i class="fas fa-robot"></i>
+    </button>
+    <div class="ytm-ai-panel" id="ytmAiPanel">
+        <div class="ytm-ai-header">
+            <div class="ytm-ai-title">
+                <i class="fas fa-robot"></i>
+                <span>AI Assistant</span>
+            </div>
+            <button class="ytm-ai-close" onclick="YTMusic.toggleAssistant()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ytm-ai-messages" id="ytmAiMessages"></div>
+        <div class="ytm-ai-suggestions" id="ytmAiSuggestions"></div>
+        <div class="ytm-ai-input-row">
+            <input type="text" id="ytmAiInput" class="ytm-ai-input" placeholder="Ask me to play, search, or navigate...">
+            <button class="ytm-ai-send" id="ytmAiSend"><i class="fas fa-paper-plane"></i></button>
+            <button class="ytm-ai-voice" id="ytmAiVoice" title="Voice input"><i class="fas fa-microphone"></i></button>
+        </div>
+    </div>
+
+    <!-- ============ AI ASSISTANT ============ -->
+    <div class="ai-chat-window" id="aiChatWindow">
+        <div class="ai-chat-header">
+            <div class="ai-avatar"><i class="fas fa-robot"></i></div>
+            <div class="ai-header-info">
+                <h3>Tamil AI FM Assistant</h3>
+                <p>Always ready to help</p>
+            </div>
+            <button class="ai-close-btn" id="aiCloseBtn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ai-messages" id="aiMessages"></div>
+        <div class="ai-chat-input">
+            <input type="text" id="aiInput" placeholder="Ask me anything..." autocomplete="off">
+            <button class="ai-voice-btn" id="aiVoiceBtn" title="Voice input"><i class="fas fa-microphone"></i></button>
+            <button class="ai-send-btn" id="aiSendBtn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <button class="ai-fab" id="aiFab" title="AI Assistant">
+        <div class="ai-pulse"></div>
+        <i class="fas fa-comment-dots"></i>
+    </button>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="site-footer" id="siteFooter">
+        <p id="footerText"></p>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+    <!-- Scripts -->
+    <script type="module" src="firebase-init.js"></script>
+    <script src="data-store.js"></script>
+    <script src="r2-config.js"></script>
+    <script src="r2-upload.js"></script>
+    <script src="r2-content-sync.js"></script>
+    <script src="player-engine.js"></script>
+    <script src="equalizer.js"></script>
+    <script src="playlist-manager.js"></script>
+    <script src="search-engine.js"></script>
+    <script src="premium-effects.js"></script>
+    <script src="player-ui.js"></script>
+    <script src="ai-music-assistant.js"></script>
+    <script src="search-ui.js"></script>
+    <script src="eq-ui.js"></script>
+    <script src="yt-music.js"></script>
+    <script src="script.js"></script>
+    <script src="ai-assistant.js"></script>
+    <script src="mini-audio-player.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            PlayerEngine.init();
+            Equalizer.loadEqSettings();
+            PlaylistManager.init();
+            SearchEngine.init();
+            PremiumEffects.init();
+            PlayerUI.init();
+            AIMusicAssistant.init();
+            PremiumEffects.initParticles();
+        });
+    </script>
+</body>
+</html>

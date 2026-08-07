@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Tamil AI FM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="noise-overlay"></div>
+    
+    <!-- Animated Background -->
+    <div class="bg-container">
+        <div class="gradient-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div class="admin-dashboard">
+        <!-- Admin Navigation -->
+        <header class="admin-nav">
+            <div class="admin-nav-container">
+                <div class="admin-nav-left">
+                    <button class="mobile-menu-toggle" id="adminMobileToggle" aria-label="Toggle menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="admin-nav-logo">
+                        <div class="logo-icon"><i class="fas fa-microphone-alt"></i></div>
+                        <div>
+                            <h1>Tamil AI FM</h1>
+                            <span>Admin Panel</span>
+                        </div>
+                    </div>
+                    <nav class="admin-nav-menu">
+                        <button class="admin-nav-item active" data-page="dashboard">
+                            <i class="fas fa-home"></i> Dashboard
+                        </button>
+                        <button class="admin-nav-item" data-page="songs">
+                            <i class="fas fa-music"></i> Songs
+                        </button>
+                        <button class="admin-nav-item" data-page="categories">
+                            <i class="fas fa-folder"></i> Categories
+                        </button>
+                        <button class="admin-nav-item" data-page="artists">
+                            <i class="fas fa-user"></i> Artists
+                        </button>
+                        <button class="admin-nav-item" data-page="movies">
+                            <i class="fas fa-film"></i> Movies
+                        </button>
+                        <button class="admin-nav-item" data-page="playlists">
+                            <i class="fas fa-list"></i> Playlists
+                        </button>
+                        <a href="admin-upload.html" class="admin-nav-item" style="text-decoration:none;display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text-secondary);transition:all 0.2s">
+                            <i class="fas fa-cloud-arrow-up"></i> Upload
+                        </a>
+                    </nav>
+                </div>
+                <div class="admin-nav-right">
+                    <a href="builder.html" target="_blank" class="admin-btn builder-link-btn">
+                        <i class="fas fa-tools"></i> Website Builder
+                    </a>
+                    <div class="admin-user-info">
+                        <div class="admin-user-avatar">A</div>
+                        <span class="admin-user-name">Admin</span>
+                    </div>
+                    <button class="admin-logout-btn" id="adminLogout">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Admin Main Content -->
+        <main class="admin-main">
+            <div class="admin-container">
+                <!-- Sidebar -->
+                <aside class="admin-sidebar">
+                    <div class="admin-sidebar-section">
+                        <div class="admin-sidebar-title">Main Menu</div>
+                        <div class="admin-sidebar-menu">
+                            <button class="admin-sidebar-item active" data-page="dashboard">
+                                <i class="fas fa-home"></i> Dashboard
+                            </button>
+                            <button class="admin-sidebar-item" data-page="songs">
+                                <i class="fas fa-music"></i> Manage Songs
+                            </button>
+                            <button class="admin-sidebar-item" data-page="add-song">
+                                <i class="fas fa-plus-circle"></i> Add New Song
+                            </button>
+                            <a href="admin-upload.html" class="admin-sidebar-item" style="text-decoration:none">
+                                <i class="fas fa-cloud-arrow-up"></i> Upload Center
+                            </a>
+                        </div>
+                    </div>
+                    <div class="admin-sidebar-section">
+                        <div class="admin-sidebar-title">Content Management</div>
+                        <div class="admin-sidebar-menu">
+                            <button class="admin-sidebar-item" data-page="categories">
+                                <i class="fas fa-folder"></i> Categories
+                            </button>
+                            <button class="admin-sidebar-item" data-page="artists">
+                                <i class="fas fa-user"></i> Artists
+                            </button>
+                            <button class="admin-sidebar-item" data-page="movies">
+                                <i class="fas fa-film"></i> Movies
+                            </button>
+                            <button class="admin-sidebar-item" data-page="playlists">
+                                <i class="fas fa-list"></i> Playlists
+                            </button>
+                        </div>
+                    </div>
+                    <div class="admin-sidebar-section">
+                        <div class="admin-sidebar-title">Featured Content</div>
+                        <div class="admin-sidebar-menu">
+                            <button class="admin-sidebar-item" data-page="featured">
+                                <i class="fas fa-star"></i> Featured Songs
+                            </button>
+                            <button class="admin-sidebar-item" data-page="trending">
+                                <i class="fas fa-fire"></i> Trending Songs
+                            </button>
+                        </div>
+                    </div>
+                    <div class="admin-sidebar-section" style="margin-top:auto; padding-top:20px; border-top:1px solid var(--border-glass);">
+                        <a href="builder.html" target="_blank" class="admin-sidebar-item builder-link" style="justify-content:center; padding:14px 16px;">
+                            <i class="fas fa-tools"></i> Website Builder
+                        </a>
+                    </div>
+                </aside>
+
+                <!-- Content Area -->
+                <div class="admin-content">
+                    <!-- Dashboard Page -->
+                    <div class="admin-page" id="dashboardPage">
+                        <div class="admin-page-header">
+                            <h1 class="admin-page-title">Dashboard Overview</h1>
+                        </div>
+                        
+                        <!-- Stats Grid -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-music"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="totalSongs">0</span>
+                                    <span class="stat-label">Total Songs</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-user"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="totalArtists">0</span>
+                                    <span class="stat-label">Artists</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-film"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="totalMovies">0</span>
+                                    <span class="stat-label">Movies</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-play"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="totalPlays">0</span>
+                                    <span class="stat-label">Total Plays</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Songs -->
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">Recently Added Songs</h2>
+                                <button class="admin-btn primary" onclick="navigateTo('add-song')">
+                                    <i class="fas fa-plus"></i> Add Song
+                                </button>
+                            </div>
+                            <div class="data-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Cover</th>
+                                            <th>Title</th>
+                                            <th>Artist</th>
+                                            <th>Movie</th>
+                                            <th>Duration</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentSongsTable">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Songs Management Page -->
+                    <div class="admin-page" id="songsPage" style="display:none;">
+                        <div class="admin-page-header">
+                            <h1 class="admin-page-title">Manage Songs</h1>
+                            <div class="admin-page-actions">
+                                <button class="admin-btn primary" onclick="navigateTo('add-song')">
+                                    <i class="fas fa-plus"></i> Add New Song
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">All Songs</h2>
+                                <input type="text" class="form-input" id="songSearch" placeholder="Search songs..." style="width:300px;">
+                            </div>
+                            <div class="data-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Cover</th>
+                                            <th>Title</th>
+                                            <th>Artist</th>
+                                            <th>Movie</th>
+                                            <th>Duration</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="allSongsTable">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add/Edit Song Page -->
+                    <div class="admin-page" id="addSongPage" style="display:none;">
+                        <div class="admin-page-header">
+                            <h1 class="admin-page-title" id="songFormTitle">Add New Song</h1>
+                        </div>
+
+                        <div class="content-card">
+                            <form id="songForm">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Song Title *</label>
+                                        <input type="text" class="form-input" id="songTitle" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Artist *</label>
+                                        <select class="form-select" id="songArtist" required>
+                                            <option value="">Select Artist</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Movie *</label>
+                                        <select class="form-select" id="songMovie" required>
+                                            <option value="">Select Movie</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Music Director</label>
+                                        <input type="text" class="form-input" id="songDirector">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Singer</label>
+                                        <input type="text" class="form-input" id="songSinger">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Language</label>
+                                        <select class="form-select" id="songLanguage">
+                                            <option value="Tamil">Tamil</option>
+                                            <option value="Hindi">Hindi</option>
+                                            <option value="Telugu">Telugu</option>
+                                            <option value="Malayalam">Malayalam</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Genre</label>
+                                        <select class="form-select" id="songGenre">
+                                            <option value="Love">Love</option>
+                                            <option value="Action">Action</option>
+                                            <option value="Comedy">Comedy</option>
+                                            <option value="Emotional">Emotional</option>
+                                            <option value="Devotional">Devotional</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Album Cover Image</label>
+                                        <div class="file-upload" id="albumUpload">
+                                            <input type="file" id="albumImage" accept="image/*">
+                                            <div class="file-upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                                            <div class="file-upload-text">Drop album cover here or click to browse</div>
+                                            <div class="file-upload-hint">PNG, JPG up to 5MB</div>
+                                        </div>
+                                        <div class="file-preview" id="albumPreview" style="display:none;">
+                                            <img id="albumPreviewImg" src="" alt="Preview">
+                                            <div class="file-preview-info">
+                                                <div class="file-preview-name" id="albumFileName">filename.jpg</div>
+                                                <div class="file-preview-size" id="albumFileSize">0 MB</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Audio File (MP3) *</label>
+                                        <div class="file-upload" id="audioUpload">
+                                            <input type="file" id="audioFile" accept="audio/mp3,audio/mpeg">
+                                            <div class="file-upload-icon"><i class="fas fa-music"></i></div>
+                                            <div class="file-upload-text">Drop MP3 file here or click to browse</div>
+                                            <div class="file-upload-hint">MP3 format, max 10MB</div>
+                                        </div>
+                                        <div class="file-preview" id="audioPreview" style="display:none;">
+                                            <div class="file-preview-info">
+                                                <div class="file-preview-name" id="audioFileName">song.mp3</div>
+                                                <div class="file-preview-size" id="audioFileSize">0 MB</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Duration (mm:ss)</label>
+                                        <input type="text" class="form-input" id="songDuration" placeholder="3:45">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" id="songStatus">
+                                            <option value="published">Published</option>
+                                            <option value="draft">Draft</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Description</label>
+                                        <textarea class="form-textarea" id="songDescription" placeholder="Enter song description..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="admin-page-actions">
+                                    <button type="submit" class="admin-btn primary">
+                                        <i class="fas fa-save"></i> Save Song
+                                    </button>
+                                    <button type="button" class="admin-btn" onclick="navigateTo('songs')">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Categories Page -->
+                    <div class="admin-page" id="categoriesPage" style="display:none;">
+                        <div class="admin-page-header">
+                            <h1 class="admin-page-title">Manage Categories</h1>
+                            <button class="admin-btn primary" id="addCategoryBtn">
+                                <i class="fas fa-plus"></i> Add Category
+                            </button>
+                        </div>
+                        <div class="content-card">
+                            <div class="data-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Description</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="categoriesTable">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Artists Page -->
+                    <div class="admin-page" id="artistsPage" style="display:none;">
+                        <div class="admin-page-header">
+                            <h1 class="admin-page-title">Manage Artists</h1>
+                            <button class="admin-btn primary" id="addArtistBtn">
+                                <i class="fas fa-plus"></i> Add Artist
+                            </button>
+                        </div>
+                        <div class="content-card">
+                            <div class="data-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="artistsTable">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Movies Page -->
+                    <div class="admin-page" id="moviesPage" style="display:none;">
+                        <div class="admin-page-header">
+                            <h1 class="admin-page-title">Manage Movies</h1>
+                            <button class="admin-btn primary" id="addMovieBtn">
+                                <i class="fas fa-plus"></i> Add Movie
+                            </button>
+                        </div>
+                        <div class="content-card">
+                            <div class="data-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Year</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="moviesTable">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Playlists Page -->
+                    <div class="admin-page" id="playlistsPage" style="display:none;">
+                        <div class="admin-page-header">
+                            <h1 class="admin-page-title">Manage Playlists</h1>
+                            <button class="admin-btn primary" id="addPlaylistBtn">
+                                <i class="fas fa-plus"></i> Create Playlist
+                            </button>
+                        </div>
+                        <div class="content-card">
+                            <div class="data-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Songs</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="playlistsTable">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- R2 Upload -->
+    <script src="r2-config.js"></script>
+    <script src="r2-upload.js"></script>
+    <script src="r2-content-sync.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

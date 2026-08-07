@@ -1,0 +1,956 @@
+/* ============================================
+   PREMIUM ANIMATIONS - Spotify-Quality UX
+   Tamil AI FM Enhanced Visual Experience
+   ============================================
+   All animations are GPU-accelerated (transform/opacity only)
+   All animations respect prefers-reduced-motion
+   All animations use will-change for optimization
+   ============================================ */
+
+/* ============================================
+   1. GLOBAL TRANSITIONS & BASE
+   ============================================ */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* GPU-accelerated base for all animated elements */
+.station-card,
+.slide-card,
+.station-grid-card,
+.tamil-hit-card,
+.recent-item,
+.song-card,
+.ytm-search-song-item,
+.ytm-playlist-track,
+.player-mini,
+.player-fullscreen,
+.ytm-player,
+.ytm-mini-player,
+.ytm-fullscreen-player {
+    will-change: transform, box-shadow, border-color;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   2. AUDIO-REACTIVE PARTICLE BACKGROUND
+   ============================================ */
+.premium-particles-active #particles-canvas {
+    filter: blur(0.5px);
+    transition: filter 0.5s ease;
+}
+
+/* Ambient glow behind player when playing */
+.ambient-glow {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    background: radial-gradient(ellipse at 50% 100%, var(--accent-color, rgba(16, 185, 129, 0.08)) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+}
+
+.ambient-glow.active {
+    opacity: 1;
+    animation: ambientPulse 4s ease-in-out infinite;
+}
+
+@keyframes ambientPulse {
+    0%, 100% { opacity: 0.6; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(1.05); }
+}
+
+/* ============================================
+   3. WAVEFORM VISUALIZER
+   ============================================ */
+.waveform-visualizer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.waveform-visualizer.active {
+    opacity: 1;
+}
+
+.waveform-visualizer canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* ============================================
+   4. ROTATING VINYL ALBUM ARTWORK
+   ============================================ */
+.vinyl-container {
+    position: relative;
+    display: inline-block;
+}
+
+.vinyl-disc {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    animation: vinylSpin 3s linear infinite;
+    animation-play-state: paused;
+    will-change: transform;
+}
+
+.vinyl-disc.spinning {
+    animation-play-state: running;
+}
+
+@keyframes vinylSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Vinyl center hole */
+.vinyl-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20%;
+    height: 20%;
+    border-radius: 50%;
+    background: var(--bg-primary, #0a0f1a);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    z-index: 2;
+}
+
+/* Vinyl groove lines */
+.vinyl-disc::after {
+    content: '';
+    position: absolute;
+    inset: 15%;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    box-shadow:
+        inset 0 0 0 8px rgba(255, 255, 255, 0.02),
+        inset 0 0 0 16px rgba(255, 255, 255, 0.015),
+        inset 0 0 0 24px rgba(255, 255, 255, 0.01),
+        inset 0 0 0 32px rgba(255, 255, 255, 0.008);
+}
+
+/* Apply vinyl to fullscreen player artwork */
+.player-fullscreen-artwork img,
+.ytm-fs-artwork img {
+    border-radius: 12px;
+    transition: border-radius 0.5s ease, box-shadow 0.5s ease;
+}
+
+.player-fullscreen.playing .player-fullscreen-artwork img,
+.player-fullscreen.playing .ytm-fs-artwork img {
+    border-radius: 50%;
+    animation: vinylSpin 4s linear infinite;
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.2), 0 0 80px rgba(16, 185, 129, 0.1);
+}
+
+/* ============================================
+   5. ANIMATED EQUALIZER BARS (Enhanced)
+   ============================================ */
+.equalizer-animation {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 16px;
+    width: 16px;
+}
+
+.equalizer-bar {
+    width: 3px;
+    background: linear-gradient(180deg, #10b981, #34d399);
+    border-radius: 1px;
+    animation: eqBounce 0.8s ease-in-out infinite;
+    will-change: transform;
+}
+
+.equalizer-bar:nth-child(1) { animation-delay: 0s; height: 60%; }
+.equalizer-bar:nth-child(2) { animation-delay: 0.2s; height: 100%; }
+.equalizer-bar:nth-child(3) { animation-delay: 0.4s; height: 40%; }
+.equalizer-bar:nth-child(4) { animation-delay: 0.6s; height: 80%; }
+
+@keyframes eqBounce {
+    0%, 100% { transform: scaleY(1); opacity: 0.6; }
+    50% { transform: scaleY(2); opacity: 1; }
+}
+
+.equalizer-animation.paused .equalizer-bar {
+    animation-play-state: paused;
+    transform: scaleY(0.3);
+    opacity: 0.3;
+}
+
+/* ============================================
+   6. NOW PLAYING GLOW (Enhanced)
+   ============================================ */
+.now-playing-glow {
+    position: relative;
+}
+
+.now-playing-glow::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(52, 211, 153, 0.1), rgba(16, 185, 129, 0.3));
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    animation: glowRotate 6s linear infinite;
+}
+
+.now-playing-glow.active::before {
+    opacity: 1;
+}
+
+@keyframes glowRotate {
+    from { filter: hue-rotate(0deg); }
+    to { filter: hue-rotate(360deg); }
+}
+
+/* ============================================
+   7. CARD PULSE & GLOW EFFECTS
+   ============================================ */
+.card-pulse {
+    animation: cardPulse 2s ease-in-out infinite;
+}
+
+@keyframes cardPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.1); }
+    50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.2), 0 0 60px rgba(16, 185, 129, 0.05); }
+}
+
+/* Card lift on hover */
+.hover-lift {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(16, 185, 129, 0.08);
+}
+
+/* ============================================
+   8. PLAY/PAUSE BUTTON MORPHING
+   ============================================ */
+.morph-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.morph-btn .morph-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease;
+}
+
+.morph-btn.playing .morph-icon {
+    animation: morphToPause 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.morph-btn:not(.playing) .morph-icon {
+    animation: morphToPlay 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes morphToPause {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; }
+    50% { transform: scale(0.8) rotate(-10deg); opacity: 0.5; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes morphToPlay {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; }
+    50% { transform: scale(0.8) rotate(10deg); opacity: 0.5; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Ripple effect on click */
+.ripple-effect {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple-effect::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease, opacity 0.6s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.ripple-effect:active::after {
+    width: 200%;
+    height: 200%;
+    opacity: 1;
+    transition: width 0s, height 0s, opacity 0s;
+}
+
+/* ============================================
+   9. ANIMATED PROGRESS BAR
+   ============================================ */
+.progress-glow {
+    position: relative;
+}
+
+.progress-glow .player-mini-progress-filled,
+.progress-glow .player-fullscreen-progress-filled,
+.progress-glow .ytm-player-progress-filled {
+    position: relative;
+    transition: width 0.1s linear;
+}
+
+.progress-glow .player-mini-progress-filled::after,
+.progress-glow .player-fullscreen-progress-filled::after,
+.progress-glow .ytm-player-progress-filled::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.progress-glow:hover .player-mini-progress-filled::after,
+.progress-glow:hover .player-fullscreen-progress-filled::after {
+    opacity: 1;
+}
+
+/* Animated shimmer on progress bar */
+.progress-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-shimmer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    animation: progressShimmer 2s linear infinite;
+}
+
+@keyframes progressShimmer {
+    from { left: -100%; }
+    to { left: 100%; }
+}
+
+/* ============================================
+   10. GLASSMORPHISM MINI PLAYER
+   ============================================ */
+.glass-player {
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.glass-player::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.3), transparent);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.glass-player.playing::before {
+    opacity: 1;
+    animation: glassShine 3s ease-in-out infinite;
+}
+
+@keyframes glassShine {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+}
+
+/* ============================================
+   11. PAGE TRANSITIONS
+   ============================================ */
+.ytm-page {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.ytm-page.active {
+    animation: pageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.ytm-page:not(.active) {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+}
+
+@keyframes pageSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   12. HOVER EFFECTS & MICRO-INTERACTIONS
+   ============================================ */
+
+/* Button hover glow */
+.btn-glow {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-glow:hover {
+    transform: scale(1.08);
+    filter: brightness(1.1);
+}
+
+.btn-glow:active {
+    transform: scale(0.95);
+    filter: brightness(0.95);
+}
+
+/* Icon spin on hover */
+.icon-spin:hover i {
+    animation: iconSpin 0.5s ease;
+}
+
+@keyframes iconSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Scale bounce on click */
+.scale-bounce:active {
+    animation: scaleBounce 0.3s ease;
+}
+
+@keyframes scaleBounce {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.92); }
+    100% { transform: scale(1); }
+}
+
+/* Sidebar item hover */
+.ytm-sidebar-item {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ytm-sidebar-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(4px);
+}
+
+.ytm-sidebar-item:active {
+    transform: translateX(2px) scale(0.98);
+}
+
+/* Nav button hover */
+.ytm-top-nav-btn {
+    transition: all 0.2s ease;
+}
+
+.ytm-top-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.05);
+}
+
+.ytm-top-nav-btn:active {
+    transform: scale(0.95);
+}
+
+/* Search box focus */
+.ytm-search-box {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ytm-search-box:focus-within {
+    transform: scale(1.01);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2), 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   13. LOADING SKELETONS (Enhanced)
+   ============================================ */
+.skeleton-enhanced {
+    position: relative;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+}
+
+.skeleton-enhanced::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.04) 20%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.04) 80%,
+        transparent 100%
+    );
+    animation: skeletonShimmer 1.5s ease-in-out infinite;
+    transform: translateX(-100%);
+}
+
+@keyframes skeletonShimmer {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(100%); }
+}
+
+/* Skeleton card variants */
+.skeleton-card {
+    height: 200px;
+    border-radius: 12px;
+}
+
+.skeleton-row {
+    height: 64px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.skeleton-circle {
+    border-radius: 50%;
+}
+
+/* ============================================
+   14. QUEUE ANIMATIONS
+   ============================================ */
+.queue-item-enter {
+    animation: queueItemEnter 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes queueItemEnter {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.queue-item-exit {
+    animation: queueItemExit 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes queueItemExit {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+}
+
+.queue-item-playing {
+    animation: queueItemPlaying 0.5s ease forwards;
+}
+
+@keyframes queueItemPlaying {
+    0% { background: transparent; }
+    50% { background: rgba(16, 185, 129, 0.15); }
+    100% { background: rgba(16, 185, 129, 0.08); }
+}
+
+/* ============================================
+   15. FAVORITE HEART BURST
+   ============================================ */
+.heart-burst {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.heart-burst.active i {
+    animation: heartBurst 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #ef4444;
+}
+
+@keyframes heartBurst {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.3); }
+    50% { transform: scale(0.9); }
+    75% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+/* Heart particles */
+.heart-burst::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #ef4444;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.heart-burst.active::after {
+    animation: heartParticles 0.6s ease-out forwards;
+}
+
+@keyframes heartParticles {
+    0% {
+        opacity: 1;
+        box-shadow:
+            0 0 0 0 #ef4444,
+            0 0 0 0 #ef4444,
+            0 0 0 0 #ef4444,
+            0 0 0 0 #ef4444;
+    }
+    100% {
+        opacity: 0;
+        box-shadow:
+            -12px -12px 0 0 #ef4444,
+            12px -12px 0 0 #ef4444,
+            -12px 12px 0 0 #ef4444,
+            12px 12px 0 0 #ef4444;
+    }
+}
+
+/* ============================================
+   16. LIVE BADGE PULSE
+   ============================================ */
+.live-badge-pulse {
+    position: relative;
+}
+
+.live-badge-pulse::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    background: rgba(16, 185, 129, 0.3);
+    animation: livePulse 2s ease-in-out infinite;
+    z-index: -1;
+}
+
+@keyframes livePulse {
+    0%, 100% { opacity: 0; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.05); }
+}
+
+/* Live dot indicator */
+.live-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    margin-right: 4px;
+    animation: liveDotPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes liveDotPulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+}
+
+/* ============================================
+   17. MICRO-INTERACTIONS
+   ============================================ */
+
+/* Volume slider interaction */
+.volume-interact {
+    transition: all 0.2s ease;
+}
+
+.volume-interact:hover {
+    transform: scaleY(1.2);
+}
+
+/* Queue button bounce */
+.queue-bounce:active {
+    animation: queueBounce 0.3s ease;
+}
+
+@keyframes queueBounce {
+    0% { transform: scale(1); }
+    30% { transform: scale(0.85); }
+    60% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Shuffle/repeat toggle */
+.toggle-active {
+    transition: all 0.2s ease;
+}
+
+.toggle-active.active {
+    color: #10b981 !important;
+    animation: toggleActivate 0.3s ease;
+}
+
+@keyframes toggleActivate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* ============================================
+   18. AI ACCENT COLOR TRANSITIONS
+   ============================================ */
+.accent-transition {
+    transition: background-color 1s ease,
+                border-color 1s ease,
+                box-shadow 1s ease,
+                color 1s ease;
+}
+
+/* Dynamic accent color applied via JS */
+:root {
+    --accent-color: rgba(16, 185, 129, 0.15);
+    --accent-solid: #10b981;
+    --accent-glow: rgba(16, 185, 129, 0.3);
+}
+
+/* ============================================
+   19. AMBIENT LIGHTING
+   ============================================ */
+.ambient-light {
+    position: relative;
+}
+
+.ambient-light::after {
+    content: '';
+    position: absolute;
+    inset: -20px;
+    border-radius: inherit;
+    background: radial-gradient(ellipse at center, var(--accent-color) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.ambient-light.active::after {
+    opacity: 0.5;
+    animation: ambientBreath 3s ease-in-out infinite;
+}
+
+@keyframes ambientBreath {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.02); }
+}
+
+/* ============================================
+   20. PREMIUM BLUR & SHADOW
+   ============================================ */
+.premium-blur {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.premium-shadow {
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.2),
+        0 10px 20px -2px rgba(0, 0, 0, 0.15),
+        0 20px 40px -4px rgba(0, 0, 0, 0.1);
+}
+
+.premium-shadow-lg {
+    box-shadow:
+        0 10px 15px -3px rgba(0, 0, 0, 0.3),
+        0 20px 40px -4px rgba(0, 0, 0, 0.2),
+        0 40px 80px -8px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   21. PLAYER ENHANCEMENTS
+   ============================================ */
+
+/* Mini player slide up on play */
+.player-mini.slide-up {
+    animation: playerSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes playerSlideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Fullscreen player entry */
+.player-fullscreen.opening {
+    animation: fullscreenOpen 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fullscreenOpen {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Artwork float effect */
+.artwork-float {
+    animation: artworkFloat 6s ease-in-out infinite;
+}
+
+@keyframes artworkFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-8px) scale(1.01); }
+}
+
+/* ============================================
+   22. RESPONSIVE ANIMATION OPTIMIZATIONS
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .vinyl-disc.spinning {
+        animation-duration: 5s;
+    }
+    
+    .ambient-glow {
+        height: 200px;
+    }
+    
+    .now-playing-bars {
+        height: 12px;
+        width: 12px;
+    }
+}
+
+/* Disable heavy animations on low-end devices */
+@media (max-width: 480px) {
+    .artwork-float {
+        animation: none;
+    }
+    
+    .ambient-glow {
+        display: none;
+    }
+}
+
+/* ============================================
+   23. SCROLL ANIMATIONS
+   ============================================ */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Staggered reveal for grid items */
+.scroll-reveal-stagger > * {
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.scroll-reveal-stagger.revealed > *:nth-child(1) { transition-delay: 0.05s; }
+.scroll-reveal-stagger.revealed > *:nth-child(2) { transition-delay: 0.1s; }
+.scroll-reveal-stagger.revealed > *:nth-child(3) { transition-delay: 0.15s; }
+.scroll-reveal-stagger.revealed > *:nth-child(4) { transition-delay: 0.2s; }
+.scroll-reveal-stagger.revealed > *:nth-child(5) { transition-delay: 0.25s; }
+.scroll-reveal-stagger.revealed > *:nth-child(6) { transition-delay: 0.3s; }
+
+.scroll-reveal-stagger.revealed > * {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ============================================
+   24. TOAST ANIMATIONS (Enhanced)
+   ============================================ */
+.toast-notification {
+    animation: toastEnter 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes toastEnter {
+    from {
+        transform: translateX(120%) scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.toast-notification.removing {
+    animation: toastExit 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes toastExit {
+    from {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(120%) scale(0.9);
+        opacity: 0;
+    }
+}
+
+/* ============================================
+   25. TICKER ANIMATIONS (Enhanced)
+   ============================================ */
+.ytm-ticker-item {
+    transition: all 0.2s ease;
+}
+
+.ytm-ticker-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.02);
+}
+
+.ytm-ticker-item:active {
+    transform: scale(0.98);
+}

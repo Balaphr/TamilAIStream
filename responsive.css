@@ -1,0 +1,255 @@
+/* ============================================
+   Responsive System - 320px to 4K
+   Supplements style.css & yt-music.css
+   ============================================ */
+
+/* Global overflow-x fix */
+html { overflow-x: hidden; }
+
+body {
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+/* ---- Selection ---- */
+::selection {
+    background: rgba(16,185,129,0.3);
+    color: white;
+}
+
+/* ---- Bottom Navigation (Mobile) ---- */
+.bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1400;
+    background: rgba(10,12,24,0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0));
+}
+.bottom-nav-items {
+    display: flex;
+    justify-content: space-around;
+    max-width: 500px;
+    margin: 0 auto;
+}
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 12px;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-size: 0.6rem;
+    font-family: var(--font-family);
+    transition: color 0.2s;
+    position: relative;
+}
+.bottom-nav-item i { font-size: 18px; }
+.bottom-nav-item.active { color: var(--emerald-400); }
+.bottom-nav-item.active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 16px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--emerald-400);
+}
+
+/* ---- Responsive Breakpoints ---- */
+
+/* Mobile Small (320px - 374px) */
+@media (max-width: 374px) {
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .bottom-nav { display: block; }
+}
+
+/* Mobile (375px - 640px) */
+@media (max-width: 640px) {
+    .bottom-nav { display: block; }
+    .container { padding: 0 12px; }
+
+    .hide-mobile { display: none !important; }
+    .show-mobile { display: block !important; }
+
+    .mobile-full { width: 100% !important; }
+    .mobile-center { text-align: center; }
+
+    .mobile-stack {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .mobile-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+    }
+    .mobile-scroll::-webkit-scrollbar { display: none; }
+    .mobile-scroll > * { scroll-snap-align: start; }
+}
+
+/* Tablet (641px - 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .container { padding: 0 24px; }
+    .hide-tablet { display: none !important; }
+    .show-tablet { display: block !important; }
+
+    .grid-3 { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+}
+
+/* Desktop (1025px - 1440px) */
+@media (min-width: 1025px) {
+    .container { padding: 0 32px; }
+    .hide-desktop { display: none !important; }
+    .show-desktop { display: block !important; }
+}
+
+/* Large Desktop / 2K (1441px - 2560px) */
+@media (min-width: 1441px) {
+    .container { max-width: 1600px; }
+}
+
+/* 4K (2561px+) */
+@media (min-width: 2561px) {
+    .container { max-width: 2000px; }
+}
+
+/* ---- Landscape Mobile ---- */
+@media (max-width: 640px) and (orientation: landscape) {
+    .bottom-nav { display: none; }
+    .full-player .fp-container { padding: 8px 16px; }
+    .full-player .fp-artwork-container {
+        width: min(180px, 40vw);
+        height: min(180px, 40vw);
+    }
+}
+
+/* ---- Safe Area (Notch phones) ---- */
+@supports (padding: env(safe-area-inset-top)) {
+    .top-safe { padding-top: env(safe-area-inset-top); }
+    .bottom-safe { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* ---- Mobile Layout Fixes ---- */
+
+/* Top nav mobile padding */
+@media (max-width: 640px) {
+    .ytm-top-nav {
+        padding: 0 12px;
+        gap: 8px;
+    }
+    
+    /* Featured slider mobile */
+    .slide-card {
+        padding: 20px;
+        gap: 16px;
+        min-height: auto;
+    }
+    .slide-art { width: 80px; height: 80px; }
+    .slide-info h3 { font-size: 1rem; }
+    .slide-info p { font-size: 0.8rem; }
+    .slide-listeners { display: none; }
+    
+    /* Stations scroll touch-friendly */
+    .stations-track { gap: 12px; }
+    .station-card { width: 150px; }
+    
+    /* Player bar mobile fine-tuning */
+    .ytm-player { padding: 0 12px; gap: 10px; }
+    
+    /* Bottom spacing for main content — must clear player (bottom:56px, h:80px) + bottom nav (h:56px) */
+    .ytm-page,
+    .ytm-page-home {
+        padding-bottom: calc(var(--ytm-player-height) + 56px + 24px);
+    }
+    
+    /* AI FAB above bottom nav */
+    .ytm-ai-fab {
+        bottom: 80px;
+        right: 16px;
+        width: 48px;
+        height: 48px;
+    }
+    
+    /* AI panel full width on mobile */
+    .ytm-ai-panel {
+        width: calc(100vw - 16px);
+        right: 8px;
+        bottom: 140px;
+        max-height: 60vh;
+    }
+    
+    /* Mini audio popup mobile */
+    .mini-audio-popup {
+        bottom: 90px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+        max-width: none;
+    }
+    
+    /* Search overlay mobile */
+    .search-overlay .search-container {
+        padding: 12px;
+    }
+}
+
+/* Very small screens (320px-374px) */
+@media (max-width: 374px) {
+    .ytm-top-nav { padding: 0 8px; gap: 6px; }
+    .slide-card { padding: 16px; gap: 12px; }
+    .slide-art { width: 64px; height: 64px; }
+    .slide-info h3 { font-size: 0.9rem; }
+    .station-card { width: 130px; }
+}
+
+/* Tablet layout */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .slide-art { width: 120px; height: 120px; }
+}
+
+/* ---- Dark mode is default, light mode support ---- */
+@media (prefers-color-scheme: light) {
+    :root {
+        --text-primary: rgba(0,0,0,0.88);
+        --text-secondary: rgba(0,0,0,0.6);
+        --text-muted: rgba(0,0,0,0.35);
+        --bg-glass: rgba(0,0,0,0.03);
+        --border-glass: rgba(0,0,0,0.08);
+    }
+    body { background: #f8fafc; }
+}
+
+/* ---- Reduced Motion ---- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ---- Print ---- */
+@media print {
+    .mini-player, .full-player, .bottom-nav, .ai-fab, .ai-chat-window,
+    .ytm-ai-fab, .ytm-ai-panel { display: none !important; }
+}

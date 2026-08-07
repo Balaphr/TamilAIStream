@@ -1,0 +1,13 @@
+name = "tamil-ai-fm"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+html_handling = "none"
+not_found_handling = "404-page"
+
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "tamil-ai-fm-media"

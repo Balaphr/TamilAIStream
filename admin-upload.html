@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload - Tamil AI FM Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="admin-upload.css">
+</head>
+<body>
+    <div class="noise-overlay"></div>
+    <div class="bg-container">
+        <div class="gradient-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+    </div>
+
+    <div class="admin-dashboard">
+        <!-- Admin Navigation -->
+        <header class="admin-nav">
+            <div class="admin-nav-container">
+                <div class="admin-nav-left">
+                    <div class="admin-nav-logo">
+                        <div class="logo-icon"><i class="fas fa-microphone-alt"></i></div>
+                        <div>
+                            <h1>Tamil AI FM</h1>
+                            <span>Admin Panel</span>
+                        </div>
+                    </div>
+                    <nav class="admin-nav-menu">
+                        <a href="admin.html" class="admin-nav-item"><i class="fas fa-home"></i> Dashboard</a>
+                        <a href="admin.html" class="admin-nav-item"><i class="fas fa-music"></i> Songs</a>
+                        <a href="admin.html" class="admin-nav-item"><i class="fas fa-folder"></i> Categories</a>
+                        <a href="admin.html" class="admin-nav-item"><i class="fas fa-user"></i> Artists</a>
+                        <a href="admin.html" class="admin-nav-item"><i class="fas fa-film"></i> Movies</a>
+                        <a href="admin.html" class="admin-nav-item"><i class="fas fa-list"></i> Playlists</a>
+                        <a href="admin-upload.html" class="admin-nav-item active"><i class="fas fa-cloud-arrow-up"></i> Upload</a>
+                    </nav>
+                </div>
+                <div class="admin-nav-right">
+                    <a href="builder.html" target="_blank" class="admin-btn builder-link-btn"><i class="fas fa-tools"></i> Website Builder</a>
+                    <div class="admin-user-info">
+                        <div class="admin-user-avatar">A</div>
+                        <span class="admin-user-name">Admin</span>
+                    </div>
+                    <button class="admin-logout-btn" onclick="localStorage.removeItem('adminSession');window.location.href='admin-login.html'">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="admin-main">
+            <div class="admin-container">
+                <!-- Sidebar -->
+                <aside class="admin-sidebar">
+                    <div class="admin-sidebar-section">
+                        <div class="admin-sidebar-title">Main Menu</div>
+                        <div class="admin-sidebar-menu">
+                            <a href="admin.html" class="admin-sidebar-item"><i class="fas fa-home"></i> Dashboard</a>
+                            <a href="admin.html" class="admin-sidebar-item"><i class="fas fa-music"></i> Manage Songs</a>
+                            <a href="admin.html" class="admin-sidebar-item"><i class="fas fa-plus-circle"></i> Add New Song</a>
+                            <a href="admin-upload.html" class="admin-sidebar-item active"><i class="fas fa-cloud-arrow-up"></i> Upload Center</a>
+                        </div>
+                    </div>
+                    <div class="admin-sidebar-section">
+                        <div class="admin-sidebar-title">Content</div>
+                        <div class="admin-sidebar-menu">
+                            <a href="admin.html" class="admin-sidebar-item"><i class="fas fa-folder"></i> Categories</a>
+                            <a href="admin.html" class="admin-sidebar-item"><i class="fas fa-user"></i> Artists</a>
+                            <a href="admin.html" class="admin-sidebar-item"><i class="fas fa-film"></i> Movies</a>
+                            <a href="admin.html" class="admin-sidebar-item"><i class="fas fa-list"></i> Playlists</a>
+                        </div>
+                    </div>
+                    <div class="admin-sidebar-section">
+                        <div class="admin-sidebar-title">Featured</div>
+                        <div class="admin-sidebar-menu">
+                            <a href="admin.html" class="admin-sidebar-item"><i class="fas fa-star"></i> Featured</a>
+                            <a href="admin.html" class="admin-sidebar-item"><i class="fas fa-fire"></i> Trending</a>
+                        </div>
+                    </div>
+                    <div class="admin-sidebar-section" style="margin-top:auto;padding-top:20px;border-top:1px solid var(--border-glass);">
+                        <a href="builder.html" target="_blank" class="admin-sidebar-item builder-link" style="justify-content:center;padding:14px 16px;">
+                            <i class="fas fa-tools"></i> Website Builder
+                        </a>
+                    </div>
+                </aside>
+
+                <!-- Content -->
+                <div class="admin-content">
+                    <div class="admin-page-header">
+                        <h1 class="admin-page-title"><i class="fas fa-cloud-arrow-up" style="color:var(--emerald-400);margin-right:12px;"></i>Upload Center</h1>
+                        <a href="admin.html" class="admin-btn"><i class="fas fa-arrow-left"></i> Back to Admin</a>
+                    </div>
+
+                    <!-- Upload Tabs -->
+                    <div class="upload-tabs">
+                        <button class="upload-tab active" data-tab="song"><i class="fas fa-music"></i> Upload Song</button>
+                        <button class="upload-tab" data-tab="image"><i class="fas fa-image"></i> Upload Image</button>
+                        <button class="upload-tab" data-tab="logo"><i class="fas fa-circle"></i> Upload FM Logo</button>
+                    </div>
+
+                    <!-- Song Upload Panel -->
+                    <div id="songPanel" class="upload-panel active">
+                        <div class="content-card">
+                            <form id="songForm">
+                                <div class="drop-zone" id="songDropZone">
+                                    <input type="file" accept="audio/*" id="songFileInput" style="display:none">
+                                    <div class="drop-zone-icon audio-icon"><i class="fas fa-headphones"></i></div>
+                                    <h3>Drop your audio file here</h3>
+                                    <p>or <span class="browse-link">browse</span> to select &bull; MP3, WAV, OGG, AAC (max 50MB)</p>
+                                </div>
+
+                                <div class="file-preview-box" id="songFilePreview"></div>
+
+                                <div class="form-grid" style="margin-top:24px;">
+                                    <div class="form-group">
+                                        <label class="form-label">Song Title *</label>
+                                        <input type="text" class="form-input" id="songTitle" placeholder="Enter song title" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Artist</label>
+                                        <input type="text" class="form-input" id="songArtist" placeholder="Artist name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Movie / Album</label>
+                                        <input type="text" class="form-input" id="songMovie" placeholder="Movie or album name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Singer</label>
+                                        <input type="text" class="form-input" id="songSinger" placeholder="Singer name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Language</label>
+                                        <select class="form-select" id="songLanguage">
+                                            <option value="Tamil">Tamil</option>
+                                            <option value="Hindi">Hindi</option>
+                                            <option value="English">English</option>
+                                            <option value="Telugu">Telugu</option>
+                                            <option value="Malayalam">Malayalam</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Genre</label>
+                                        <select class="form-select" id="songGenre">
+                                            <option value="Love">Love</option>
+                                            <option value="Devotional">Devotional</option>
+                                            <option value="Folk">Folk</option>
+                                            <option value="Classical">Classical</option>
+                                            <option value="Film">Film</option>
+                                            <option value="Pop">Pop</option>
+                                            <option value="Rock">Rock</option>
+                                            <option value="Hip Hop">Hip Hop</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Duration</label>
+                                        <input type="text" class="form-input" id="songDuration" placeholder="e.g., 4:32">
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Description</label>
+                                        <textarea class="form-textarea" id="songDescription" placeholder="Optional description" style="min-height:80px;"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="upload-progress" id="songProgress">
+                                    <div class="progress-track"><div class="progress-bar" id="songProgressFill"></div></div>
+                                    <div class="progress-label" id="songProgressText">0%</div>
+                                </div>
+
+                                <div style="margin-top:24px;display:flex;gap:12px;">
+                                    <button type="submit" class="admin-btn primary" id="songUploadBtn" style="flex:1;padding:14px 24px;">
+                                        <i class="fas fa-cloud-arrow-up"></i> Upload Song
+                                    </button>
+                                    <button type="button" class="admin-btn" onclick="resetForm('song')">Clear</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Image Upload Panel -->
+                    <div id="imagePanel" class="upload-panel">
+                        <div class="content-card">
+                            <form id="imageForm">
+                                <div class="drop-zone" id="imageDropZone">
+                                    <input type="file" accept="image/*" id="imageFileInput" style="display:none">
+                                    <div class="drop-zone-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+                                    <h3>Drop your image here</h3>
+                                    <p>or <span class="browse-link">browse</span> to select &bull; JPG, PNG, WebP, GIF (max 10MB)</p>
+                                </div>
+
+                                <div class="file-preview-box" id="imageFilePreview"></div>
+
+                                <div class="form-grid" style="margin-top:24px;">
+                                    <div class="form-group">
+                                        <label class="form-label">Image Title *</label>
+                                        <input type="text" class="form-input" id="imageTitle" placeholder="Enter image title" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Category</label>
+                                        <select class="form-select" id="imageCategory">
+                                            <option value="album">Album Cover</option>
+                                            <option value="banner">Banner</option>
+                                            <option value="artist">Artist Photo</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="upload-progress" id="imageProgress">
+                                    <div class="progress-track"><div class="progress-bar" id="imageProgressFill"></div></div>
+                                    <div class="progress-label" id="imageProgressText">0%</div>
+                                </div>
+
+                                <div style="margin-top:24px;display:flex;gap:12px;">
+                                    <button type="submit" class="admin-btn primary" id="imageUploadBtn" style="flex:1;padding:14px 24px;">
+                                        <i class="fas fa-cloud-arrow-up"></i> Upload Image
+                                    </button>
+                                    <button type="button" class="admin-btn" onclick="resetForm('image')">Clear</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Logo Upload Panel -->
+                    <div id="logoPanel" class="upload-panel">
+                        <div class="content-card">
+                            <form id="logoForm">
+                                <div class="drop-zone" id="logoDropZone">
+                                    <input type="file" accept="image/*" id="logoFileInput" style="display:none">
+                                    <div class="drop-zone-icon logo-icon"><i class="fas fa-radio"></i></div>
+                                    <h3>Drop FM logo here</h3>
+                                    <p>or <span class="browse-link">browse</span> to select &bull; JPG, PNG, SVG (max 10MB)</p>
+                                </div>
+
+                                <div class="file-preview-box" id="logoFilePreview"></div>
+
+                                <div class="form-grid" style="margin-top:24px;">
+                                    <div class="form-group">
+                                        <label class="form-label">Station / FM Name *</label>
+                                        <input type="text" class="form-input" id="logoStationName" placeholder="e.g., Radio Mirchi" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Category</label>
+                                        <select class="form-select" id="logoCategory">
+                                            <option value="radio">Radio Station</option>
+                                            <option value="podcast">Podcast</option>
+                                            <option value="channel">Channel</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="upload-progress" id="logoProgress">
+                                    <div class="progress-track"><div class="progress-bar" id="logoProgressFill"></div></div>
+                                    <div class="progress-label" id="logoProgressText">0%</div>
+                                </div>
+
+                                <div style="margin-top:24px;display:flex;gap:12px;">
+                                    <button type="submit" class="admin-btn primary" id="logoUploadBtn" style="flex:1;padding:14px 24px;">
+                                        <i class="fas fa-cloud-arrow-up"></i> Upload Logo
+                                    </button>
+                                    <button type="button" class="admin-btn" onclick="resetForm('logo')">Clear</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Recent Uploads -->
+                    <div class="content-card" style="margin-top:8px;">
+                        <div class="content-card-header">
+                            <h2 class="content-card-title"><i class="fas fa-clock-rotate" style="color:var(--emerald-400);margin-right:8px;"></i>Recent Uploads</h2>
+                        </div>
+                        <div class="recent-uploads-list" id="recentUploads">
+                            <div class="recent-empty"><i class="fas fa-inbox"></i><p>Loading...</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="r2-config.js"></script>
+    <script src="r2-upload.js"></script>
+    <script src="r2-content-sync.js"></script>
+    <script src="admin-upload.js"></script>
+</body>
+</html>
