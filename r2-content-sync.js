@@ -2,6 +2,8 @@
     'use strict';
 
     const DEFAULT_MANIFEST_VERSION = 1;
+    const SYNC_LOCK_KEY = 'tamilAIStream_syncLock';
+    const SYNC_LOCK_TIMEOUT = 10000; // 10 seconds
 
     function readLocalStorage(key, fallback = null) {
         try {
@@ -78,24 +80,47 @@
 
         const localTime = localPayload?.updatedAt ? new Date(localPayload.updatedAt).getTime() : 0;
         const remoteTime = remotePayload?.updatedAt ? new Date(remotePayload.updatedAt).getTime() : 0;
-        const remoteIsNewer = remoteTime > localTime;
+
+        // FIX: Remote (R2) is ALWAYS the source of truth for shared content.
+        // Only user-specific data (likedSongs, playlists, history, queue, settings)
+        // uses local-first merge to preserve personal preferences.
+        const sharedKeys = ['songs', 'stations', 'categories', 'featured', 'trending', 'artistHits', 'quotes', 'siteSettings', 'layout', 'images'];
+        const userKeys = ['likedSongs', 'playlists', 'history', 'queue', 'settings'];
 
         keys.forEach((key) => {
             const remoteValue = remoteData[key];
             const localValue = localData[key];
-            if (Array.isArray(remoteValue) && Array.isArray(localValue)) {
-                mergedData[key] = remoteIsNewer ? remoteValue : localValue;
-            } else if (Array.isArray(localValue)) {
-                mergedData[key] = remoteIsNewer && remoteValue !== undefined ? remoteValue : localValue;
-            } else if (Array.isArray(remoteValue)) {
-                mergedData[key] = remoteIsNewer ? remoteValue : (localValue !== undefined ? localValue : remoteValue);
-            } else if (localValue && typeof localValue === 'object' && !Array.isArray(localValue)) {
-                if (remoteIsNewer) {
-                    mergedData[key] = { ...(localValue || {}), ...(remoteValue || {}) };
+
+            if (sharedKeys.includes(key)) {
+                // Shared content: ALWAYS prefer remote (R2) as single source of truth
+                if (remoteValue !== undefined && remoteValue !== null) {
+                    mergedData[key] = remoteValue;
                 } else {
-                    mergedData[key] = { ...(remoteValue || {}), ...(localValue || {}) };
+                    mergedData[key] = localValue !== undefined ? localValue : (Array.isArray(remoteValue) ? [] : {});
+                }
+            } else if (userKeys.includes(key)) {
+                // User-specific content: newer timestamp wins
+                const remoteIsNewer = remoteTime > localTime;
+                if (Array.isArray(remoteValue) && Array.isArray(localValue)) {
+                    mergedData[key] = remoteIsNewer ? remoteValue : localValue;
+                } else if (Array.isArray(localValue)) {
+                    mergedData[key] = remoteIsNewer && remoteValue !== undefined ? remoteValue : localValue;
+                } else if (Array.isArray(remoteValue)) {
+                    mergedData[key] = remoteIsNewer ? remoteValue : (localValue !== undefined ? localValue : remoteValue);
+                } else if (localValue && typeof localValue === 'object' && !Array.isArray(localValue)) {
+                    if (remoteIsNewer) {
+                        mergedData[key] = { ...(localValue || {}), ...(remoteValue || {}) };
+                    } else {
+                        mergedData[key] = { ...(remoteValue || {}), ...(localValue || {}) };
+                    }
+                } else {
+                    mergedData[key] = remoteIsNewer
+                        ? (remoteValue !== undefined ? remoteValue : localValue)
+                        : (localValue !== undefined ? localValue : remoteValue);
                 }
             } else {
+                // Default: newer wins
+                const remoteIsNewer = remoteTime > localTime;
                 mergedData[key] = remoteIsNewer
                     ? (remoteValue !== undefined ? remoteValue : localValue)
                     : (localValue !== undefined ? localValue : remoteValue);
@@ -104,9 +129,7 @@
 
         return {
             version: localPayload?.version || remotePayload?.version || DEFAULT_MANIFEST_VERSION,
-            updatedAt: remoteIsNewer
-                ? (remotePayload?.updatedAt || localPayload?.updatedAt || new Date().toISOString())
-                : (localPayload?.updatedAt || remotePayload?.updatedAt || new Date().toISOString()),
+            updatedAt: new Date().toISOString(), // Always use current time for merged result
             data: mergedData
         };
     }
@@ -178,31 +201,65 @@
         }
     }
 
+    // Simple lock to prevent concurrent syncs
+    function acquireSyncLock() {
+        const now = Date.now();
+        const lockTime = readLocalStorage(SYNC_LOCK_KEY, 0);
+        if (now - lockTime < SYNC_LOCK_TIMEOUT) {
+            return false; // Another sync is in progress
+        }
+        writeLocalStorage(SYNC_LOCK_KEY, now);
+        return true;
+    }
+
+    function releaseSyncLock() {
+        writeLocalStorage(SYNC_LOCK_KEY, 0);
+    }
+
     async function bootstrapSharedContent() {
         const localPayload = buildContentPayload();
         try {
+            // Step 1: Fetch remote (R2) content - this is the source of truth
             const remotePayload = await loadRemoteContent();
+
+            if (!remotePayload || !remotePayload.data || Object.keys(remotePayload.data).length === 0) {
+                // Remote is empty - upload local as initial seed
+                persistLocalContent(localPayload);
+                await uploadManifest(localPayload);
+                return localPayload;
+            }
+
+            // Step 2: Merge - remote shared content ALWAYS wins
             const mergedPayload = mergePayloads(localPayload, remotePayload);
+
+            // Step 3: Persist merged result locally
             persistLocalContent(mergedPayload);
+
+            // Step 4: Upload merged result back to R2
             const synced = buildContentPayload();
             await uploadManifest(synced);
             return synced;
         } catch (error) {
+            console.warn('R2 sync failed, using local data:', error);
+            // On failure, still use local data so the site works
             persistLocalContent(localPayload);
-            try {
-                await syncCurrentState();
-            } catch (syncError) {
-                console.warn('Initial content manifest sync failed:', syncError);
-            }
             return localPayload;
         }
     }
 
     async function syncCurrentState() {
-        const payload = buildContentPayload();
-        const remoteUrl = await uploadManifest(payload);
-        persistLocalContent(payload);
-        return { payload, remoteUrl };
+        if (!acquireSyncLock()) {
+            return { payload: null, remoteUrl: null, skipped: true };
+        }
+
+        try {
+            const payload = buildContentPayload();
+            const remoteUrl = await uploadManifest(payload);
+            persistLocalContent(payload);
+            return { payload, remoteUrl };
+        } finally {
+            releaseSyncLock();
+        }
     }
 
     const ContentSync = {

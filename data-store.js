@@ -276,6 +276,5 @@ const DataStore = {
     }
 };
 
-// Auto-initialize
-DataStore.init();
+// Auto-initialize sync listeners (but NOT init defaults - R2 sync handles that)
 DataStore.initSync();
