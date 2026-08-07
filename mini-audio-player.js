@@ -64,7 +64,7 @@ const MiniAudioPlayer = (() => {
                     </div>
                     <div class="map-info">
                         <div class="map-track-name" id="mapTrackName">Select a station</div>
-                        <div class="map-track-artist" id="mapTrackArtist">Tamil AI FM</div>
+                        <div class="map-track-artist" id="mapTrackArtist">Tamil AI Stream</div>
                         <div class="map-track-meta" id="mapTrackMeta"></div>
                         <div class="map-track-tags" id="mapTrackTags"></div>
                     </div>
@@ -241,7 +241,7 @@ const MiniAudioPlayer = (() => {
         document.getElementById('mapShareBtn')?.addEventListener('click', () => {
             if (!currentPlayback) return;
             const track = currentPlayback.track || currentPlayback;
-            const text = `Listening to ${track.title || track.name} on Tamil AI FM 🎵`;
+            const text = `Listening to ${track.title || track.name} on Tamil AI Stream 🎵`;
             if (navigator.share) {
                 navigator.share({ title: track.title || track.name, text });
             } else if (navigator.clipboard) {
@@ -365,7 +365,7 @@ const MiniAudioPlayer = (() => {
             const isStation = !!rec.streamUrl && !rec.audioUrl;
             const thumb = rec.thumbnail || rec.cover || '';
             const title = rec.title || rec.name || 'Unknown';
-            const artist = rec.artist || rec.subtitle || rec.genre || (isStation ? 'FM Station' : 'Tamil AI FM');
+            const artist = rec.artist || rec.subtitle || rec.genre || (isStation ? 'FM Station' : 'Tamil AI Stream');
             return `
                 <div class="map-ai-suggestion" data-name="${title}" data-type="${isStation ? 'station' : 'song'}">
                     <div class="map-ai-sug-num">${i + 1}</div>
@@ -437,7 +437,7 @@ const MiniAudioPlayer = (() => {
                         streamUrl: null,
                         title: sg.title,
                         name: sg.title,
-                        artist: sg.artist || 'Tamil AI FM',
+                        artist: sg.artist || 'Tamil AI Stream',
                         subtitle: sg.artist || '',
                         genre: sg.genre || '',
                         thumbnail: sg.albumCover || sg.cover || '',
@@ -513,7 +513,7 @@ const MiniAudioPlayer = (() => {
         currentPlayback = {
             track: track,
             title: track.title || track.name,
-            artist: track.artist || track.subtitle || track.freq || 'Tamil AI FM',
+            artist: track.artist || track.subtitle || track.freq || 'Tamil AI Stream',
             meta: track.freq ? `${track.freq} • ${track.city || ''}` : (track.movie || ''),
             genre: track.genre || '',
             thumbnail: track.thumbnail || track.cover || track.albumCover || '',
@@ -869,7 +869,7 @@ const MiniAudioPlayer = (() => {
                     onPlaybackStart({
                         ...song,
                         title: song.title || song.name,
-                        artist: song.artist || 'Tamil AI FM',
+                        artist: song.artist || 'Tamil AI Stream',
                         thumbnail: song.albumCover || song.cover || '',
                         isStation: false
                     }, {});
@@ -886,7 +886,7 @@ const MiniAudioPlayer = (() => {
                         onPlaybackStart({
                             ...state.currentTrack,
                             title: state.currentTrack.title || state.currentTrack.name,
-                            artist: state.currentTrack.artist || 'Tamil AI FM',
+                            artist: state.currentTrack.artist || 'Tamil AI Stream',
                             isStation: !!state.currentTrack.streamUrl
                         }, {});
                     }

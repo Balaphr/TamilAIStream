@@ -1,7 +1,7 @@
 'use strict';
 /* ============================================
    YouTube Music-like Features - JavaScript
-   Tamil AI FM Enhanced UI
+   Tamil AI Stream Enhanced UI
    ============================================ */
 
 const YTMusic = {
@@ -976,7 +976,7 @@ const YTMusic = {
     shareTrack() {
         if (!this.currentTrack) return;
         if (navigator.share) {
-            navigator.share({ title: this.currentTrack.title, text: 'Listen to ' + this.currentTrack.title + ' on Tamil AI FM', url: window.location.href });
+            navigator.share({ title: this.currentTrack.title, text: 'Listen to ' + this.currentTrack.title + ' on Tamil AI Stream', url: window.location.href });
         } else {
             navigator.clipboard?.writeText(window.location.href);
             this.showToast('Link copied to clipboard', 'success');
@@ -1304,7 +1304,7 @@ const YTMusic = {
     },
 
     renderProfileDropdown() {
-        const user = JSON.parse(localStorage.getItem('tamilAIFM_user') || '{}');
+        const user = JSON.parse(localStorage.getItem('tamilAIStream_user') || '{}');
         const dd = document.getElementById('ytmProfileDropdown');
         if (!dd) return;
         dd.innerHTML = `

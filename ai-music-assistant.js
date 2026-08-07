@@ -176,8 +176,8 @@ const AIMusicAssistant = (() => {
                 PlayerEngine.setSleepTimer(data.minutes || 30);
                 return `Sleep timer set for ${data.minutes || 30} minutes.`;
             case 'share':
-                if (navigator.share) navigator.share({ title: data.title, text: `Listening to ${data.title} on Tamil AI FM` });
-                else navigator.clipboard?.writeText(`Listening to ${data.title} on Tamil AI FM`);
+                if (navigator.share) navigator.share({ title: data.title, text: `Listening to ${data.title} on Tamil AI Stream` });
+                else navigator.clipboard?.writeText(`Listening to ${data.title} on Tamil AI Stream`);
                 return 'Shared!';
             case 'download':
                 PlaylistManager.addDownload(data);

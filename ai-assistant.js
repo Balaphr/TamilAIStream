@@ -1,7 +1,7 @@
 'use strict';
 
 /* ============================================
-   AI Assistant - Tamil AI FM
+   AI Assistant - Tamil AI Stream
    Natural language search, voice, actions
    ============================================ */
 
@@ -205,8 +205,8 @@ const AIAssistant = (() => {
         switch (intent) {
             case 'greeting': {
                 const greetings = [
-                    'Vanakkam! I am your Tamil AI FM assistant. How can I help you today?',
-                    'Hello! Welcome to Tamil AI FM. What would you like to listen to?',
+                    'Vanakkam! I am your Tamil AI Stream assistant. How can I help you today?',
+                    'Hello! Welcome to Tamil AI Stream. What would you like to listen to?',
                     'Hi there! Ask me to play a station, find a song, or explore the site.'
                 ];
                 return { text: greetings[Math.floor(Math.random() * greetings.length)], quickActions: ['Play radio', 'Show trending', 'Help'] };
@@ -581,7 +581,7 @@ const AIAssistant = (() => {
             if (!isOpen) {
                 hideBadge();
                 if (messages.children.length === 0) {
-                    addBotMessage(messages, 'Welcome to **Tamil AI FM**! I can help you play stations, search songs, navigate pages, and more.\n\nTry saying something like:');
+                    addBotMessage(messages, 'Welcome to **Tamil AI Stream**! I can help you play stations, search songs, navigate pages, and more.\n\nTry saying something like:');
                     renderQuickActions(messages, ['Play Radio Mirchi', 'Show trending', 'Search songs', 'Help']);
                 }
                 input.focus();

@@ -182,7 +182,7 @@ async function uploadSong() {
     try {
         const result = await R2Uploader.uploadAudio(
             selectedFile,
-            'tamil-ai-fm/audio',
+            'tamil-ai-stream/audio',
             (percent) => {
                 progressFill.style.width = percent + '%';
                 progressText.textContent = `${percent}%`;
@@ -267,15 +267,15 @@ async function uploadImage() {
 
     try {
         const folderMap = {
-            'album': 'tamil-ai-fm/albums',
-            'banner': 'tamil-ai-fm/banners',
-            'artist': 'tamil-ai-fm/artists',
-            'other': 'tamil-ai-fm/images'
+            'album': 'tamil-ai-stream/albums',
+            'banner': 'tamil-ai-stream/banners',
+            'artist': 'tamil-ai-stream/artists',
+            'other': 'tamil-ai-stream/images'
         };
 
         const result = await R2Uploader.uploadImage(
             selectedFile,
-            folderMap[category] || 'tamil-ai-fm/images',
+            folderMap[category] || 'tamil-ai-stream/images',
             (percent) => {
                 progressFill.style.width = percent + '%';
                 progressText.textContent = `${percent}%`;
@@ -355,7 +355,7 @@ async function uploadLogo() {
     try {
         const result = await R2Uploader.uploadImage(
             selectedFile,
-            'tamil-ai-fm/logos',
+            'tamil-ai-stream/logos',
             (percent) => {
                 progressFill.style.width = percent + '%';
                 progressText.textContent = `${percent}%`;
@@ -509,6 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
         uploadLogo();
     });
 
-    console.log('%c🎙️ Tamil AI FM - Admin Upload', 'font-size:18px;font-weight:bold;color:#34d399;');
+    console.log('%c🎙️ Tamil AI Stream - Admin Upload', 'font-size:18px;font-weight:bold;color:#34d399;');
     console.log('%cR2 Upload Panel Ready', 'font-size:12px;color:#6ee7b7;');
 });

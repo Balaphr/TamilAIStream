@@ -217,8 +217,8 @@ const SearchEngine = (() => {
         } catch { searchHistory = []; }
         buildIndex();
         if (DataStore.on) {
-            DataStore.on('tamilAIFM_songs', () => buildIndex());
-            DataStore.on('tamilAIFM_stations', () => buildIndex());
+            DataStore.on('tamilAIStream_songs', () => buildIndex());
+            DataStore.on('tamilAIStream_stations', () => buildIndex());
         }
     }
 

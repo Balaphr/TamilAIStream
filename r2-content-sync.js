@@ -50,16 +50,16 @@
         }
 
         payload.data = {
-            songs: readLocalStorage('tamilAIFM_songs', []),
-            stations: readLocalStorage('tamilAIFM_stations', []),
-            categories: readLocalStorage('tamilAIFM_categories', []),
-            featured: readLocalStorage('tamilAIFM_featured', []),
-            trending: readLocalStorage('tamilAIFM_trending', []),
-            artistHits: readLocalStorage('tamilAIFM_artistHits', []),
-            quotes: readLocalStorage('tamilAIFM_quotes', []),
-            siteSettings: readLocalStorage('tamilAIFM_siteSettings', {}),
+            songs: readLocalStorage('tamilAIStream_songs', []),
+            stations: readLocalStorage('tamilAIStream_stations', []),
+            categories: readLocalStorage('tamilAIStream_categories', []),
+            featured: readLocalStorage('tamilAIStream_featured', []),
+            trending: readLocalStorage('tamilAIStream_trending', []),
+            artistHits: readLocalStorage('tamilAIStream_artistHits', []),
+            quotes: readLocalStorage('tamilAIStream_quotes', []),
+            siteSettings: readLocalStorage('tamilAIStream_siteSettings', {}),
             layout: readLocalStorage('websiteLayout', []),
-            images: readLocalStorage('tamilAIFM_images', []),
+            images: readLocalStorage('tamilAIStream_images', []),
             playlists: readLocalStorage('ytm_playlists', []),
             likedSongs: readLocalStorage('ytm_likedSongs', []),
             history: readLocalStorage('ytm_history', []),
@@ -132,22 +132,22 @@
             if (typeof global.DataStore.setYTSettings === 'function') global.DataStore.setYTSettings(data.settings || {});
         }
 
-        writeLocalStorage('tamilAIFM_songs', data.songs || []);
-        writeLocalStorage('tamilAIFM_stations', data.stations || []);
-        writeLocalStorage('tamilAIFM_categories', data.categories || []);
-        writeLocalStorage('tamilAIFM_featured', data.featured || []);
-        writeLocalStorage('tamilAIFM_trending', data.trending || []);
-        writeLocalStorage('tamilAIFM_artistHits', data.artistHits || []);
-        writeLocalStorage('tamilAIFM_quotes', data.quotes || []);
-        writeLocalStorage('tamilAIFM_siteSettings', data.siteSettings || {});
+        writeLocalStorage('tamilAIStream_songs', data.songs || []);
+        writeLocalStorage('tamilAIStream_stations', data.stations || []);
+        writeLocalStorage('tamilAIStream_categories', data.categories || []);
+        writeLocalStorage('tamilAIStream_featured', data.featured || []);
+        writeLocalStorage('tamilAIStream_trending', data.trending || []);
+        writeLocalStorage('tamilAIStream_artistHits', data.artistHits || []);
+        writeLocalStorage('tamilAIStream_quotes', data.quotes || []);
+        writeLocalStorage('tamilAIStream_siteSettings', data.siteSettings || {});
         writeLocalStorage('websiteLayout', data.layout || []);
-        writeLocalStorage('tamilAIFM_images', data.images || []);
+        writeLocalStorage('tamilAIStream_images', data.images || []);
         writeLocalStorage('ytm_playlists', data.playlists || []);
         writeLocalStorage('ytm_likedSongs', data.likedSongs || []);
         writeLocalStorage('ytm_history', data.history || []);
         writeLocalStorage('ytm_queue', data.queue || []);
         writeLocalStorage('ytm_settings', data.settings || {});
-        writeLocalStorage('tamilAIFM_lastSyncedAt', payload?.updatedAt || new Date().toISOString());
+        writeLocalStorage('tamilAIStream_lastSyncedAt', payload?.updatedAt || new Date().toISOString());
     }
 
     async function loadRemoteContent() {

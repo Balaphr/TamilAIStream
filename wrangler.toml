@@ -1,4 +1,4 @@
-name = "tamil-ai-fm"
+name = "tamil-ai-stream"
 main = "src/index.js"
 compatibility_date = "2024-09-23"
 
@@ -10,4 +10,4 @@ not_found_handling = "404-page"
 
 [[r2_buckets]]
 binding = "MEDIA_BUCKET"
-bucket_name = "tamil-ai-fm-media"
+bucket_name = "tamil-ai-stream-media"

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tamil Hits - Playlist | Tamil AI FM</title>
+    <title>Tamil Hits - Playlist | Tamil AI Stream</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -33,7 +33,7 @@
                 <div class="nav-logo">
                     <div class="logo-icon"><i class="fas fa-microphone-alt"></i></div>
                     <div class="logo-text">
-                        <h1>Tamil AI FM</h1>
+                        <h1>Tamil AI Stream</h1>
                         <span>AI-Powered Radio</span>
                     </div>
                 </div>
@@ -125,7 +125,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             var playlistData = null;
             try {
-                var raw = localStorage.getItem('tamilAIFM_currentPlaylist');
+                var raw = localStorage.getItem('tamilAIStream_currentPlaylist');
                 if (raw) playlistData = JSON.parse(raw);
             } catch(e) {}
 

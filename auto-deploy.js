@@ -2,7 +2,7 @@
 'use strict';
 
 /**
- * Tamil AI FM - Auto Deploy Script
+ * Tamil AI Stream - Auto Deploy Script
  * Watches for file changes and automatically deploys to Vercel.
  * 
  * Usage:

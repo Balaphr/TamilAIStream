@@ -1,11 +1,11 @@
-# Tamil AI FM - Production Deployment Guide
+# Tamil AI Stream - Production Deployment Guide
 
 ## 🚀 Firebase Hosting Deployment
 
 ### Prerequisites
 - Node.js installed (v16 or higher)
 - Firebase CLI installed (`npm install -g firebase-tools`)
-- Firebase project created (tamil-ai-fm)
+- Firebase project created (tamil-ai-stream)
 
 ### Step 1: Install Firebase CLI
 ```bash
@@ -21,7 +21,7 @@ firebase login
 ```bash
 firebase init hosting
 ```
-- Select existing project: `tamil-ai-fm`
+- Select existing project: `tamil-ai-stream`
 - Set public directory: `.`
 - Configure as single-page app: `No`
 - Set up automatic builds: `No`
@@ -34,8 +34,8 @@ firebase deploy --only hosting
 ### Step 5: Verify Deployment
 After deployment, Firebase will provide a hosting URL like:
 ```
-https://tamil-ai-fm.web.app
-https://tamil-ai-fm.firebaseapp.com
+https://tamil-ai-stream.web.app
+https://tamil-ai-stream.firebaseapp.com
 ```
 
 ## ✅ Production Checklist
@@ -49,7 +49,7 @@ https://tamil-ai-fm.firebaseapp.com
 
 ### Environment Compatibility
 - ✅ Works on Localhost (http://localhost:3000)
-- ✅ Works on Firebase Hosting (https://tamil-ai-fm.web.app)
+- ✅ Works on Firebase Hosting (https://tamil-ai-stream.web.app)
 - ✅ Works on any static hosting (Netlify, Vercel, etc.)
 - ✅ No localhost-only logic
 - ✅ No environment-specific code
@@ -115,7 +115,7 @@ http://localhost:3000
 ### What Changes:
 1. **URL Structure**: 
    - Localhost: `http://localhost:3000/page.html`
-   - Firebase: `https://tamil-ai-fm.web.app/page` (clean URLs)
+   - Firebase: `https://tamil-ai-stream.web.app/page` (clean URLs)
 
 2. **HTTPS**: 
    - Localhost: HTTP
@@ -203,7 +203,7 @@ service cloud.firestore {
 
 ## 🎉 Deployment Complete!
 
-Your Tamil AI FM website is now production-ready and will work identically on:
+Your Tamil AI Stream website is now production-ready and will work identically on:
 - ✅ Localhost
 - ✅ Firebase Hosting
 - ✅ Any static hosting service

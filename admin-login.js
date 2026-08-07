@@ -8,7 +8,7 @@
 // Admin Credentials
 // ============================================
 const ADMIN_CREDENTIALS = {
-    username: 'admin@tamilaifm.com',
+    username: 'admin@tamilaistream.com',
     password: 'Admin@123'
 };
 
@@ -193,6 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    console.log('%c🔐 Tamil AI FM Admin Login', 'font-size:18px;font-weight:bold;color:#34d399;');
+    console.log('%c🔐 Tamil AI Stream Admin Login', 'font-size:18px;font-weight:bold;color:#34d399;');
     console.log('%cReady for authentication', 'font-size:12px;color:#6ee7b7;');
 });

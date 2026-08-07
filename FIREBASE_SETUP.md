@@ -1,21 +1,21 @@
-# Firebase Setup for Tamil AI FM
+# Firebase Setup for Tamil AI Stream
 
-This guide will help you connect Firebase to your Tamil AI FM app.
+This guide will help you connect Firebase to your Tamil AI Stream app.
 
 ## 📋 Prerequisites
 
-- Firebase project created: `tamil-ai-fm-b916a`
+- Firebase project created: `tamil-ai-stream-b916a`
 - Firebase CLI installed (v15.25.1)
 
 ## 🚀 Setup Steps
 
 ### Step 1: Create Firebase Web App
 
-1. Go to Firebase Console: https://console.firebase.google.com/project/tamil-ai-fm-b916a/settings/general
+1. Go to Firebase Console: https://console.firebase.google.com/project/tamil-ai-stream-b916a/settings/general
 2. Scroll down to "Your apps" section
 3. Click "Add app" and select the Web icon (`</`)
 4. Register the app:
-   - App nickname: `Tamil AI FM Web`
+   - App nickname: `Tamil AI Stream Web`
    - Uncheck "Also set up Firebase Hosting" (you're using Vercel)
    - Click "Register app"
 5. **Copy the firebaseConfig object** that appears
@@ -27,9 +27,9 @@ Open `firebase-config.js` and replace the placeholder values with your actual Fi
 ```javascript
 const firebaseConfig = {
   apiKey: "AIza...",                    // Replace with your actual API key
-  authDomain: "tamil-ai-fm-b916a.firebaseapp.com",
-  projectId: "tamil-ai-fm-b916a",
-  storageBucket: "tamil-ai-fm-b916a.appspot.com",
+  authDomain: "tamil-ai-stream-b916a.firebaseapp.com",
+  projectId: "tamil-ai-stream-b916a",
+  storageBucket: "tamil-ai-stream-b916a.appspot.com",
   messagingSenderId: "123456789",       // Replace with your actual value
   appId: "1:123456789:web:abc123"      // Replace with your actual value
 };
@@ -40,20 +40,20 @@ const firebaseConfig = {
 In Firebase Console, enable the following services:
 
 #### 3.1 Authentication
-1. Go to https://console.firebase.google.com/project/tamil-ai-fm-b916a/authentication
+1. Go to https://console.firebase.google.com/project/tamil-ai-stream-b916a/authentication
 2. Click "Get started"
 3. Enable "Email/Password" sign-in method
 4. (Optional) Enable "Google" sign-in method
 
 #### 3.2 Firestore Database
-1. Go to https://console.firebase.google.com/project/tamil-ai-fm-b916a/firestore
+1. Go to https://console.firebase.google.com/project/tamil-ai-stream-b916a/firestore
 2. Click "Create database"
 3. Select "Start in test mode" (we'll secure it later)
 4. Choose a location (e.g., nam5 for Mumbai)
 5. Click "Enable"
 
 #### 3.3 Storage
-1. Go to https://console.firebase.google.com/project/tamil-ai-fm-b916a/storage
+1. Go to https://console.firebase.google.com/project/tamil-ai-stream-b916a/storage
 2. Click "Get started"
 3. Select "Start in test mode"
 4. Click "Next" then "Done"
@@ -65,7 +65,7 @@ In Firebase Console, enable the following services:
 3. You should see:
    ```
    🔥 Firebase initialized successfully
-      Project: tamil-ai-fm-b916a
+      Project: tamil-ai-stream-b916a
       Auth: Ready
       Firestore: Ready
       Storage: Ready
@@ -182,5 +182,5 @@ service firebase.storage {
 ## 📞 Support
 
 - Firebase Docs: https://firebase.google.com/docs
-- Firebase Console: https://console.firebase.google.com/project/tamil-ai-fm-b916a
-- Vercel Dashboard: https://vercel.com/dwmx-fcsz/tamil-ai-fm
+- Firebase Console: https://console.firebase.google.com/project/tamil-ai-stream-b916a
+- Vercel Dashboard: https://vercel.com/dwmx-fcsz/tamil-ai-stream

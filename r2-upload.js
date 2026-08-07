@@ -37,7 +37,7 @@ const R2Uploader = {
         }
 
         // Normalize folder format for R2
-        const r2Folder = folder.replace('tamil-ai-fm/', '');
+        const r2Folder = folder.replace('tamil-ai-stream/', '');
 
         return new Promise((resolve, reject) => {
             const formData = new FormData();

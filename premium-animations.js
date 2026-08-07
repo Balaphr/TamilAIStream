@@ -2,7 +2,7 @@
 
 /* ============================================
    PREMIUM ANIMATIONS - Audio-Reactive Engine
-   Tamil AI FM Enhanced Visual Experience
+   Tamil AI Stream Enhanced Visual Experience
    ============================================
    Lightweight, GPU-accelerated, 60 FPS
    ============================================ */

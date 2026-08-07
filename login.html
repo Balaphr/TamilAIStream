@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Tamil AI FM | AI-Powered Tamil Radio</title>
-    <meta name="description" content="Login to Tamil AI FM - Listen to your favorite Tamil FM stations with AI-powered recommendations.">
-    <meta name="theme-color" content="#000000">
+    <title>Tamil AI Stream | AI-Powered Tamil Music &amp; Radio</title>
+    <meta name="description" content="Tamil AI Stream — AI-powered Tamil music &amp; live radio streaming. Unlimited Tamil songs, live FM stations, smart AI recommendations, podcasts &amp; more. Start listening for free.">
+    <meta name="theme-color" content="#05080f">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="login.css">
 </head>
 <body>
+    <!-- Ambient Background -->
     <div class="noise-overlay"></div>
     <div class="bg-container">
         <div class="gradient-orbs">
@@ -22,275 +23,555 @@
             <div class="orb orb-4"></div>
             <div class="orb orb-5"></div>
         </div>
-        <div class="floating-shapes">
-            <div class="shape shape-1"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50"/></svg></div>
-            <div class="shape shape-2"><svg viewBox="0 0 100 100"><rect width="100" height="100" rx="20"/></svg></div>
-            <div class="shape shape-3"><svg viewBox="0 0 100 100"><polygon points="50,0 100,100 0,100"/></svg></div>
-            <div class="shape shape-4"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="50"/></svg></div>
+        <div class="floating-shapes" aria-hidden="true">
+            <i class="fa-solid fa-music note note-1"></i>
+            <i class="fa-solid fa-compact-disc note note-2"></i>
+            <i class="fa-solid fa-headphones note note-3"></i>
+            <i class="fa-solid fa-microphone-lines note note-4"></i>
+            <i class="fa-solid fa-tower-broadcast note note-5"></i>
+            <i class="fa-solid fa-wave-square note note-6"></i>
+            <i class="fa-solid fa-cassette note note-7"></i>
+            <i class="fa-solid fa-heart note note-8"></i>
         </div>
         <canvas id="particles-canvas"></canvas>
     </div>
 
-    <main class="login-main">
-        <div class="login-card">
-            <div class="login-logo">
-                <div class="logo-icon"><i class="fas fa-microphone-alt"></i></div>
-                <div class="logo-text">
-                    <h1>Tamil AI FM</h1>
-                    <span>AI-Powered Radio</span>
-                </div>
-            </div>
+    <!-- Top Navigation -->
+    <header class="lp-nav" id="top">
+        <div class="lp-nav-inner">
+            <a href="#top" class="brand">
+                <span class="brand-icon"><i class="fa-solid fa-tower-broadcast"></i></span>
+                <span class="brand-text">Tamil <b>AI FM</b></span>
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+            <nav class="lp-nav-links" id="navLinks">
+                <a href="#features">Features</a>
+                <a href="#albums">Albums</a>
+                <a href="#stations">Stations</a>
+                <a href="#how">How it Works</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#faq">FAQ</a>
+            </nav>
+            <a href="#authPanel" class="nav-cta"><i class="fa-solid fa-play"></i> Start Listening</a>
+        </div>
+    </header>
 
-            <!-- Login View -->
-            <div class="auth-view active" id="loginView">
-                <div class="welcome-section">
-                    <h2 class="welcome-title">Welcome Back</h2>
-                    <p class="welcome-sub">Sign in to continue your AI-powered radio experience</p>
-                </div>
-                <div class="social-login">
-                    <button class="social-btn google-btn" type="button" id="googleLogin">
-                        <svg class="social-icon" viewBox="0 0 48 48">
-                            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-                            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-                            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-                            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001,0.001-0.001,0.001-0.002,0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-                        </svg>
-                        <span>Continue with Google</span>
-                    </button>
-                    <button class="social-btn guest-btn" type="button" id="guestLogin">
-                        <i class="fas fa-user-secret social-icon"></i>
-                        <span>Continue as Guest</span>
-                    </button>
-                </div>
-                <div class="divider">
-                    <span class="divider-line"></span>
-                    <span class="divider-text">or sign in with email</span>
-                    <span class="divider-line"></span>
-                </div>
-                <form class="login-form" id="loginForm" novalidate>
-                    <div class="input-group">
-                        <label for="loginEmail" class="input-label"><i class="fas fa-envelope"></i><span>Email Address</span></label>
-                        <div class="input-wrapper">
-                            <input type="email" id="loginEmail" name="email" placeholder="Enter your email" autocomplete="email" required>
-                            <div class="input-status">
-                                <i class="fas fa-check-circle valid-icon"></i>
-                                <i class="fas fa-exclamation-circle invalid-icon"></i>
-                            </div>
-                        </div>
-                        <div class="error-message" id="emailError"><i class="fas fa-exclamation-triangle"></i><span>Please enter a valid email address</span></div>
+    <div class="lp-shell">
+        <div class="split-layout">
+            <!-- ================= LEFT: PLATFORM OVERVIEW ================= -->
+            <main class="platform-overview" id="overview">
+
+                <!-- Hero -->
+                <section class="hero">
+                    <div class="hero-badge glass-chip reveal"><i class="fa-solid fa-wand-magic-sparkles"></i> AI-Powered Tamil Music &amp; Radio</div>
+                    <h1 class="hero-title reveal">Welcome to <span class="gradient-text">Tamil AI Stream</span></h1>
+                    <p class="hero-sub reveal">Your intelligent home for Tamil music &amp; live radio — unlimited songs, live FM stations and AI-powered recommendations, beautifully tuned just for you.</p>
+                    <div class="hero-cta reveal">
+                        <a href="#authPanel" class="btn-hero"><i class="fa-solid fa-play"></i> Start Listening for Free</a>
+                        <a href="#how" class="btn-ghost"><i class="fa-solid fa-circle-question"></i> How It Works</a>
                     </div>
-                    <div class="input-group">
-                        <label for="loginPassword" class="input-label"><i class="fas fa-lock"></i><span>Password</span></label>
-                        <div class="input-wrapper">
-                            <input type="password" id="loginPassword" name="password" placeholder="Enter your password" autocomplete="current-password" required>
-                            <button type="button" class="toggle-password" id="togglePassword" aria-label="Toggle password">
-                                <i class="fas fa-eye"></i>
-                                <i class="fas fa-eye-slash"></i>
-                            </button>
-                        </div>
-                        <div class="error-message" id="passwordError"><i class="fas fa-exclamation-triangle"></i><span>Password is required</span></div>
+                    <div class="hero-wave" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                </section>
+
+                <!-- Marquee Strip -->
+                <div class="marquee glass-chip" aria-hidden="true">
+                    <div class="marquee-track">
+                        <span><i class="fa-solid fa-infinity"></i> Unlimited Tamil Songs</span>
+                        <span><i class="fa-solid fa-tower-broadcast"></i> Live Tamil FM Stations</span>
+                        <span><i class="fa-solid fa-brain"></i> AI Music Recommendations</span>
+                        <span><i class="fa-solid fa-fire"></i> Trending Charts</span>
+                        <span><i class="fa-solid fa-calendar-day"></i> Daily New Releases</span>
+                        <span><i class="fa-solid fa-podcast"></i> Tamil Podcasts</span>
+                        <span><i class="fa-solid fa-mobile-screen"></i> Play Everywhere</span>
                     </div>
-                    <div class="form-options">
-                        <label class="remember-me">
-                            <input type="checkbox" id="rememberMe">
-                            <span class="checkmark"></span>
-                            <span class="remember-text">Remember me</span>
-                        </label>
-                    <a href="javascript:void(0)" class="forgot-password" id="forgotPassword">Forgot Password?</a>
-                    </div>
-                    <div class="login-error" id="loginError">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span id="loginErrorText">Invalid email or password.</span>
-                    </div>
-                    <button type="submit" class="login-btn" id="loginBtn">
-                        <span class="btn-text">Sign In</span>
-                        <span class="btn-loader"><i class="fas fa-circle-notch fa-spin"></i><span>Signing In...</span></span>
-                    </button>
-                </form>
-                
-                <!-- Demo Account Section -->
-                <div class="demo-account-section">
-                    <div class="demo-account-header">
-                        <i class="fas fa-flask demo-icon"></i>
-                        <span>Demo Account</span>
-                    </div>
-                    <div class="demo-account-details">
-                        <div class="demo-field">
-                            <span class="demo-label">Email:</span>
-                            <span class="demo-value">admin@tamilaifm.com</span>
-                            <button class="demo-copy-btn" data-copy="admin@tamilaifm.com" aria-label="Copy email">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>
-                        <div class="demo-field">
-                            <span class="demo-label">Password:</span>
-                            <span class="demo-value">Admin@123</span>
-                            <button class="demo-copy-btn" data-copy="Admin@123" aria-label="Copy password">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <button class="demo-login-btn" id="demoLoginBtn" type="button">
-                        <i class="fas fa-rocket"></i>
-                        <span>Quick Login with Demo</span>
-                    </button>
                 </div>
 
-                <div class="login-footer">
-                    <div class="create-account">
-                        <span>Don't have an account?</span>
-                         <a href="javascript:void(0)" class="create-link" id="createAccount">Create New Account</a>
+                <!-- Platform Highlights / Features -->
+                <section class="section" id="features">
+                    <div class="section-head reveal">
+                        <span class="section-eyebrow"><i class="fa-solid fa-layer-group"></i> Platform Highlights</span>
+                        <h2 class="section-title">Everything Tamil Music. <span class="gradient-text">Powered by AI.</span></h2>
+                        <p class="section-sub">One premium platform for every Tamil melody, voice, and vibe — from live radio to smart recommendations.</p>
                     </div>
-                </div>
-            </div>
+                    <div class="features-grid">
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-brain"></i><h4>AI Music &amp; Radio Streaming</h4><p>Intelligent Tamil music &amp; radio powered by AI.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-tower-broadcast"></i><h4>Live Tamil FM Stations</h4><p>Stream live radio from across Tamil Nadu.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-infinity"></i><h4>Unlimited Tamil Songs</h4><p>Play as much as you want, anytime.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-calendar-day"></i><h4>Latest Releases</h4><p>New Tamil hits the moment they drop.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-fire"></i><h4>Trending Songs</h4><p>See what Tamil Nadu is loving right now.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-chart-column"></i><h4>Top Charts</h4><p>Daily &amp; weekly charts, updated live.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-list"></i><h4>Featured Playlists</h4><p>Hand-crafted playlists for every mood.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-wand-sparkles"></i><h4>AI Recommendations</h4><p>Discover songs tailored to your taste.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-heart"></i><h4>Personalized Experience</h4><p>A home page built around you.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-magnifying-glass"></i><h4>Smart Global Search</h4><p>Find songs, artists, stations instantly.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-microphone-lines"></i><h4>AI Voice Assistant</h4><p>&ldquo;Hey Tamil AI Stream, play a melody&hellip;&rdquo;</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-sliders"></i><h4>AI Playlist Generator</h4><p>Generate the perfect mix in seconds.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-bookmark"></i><h4>Favorites</h4><p>Favorite songs &amp; stations in one tap.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-clock-rotate-left"></i><h4>Recently Played</h4><p>Pick up right where you left off.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-list-ol"></i><h4>Queue Management</h4><p>Reorder your playback, your way.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-volume-high"></i><h4>High-Quality Audio</h4><p>Crisp, lossless-grade Tamil streaming.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-headphones"></i><h4>Background Playback</h4><p>Keep the music going while you browse.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-music"></i><h4>Mini Music Player</h4><p>Control playback without leaving a page.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-mobile-screen"></i><h4>Responsive Experience</h4><p>Music that fits every screen you own.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-arrows-rotate"></i><h4>Multi-Device Sync</h4><p>Seamless from phone to desktop.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-shield-halved"></i><h4>Secure Accounts</h4><p>Your library, protected &amp; private.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-cloud"></i><h4>Fast Cloud Streaming</h4><p>Warp-speed, buffering-friendly delivery.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-calendar-plus"></i><h4>Daily New Songs</h4><p>Fresh Tamil music added every single day.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-podcast"></i><h4>Tamil Podcasts</h4><p>Stories, news &amp; culture in Tamil.</p></div>
+                        <div class="feature-card glass-chip reveal"><i class="fa-solid fa-compact-disc"></i><h4>Artist Discovery</h4><p>Explore artists, albums &amp; discographies.</p></div>
+                        <div class="feature-card glass-chip reveal soon"><i class="fa-solid fa-align-left"></i><h4>Lyrics Support</h4><span class="soon-tag">Coming Soon</span></div>
+                        <div class="feature-card glass-chip reveal soon"><i class="fa-solid fa-circle-down"></i><h4>Offline Listening</h4><span class="soon-tag">Coming Soon</span></div>
+                        <div class="feature-card glass-chip reveal soon"><i class="fa-solid fa-users"></i><h4>Community Features</h4><span class="soon-tag">Coming Soon</span></div>
+                    </div>
+                </section>
 
-            <!-- Register View -->
-            <div class="auth-view" id="registerView">
-                <div class="welcome-section">
-                    <h2 class="welcome-title">Create Account</h2>
-                    <p class="welcome-sub">Join Tamil AI FM for a personalized radio experience</p>
-                </div>
-                <div class="social-login">
-                    <button class="social-btn google-btn" type="button" id="googleRegister">
-                        <svg class="social-icon" viewBox="0 0 48 48">
-                            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-                            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-                            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-                            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001,0.001-0.001,0.001-0.002,0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-                        </svg>
-                        <span>Sign up with Google</span>
-                    </button>
-                </div>
-                <div class="divider">
-                    <span class="divider-line"></span>
-                    <span class="divider-text">or register with email</span>
-                    <span class="divider-line"></span>
-                </div>
-                <form class="login-form" id="registerForm" novalidate>
-                    <div class="input-group">
-                        <label for="registerName" class="input-label"><i class="fas fa-user"></i><span>Full Name</span></label>
-                        <div class="input-wrapper">
-                            <input type="text" id="registerName" name="name" placeholder="Enter your full name" autocomplete="name" required>
-                            <div class="input-status">
-                                <i class="fas fa-check-circle valid-icon"></i>
-                                <i class="fas fa-exclamation-circle invalid-icon"></i>
-                            </div>
+                <!-- Featured Tamil Albums -->
+                <section class="section" id="albums">
+                    <div class="section-head inline-head reveal">
+                        <div>
+                            <span class="section-eyebrow"><i class="fa-solid fa-compact-disc"></i> Featured Albums</span>
+                            <h2 class="section-title">Fresh Tamil <span class="gradient-text">Albums</span></h2>
                         </div>
-                        <div class="error-message" id="nameError"><i class="fas fa-exclamation-triangle"></i><span>Please enter your name</span></div>
+                        <a href="#authPanel" class="link-cta">Explore all <i class="fa-solid fa-arrow-right"></i></a>
                     </div>
-                    <div class="input-group">
-                        <label for="registerEmail" class="input-label"><i class="fas fa-envelope"></i><span>Email Address</span></label>
-                        <div class="input-wrapper">
-                            <input type="email" id="registerEmail" name="email" placeholder="Enter your email" autocomplete="email" required>
-                            <div class="input-status">
-                                <i class="fas fa-check-circle valid-icon"></i>
-                                <i class="fas fa-exclamation-circle invalid-icon"></i>
-                            </div>
+                    <div class="albums-grid">
+                        <div class="album-card reveal"><div class="album-art art-1"><i class="fa-solid fa-music"></i><span class="vinyl"></span></div><div class="album-meta"><h4>Vaigai Waves</h4><p>Karky &middot; 2026</p></div></div>
+                        <div class="album-card reveal"><div class="album-art art-2"><i class="fa-solid fa-drum"></i><span class="vinyl"></span></div><div class="album-meta"><h4>Madras Beats</h4><p>Anirudh &middot; 2026</p></div></div>
+                        <div class="album-card reveal"><div class="album-art art-3"><i class="fa-solid fa-feather"></i><span class="vinyl"></span></div><div class="album-meta"><h4>Kurinji</h4><p>Ilaiyaraaja &middot; 1985</p></div></div>
+                        <div class="album-card reveal"><div class="album-art art-4"><i class="fa-solid fa-umbrella"></i><span class="vinyl"></span></div><div class="album-meta"><h4>Kadal Raagam</h4><p>A.R. Rahman &middot; 2025</p></div></div>
+                    </div>
+                </section>
+
+                <!-- Popular Artists -->
+                <section class="section" id="artists">
+                    <div class="section-head inline-head reveal">
+                        <div>
+                            <span class="section-eyebrow"><i class="fa-solid fa-star"></i> Popular Artists</span>
+                            <h2 class="section-title">Loved by <span class="gradient-text">Millions</span></h2>
                         </div>
-                        <div class="error-message" id="registerEmailError"><i class="fas fa-exclamation-triangle"></i><span>Please enter a valid email address</span></div>
                     </div>
-                    <div class="input-group">
-                        <label for="registerPassword" class="input-label"><i class="fas fa-lock"></i><span>Password</span></label>
-                        <div class="input-wrapper">
-                            <input type="password" id="registerPassword" name="password" placeholder="Create a password (min 8 characters)" autocomplete="new-password" required>
-                            <button type="button" class="toggle-password" id="toggleRegisterPassword" aria-label="Toggle password">
-                                <i class="fas fa-eye"></i>
-                                <i class="fas fa-eye-slash"></i>
+                    <div class="artists-grid">
+                        <div class="artist-card reveal"><div class="artist-avatar av-1">AR</div><h4>A.R. Rahman</h4><p>2,500+ songs</p></div>
+                        <div class="artist-card reveal"><div class="artist-avatar av-2">IR</div><h4>Ilaiyaraaja</h4><p>4,000+ songs</p></div>
+                        <div class="artist-card reveal"><div class="artist-avatar av-3">AN</div><h4>Anirudh Ravichander</h4><p>1,800+ songs</p></div>
+                        <div class="artist-card reveal"><div class="artist-avatar av-4">HJ</div><h4>Harris Jayaraj</h4><p>900+ songs</p></div>
+                        <div class="artist-card reveal"><div class="artist-avatar av-5">YS</div><h4>Yuvan Shankar Raja</h4><p>1,200+ songs</p></div>
+                        <div class="artist-card reveal"><div class="artist-avatar av-6">SPB</div><h4>S.P. Balasubrahmanyam</h4><p>5,000+ songs</p></div>
+                    </div>
+                </section>
+
+                <!-- Live Radio Stations -->
+                <section class="section" id="stations">
+                    <div class="section-head inline-head reveal">
+                        <div>
+                            <span class="section-eyebrow"><i class="fa-solid fa-tower-broadcast"></i> Live Radio</span>
+                            <h2 class="section-title">Live Tamil <span class="gradient-text">FM Stations</span></h2>
+                        </div>
+                        <div class="live-pill"><span class="live-dot"></span> 12 stations live now</div>
+                    </div>
+                    <div class="stations-grid">
+                        <div class="station-card glass-chip reveal"><div class="station-top"><span class="live-badge"><span class="live-dot"></span> LIVE</span><span class="station-eq"><i></i><i></i><i></i><i></i></span></div><h4>Chennai FM</h4><p>Kollywood Hits 24/7</p><div class="station-footer"><span><i class="fa-solid fa-headphones"></i> 12.4k</span><button class="station-play" aria-label="Play"><i class="fa-solid fa-play"></i></button></div></div>
+                        <div class="station-card glass-chip reveal"><div class="station-top"><span class="live-badge"><span class="live-dot"></span> LIVE</span><span class="station-eq"><i></i><i></i><i></i><i></i></span></div><h4>Madurai Melody</h4><p>Classic Ilaiyaraaja</p><div class="station-footer"><span><i class="fa-solid fa-headphones"></i> 9.1k</span><button class="station-play" aria-label="Play"><i class="fa-solid fa-play"></i></button></div></div>
+                        <div class="station-card glass-chip reveal"><div class="station-top"><span class="live-badge"><span class="live-dot"></span> LIVE</span><span class="station-eq"><i></i><i></i><i></i><i></i></span></div><h4>Coimbatore Beats</h4><p>Mass &amp; Party Mix</p><div class="station-footer"><span><i class="fa-solid fa-headphones"></i> 7.8k</span><button class="station-play" aria-label="Play"><i class="fa-solid fa-play"></i></button></div></div>
+                        <div class="station-card glass-chip reveal"><div class="station-top"><span class="live-badge"><span class="live-dot"></span> LIVE</span><span class="station-eq"><i></i><i></i><i></i><i></i></span></div><h4>Trichy Talkies</h4><p>Melody &amp; Ghazals</p><div class="station-footer"><span><i class="fa-solid fa-headphones"></i> 6.3k</span><button class="station-play" aria-label="Play"><i class="fa-solid fa-play"></i></button></div></div>
+                        <div class="station-card glass-chip reveal"><div class="station-top"><span class="live-badge"><span class="live-dot"></span> LIVE</span><span class="station-eq"><i></i><i></i><i></i><i></i></span></div><h4>Kovai Radio</h4><p>Devotional &amp; Folk</p><div class="station-footer"><span><i class="fa-solid fa-headphones"></i> 5.9k</span><button class="station-play" aria-label="Play"><i class="fa-solid fa-play"></i></button></div></div>
+                        <div class="station-card glass-chip reveal"><div class="station-top"><span class="live-badge"><span class="live-dot"></span> LIVE</span><span class="station-eq"><i></i><i></i><i></i><i></i></span></div><h4>Kollywood 24/7</h4><p>Non-stop Chartbusters</p><div class="station-footer"><span><i class="fa-solid fa-headphones"></i> 15.2k</span><button class="station-play" aria-label="Play"><i class="fa-solid fa-play"></i></button></div></div>
+                    </div>
+                </section>
+
+                <!-- Trending Playlists -->
+                <section class="section" id="playlists">
+                    <div class="section-head reveal">
+                        <span class="section-eyebrow"><i class="fa-solid fa-ranking-star"></i> Trending Playlists</span>
+                        <h2 class="section-title">Playlists <span class="gradient-text">On Repeat</span></h2>
+                    </div>
+                    <div class="playlists-grid">
+                        <div class="playlist-card glass-chip reveal"><div class="playlist-thumb pt-1"><i class="fa-solid fa-martini-glass-citrus"></i></div><div class="playlist-meta"><h4>Tamil Party Hits</h4><p>40 songs &middot; 12.4M plays</p></div></div>
+                        <div class="playlist-card glass-chip reveal"><div class="playlist-thumb pt-2"><i class="fa-solid fa-cloud-rain"></i></div><div class="playlist-meta"><h4>Melody for Rainy Days</h4><p>32 songs &middot; 8.1M plays</p></div></div>
+                        <div class="playlist-card glass-chip reveal"><div class="playlist-thumb pt-3"><i class="fa-solid fa-dumbbell"></i></div><div class="playlist-meta"><h4>Gym Tamil Beats</h4><p>28 songs &middot; 5.6M plays</p></div></div>
+                        <div class="playlist-card glass-chip reveal"><div class="playlist-thumb pt-4"><i class="fa-solid fa-crown"></i></div><div class="playlist-meta"><h4>Ilaiyaraaja Classics</h4><p>60 songs &middot; 9.9M plays</p></div></div>
+                        <div class="playlist-card glass-chip reveal"><div class="playlist-thumb pt-5"><i class="fa-solid fa-bolt"></i></div><div class="playlist-meta"><h4>Anirudh Top 40</h4><p>40 songs &middot; 14.2M plays</p></div></div>
+                        <div class="playlist-card glass-chip reveal"><div class="playlist-thumb pt-6"><i class="fa-solid fa-fire-flame-curved"></i></div><div class="playlist-meta"><h4>Kuthu Nonstop</h4><p>25 songs &middot; 6.8M plays</p></div></div>
+                    </div>
+                </section>
+
+                <!-- Listening Statistics -->
+                <section class="section stats-section" id="stats">
+                    <div class="stats-glass reveal">
+                        <div class="stat"><h3 class="stat-num" data-count="25000">0</h3><p>Tamil Songs Available</p></div>
+                        <div class="stat"><h3 class="stat-num" data-count="50">0</h3><p>Live FM Stations</p></div>
+                        <div class="stat"><h3 class="stat-num" data-count="120000">0</h3><p>+ Happy Listeners</p></div>
+                        <div class="stat"><h3 class="stat-num" data-count="10000">0</h3><p>+ Songs Streamed Daily</p></div>
+                    </div>
+                </section>
+
+                <!-- How Tamil AI Stream Works -->
+                <section class="section" id="how">
+                    <div class="section-head reveal">
+                        <span class="section-eyebrow"><i class="fa-solid fa-diagram-project"></i> How it Works</span>
+                        <h2 class="section-title">Start Listening in <span class="gradient-text">4 Easy Steps</span></h2>
+                    </div>
+                    <div class="steps-grid">
+                        <div class="step reveal"><div class="step-icon"><i class="fa-solid fa-user-plus"></i><span class="step-no">01</span></div><h4>Create a Free Account</h4><p>Sign up with email or Google in seconds.</p></div>
+                        <div class="step reveal"><div class="step-icon"><i class="fa-solid fa-magnifying-glass"></i><span class="step-no">02</span></div><h4>Discover with AI</h4><p>Tell us your mood — get a perfect mix instantly.</p></div>
+                        <div class="step reveal"><div class="step-icon"><i class="fa-solid fa-play"></i><span class="step-no">03</span></div><h4>Play Live &amp; On-Demand</h4><p>Stream stations, albums and playlists anywhere.</p></div>
+                        <div class="step reveal"><div class="step-icon"><i class="fa-solid fa-arrows-rotate"></i><span class="step-no">04</span></div><h4>Sync Everywhere</h4><p>Pick up exactly where you left off, on any device.</p></div>
+                    </div>
+                </section>
+
+                <!-- Pricing -->
+                <section class="section" id="pricing">
+                    <div class="section-head reveal">
+                        <span class="section-eyebrow"><i class="fa-solid fa-tags"></i> Pricing</span>
+                        <h2 class="section-title">Choose Your <span class="gradient-text">Listening Plan</span></h2>
+                        <p class="section-sub">Start free — upgrade anytime. Cancel whenever you like.</p>
+                    </div>
+                    <div class="pricing-grid">
+                        <div class="price-card glass-chip reveal">
+                            <div class="price-head"><span class="price-name">Free</span><div class="price-amount">₹0<span>/ forever</span></div></div>
+                            <ul class="price-list">
+                                <li><i class="fa-solid fa-check"></i> Live FM radio</li>
+                                <li><i class="fa-solid fa-check"></i> Unlimited songs (with ads)</li>
+                                <li><i class="fa-solid fa-check"></i> AI recommendations</li>
+                                <li><i class="fa-solid fa-check"></i> Mini player</li>
+                            </ul>
+                            <a href="#authPanel" class="price-btn">Start Listening for Free</a>
+                        </div>
+                        <div class="price-card price-popular reveal">
+                            <span class="popular-tag">Most Popular</span>
+                            <div class="price-head"><span class="price-name">Premium</span><div class="price-amount">₹99<span>/ month</span></div></div>
+                            <ul class="price-list">
+                                <li><i class="fa-solid fa-check"></i> Everything in Free</li>
+                                <li><i class="fa-solid fa-check"></i> Ad-free, high-quality audio</li>
+                                <li><i class="fa-solid fa-check"></i> Background playback</li>
+                                <li><i class="fa-solid fa-check"></i> AI playlist generator</li>
+                                <li><i class="fa-solid fa-check"></i> Priority new releases</li>
+                            </ul>
+                            <a href="#authPanel" class="price-btn">Go Premium</a>
+                        </div>
+                        <div class="price-card glass-chip reveal">
+                            <div class="price-head"><span class="price-name">Family</span><div class="price-amount">₹149<span>/ month</span></div></div>
+                            <ul class="price-list">
+                                <li><i class="fa-solid fa-check"></i> Up to 6 accounts</li>
+                                <li><i class="fa-solid fa-check"></i> All Premium features</li>
+                                <li><i class="fa-solid fa-check"></i> Kids-safe mode</li>
+                                <li><i class="fa-solid fa-check"></i> Shared family playlists</li>
+                            </ul>
+                            <a href="#authPanel" class="price-btn">Get Family Plan</a>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Testimonials -->
+                <section class="section" id="testimonials">
+                    <div class="section-head reveal">
+                        <span class="section-eyebrow"><i class="fa-solid fa-comment-dots"></i> Testimonials</span>
+                        <h2 class="section-title">Loved Across <span class="gradient-text">Tamil Nadu</span></h2>
+                    </div>
+                    <div class="testimonials-grid">
+                        <div class="testimonial-card glass-chip reveal"><div class="quote-mark"><i class="fa-solid fa-quote-left"></i></div><p>&ldquo;The AI recommendations are uncanny — it plays exactly the songs I didn&rsquo;t know I needed. Tamil AI Stream feels like it grew up with me.&rdquo;</p><div class="testimonial-author"><div class="testi-avatar ta-1">KV</div><div><h4>Kavya Venkatesan</h4><span>Chennai &middot; Premium</span></div></div></div>
+                        <div class="testimonial-card glass-chip reveal"><div class="quote-mark"><i class="fa-solid fa-quote-left"></i></div><p>&ldquo;Live FM stations from home, crystal-clear audio, and zero buffering. This is how I stay connected to Tamil music from abroad.&rdquo;</p><div class="testimonial-author"><div class="testi-avatar ta-2">RS</div><div><h4>Rajesh Subramanian</h4><span>Singapore &middot; Premium</span></div></div></div>
+                        <div class="testimonial-card glass-chip reveal"><div class="quote-mark"><i class="fa-solid fa-quote-left"></i></div><p>&ldquo;My whole family shares one Family plan. From Ilaiyaraaja classics to today&rsquo;s Anirudh hits — everyone&rsquo;s taste is covered.&rdquo;</p><div class="testimonial-author"><div class="testi-avatar ta-3">PM</div><div><h4>Priya Mahadevan</h4><span>Coimbatore &middot; Family</span></div></div></div>
+                    </div>
+                </section>
+
+                <!-- FAQ -->
+                <section class="section" id="faq">
+                    <div class="section-head reveal">
+                        <span class="section-eyebrow"><i class="fa-solid fa-circle-question"></i> FAQ</span>
+                        <h2 class="section-title">Frequently Asked <span class="gradient-text">Questions</span></h2>
+                    </div>
+                    <div class="faq-list">
+                        <details class="faq-item glass-chip reveal"><summary>Is Tamil AI Stream really free to start?<i class="fa-solid fa-plus"></i></summary><div class="faq-body"><p>Yes! Create an account and stream live FM radio plus unlimited Tamil songs with ads — completely free, no credit card required.</p></div></details>
+                        <details class="faq-item glass-chip reveal"><summary>How does the AI music recommendation work?<i class="fa-solid fa-plus"></i></summary><div class="faq-body"><p>Our AI learns from your listening history, favourite artists, songs you skip and re-play, then crafts a personalised mix — even generating playlists on command.</p></div></details>
+                        <details class="faq-item glass-chip reveal"><summary>Can I listen to live Tamil FM stations?<i class="fa-solid fa-plus"></i></summary><div class="faq-body"><p>Yes — live Tamil FM stations from Chennai, Madurai, Coimbatore, Trichy, Kovai and more are always on air with real-time equalizer playback.</p></div></details>
+                        <details class="faq-item glass-chip reveal"><summary>Does playback continue in the background?<i class="fa-solid fa-plus"></i></summary><div class="faq-body"><p>Premium members enjoy background playback with the mini music player, so the music keeps playing while you use other apps or browse the web.</p></div></details>
+                        <details class="faq-item glass-chip reveal"><summary>Can I listen on my phone, tablet and computer?<i class="fa-solid fa-plus"></i></summary><div class="faq-body"><p>Absolutely. Tamil AI Stream is a responsive web experience that syncs your favourites and queue across all your devices.</p></div></details>
+                        <details class="faq-item glass-chip reveal"><summary>Is my account and data secure?<i class="fa-solid fa-plus"></i></summary><div class="faq-body"><p>Yes — accounts are protected with secure sign-in (including Google), and your library, favourites and preferences stay private to you.</p></div></details>
+                    </div>
+                </section>
+
+                <!-- Final CTA -->
+                <section class="section final-cta">
+                    <div class="cta-glass reveal">
+                        <h2 class="cta-title">Your Tamil soundtrack <span class="gradient-text">awaits.</span></h2>
+                        <p class="cta-sub">Join lakhs of listeners streaming Tamil music, radio and AI playlists — free.</p>
+                        <a href="#authPanel" class="btn-hero cta-big"><i class="fa-solid fa-play"></i> Start Listening for Free</a>
+                        <div class="cta-trust"><span><i class="fa-solid fa-lock"></i> Secure sign-in</span><span><i class="fa-solid fa-bolt"></i> Instant access</span><span><i class="fa-solid fa-circle-check"></i> No credit card</span></div>
+                    </div>
+                </section>
+            </main>
+            <!-- ================= END LEFT OVERVIEW ================= -->
+
+            <!-- ================= RIGHT: AUTH ================= -->
+            <aside class="auth-panel" id="authPanel">
+                <div class="auth-panel-badge glass-chip"><i class="fa-solid fa-bolt"></i> Free forever plan &middot; No credit card</div>
+
+                <div class="login-card glass-card">
+                    <div class="login-logo">
+                        <div class="logo-icon"><i class="fa-solid fa-tower-broadcast"></i></div>
+                        <div class="logo-text">
+                            <h1>Tamil AI Stream</h1>
+                            <span>AI-Powered Radio</span>
+                        </div>
+                    </div>
+
+                    <!-- Login View -->
+                    <div class="auth-view active" id="loginView">
+                        <div class="welcome-section">
+                            <h2 class="welcome-title">Welcome Back</h2>
+                            <p class="welcome-sub">Sign in to continue your AI-powered radio experience</p>
+                        </div>
+                        <div class="social-login">
+                            <button class="social-btn google-btn" type="button" id="googleLogin">
+                                <svg class="social-icon" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001,0.001-0.001,0.001-0.002,0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+                                <span>Continue with Google</span>
+                            </button>
+                            <button class="social-btn guest-btn" type="button" id="guestLogin">
+                                <i class="fa-solid fa-user-astronaut social-icon"></i>
+                                <span>Continue as Guest</span>
                             </button>
                         </div>
-                        <div class="error-message" id="registerPasswordError"><i class="fas fa-exclamation-triangle"></i><span>Password must be at least 8 characters</span></div>
-                    </div>
-                    <div class="input-group">
-                        <label for="confirmPassword" class="input-label"><i class="fas fa-lock"></i><span>Confirm Password</span></label>
-                        <div class="input-wrapper">
-                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" autocomplete="new-password" required>
-                            <div class="input-status">
-                                <i class="fas fa-check-circle valid-icon"></i>
-                                <i class="fas fa-exclamation-circle invalid-icon"></i>
+                        <div class="divider"><span class="divider-line"></span><span class="divider-text">or sign in with email</span><span class="divider-line"></span></div>
+                        <form class="login-form" id="loginForm" novalidate>
+                            <div class="input-group">
+                                <label for="loginEmail" class="input-label"><i class="fa-solid fa-envelope"></i><span>Email Address</span></label>
+                                <div class="input-wrapper">
+                                    <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" required>
+                                    <div class="input-status"><i class="fa-solid fa-check-circle valid-icon"></i><i class="fa-solid fa-exclamation-circle invalid-icon"></i></div>
+                                </div>
+                                <div class="error-message" id="emailError"><i class="fa-solid fa-exclamation-triangle"></i><span>Please enter a valid email address</span></div>
                             </div>
+                            <div class="input-group">
+                                <label for="loginPassword" class="input-label"><i class="fa-solid fa-lock"></i><span>Password</span></label>
+                                <div class="input-wrapper">
+                                    <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password" required>
+                                    <button type="button" class="toggle-password" id="togglePassword" aria-label="Show password"><i class="fa-solid fa-eye"></i><i class="fa-solid fa-eye-slash"></i></button>
+                                </div>
+                                <div class="error-message" id="passwordError"><i class="fa-solid fa-exclamation-triangle"></i><span>Password must be at least 8 characters</span></div>
+                            </div>
+                            <div class="login-error" id="loginError"><i class="fa-solid fa-exclamation-circle"></i><span id="loginErrorText">Invalid email or password</span></div>
+                            <div class="form-options">
+                                <label class="remember-me">
+                                    <input type="checkbox" id="rememberMe">
+                                    <span class="checkmark"></span>
+                                    <span class="remember-text">Remember Me</span>
+                                </label>
+                                <a href="javascript:void(0)" class="forgot-password" id="forgotPassword">Forgot Password?</a>
+                            </div>
+                            <button type="submit" class="login-btn" id="loginBtn">
+                                <span class="btn-text"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</span>
+                                <span class="btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Signing In...</span></span>
+                            </button>
+                        </form>
+                        <div class="login-footer">
+                            <div class="create-account">New to Tamil AI Stream? <a href="javascript:void(0)" class="create-link" id="createAccount">Create Account</a></div>
                         </div>
-                        <div class="error-message" id="confirmPasswordError"><i class="fas fa-exclamation-triangle"></i><span>Passwords do not match</span></div>
                     </div>
-                    <div class="login-error" id="registerError">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span id="registerErrorText">Registration failed.</span>
-                    </div>
-                    <button type="submit" class="login-btn" id="registerBtn">
-                        <span class="btn-text">Create Account</span>
-                        <span class="btn-loader"><i class="fas fa-circle-notch fa-spin"></i><span>Creating Account...</span></span>
-                    </button>
-                </form>
-                <div class="login-footer">
-                    <div class="create-account">
-                        <span>Already have an account?</span>
-                         <a href="javascript:void(0)" class="create-link" id="backToLogin">Sign In</a>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Forgot Password View -->
-            <div class="auth-view" id="forgotPasswordView">
-                <div class="welcome-section">
-                    <h2 class="welcome-title">Reset Password</h2>
-                    <p class="welcome-sub">Enter your email to receive a password reset link</p>
-                </div>
-                <form class="login-form" id="forgotPasswordForm" novalidate>
-                    <div class="input-group">
-                        <label for="resetEmail" class="input-label"><i class="fas fa-envelope"></i><span>Email Address</span></label>
-                        <div class="input-wrapper">
-                            <input type="email" id="resetEmail" name="email" placeholder="Enter your email" autocomplete="email" required>
-                            <div class="input-status">
-                                <i class="fas fa-check-circle valid-icon"></i>
-                                <i class="fas fa-exclamation-circle invalid-icon"></i>
-                            </div>
+                    <!-- Register View -->
+                    <div class="auth-view" id="registerView">
+                        <div class="welcome-section">
+                            <h2 class="welcome-title">Create Account</h2>
+                            <p class="welcome-sub">Join Tamil AI Stream for a personalized radio experience</p>
                         </div>
-                        <div class="error-message" id="resetEmailError"><i class="fas fa-exclamation-triangle"></i><span>Please enter a valid email address</span></div>
+                        <div class="social-login">
+                            <button class="social-btn google-btn" type="button" id="googleRegister">
+                                <svg class="social-icon" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001,0.001-0.001,0.001-0.002,0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+                                <span>Sign up with Google</span>
+                            </button>
+                        </div>
+                        <div class="divider"><span class="divider-line"></span><span class="divider-text">or register with email</span><span class="divider-line"></span></div>
+                        <form class="login-form" id="registerForm" novalidate>
+                            <div class="input-group">
+                                <label for="registerName" class="input-label"><i class="fa-solid fa-user"></i><span>Full Name</span></label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="registerName" placeholder="Enter your full name" autocomplete="name" required>
+                                </div>
+                                <div class="error-message" id="nameError"><i class="fa-solid fa-exclamation-triangle"></i><span>Please enter your name</span></div>
+                            </div>
+                            <div class="input-group">
+                                <label for="registerEmail" class="input-label"><i class="fa-solid fa-envelope"></i><span>Email Address</span></label>
+                                <div class="input-wrapper">
+                                    <input type="email" id="registerEmail" placeholder="Enter your email" autocomplete="email" required>
+                                </div>
+                                <div class="error-message" id="registerEmailError"><i class="fa-solid fa-exclamation-triangle"></i><span>Please enter a valid email address</span></div>
+                            </div>
+                            <div class="input-group">
+                                <label for="registerPassword" class="input-label"><i class="fa-solid fa-lock"></i><span>Password</span></label>
+                                <div class="input-wrapper">
+                                    <input type="password" id="registerPassword" placeholder="Create a password (min 8 chars)" autocomplete="new-password" required>
+                                    <button type="button" class="toggle-password" id="toggleRegisterPassword" aria-label="Toggle password"><i class="fa-solid fa-eye"></i><i class="fa-solid fa-eye-slash"></i></button>
+                                </div>
+                                <div class="error-message" id="registerPasswordError"><i class="fa-solid fa-exclamation-triangle"></i><span>Password must be at least 8 characters</span></div>
+                            </div>
+                            <div class="input-group">
+                                <label for="confirmPassword" class="input-label"><i class="fa-solid fa-lock"></i><span>Confirm Password</span></label>
+                                <div class="input-wrapper">
+                                    <input type="password" id="confirmPassword" placeholder="Confirm your password" autocomplete="new-password" required>
+                                </div>
+                                <div class="error-message" id="confirmPasswordError"><i class="fa-solid fa-exclamation-triangle"></i><span>Passwords do not match</span></div>
+                            </div>
+                            <div class="login-error" id="registerError"><i class="fa-solid fa-exclamation-circle"></i><span id="registerErrorText">Registration failed.</span></div>
+                            <button type="submit" class="login-btn" id="registerBtn">
+                                <span class="btn-text"><i class="fa-solid fa-user-plus"></i> Create Account</span>
+                                <span class="btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Creating Account...</span></span>
+                            </button>
+                        </form>
+                        <div class="login-footer">
+                            <div class="create-account">Already have an account? <a href="javascript:void(0)" class="create-link" id="backToLogin">Sign In</a></div>
+                        </div>
                     </div>
-                    <div class="login-error" id="resetError">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span id="resetErrorText">Failed to send reset email.</span>
+
+                    <!-- Forgot Password View -->
+                    <div class="auth-view" id="forgotPasswordView">
+                        <div class="welcome-section">
+                            <h2 class="welcome-title">Reset Password</h2>
+                            <p class="welcome-sub">Enter your email to receive a password reset link</p>
+                        </div>
+                        <form class="login-form" id="forgotPasswordForm" novalidate>
+                            <div class="input-group">
+                                <label for="resetEmail" class="input-label"><i class="fa-solid fa-envelope"></i><span>Email Address</span></label>
+                                <div class="input-wrapper">
+                                    <input type="email" id="resetEmail" name="email" placeholder="Enter your email" autocomplete="email" required>
+                                    <div class="input-status"><i class="fa-solid fa-check-circle valid-icon"></i><i class="fa-solid fa-exclamation-circle invalid-icon"></i></div>
+                                </div>
+                                <div class="error-message" id="resetEmailError"><i class="fa-solid fa-exclamation-triangle"></i><span>Please enter a valid email address</span></div>
+                            </div>
+                            <div class="login-error" id="resetError"><i class="fa-solid fa-exclamation-circle"></i><span id="resetErrorText">Failed to send reset email.</span></div>
+                            <button type="submit" class="login-btn" id="resetBtn">
+                                <span class="btn-text"><i class="fa-solid fa-paper-plane"></i> Send Reset Link</span>
+                                <span class="btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Sending...</span></span>
+                            </button>
+                        </form>
+                        <div class="login-footer">
+                            <div class="create-account"><a href="javascript:void(0)" class="create-link" id="backToLoginFromReset">Back to Sign In</a></div>
+                        </div>
                     </div>
-                    <button type="submit" class="login-btn" id="resetBtn">
-                        <span class="btn-text">Send Reset Link</span>
-                        <span class="btn-loader"><i class="fas fa-circle-notch fa-spin"></i><span>Sending...</span></span>
-                    </button>
-                </form>
-                <div class="login-footer">
-                    <div class="create-account">
-                     <a href="javascript:void(0)" class="create-link" id="backToLoginFromReset">Back to Sign In</a>
+
+                    <!-- Demo Account Section -->
+                    <div class="demo-account-section">
+                        <div class="demo-account-header"><i class="fa-solid fa-flask demo-icon"></i><span>Demo Account</span></div>
+                        <div class="demo-account-details">
+                            <div class="demo-field"><span class="demo-label">Email:</span><span class="demo-value">admin@tamilaistream.com</span><button class="demo-copy-btn" data-copy="admin@tamilaistream.com" aria-label="Copy email"><i class="fa-regular fa-copy"></i></button></div>
+                            <div class="demo-field"><span class="demo-label">Password:</span><span class="demo-value">Admin@123</span><button class="demo-copy-btn" data-copy="Admin@123" aria-label="Copy password"><i class="fa-regular fa-copy"></i></button></div>
+                        </div>
+                        <button class="demo-login-btn" id="demoLoginBtn" type="button"><i class="fa-solid fa-rocket"></i><span>Quick Login with Demo</span></button>
+                    </div>
+
+                    <div class="login-footer-base">
+                        <div class="footer-links">
+                            <a href="javascript:void(0)" class="footer-link">Terms &amp; Conditions</a>
+                            <span class="footer-sep">|</span>
+                            <a href="javascript:void(0)" class="footer-link">Privacy Policy</a>
+                        </div>
+                        <div class="footer-note">&copy; 2025 Tamil AI Stream. All rights reserved.</div>
                     </div>
                 </div>
-            </div>
+            </aside>
 
             <!-- Success Overlay -->
             <div class="success-overlay" id="successOverlay">
                 <div class="success-content">
-                    <div class="success-check"><i class="fas fa-check-circle"></i></div>
+                    <div class="success-check"><i class="fa-solid fa-check-circle"></i></div>
                     <h3 id="successTitle">Welcome back!</h3>
                     <p id="successMessage">Redirecting to your dashboard...</p>
                 </div>
             </div>
 
-            <div class="login-footer-base">
-                <div class="footer-links">
-                    <a href="javascript:void(0)" class="footer-link">Terms & Conditions</a>
-                    <span class="footer-sep">|</span>
-                    <a href="javascript:void(0)" class="footer-link">Privacy Policy</a>
+            </div><!-- /.split-layout -->
+            </div><!-- /.lp-shell -->
+
+    <!-- Footer -->
+    <footer class="lp-footer">
+        <div class="footer-top">
+            <div class="footer-brand">
+                <div class="brand"><span class="brand-icon"><i class="fa-solid fa-tower-broadcast"></i></span><span class="brand-text">Tamil <b>AI FM</b></span></div>
+                <p class="footer-tag">Your intelligent home for Tamil music, live radio &amp; AI playlists — start listening free.</p>
+                <div class="footer-social">
+                    <a href="javascript:void(0)" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="javascript:void(0)" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="javascript:void(0)" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a href="javascript:void(0)" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
                 </div>
-                <p class="copyright">&copy; 2026 Tamil AI FM. All rights reserved.</p>
+            </div>
+            <div class="footer-col">
+                <h5>Product</h5>
+                <a href="#features">Features</a><a href="#stations">Live Radio</a><a href="#albums">Albums</a><a href="#playlists">Playlists</a><a href="#pricing">Pricing</a>
+            </div>
+            <div class="footer-col">
+                <h5>Company</h5>
+                <a href="javascript:void(0)">About</a><a href="javascript:void(0)">Careers</a><a href="javascript:void(0)">Press</a><a href="javascript:void(0)">Contact</a>
+            </div>
+            <div class="footer-col">
+                <h5>Legal</h5>
+                <a href="javascript:void(0)">Terms &amp; Conditions</a><a href="javascript:void(0)">Privacy Policy</a><a href="javascript:void(0)">Cookie Policy</a><a href="javascript:void(0)">Licenses</a>
             </div>
         </div>
-    </main>
+        <div class="footer-bottom">
+            <span>&copy; 2025 Tamil AI Stream. All rights reserved.</span>
+            <span class="footer-made">Made with <i class="fa-solid fa-heart"></i> for Tamil music lovers</span>
+        </div>
+    </footer>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-    
-    <!-- Firebase Initialization -->
-    <script type="module" src="firebase-init.js"></script>
-    
+    <!-- Scripts -->
+    <script>
+        /*** Mobile nav toggle ***/
+        const navToggle = document.getElementById('navToggle');
+        const navLinks = document.getElementById('navLinks');
+        if (navToggle && navLinks) {
+            navToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('open');
+                navToggle.classList.toggle('active');
+            });
+            navLinks.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A') {
+                    navLinks.classList.remove('open');
+                    navToggle.classList.remove('active');
+                }
+            });
+        }
+
+        /*** Sticky header scrolled state ***/
+        const lpNav = document.querySelector('.lp-nav');
+        const onScroll = () => {
+            if (lpNav) lpNav.classList.toggle('scrolled', window.scrollY > 20);
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+
+        /*** Reveal-on-scroll ***/
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+        document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
+
+        /*** Animated stat counters ***/
+        const countObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                const el = entry.target;
+                const target = parseInt(el.dataset.count, 10) || 0;
+                const duration = 1600;
+                const start = performance.now();
+                const tick = (now) => {
+                    const p = Math.min((now - start) / duration, 1);
+                    const eased = 1 - Math.pow(1 - p, 3);
+                    el.textContent = Math.round(target * eased).toLocaleString('en-IN');
+                    if (p < 1) requestAnimationFrame(tick);
+                };
+                requestAnimationFrame(tick);
+                countObserver.unobserve(el);
+            });
+        }, { threshold: 0.6 });
+        document.querySelectorAll('.stat-num').forEach((el) => countObserver.observe(el));
+    </script>
+
     <script src="login.js"></script>
 </body>
 </html>

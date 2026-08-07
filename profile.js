@@ -284,7 +284,7 @@ let userData = {
 async function loadUserData() {
     try {
         // Read from localStorage
-        const stored = localStorage.getItem('tamilAIFM_user');
+        const stored = localStorage.getItem('tamilAIStream_user');
         if (stored) {
             const saved = JSON.parse(stored);
             userData.name = saved.name || 'User';
@@ -296,7 +296,7 @@ async function loadUserData() {
             userData.password = saved.password || '';
 
             // Determine account type
-            const isAdmin = userData.email === 'admin@tamilaifm.com';
+            const isAdmin = userData.email === 'admin@tamilaistream.com';
             if (isAdmin) {
                 userData.accountType = 'Admin';
                 DOM.accountTypeBadge.innerHTML = '<i class="fas fa-crown"></i> <span>Admin</span>';
@@ -353,12 +353,12 @@ function updateProfileUI() {
 async function loadUserStats() {
     try {
         // Favorites count
-        const favorites = localStorage.getItem('tamilAIFM_favorites');
+        const favorites = localStorage.getItem('tamilAIStream_favorites');
         const favCount = favorites ? JSON.parse(favorites).length : 0;
         DOM.favoritesCount.textContent = favCount;
         
         // Recently played count
-        const recent = localStorage.getItem('tamilAIFM_recent');
+        const recent = localStorage.getItem('tamilAIStream_recent');
         const recentCount = recent ? JSON.parse(recent).length : 0;
         DOM.recentCount.textContent = recentCount;
         
@@ -366,7 +366,7 @@ async function loadUserStats() {
         DOM.listeningTime.textContent = '24h';
         
         // Playlists count
-        const playlists = localStorage.getItem('tamilAIFM_playlists');
+        const playlists = localStorage.getItem('tamilAIStream_playlists');
         const playlistCount = playlists ? JSON.parse(playlists).length : 0;
         DOM.playlistsCount.textContent = playlistCount;
         
@@ -380,15 +380,15 @@ async function loadUserStats() {
  */
 function loadUserPreferences() {
     // Notifications
-    const notifications = localStorage.getItem('tamilAIFM_notifications');
+    const notifications = localStorage.getItem('tamilAIStream_notifications');
     DOM.notificationsToggle.checked = notifications !== 'false';
     
     // Dark mode
-    const darkMode = localStorage.getItem('tamilAIFM_darkMode');
+    const darkMode = localStorage.getItem('tamilAIStream_darkMode');
     DOM.darkModeToggle.checked = darkMode !== 'false';
     
     // Language
-    const language = localStorage.getItem('tamilAIFM_language') || 'en';
+    const language = localStorage.getItem('tamilAIStream_language') || 'en';
     DOM.languageSelect.value = language;
 }
 
@@ -430,10 +430,10 @@ DOM.photoInput?.addEventListener('change', async (e) => {
             
             // Update localStorage
             userData.photoURL = photoURL;
-            const stored = localStorage.getItem('tamilAIFM_user');
+            const stored = localStorage.getItem('tamilAIStream_user');
             const saved = stored ? JSON.parse(stored) : {};
             saved.photoURL = photoURL;
-            localStorage.setItem('tamilAIFM_user', JSON.stringify(saved));
+            localStorage.setItem('tamilAIStream_user', JSON.stringify(saved));
 
             showToast('Profile photo updated!', 'success');
         };
@@ -467,10 +467,10 @@ DOM.editNameBtn?.addEventListener('click', () => {
             try {
                 // Update localStorage
                 userData.name = newName;
-                const stored = localStorage.getItem('tamilAIFM_user');
+                const stored = localStorage.getItem('tamilAIStream_user');
                 const saved = stored ? JSON.parse(stored) : {};
                 saved.name = newName;
-                localStorage.setItem('tamilAIFM_user', JSON.stringify(saved));
+                localStorage.setItem('tamilAIStream_user', JSON.stringify(saved));
                 
                 updateProfileUI();
                 showToast('Name updated successfully!', 'success');
@@ -504,10 +504,10 @@ DOM.editEmailBtn?.addEventListener('click', () => {
             try {
                 // Update localStorage
                 userData.email = newEmail;
-                const stored = localStorage.getItem('tamilAIFM_user');
+                const stored = localStorage.getItem('tamilAIStream_user');
                 const saved = stored ? JSON.parse(stored) : {};
                 saved.email = newEmail;
-                localStorage.setItem('tamilAIFM_user', JSON.stringify(saved));
+                localStorage.setItem('tamilAIStream_user', JSON.stringify(saved));
                 
                 updateProfileUI();
                 showToast('Email updated!', 'success');
@@ -534,10 +534,10 @@ DOM.editPhoneBtn?.addEventListener('click', () => {
             try {
                 // Update localStorage
                 userData.phone = newPhone;
-                const stored = localStorage.getItem('tamilAIFM_user');
+                const stored = localStorage.getItem('tamilAIStream_user');
                 const saved = stored ? JSON.parse(stored) : {};
                 saved.phone = newPhone;
-                localStorage.setItem('tamilAIFM_user', JSON.stringify(saved));
+                localStorage.setItem('tamilAIStream_user', JSON.stringify(saved));
                 
                 updateProfileUI();
                 showToast('Phone number updated!', 'success');
@@ -564,10 +564,10 @@ DOM.editBioBtn?.addEventListener('click', () => {
             try {
                 // Update localStorage
                 userData.bio = newBio;
-                const stored = localStorage.getItem('tamilAIFM_user');
+                const stored = localStorage.getItem('tamilAIStream_user');
                 const saved = stored ? JSON.parse(stored) : {};
                 saved.bio = newBio;
-                localStorage.setItem('tamilAIFM_user', JSON.stringify(saved));
+                localStorage.setItem('tamilAIStream_user', JSON.stringify(saved));
                 
                 updateProfileUI();
                 showToast('Bio updated!', 'success');
@@ -621,7 +621,7 @@ DOM.changePasswordBtn?.addEventListener('click', () => {
             
             try {
                 // Validate current password against localStorage
-                const stored = localStorage.getItem('tamilAIFM_user');
+                const stored = localStorage.getItem('tamilAIStream_user');
                 const saved = stored ? JSON.parse(stored) : {};
                 if (saved.password && saved.password !== currentPassword) {
                     showToast('Current password is incorrect', 'error');
@@ -630,7 +630,7 @@ DOM.changePasswordBtn?.addEventListener('click', () => {
 
                 // Update localStorage
                 saved.password = newPassword;
-                localStorage.setItem('tamilAIFM_user', JSON.stringify(saved));
+                localStorage.setItem('tamilAIStream_user', JSON.stringify(saved));
                 
                 showToast('Password changed successfully!', 'success');
             } catch (error) {
@@ -735,18 +735,18 @@ DOM.backBtn?.addEventListener('click', () => {
 // Preferences
 // ============================================
 DOM.notificationsToggle?.addEventListener('change', (e) => {
-    localStorage.setItem('tamilAIFM_notifications', e.target.checked);
+    localStorage.setItem('tamilAIStream_notifications', e.target.checked);
     showToast(e.target.checked ? 'Notifications enabled' : 'Notifications disabled', 'info');
 });
 
 DOM.darkModeToggle?.addEventListener('change', (e) => {
-    localStorage.setItem('tamilAIFM_darkMode', e.target.checked);
+    localStorage.setItem('tamilAIStream_darkMode', e.target.checked);
     showToast(e.target.checked ? 'Dark mode enabled' : 'Light mode enabled', 'info');
     // In production, toggle CSS class on body
 });
 
 DOM.languageSelect?.addEventListener('change', (e) => {
-    localStorage.setItem('tamilAIFM_language', e.target.value);
+    localStorage.setItem('tamilAIStream_language', e.target.value);
     showToast(`Language changed to ${e.target.value === 'ta' ? 'Tamil' : 'English'}`, 'success');
     // In production, reload page with new language
 });
@@ -783,7 +783,7 @@ DOM.helpBtn?.addEventListener('click', () => {
         `
             <div style="padding: 20px 0;">
                 <h4 style="margin-bottom: 16px; color: var(--emerald-400);">Contact Us</h4>
-                <p style="margin-bottom: 12px;"><i class="fas fa-envelope" style="width: 20px;"></i> support@tamilaifm.com</p>
+                <p style="margin-bottom: 12px;"><i class="fas fa-envelope" style="width: 20px;"></i> support@tamilaistream.com</p>
                 <p style="margin-bottom: 12px;"><i class="fas fa-phone" style="width: 20px;"></i> +91 98765 43210</p>
                 <p style="margin-bottom: 12px;"><i class="fas fa-clock" style="width: 20px;"></i> 24/7 Support</p>
                 <hr style="border-color: var(--border-glass); margin: 20px 0;">
@@ -826,11 +826,11 @@ DOM.termsBtn?.addEventListener('click', () => {
                 <h4 style="margin-bottom: 16px; color: var(--emerald-400);">Terms & Conditions</h4>
                 <p style="margin-bottom: 12px; color: var(--text-secondary);">Last updated: January 2024</p>
                 <h5 style="margin-top: 16px; margin-bottom: 8px;">1. Acceptance of Terms</h5>
-                <p style="color: var(--text-secondary); margin-bottom: 12px;">By accessing or using Tamil AI FM, you agree to be bound by these terms.</p>
+                <p style="color: var(--text-secondary); margin-bottom: 12px;">By accessing or using Tamil AI Stream, you agree to be bound by these terms.</p>
                 <h5 style="margin-top: 16px; margin-bottom: 8px;">2. User Responsibilities</h5>
                 <p style="color: var(--text-secondary); margin-bottom: 12px;">You are responsible for maintaining the confidentiality of your account and password.</p>
                 <h5 style="margin-top: 16px; margin-bottom: 8px;">3. Intellectual Property</h5>
-                <p style="color: var(--text-secondary); margin-bottom: 12px;">All content provided on Tamil AI FM is the property of Tamil AI FM or its licensors.</p>
+                <p style="color: var(--text-secondary); margin-bottom: 12px;">All content provided on Tamil AI Stream is the property of Tamil AI Stream or its licensors.</p>
             </div>
         `,
         null,
@@ -840,16 +840,16 @@ DOM.termsBtn?.addEventListener('click', () => {
 
 DOM.aboutBtn?.addEventListener('click', () => {
     showModal(
-        'About Tamil AI FM',
+        'About Tamil AI Stream',
         `
             <div style="text-align: center; padding: 20px 0;">
                 <div class="logo-icon" style="width: 80px; height: 80px; margin: 0 auto 16px; background: var(--gradient-brand); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px; color: white; box-shadow: 0 4px 16px rgba(16,185,129,0.3);">
                     <i class="fas fa-microphone-alt"></i>
                 </div>
-                <h4 style="margin-bottom: 8px; background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Tamil AI FM</h4>
+                <h4 style="margin-bottom: 8px; background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Tamil AI Stream</h4>
                 <p style="color: var(--text-secondary); margin-bottom: 16px;">AI-Powered Tamil Radio</p>
                 <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px;">Version 1.0.0</p>
-                <p style="font-size: 0.85rem; color: var(--text-secondary);">© 2024 Tamil AI FM. All rights reserved.</p>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">© 2024 Tamil AI Stream. All rights reserved.</p>
                 <hr style="border-color: var(--border-glass); margin: 20px 0;">
                 <p style="font-size: 0.85rem; color: var(--text-muted);">Built with ❤️ for Tamil music lovers</p>
             </div>
@@ -863,7 +863,7 @@ DOM.aboutBtn?.addEventListener('click', () => {
 // Authentication Check
 // ============================================
 function checkAuth() {
-    const isLoggedIn = localStorage.getItem('tamilAIFM_loggedIn');
+    const isLoggedIn = localStorage.getItem('tamilAIStream_loggedIn');
     if (isLoggedIn !== 'true') {
         window.location.href = 'login.html';
         return false;
@@ -884,6 +884,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load user data
     loadUserData();
     
-    console.log('%c🎙️ Tamil AI FM', 'font-size:24px;font-weight:bold;color:#34d399;');
+    console.log('%c🎙️ Tamil AI Stream', 'font-size:24px;font-weight:bold;color:#34d399;');
     console.log('%cProfile Page Loaded', 'font-size:14px;color:#6ee7b7;');
 });

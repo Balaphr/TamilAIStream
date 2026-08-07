@@ -35,7 +35,7 @@ let uploadedAudioUrl = null;
 // Admin Authentication
 // ============================================
 const ADMIN_CREDENTIALS = {
-    username: 'admin@tamilaifm.com',
+    username: 'admin@tamilaistream.com',
     password: 'Admin@123'
 };
 
@@ -204,7 +204,7 @@ async function saveSong(e) {
         if (albumFile) {
             showToast('Uploading album cover...', 'info');
             try {
-                const albumResult = await R2Uploader.uploadImage(albumFile, 'tamil-ai-fm/albums', (pct) => {
+                const albumResult = await R2Uploader.uploadImage(albumFile, 'tamil-ai-stream/albums', (pct) => {
                     showToast(`Album cover: ${pct}%`, 'info');
                 });
                 songData.albumCover = albumResult.url;
@@ -220,7 +220,7 @@ async function saveSong(e) {
         if (audioFile) {
             showToast('Uploading audio file...', 'info');
             try {
-                const audioResult = await R2Uploader.uploadAudio(audioFile, 'tamil-ai-fm/audio', (pct) => {
+                const audioResult = await R2Uploader.uploadAudio(audioFile, 'tamil-ai-stream/audio', (pct) => {
                     showToast(`Audio: ${pct}%`, 'info');
                 });
                 songData.audioUrl = audioResult.url;
@@ -819,7 +819,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    console.log('%c🎙️ Tamil AI FM Admin', 'font-size:20px;font-weight:bold;color:#34d399;');
+    console.log('%c🎙️ Tamil AI Stream Admin', 'font-size:20px;font-weight:bold;color:#34d399;');
     console.log('%cAdmin Panel Loaded', 'font-size:12px;color:#6ee7b7;');
 });
 

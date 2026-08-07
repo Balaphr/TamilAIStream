@@ -1,4 +1,4 @@
-# Tamil AI FM - Auto Deploy to Vercel
+# Tamil AI Stream - Auto Deploy to Vercel
 
 This guide explains how to automatically deploy your changes to Vercel whenever you make changes locally.
 
@@ -13,7 +13,7 @@ When you push changes to GitHub, Vercel automatically deploys them. This is the 
 1. **Get your Vercel Token**
    - Go to https://vercel.com/account/tokens
    - Click "Create Token"
-   - Name it: `tamil-ai-fm-auto-deploy`
+   - Name it: `tamil-ai-stream-auto-deploy`
    - Copy the token value
 
 2. **Get your Vercel Org ID**
@@ -21,12 +21,12 @@ When you push changes to GitHub, Vercel automatically deploys them. This is the 
    - Copy the "ID" under your team/username
 
 3. **Get your Vercel Project ID**
-   - Go to https://vercel.com/dwmx-fcsz/tamil-ai-fm/settings
+   - Go to https://vercel.com/dwmx-fcsz/tamil-ai-stream/settings
    - Scroll to "Project ID"
    - Copy the value
 
 4. **Add Secrets to GitHub**
-   - Go to https://github.com/Balaphr/Tamil-AI-FM/settings/secrets/actions
+   - Go to https://github.com/Balaphr/Tamil-AI-Stream/settings/secrets/actions
    - Click "New repository secret"
    - Add these 3 secrets:
      - `VERCEL_TOKEN` = your Vercel token
@@ -115,7 +115,7 @@ npm run deploy:once
 1. Run `npm run deploy:watch`
 2. Make changes to your files
 3. Wait 5 seconds - it auto-deploys
-4. Check https://tamil-ai-fm.vercel.app
+4. Check https://tamil-ai-stream.vercel.app
 
 ---
 
@@ -133,5 +133,5 @@ npm run deploy:once
 
 ### Changes not showing on Vercel
 - Wait 1-2 minutes for deployment to complete
-- Check Vercel dashboard: https://vercel.com/dwmx-fcsz/tamil-ai-fm
+- Check Vercel dashboard: https://vercel.com/dwmx-fcsz/tamil-ai-stream
 - Clear browser cache (Ctrl+Shift+R)

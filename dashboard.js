@@ -14,7 +14,7 @@ const DOM = {
 // Check Authentication
 // ============================================
 function checkAuth() {
-    const isLoggedIn = localStorage.getItem('tamilAIFM_loggedIn');
+    const isLoggedIn = localStorage.getItem('tamilAIStream_loggedIn');
     if (isLoggedIn !== 'true') {
         window.location.href = 'login.html';
         return false;
@@ -26,7 +26,7 @@ function checkAuth() {
 // Load User Data
 // ============================================
 function loadUserData() {
-    const userData = localStorage.getItem('tamilAIFM_user');
+    const userData = localStorage.getItem('tamilAIStream_user');
     if (userData && DOM.userName) {
         try {
             const user = JSON.parse(userData);
@@ -42,10 +42,10 @@ function loadUserData() {
 // ============================================
 function logout() {
     if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('tamilAIFM_loggedIn');
-        localStorage.removeItem('tamilAIFM_user');
-        localStorage.removeItem('tamilAIFM_rememberEmail');
-        localStorage.removeItem('tamilAIFM_rememberMe');
+        localStorage.removeItem('tamilAIStream_loggedIn');
+        localStorage.removeItem('tamilAIStream_user');
+        localStorage.removeItem('tamilAIStream_rememberEmail');
+        localStorage.removeItem('tamilAIStream_rememberMe');
 
         window.location.href = 'login.html';
     }
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!checkAuth()) return;
     new ParticleSystem('particles-canvas');
     loadUserData();
-    console.log('%c🎙️ Tamil AI FM', 'font-size:24px;font-weight:bold;color:#34d399;');
+    console.log('%c🎙️ Tamil AI Stream', 'font-size:24px;font-weight:bold;color:#34d399;');
     console.log('%cDashboard Loaded', 'font-size:14px;color:#6ee7b7;');
     console.log('%cPress Ctrl+Q to logout', 'font-size:12px;color:#a7f3d0;');
 });

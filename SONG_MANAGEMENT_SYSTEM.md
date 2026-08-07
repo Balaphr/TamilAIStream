@@ -1,8 +1,8 @@
-# Song Management System - Tamil AI FM
+# Song Management System - Tamil AI Stream
 
 ## ✅ Implementation Complete
 
-A fully dynamic, Firebase-powered song management system has been integrated into the Tamil AI FM website.
+A fully dynamic, Firebase-powered song management system has been integrated into the Tamil AI Stream website.
 
 ## 🎯 Features Implemented
 
@@ -41,7 +41,7 @@ Each song card shows:
 ## 📁 Folder Structure
 
 ```
-tamil-ai-fm/
+tamil-ai-stream/
 ├── assets/
 │   ├── images/          # Local album images (for development)
 │   └── songs/           # Local MP3 files (for development)

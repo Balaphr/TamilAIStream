@@ -58,7 +58,7 @@ const DOM = {
 // ============================================
 // Auth Configuration (localStorage-based)
 // ============================================
-const AUTH_STORAGE_KEY = 'tamilAIFM_users';
+const AUTH_STORAGE_KEY = 'tamilAIStream_users';
 
 // ============================================
 // Local Auth Helpers
@@ -282,14 +282,14 @@ function getAuthErrorMessage(error) {
  */
 function setRememberMeFlag(remember) {
     if (remember) {
-        localStorage.setItem('tamilAIFM_rememberMe', 'true');
+        localStorage.setItem('tamilAIStream_rememberMe', 'true');
     } else {
-        localStorage.removeItem('tamilAIFM_rememberMe');
+        localStorage.removeItem('tamilAIStream_rememberMe');
     }
 }
 
 function getRememberMeFlag() {
-    return localStorage.getItem('tamilAIFM_rememberMe') === 'true';
+    return localStorage.getItem('tamilAIStream_rememberMe') === 'true';
 }
 
 async function applyPersistence(remember) {
@@ -461,9 +461,9 @@ DOM.loginForm?.addEventListener('submit', async function(e) {
         }
 
         const userData = { name: user.name, email: user.email, photoURL: user.photoURL || '', uid: user.uid };
-        localStorage.setItem('tamilAIFM_loggedIn', 'true');
-        localStorage.setItem('tamilAIFM_user', JSON.stringify(userData));
-        localStorage.removeItem('tamilAIFM_guest');
+        localStorage.setItem('tamilAIStream_loggedIn', 'true');
+        localStorage.setItem('tamilAIStream_user', JSON.stringify(userData));
+        localStorage.removeItem('tamilAIStream_guest');
         
         // If logging in with admin credentials, also set adminSession for builder access
         if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
@@ -580,18 +580,18 @@ DOM.registerForm?.addEventListener('submit', async function(e) {
         }
         
         const userData = { name: newUser.name, email: newUser.email, photoURL: '', uid: newUser.uid };
-        localStorage.setItem('tamilAIFM_loggedIn', 'true');
-        localStorage.setItem('tamilAIFM_user', JSON.stringify(userData));
-        localStorage.removeItem('tamilAIFM_guest');
+        localStorage.setItem('tamilAIStream_loggedIn', 'true');
+        localStorage.setItem('tamilAIStream_user', JSON.stringify(userData));
+        localStorage.removeItem('tamilAIStream_guest');
         
         DOM.registerBtn.classList.remove('loading');
         DOM.registerBtn.disabled = false;
         
         DOM.successTitle.textContent = 'Account Created!';
-        DOM.successMessage.textContent = 'Welcome to Tamil AI FM! Redirecting...';
+        DOM.successMessage.textContent = 'Welcome to Tamil AI Stream! Redirecting...';
         DOM.successOverlay.classList.add('visible');
         
-        showToast('Account created successfully! Welcome to Tamil AI FM.', 'success');
+        showToast('Account created successfully! Welcome to Tamil AI Stream.', 'success');
         
         setTimeout(() => redirectToHome(), 1500);
         
@@ -638,9 +638,9 @@ async function signInWithGoogle() {
                 emailVerified: user.emailVerified
             };
             
-            localStorage.setItem('tamilAIFM_loggedIn', 'true');
-            localStorage.setItem('tamilAIFM_user', JSON.stringify(userData));
-            localStorage.removeItem('tamilAIFM_guest');
+            localStorage.setItem('tamilAIStream_loggedIn', 'true');
+            localStorage.setItem('tamilAIStream_user', JSON.stringify(userData));
+            localStorage.removeItem('tamilAIStream_guest');
             
             showToast(`Welcome ${userData.name}! Signed in with Google.`, 'success');
             
@@ -685,11 +685,11 @@ DOM.guestLogin?.addEventListener('click', async function() {
         const rememberMe = DOM.rememberMe ? DOM.rememberMe.checked : false;
         await applyPersistence(rememberMe);
         
-        localStorage.setItem('tamilAIFM_guest', 'true');
-        localStorage.setItem('tamilAIFM_loggedIn', 'true');
-        localStorage.setItem('tamilAIFM_user', JSON.stringify({
+        localStorage.setItem('tamilAIStream_guest', 'true');
+        localStorage.setItem('tamilAIStream_loggedIn', 'true');
+        localStorage.setItem('tamilAIStream_user', JSON.stringify({
             name: 'Guest User',
-            email: 'guest@tamilaifm.com',
+            email: 'guest@tamilaistream.com',
             photoURL: '',
             uid: 'guest_' + Date.now(),
             isGuest: true
@@ -740,7 +740,7 @@ DOM.forgotPasswordForm?.addEventListener('submit', async function(e) {
         }
         DOM.resetBtn.classList.remove('loading');
         DOM.resetBtn.disabled = false;
-        showToast('Password reset instructions sent! (Demo: contact admin@tamilaifm.com)', 'success');
+        showToast('Password reset instructions sent! (Demo: contact admin@tamilaistream.com)', 'success');
         setTimeout(() => {
             showView('login');
             DOM.loginEmail.value = email;
@@ -788,7 +788,7 @@ DOM.backToLoginFromReset?.addEventListener('click', function(e) {
 // Load Remembered Email
 // ============================================
 function loadRememberedEmail() {
-    const rememberedEmail = localStorage.getItem('tamilAIFM_rememberEmail');
+    const rememberedEmail = localStorage.getItem('tamilAIStream_rememberEmail');
     if (rememberedEmail) {
         DOM.loginEmail.value = rememberedEmail;
         DOM.rememberMe.checked = true;
@@ -812,7 +812,7 @@ document.head.appendChild(shakeStyle);
 // ============================================
 // Demo Account
 // ============================================
-const DEMO_EMAIL = 'admin@tamilaifm.com';
+const DEMO_EMAIL = 'admin@tamilaistream.com';
 const DEMO_PASSWORD = 'Admin@123';
 const DEMO_NAME = 'Admin User';
 
@@ -857,9 +857,9 @@ async function quickDemoLogin() {
         }
 
         const userData = { name: user.name, email: user.email, photoURL: user.photoURL || '', uid: user.uid };
-        localStorage.setItem('tamilAIFM_loggedIn', 'true');
-        localStorage.setItem('tamilAIFM_user', JSON.stringify(userData));
-        localStorage.removeItem('tamilAIFM_guest');
+        localStorage.setItem('tamilAIStream_loggedIn', 'true');
+        localStorage.setItem('tamilAIStream_user', JSON.stringify(userData));
+        localStorage.removeItem('tamilAIStream_guest');
         
         // Also set adminSession so builder.html recognizes the admin login
         localStorage.setItem('adminSession', JSON.stringify({
@@ -926,7 +926,7 @@ function fallbackCopy(text) {
 /**
  * On page load:
  * 1. Redirect to index.html ONLY if:
- *    - The user is logged in (localStorage tamilAIFM_loggedIn === 'true')
+ *    - The user is logged in (localStorage tamilAIStream_loggedIn === 'true')
  *    - AND the "Remember Me" flag is set in localStorage
  * 2. If the user is logged in but "Remember Me" is NOT set,
  *    clear the session silently to clean up stale sessions.
@@ -945,7 +945,7 @@ document.addEventListener('DOMContentLoaded', () => {
     seedDemoAccount();
     
     const rememberMe = getRememberMeFlag();
-    const loggedIn = localStorage.getItem('tamilAIFM_loggedIn');
+    const loggedIn = localStorage.getItem('tamilAIStream_loggedIn');
     
     if (loggedIn === 'true' && rememberMe) {
         console.log('Valid session with Remember Me - redirecting to home');
@@ -955,10 +955,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (loggedIn === 'true' && !rememberMe) {
         console.log('Stale session detected without Remember Me - clearing');
-        localStorage.removeItem('tamilAIFM_loggedIn');
-        localStorage.removeItem('tamilAIFM_user');
+        localStorage.removeItem('tamilAIStream_loggedIn');
+        localStorage.removeItem('tamilAIStream_user');
     }
     
-    console.log('%c🎙️ Tamil AI FM', 'font-size:24px;font-weight:bold;color:#34d399;');
+    console.log('%c🎙️ Tamil AI Stream', 'font-size:24px;font-weight:bold;color:#34d399;');
     console.log('%cLogin Page Loaded', 'font-size:14px;color:#6ee7b7;');
 });

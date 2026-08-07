@@ -387,7 +387,7 @@ function persistPlaybackState() {
             duration: audioPlayer?.duration || 0,
             timestamp: Date.now()
         };
-        localStorage.setItem('tamilAIFM_player_state', JSON.stringify(state));
+        localStorage.setItem('tamilAIStream_player_state', JSON.stringify(state));
     } catch (e) {
         console.warn('Unable to persist playback state', e);
     }
@@ -395,7 +395,7 @@ function persistPlaybackState() {
 
 function restorePlaybackState() {
     try {
-        const saved = JSON.parse(localStorage.getItem('tamilAIFM_player_state') || '{}');
+        const saved = JSON.parse(localStorage.getItem('tamilAIStream_player_state') || '{}');
         if (!saved || !saved.currentPlaybackTrack && !saved.currentStation) return null;
         currentStation = saved.currentStation || null;
         currentPlaybackMode = saved.currentPlaybackMode || 'station';
@@ -424,7 +424,7 @@ function openMusicPlayer(track, playlist = [], queueIndex = -1) {
         queueIndex,
         source: 'song'
     };
-    localStorage.setItem('tamilAIFM_player_selection', JSON.stringify(selection));
+    localStorage.setItem('tamilAIStream_player_selection', JSON.stringify(selection));
     persistPlaybackState();
     if (!window.location.pathname.includes('music-player.html')) {
         window.location.href = 'music-player.html';
@@ -1030,7 +1030,7 @@ function openPlaylistPage(artist, artistName, songCount) {
         songs: songs,
         timestamp: Date.now()
     };
-    localStorage.setItem('tamilAIFM_currentPlaylist', JSON.stringify(playlistData));
+    localStorage.setItem('tamilAIStream_currentPlaylist', JSON.stringify(playlistData));
     window.location.href = 'playlist.html';
 }
 
@@ -1288,7 +1288,7 @@ const CACHE_DURATION = 30000;
 
 async function loadSongs(forceRefresh = false) {
     try {
-        const songs = JSON.parse(localStorage.getItem('tamilAIFM_songs') || '[]');
+        const songs = JSON.parse(localStorage.getItem('tamilAIStream_songs') || '[]');
         songsCache = songs.filter(s => s.status === 'published');
         return songsCache;
     } catch (e) {
@@ -1399,7 +1399,7 @@ function displaySongs(songs) {
 
 async function playSongById(songId) {
     try {
-        const songs = JSON.parse(localStorage.getItem('tamilAIFM_songs') || '[]');
+        const songs = JSON.parse(localStorage.getItem('tamilAIStream_songs') || '[]');
         const song = songs.find(s => s.id === songId);
         if (!song) {
             showToast('Song not found', 'error');
@@ -1481,27 +1481,27 @@ function updateUserProfile(userData) {
 // Authentication Check & Logout (localStorage)
 // ============================================
 function checkAuth() {
-    const isGuest = localStorage.getItem('tamilAIFM_guest');
+    const isGuest = localStorage.getItem('tamilAIStream_guest');
     if (isGuest === 'true') {
-        updateUserProfile({ name: 'Guest User', email: 'guest@tamilaifm.com', photoURL: '', isGuest: true });
+        updateUserProfile({ name: 'Guest User', email: 'guest@tamilaistream.com', photoURL: '', isGuest: true });
         return true;
     }
-    const isLoggedIn = localStorage.getItem('tamilAIFM_loggedIn');
+    const isLoggedIn = localStorage.getItem('tamilAIStream_loggedIn');
     if (isLoggedIn === 'true') {
-        const storedUser = localStorage.getItem('tamilAIFM_user');
+        const storedUser = localStorage.getItem('tamilAIStream_user');
         if (storedUser) { updateUserProfile(JSON.parse(storedUser)); }
         return true;
     }
-    updateUserProfile({ name: 'Guest User', email: 'guest@tamilaifm.com', photoURL: '', isGuest: true });
+    updateUserProfile({ name: 'Guest User', email: 'guest@tamilaistream.com', photoURL: '', isGuest: true });
     return true;
 }
 
 function logout() {
-    localStorage.removeItem('tamilAIFM_loggedIn');
-    localStorage.removeItem('tamilAIFM_user');
-    localStorage.removeItem('tamilAIFM_guest');
-    localStorage.removeItem('tamilAIFM_rememberMe');
-    localStorage.removeItem('tamilAIFM_rememberEmail');
+    localStorage.removeItem('tamilAIStream_loggedIn');
+    localStorage.removeItem('tamilAIStream_user');
+    localStorage.removeItem('tamilAIStream_guest');
+    localStorage.removeItem('tamilAIStream_rememberMe');
+    localStorage.removeItem('tamilAIStream_rememberEmail');
     localStorage.removeItem('adminSession');
     window.location.href = 'login.html';
 }
@@ -1594,7 +1594,7 @@ function checkAdminAndShowBuilder() {
     builderNavLink.style.display = 'none';
     
     // Check if user is guest - NEVER show builder for guests
-    const isGuest = localStorage.getItem('tamilAIFM_guest');
+    const isGuest = localStorage.getItem('tamilAIStream_guest');
     if (isGuest === 'true') {
         return;
     }
@@ -1604,7 +1604,7 @@ function checkAdminAndShowBuilder() {
     if (adminSession) {
         try {
             const sessionData = JSON.parse(adminSession);
-            if (sessionData.username === 'admin@tamilaifm.com' && sessionData.expiry > Date.now()) {
+            if (sessionData.username === 'admin@tamilaistream.com' && sessionData.expiry > Date.now()) {
                 builderNavLink.style.display = 'flex';
                 return;
             }
@@ -1614,11 +1614,11 @@ function checkAdminAndShowBuilder() {
     }
     
     // Check for admin logged in via main login page
-    const storedUser = localStorage.getItem('tamilAIFM_user');
+    const storedUser = localStorage.getItem('tamilAIStream_user');
     if (storedUser) {
         try {
             const userData = JSON.parse(storedUser);
-            if (userData.email === 'admin@tamilaifm.com') {
+            if (userData.email === 'admin@tamilaistream.com') {
                 builderNavLink.style.display = 'flex';
                 return;
             }
@@ -1934,7 +1934,7 @@ function applySiteSettings() {
     const settings = DataStore.getSiteSettings();
     if (!settings) return;
     
-    document.title = settings.title || 'Tamil AI FM';
+    document.title = settings.title || 'Tamil AI Stream';
     
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.content = settings.description || '';
@@ -2116,7 +2116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         filterStations();
     }, 200);
     
-    console.log('%c🎙️ Tamil AI FM', 'font-size:24px;font-weight:bold;color:#34d399;');
+    console.log('%c🎙️ Tamil AI Stream', 'font-size:24px;font-weight:bold;color:#34d399;');
     console.log('%cHome Page Loaded with Real-time Sync', 'font-size:14px;color:#6ee7b7;');
     console.log('%cVersion 3.0.0 - YouTube Music Features', 'font-size:12px;color:#a7f3d0;');
     

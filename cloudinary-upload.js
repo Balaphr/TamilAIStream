@@ -8,11 +8,11 @@ const CloudinaryUploader = {
     /**
      * Upload a file to Cloudinary with progress tracking
      * @param {File} file - The file to upload
-     * @param {string} folder - Cloudinary folder (e.g., 'tamil-ai-fm/albums')
+     * @param {string} folder - Cloudinary folder (e.g., 'tamil-ai-stream/albums')
      * @param {Function} onProgress - Progress callback (0-100)
      * @returns {Promise<{url: string, publicId: string, format: string, bytes: number}>}
      */
-    async upload(file, folder = 'tamil-ai-fm/general', onProgress = null) {
+    async upload(file, folder = 'tamil-ai-stream/general', onProgress = null) {
         if (!CLOUDINARY_CONFIG || !CLOUDINARY_CONFIG.cloudName) {
             throw new Error('Cloudinary not configured. Update cloudinary.config.js');
         }
@@ -94,14 +94,14 @@ const CloudinaryUploader = {
     /**
      * Upload image to Cloudinary
      */
-    async uploadImage(file, folder = 'tamil-ai-fm/albums', onProgress = null) {
+    async uploadImage(file, folder = 'tamil-ai-stream/albums', onProgress = null) {
         return this.upload(file, folder, onProgress);
     },
 
     /**
      * Upload audio to Cloudinary
      */
-    async uploadAudio(file, folder = 'tamil-ai-fm/audio', onProgress = null) {
+    async uploadAudio(file, folder = 'tamil-ai-stream/audio', onProgress = null) {
         return this.upload(file, folder, onProgress);
     },
 

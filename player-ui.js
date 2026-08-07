@@ -29,7 +29,7 @@ const PlayerUI = (() => {
                 </div>
                 <div class="mini-player-info" id="miniInfo">
                     <div class="mini-track-name" id="miniTrackName">Select a song</div>
-                    <div class="mini-track-artist" id="miniTrackArtist">Tamil AI FM</div>
+                    <div class="mini-track-artist" id="miniTrackArtist">Tamil AI Stream</div>
                     <div class="mini-time-row">
                         <span id="miniCurrentTime">0:00</span>
                         <span id="miniDuration">0:00</span>
@@ -119,7 +119,7 @@ const PlayerUI = (() => {
         if (!track) return;
 
         const name = track.title || track.name || 'Unknown';
-        const artist = track.artist || track.subtitle || 'Tamil AI FM';
+        const artist = track.artist || track.subtitle || 'Tamil AI Stream';
 
         document.getElementById('miniTrackName').textContent = name;
         document.getElementById('miniTrackArtist').textContent = artist;
@@ -284,7 +284,7 @@ const PlayerUI = (() => {
                     <button class="fp-btn" id="fpCollapse"><i class="fas fa-chevron-down"></i></button>
                     <div class="fp-header-title">
                         <span>Playing from</span>
-                        <strong id="fpSource">Tamil AI FM</strong>
+                        <strong id="fpSource">Tamil AI Stream</strong>
                     </div>
                     <button class="fp-btn" id="fpMore"><i class="fas fa-ellipsis-vertical"></i></button>
                 </div>
@@ -299,7 +299,7 @@ const PlayerUI = (() => {
 
                 <div class="fp-info">
                     <div class="fp-track-name" id="fpTrackName">Select a song</div>
-                    <div class="fp-track-artist" id="fpTrackArtist">Tamil AI FM</div>
+                    <div class="fp-track-artist" id="fpTrackArtist">Tamil AI Stream</div>
                     <div class="fp-quality-badge" id="fpQuality">HD</div>
                 </div>
 
@@ -440,7 +440,7 @@ const PlayerUI = (() => {
         if (!track) return;
 
         document.getElementById('fpTrackName').textContent = track.title || track.name || 'Unknown';
-        document.getElementById('fpTrackArtist').textContent = track.artist || track.subtitle || 'Tamil AI FM';
+        document.getElementById('fpTrackArtist').textContent = track.artist || track.subtitle || 'Tamil AI Stream';
 
         const artwork = track.thumbnail || track.cover || track.image || '';
         const artworkImg = document.getElementById('fpArtworkImg');
@@ -655,7 +655,7 @@ const PlayerUI = (() => {
     function shareTrack() {
         const track = PlayerEngine.currentTrack;
         if (!track) return;
-        const text = `Listening to ${track.title || track.name} on Tamil AI FM`;
+        const text = `Listening to ${track.title || track.name} on Tamil AI Stream`;
         if (navigator.share) {
             navigator.share({ title: track.title || track.name, text });
         } else {

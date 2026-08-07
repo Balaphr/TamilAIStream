@@ -11,17 +11,17 @@ const DataStore = {
     // Storage Keys
     // ============================================
     KEYS: {
-        SONGS: 'tamilAIFM_songs',
-        IMAGES: 'tamilAIFM_images',
-        STATIONS: 'tamilAIFM_stations',
-        CATEGORIES: 'tamilAIFM_categories',
-        FEATURED: 'tamilAIFM_featured',
-        TRENDING: 'tamilAIFM_trending',
-        ARTIST_HITS: 'tamilAIFM_artistHits',
-        QUOTES: 'tamilAIFM_quotes',
-        SITE_SETTINGS: 'tamilAIFM_siteSettings',
+        SONGS: 'tamilAIStream_songs',
+        IMAGES: 'tamilAIStream_images',
+        STATIONS: 'tamilAIStream_stations',
+        CATEGORIES: 'tamilAIStream_categories',
+        FEATURED: 'tamilAIStream_featured',
+        TRENDING: 'tamilAIStream_trending',
+        ARTIST_HITS: 'tamilAIStream_artistHits',
+        QUOTES: 'tamilAIStream_quotes',
+        SITE_SETTINGS: 'tamilAIStream_siteSettings',
         LAYOUT: 'websiteLayout',
-        RECENT_PLAYED: 'tamilAIFM_recent',
+        RECENT_PLAYED: 'tamilAIStream_recent',
         // YouTube Music-like features
         LIKED_SONGS: 'ytm_likedSongs',
         PLAYLISTS: 'ytm_playlists',
@@ -108,14 +108,14 @@ const DataStore = {
             { id: 'q_8', text: 'ஒவ்வொரு பாடலும் ஒரு கதை சொல்லும்.', status: 'active' }
         ],
         siteSettings: {
-            title: 'Tamil AI FM - AI-Powered Tamil Radio',
+            title: 'Tamil AI Stream - AI-Powered Tamil Radio',
             description: 'Listen to your favorite Tamil FM stations with AI-powered recommendations. Discover 100+ live Tamil radio stations curated by artificial intelligence.',
-            keywords: 'Tamil FM, Tamil radio, AI radio, Tamil music, online radio, Tamil AI FM, live radio',
-            ogTitle: 'Tamil AI FM - AI-Powered Tamil Radio',
+            keywords: 'Tamil FM, Tamil radio, AI radio, Tamil music, online radio, Tamil AI Stream, live radio',
+            ogTitle: 'Tamil AI Stream - AI-Powered Tamil Radio',
             ogDescription: 'Listen to your favorite Tamil FM stations with AI-powered recommendations.',
-            ogUrl: 'https://tamilaifm.com',
+            ogUrl: 'https://tamilaistream.com',
             themeColor: '#000000',
-            footerText: '© 2024 Tamil AI FM. All rights reserved.'
+            footerText: '© 2024 Tamil AI Stream. All rights reserved.'
         },
         layout: []
     },

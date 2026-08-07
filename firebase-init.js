@@ -1,4 +1,4 @@
-// Firebase Initialization for Tamil AI FM
+// Firebase Initialization for Tamil AI Stream
 // Import the config
 import { firebaseConfig } from './firebase-config.js';
 

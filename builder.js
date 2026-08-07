@@ -20,11 +20,11 @@ let publishHistory = [];
 // Authentication System
 // ============================================
 const ADMIN_CREDENTIALS = {
-    username: 'admin@tamilaifm.com',
+    username: 'admin@tamilaistream.com',
     password: 'Admin@123'
 };
 
-const BUILDER_USERS_KEY = 'tamilAIFM_builderUsers';
+const BUILDER_USERS_KEY = 'tamilAIStream_builderUsers';
 
 function getBuilderUsers() {
     try {
@@ -62,14 +62,14 @@ function checkAuth() {
 
 function checkWebsiteAuth(resolve) {
     // Also check for admin login from the main website login page
-    const storedUser = localStorage.getItem('tamilAIFM_user');
-    const loggedIn = localStorage.getItem('tamilAIFM_loggedIn');
+    const storedUser = localStorage.getItem('tamilAIStream_user');
+    const loggedIn = localStorage.getItem('tamilAIStream_loggedIn');
     
     if (loggedIn === 'true' && storedUser) {
         try {
             const userData = JSON.parse(storedUser);
             const isAdmin = userData.email === ADMIN_CREDENTIALS.username ||
-                           userData.email === 'admin@tamilaifm.com';
+                           userData.email === 'admin@tamilaistream.com';
             
             if (isAdmin) {
                 // Auto-create adminSession for builder access
@@ -457,7 +457,7 @@ async function saveSong(e) {
         if (albumFile) {
             showToast('Uploading album cover...', 'info');
             try {
-                const albumResult = await R2Uploader.uploadImage(albumFile, 'tamil-ai-fm/albums', (pct) => {
+                const albumResult = await R2Uploader.uploadImage(albumFile, 'tamil-ai-stream/albums', (pct) => {
                     showToast('Album cover: ' + pct + '%', 'info');
                 });
                 songData.albumCover = albumResult.url;
@@ -472,7 +472,7 @@ async function saveSong(e) {
         if (audioFile) {
             showToast('Uploading audio file...', 'info');
             try {
-                const audioResult = await R2Uploader.uploadAudio(audioFile, 'tamil-ai-fm/audio', (pct) => {
+                const audioResult = await R2Uploader.uploadAudio(audioFile, 'tamil-ai-stream/audio', (pct) => {
                     showToast('Audio: ' + pct + '%', 'info');
                 });
                 songData.audioUrl = audioResult.url;
@@ -851,13 +851,13 @@ async function uploadImage(file, category, title) {
         showToast('Uploading image to R2...', 'info');
         
         const folderMap = {
-            'album': 'tamil-ai-fm/albums',
-            'banner': 'tamil-ai-fm/banners',
-            'artist': 'tamil-ai-fm/artists',
-            'other': 'tamil-ai-fm/images'
+            'album': 'tamil-ai-stream/albums',
+            'banner': 'tamil-ai-stream/banners',
+            'artist': 'tamil-ai-stream/artists',
+            'other': 'tamil-ai-stream/images'
         };
         
-        const result = await R2Uploader.uploadImage(file, folderMap[category] || 'tamil-ai-fm/images', (pct) => {
+        const result = await R2Uploader.uploadImage(file, folderMap[category] || 'tamil-ai-stream/images', (pct) => {
             showToast('Uploading: ' + pct + '%', 'info');
         });
         
@@ -1027,7 +1027,7 @@ function exportWebsite() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "tamil-ai-fm-website.json");
+    downloadAnchorNode.setAttribute("download", "tamil-ai-stream-website.json");
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
@@ -1061,7 +1061,7 @@ function savePublishState() {
 
 async function syncToLiveWebsite() {
     try {
-        localStorage.setItem('tamilAIFM_lastSyncedAt', new Date().toISOString());
+        localStorage.setItem('tamilAIStream_lastSyncedAt', new Date().toISOString());
         localStorage.setItem('builderLastPublished', Date.now().toString());
 
         if (window.ContentSync && typeof window.ContentSync.syncCurrentState === 'function') {
@@ -1118,7 +1118,7 @@ async function publishChanges() {
             } catch (e) { /* ignore */ }
         }
 
-        localStorage.removeItem('tamilAIFM_lastSyncedAt');
+        localStorage.removeItem('tamilAIStream_lastSyncedAt');
 
         const publishEntry = {
             id: 'pub_' + Date.now(),
@@ -1622,7 +1622,7 @@ function initBuilder() {
     // Load dashboard by default
     navigateTo('dashboard');
 
-    console.log('%c🎙️ Tamil AI FM Admin Panel', 'font-size:20px;font-weight:bold;color:#34d399;');
+    console.log('%c🎙️ Tamil AI Stream Admin Panel', 'font-size:20px;font-weight:bold;color:#34d399;');
     console.log('%cAdmin Ready - Logged in as: ' + (currentUser?.displayName || currentUser?.email || 'Admin'), 'font-size:12px;color:#6ee7b7;');
 }
 
