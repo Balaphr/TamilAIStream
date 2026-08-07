@@ -14,9 +14,8 @@ const DOM = {
 // Check Authentication
 // ============================================
 function checkAuth() {
-    const isLoggedIn = localStorage.getItem('tamilAIStream_loggedIn');
-    if (isLoggedIn !== 'true') {
-        window.location.href = 'login.html';
+    if (!Auth.isAuthenticated()) {
+        Auth.requireAuth();
         return false;
     }
     return true;
@@ -42,12 +41,7 @@ function loadUserData() {
 // ============================================
 function logout() {
     if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('tamilAIStream_loggedIn');
-        localStorage.removeItem('tamilAIStream_user');
-        localStorage.removeItem('tamilAIStream_rememberEmail');
-        localStorage.removeItem('tamilAIStream_rememberMe');
-
-        window.location.href = 'login.html';
+        Auth.logout();
     }
 }
 

@@ -211,7 +211,7 @@ async function signInAsGuest() {
 // Sign Out
 async function signOut() {
     try {
-        localStorage.removeItem('adminSession');
+        Auth.clearAll();
         currentUser = null;
         showLoginScreen();
         showToast('Signed out successfully', 'success');
@@ -3339,6 +3339,14 @@ function saveSettings(e) {
 // Main Initialization
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
+    // Require a valid session before allowing access to the Builder.
+    // (A user with NO session is sent to login.html; admins/logged-in users
+    //  continue to the builder's own admin login screen if needed.)
+    if (!Auth.isAuthenticated() && !localStorage.getItem('adminSession')) {
+        Auth.requireAuth();
+        return;
+    }
+    
     setupLoginScreen();
     
     const user = await checkAuth();

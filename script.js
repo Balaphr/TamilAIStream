@@ -1481,29 +1481,26 @@ function updateUserProfile(userData) {
 // Authentication Check & Logout (localStorage)
 // ============================================
 function checkAuth() {
-    const isGuest = localStorage.getItem('tamilAIStream_guest');
-    if (isGuest === 'true') {
-        updateUserProfile({ name: 'Guest User', email: 'guest@tamilaistream.com', photoURL: '', isGuest: true });
-        return true;
+    // Strict guard: only a valid, unexpired, un-tampered session is allowed.
+    // Unauthenticated/expired visitors are redirected to login.html.
+    if (!Auth.isAuthenticated()) {
+        Auth.requireAuth();
+        return false;
     }
-    const isLoggedIn = localStorage.getItem('tamilAIStream_loggedIn');
-    if (isLoggedIn === 'true') {
-        const storedUser = localStorage.getItem('tamilAIStream_user');
-        if (storedUser) { updateUserProfile(JSON.parse(storedUser)); }
-        return true;
+    const user = Auth.currentUser();
+    if (user) {
+        updateUserProfile({
+            name: user.name || 'User',
+            email: user.email || '',
+            photoURL: user.photoURL || '',
+            isGuest: !!user.isGuest
+        });
     }
-    updateUserProfile({ name: 'Guest User', email: 'guest@tamilaistream.com', photoURL: '', isGuest: true });
     return true;
 }
 
 function logout() {
-    localStorage.removeItem('tamilAIStream_loggedIn');
-    localStorage.removeItem('tamilAIStream_user');
-    localStorage.removeItem('tamilAIStream_guest');
-    localStorage.removeItem('tamilAIStream_rememberMe');
-    localStorage.removeItem('tamilAIStream_rememberEmail');
-    localStorage.removeItem('adminSession');
-    window.location.href = 'login.html';
+    Auth.logout();
 }
 
 // ============================================

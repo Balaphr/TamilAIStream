@@ -308,7 +308,7 @@ async function applyPersistence(remember) {
  * This prevents automatic redirects from stale sessions.
  */
 function redirectToHome() {
-    window.location.href = 'index.html';
+    window.location.href = Auth.getRedirect();
 }
 
 // ============================================
@@ -461,9 +461,7 @@ DOM.loginForm?.addEventListener('submit', async function(e) {
         }
 
         const userData = { name: user.name, email: user.email, photoURL: user.photoURL || '', uid: user.uid };
-        localStorage.setItem('tamilAIStream_loggedIn', 'true');
-        localStorage.setItem('tamilAIStream_user', JSON.stringify(userData));
-        localStorage.removeItem('tamilAIStream_guest');
+        Auth.createSession(userData, rememberMe, false);
         
         // If logging in with admin credentials, also set adminSession for builder access
         if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
@@ -580,9 +578,7 @@ DOM.registerForm?.addEventListener('submit', async function(e) {
         }
         
         const userData = { name: newUser.name, email: newUser.email, photoURL: '', uid: newUser.uid };
-        localStorage.setItem('tamilAIStream_loggedIn', 'true');
-        localStorage.setItem('tamilAIStream_user', JSON.stringify(userData));
-        localStorage.removeItem('tamilAIStream_guest');
+        Auth.createSession(userData, rememberMe, false);
         
         DOM.registerBtn.classList.remove('loading');
         DOM.registerBtn.disabled = false;
@@ -638,9 +634,7 @@ async function signInWithGoogle() {
                 emailVerified: user.emailVerified
             };
             
-            localStorage.setItem('tamilAIStream_loggedIn', 'true');
-            localStorage.setItem('tamilAIStream_user', JSON.stringify(userData));
-            localStorage.removeItem('tamilAIStream_guest');
+            Auth.createSession(userData, true, false);
             
             showToast(`Welcome ${userData.name}! Signed in with Google.`, 'success');
             
@@ -685,15 +679,13 @@ DOM.guestLogin?.addEventListener('click', async function() {
         const rememberMe = DOM.rememberMe ? DOM.rememberMe.checked : false;
         await applyPersistence(rememberMe);
         
-        localStorage.setItem('tamilAIStream_guest', 'true');
-        localStorage.setItem('tamilAIStream_loggedIn', 'true');
-        localStorage.setItem('tamilAIStream_user', JSON.stringify({
+        Auth.createSession({
             name: 'Guest User',
             email: 'guest@tamilaistream.com',
             photoURL: '',
             uid: 'guest_' + Date.now(),
             isGuest: true
-        }));
+        }, rememberMe, true);
         
         showToast('Continuing as Guest. Some features may be limited.', 'info');
         DOM.successTitle.textContent = 'Welcome Guest!';
@@ -857,9 +849,7 @@ async function quickDemoLogin() {
         }
 
         const userData = { name: user.name, email: user.email, photoURL: user.photoURL || '', uid: user.uid };
-        localStorage.setItem('tamilAIStream_loggedIn', 'true');
-        localStorage.setItem('tamilAIStream_user', JSON.stringify(userData));
-        localStorage.removeItem('tamilAIStream_guest');
+        Auth.createSession(userData, rememberMe, false);
         
         // Also set adminSession so builder.html recognizes the admin login
         localStorage.setItem('adminSession', JSON.stringify({
@@ -925,15 +915,12 @@ function fallbackCopy(text) {
 // ============================================
 /**
  * On page load:
- * 1. Redirect to index.html ONLY if:
- *    - The user is logged in (localStorage tamilAIStream_loggedIn === 'true')
- *    - AND the "Remember Me" flag is set in localStorage
- * 2. If the user is logged in but "Remember Me" is NOT set,
- *    clear the session silently to clean up stale sessions.
- * 3. Otherwise, stay on login.html and show the login form.
- * 
- * This ensures that on the FIRST visit, login.html is always shown
- * (no localStorage flags, no session).
+ * 1. If a VALID authenticated session already exists (flag + stored user,
+ *    unexpired + token intact), redirect to the originally requested page
+ *    (or the home page) immediately.
+ * 2. Auth.isAuthenticated() silently clears missing/expired/invalid sessions,
+ *    so an unauthenticated visitor always stays on the login page first.
+ * 3. Otherwise, show the login form.
  */
 document.addEventListener('DOMContentLoaded', () => {
     new ParticleSystem('particles-canvas');
@@ -944,21 +931,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     seedDemoAccount();
     
-    const rememberMe = getRememberMeFlag();
-    const loggedIn = localStorage.getItem('tamilAIStream_loggedIn');
-    
-    if (loggedIn === 'true' && rememberMe) {
-        console.log('Valid session with Remember Me - redirecting to home');
-        window.location.href = 'index.html';
+    if (Auth.isAuthenticated()) {
+        window.location.href = Auth.getRedirect();
         return;
     }
     
-    if (loggedIn === 'true' && !rememberMe) {
-        console.log('Stale session detected without Remember Me - clearing');
-        localStorage.removeItem('tamilAIStream_loggedIn');
-        localStorage.removeItem('tamilAIStream_user');
-    }
-    
-    console.log('%c🎙️ Tamil AI Stream', 'font-size:24px;font-weight:bold;color:#34d399;');
+    console.log('%c🎙️ Tamil AI FM', 'font-size:24px;font-weight:bold;color:#34d399;');
     console.log('%cLogin Page Loaded', 'font-size:14px;color:#6ee7b7;');
 });

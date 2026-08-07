@@ -63,7 +63,7 @@ function setAdminSession() {
 }
 
 function logout() {
-    localStorage.removeItem('adminSession');
+    Auth.clearAll();
     currentUser = null;
     window.location.href = 'admin-login.html';
 }

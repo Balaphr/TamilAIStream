@@ -487,6 +487,12 @@ function showToast(message, type = 'info') {
 // Initialize
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
+    // Require a valid administrator session for the upload panel.
+    if (!Auth.isAdmin()) {
+        window.location.href = 'admin-login.html';
+        return;
+    }
+
     setupDragDrop();
     loadRecentUploads();
 

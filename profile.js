@@ -668,9 +668,8 @@ DOM.deleteAccountBtn?.addEventListener('click', () => {
             try {
                 showToast('Deleting account...', 'info');
                 
-                // Clear localStorage and sessionStorage
-                localStorage.clear();
-                sessionStorage.clear();
+                // Clear all auth state, cookies, localStorage & sessionStorage
+                Auth.clearAll();
                 
                 showToast('Account deleted successfully', 'success');
                 
@@ -702,9 +701,8 @@ function logout() {
         `,
         async () => {
             try {
-                // Clear localStorage and sessionStorage
-                localStorage.clear();
-                sessionStorage.clear();
+                // Clear all auth state, cookies, localStorage & sessionStorage
+                Auth.clearAll();
                 
                 showToast('Logged out successfully', 'success');
                 
@@ -863,9 +861,8 @@ DOM.aboutBtn?.addEventListener('click', () => {
 // Authentication Check
 // ============================================
 function checkAuth() {
-    const isLoggedIn = localStorage.getItem('tamilAIStream_loggedIn');
-    if (isLoggedIn !== 'true') {
-        window.location.href = 'login.html';
+    if (!Auth.isAuthenticated()) {
+        Auth.requireAuth();
         return false;
     }
     return true;
