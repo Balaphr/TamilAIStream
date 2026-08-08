@@ -191,16 +191,11 @@ const DataStore = {
             { id: 'sec_greeting', name: 'AI Greeting', enabled: true, order: 1 },
             { id: 'sec_featured', name: 'Featured Stations', enabled: true, order: 2 },
             { id: 'sec_trending', name: 'Trending Now', enabled: true, order: 3 },
-            { id: 'sec_airadio', name: 'AI Radio For Me', enabled: true, order: 4 },
-            { id: 'sec_categories', name: 'Browse Categories', enabled: true, order: 5 },
-            { id: 'sec_artisthits', name: 'Tamil Hits Collections', enabled: true, order: 6 },
-            { id: 'sec_popular', name: 'Popular Artists', enabled: true, order: 7 },
-            { id: 'sec_moods', name: 'Mood & Genre', enabled: true, order: 8 },
-            { id: 'sec_charts', name: 'Top Charts', enabled: true, order: 9 },
-            { id: 'sec_recent', name: 'Recently Played', enabled: true, order: 10 },
-            { id: 'sec_allstations', name: 'All Tamil FM Stations', enabled: true, order: 11 },
-            { id: 'sec_recentadded', name: 'Recently Added', enabled: true, order: 12 },
-            { id: 'sec_recommended', name: 'AI Recommended', enabled: true, order: 13 }
+            { id: 'sec_categories', name: 'Browse Categories', enabled: true, order: 4 },
+            { id: 'sec_artisthits', name: 'Tamil Hits Collections', enabled: true, order: 5 },
+            { id: 'sec_allstations', name: 'All Tamil FM Stations', enabled: true, order: 6 },
+            { id: 'sec_recentadded', name: 'Recently Added', enabled: true, order: 7 },
+            { id: 'sec_recommended', name: 'AI Recommended', enabled: true, order: 8 }
         ]
     },
 

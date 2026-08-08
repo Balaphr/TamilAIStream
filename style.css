@@ -762,32 +762,6 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 }
 
 /* ============================================
-   Recently Played
-   ============================================ */
-.recent-list { display: flex; flex-direction: column; gap: 8px; }
-.recent-item {
-    display: flex; align-items: center; gap: 14px; padding: 12px 16px;
-    background: var(--bg-glass); border: 1px solid var(--border-glass); border-radius: var(--radius-md);
-    transition: all var(--transition-base); cursor: pointer; animation: fadeInUp 0.5s ease-out both;
-}
-.recent-item:hover { background: var(--bg-glass-hover); border-color: var(--border-glass-hover); }
-.recent-thumb {
-    width: 48px; height: 48px; border-radius: var(--radius-md); flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-}
-.recent-info { flex: 1; min-width: 0; }
-.recent-info h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 2px; }
-.recent-info p { font-size: 0.72rem; color: var(--text-muted); }
-.recent-time { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; }
-.recent-play-btn {
-    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
-    background: var(--bg-glass); border: 1px solid var(--border-glass); border-radius: var(--radius-full);
-    color: var(--text-secondary); cursor: pointer; font-size: 14px; transition: all var(--transition-base);
-    min-width: 44px; min-height: 44px;
-}
-.recent-play-btn:hover { background: var(--gradient-brand); color: white; border-color: transparent; }
-
-/* ============================================
    Responsive Design
    ============================================ */
 @media (max-width: 1024px) {
@@ -959,19 +933,6 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 .filter-btn:hover { background: var(--bg-glass-hover); border-color: var(--border-glass-hover); color: var(--text-primary); }
 .filter-btn.active { background: var(--gradient-brand); border-color: transparent; color: white; box-shadow: 0 4px 16px rgba(16,185,129,0.3); }
 
-.stations-search-wrapper {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--bg-glass); border: 1px solid var(--border-glass);
-    border-radius: var(--radius-full); padding: 0 16px; transition: all var(--transition-base);
-    min-width: 200px;
-}
-.stations-search-wrapper:focus-within { border-color: var(--emerald-400); box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
-.stations-search-wrapper i { font-size: 14px; color: var(--text-muted); }
-.stations-search {
-    background: none; border: none; outline: none; color: var(--text-primary);
-    font-family: var(--font-family); font-size: 0.8rem; padding: 9px 0; width: 100%;
-}
-.stations-search::placeholder { color: var(--text-muted); }
 
 .stations-grid {
     display: grid;
@@ -1049,7 +1010,6 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 @media (max-width: 1024px) {
     .stations-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
     .stations-controls { flex-direction: column; align-items: stretch; }
-    .stations-search-wrapper { min-width: auto; }
 }
 @media (max-width: 640px) {
     .stations-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
@@ -1069,7 +1029,6 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     .sg-genre { font-size: 0.72rem; }
     .filter-bar { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
     .filter-bar::-webkit-scrollbar { display: none; }
-    .stations-search-wrapper { min-width: auto; }
 }
 @media (max-width: 380px) {
     .stations-grid { grid-template-columns: 1fr; gap: 10px; }
@@ -1535,3 +1494,6 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
         font-size: 8px;
     }
 }
+
+
+

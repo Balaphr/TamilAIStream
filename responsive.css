@@ -1010,39 +1010,14 @@ body {
     .greeting-title { font-size: 1.3rem; }
     .greeting-subtitle { font-size: 0.8rem; }
     
-    .ai-radio-grid { grid-template-columns: 1fr; gap: 10px; }
-    .ai-radio-card { padding: 14px; }
-    .ai-radio-icon { width: 40px; height: 40px; font-size: 16px; }
-    
-    .carousel-section { margin-bottom: 24px; }
-    .carousel-card { flex: 0 0 140px; padding: 12px; }
-    .carousel-card-art { margin-bottom: 8px; }
-    .carousel-card-title { font-size: 0.8rem; }
-    .carousel-card-subtitle { font-size: 0.7rem; }
-    .chart-number { width: 24px; height: 24px; font-size: 0.65rem; }
-    
     .station-glass-card { flex: 0 0 120px; padding: 10px; }
     .station-glass-logo { width: 48px; height: 48px; font-size: 18px; }
     .station-glass-name { font-size: 0.75rem; }
-    
-    .artist-glass-card { flex: 0 0 100px; }
-    .artist-glass-img { width: 72px; height: 72px; }
-    .artist-glass-name { font-size: 0.75rem; }
-    
-    .mood-glass-card { flex: 0 0 110px; padding: 12px; }
-    .mood-glass-icon { font-size: 24px; }
-    .mood-glass-name { font-size: 0.75rem; }
     
     .category-glass-card { padding: 16px 12px; }
     .category-glass-icon { width: 44px; height: 44px; font-size: 18px; }
     .category-glass-name { font-size: 0.8rem; }
     
-    .recent-glass-card { padding: 8px; gap: 8px; }
-    .recent-glass-thumb { width: 40px; height: 40px; }
-    .recent-glass-title { font-size: 0.8rem; }
-    .recent-glass-play { width: 32px; height: 32px; font-size: 10px; }
-    
-    .carousel-controls { display: none; }
 }
 
 @media (max-width: 480px) {
@@ -1059,9 +1034,6 @@ body {
     .greeting-card { padding: 18px; }
     .greeting-title { font-size: 1.2rem; }
     
-    .ai-radio-grid { grid-template-columns: 1fr; gap: 8px; }
-    .ai-radio-card { padding: 12px; }
-    
     .carousel-card { flex: 0 0 130px; padding: 10px; }
     .station-glass-card { flex: 0 0 110px; }
     .artist-glass-card { flex: 0 0 95px; }
@@ -1069,28 +1041,13 @@ body {
     .mood-glass-card { flex: 0 0 105px; padding: 10px; }
     .category-glass-card { padding: 14px 10px; }
     
-    .chart-number { width: 22px; height: 22px; font-size: 0.6rem; }
-    .recent-glass-thumb { width: 38px; height: 38px; }
 }
 
 @media (max-width: 374px) {
     .greeting-title { font-size: 1.1rem; }
     .greeting-card { padding: 16px; }
     
-    .ai-radio-card { padding: 12px; }
-    .ai-radio-icon { width: 36px; height: 36px; font-size: 14px; }
-    
-    .carousel-card { flex: 0 0 120px; }
-    .station-glass-card { flex: 0 0 105px; }
-    .artist-glass-card { flex: 0 0 90px; }
-    .artist-glass-img { width: 64px; height: 64px; }
-    .mood-glass-card { flex: 0 0 100px; }
 }
 
-@media (min-width: 1024px) {
-    .ai-radio-grid { grid-template-columns: repeat(3, 1fr); }
-}
 
-@media (min-width: 1440px) {
-    .ai-radio-grid { grid-template-columns: repeat(4, 1fr); }
-}
+

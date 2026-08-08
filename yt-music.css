@@ -356,21 +356,11 @@
     flex-wrap: wrap;
 }
 
-/* Fix stations search alignment */
-.ytm-page .stations-search {
-    position: relative;
-    padding: 0 24px;
-    margin-bottom: 16px;
-}
-
 /* Fix section spacing for home page sections */
 .ytm-page-home .featured-section,
 .ytm-page-home .trending-section,
 .ytm-page-home .ai-section,
-.ytm-page-home .categories-section,
-.ytm-page-home .tamil-hits-section,
-.ytm-page-home .recent-section,
-.ytm-page-home .stations-section {
+.ytm-page-home .categories-section,.ytm-page-home .tamil-hits-section,.ytm-page-home .stations-section {
     padding: 0 24px;
     margin-bottom: 32px;
 }
@@ -4408,11 +4398,6 @@ body.home-active .ytm-page-home {
         font-size: 0.75rem;
     }
     
-    /* Stations search */
-    .ytm-page-home .stations-search {
-        padding: 0 12px;
-    }
-    
     /* Explore/Library grids — horizontal carousels on mobile */
     .ytm-explore-grid,
     .ytm-library-grid {
@@ -4601,7 +4586,5 @@ body.home-active .ytm-page-home {
         padding: 0 10px;
     }
     
-    .ytm-stations-search {
-        padding: 0 10px;
-    }
 }
+

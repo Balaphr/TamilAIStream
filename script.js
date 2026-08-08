@@ -1168,9 +1168,6 @@ document.querySelectorAll('.section-link').forEach(link => {
         const text = this.textContent.trim();
         if (text === 'View All') {
             document.querySelector('.stations-scroll')?.scrollBy({ left: 500, behavior: 'smooth' });
-        } else if (text === 'Clear History') {
-            document.querySelector('.recent-list').innerHTML = '<div class="recent-item" style="justify-content:center;padding:24px;color:var(--text-muted)"><p>No recently played stations</p></div>';
-            showToast('Recently played history cleared', 'info');
         }
     });
 });
@@ -2005,35 +2002,6 @@ function renderAIRecommendedDynamic() {
     }).join('');
 }
 
-// Render Recently Played from DataStore
-function renderRecentlyPlayedDynamic() {
-    const container = document.querySelector('.recent-list');
-    if (!container) return;
-    
-    const recent = DataStore.get(DataStore.KEYS.RECENT_PLAYED) || [];
-    const stations = DataStore.getStations();
-    
-    if (!recent.length) {
-        container.innerHTML = '<div class="recent-item" style="justify-content:center;padding:24px;color:var(--text-muted)"><p>No recently played stations</p></div>';
-        return;
-    }
-    
-    container.innerHTML = recent.slice(0, 5).map(item => {
-        const station = stations.find(s => s.name === item.name) || {};
-        return `
-            <div class="recent-item">
-                <div class="recent-thumb" style="background:${station.gradient || 'linear-gradient(135deg,#0f3b2e,#064e3b)'};"></div>
-                <div class="recent-info">
-                    <h4>${item.name || 'Station'}</h4>
-                    <p>${station.genre || ''} • ${station.freq || ''}</p>
-                </div>
-                <span class="recent-time">${item.time || 'Recently'}</span>
-                <button class="recent-play-btn" onclick="playStation('${item.name || ''}')"><i class="fas fa-play"></i></button>
-            </div>
-        `;
-    }).join('');
-}
-
 // Apply Site Settings to page
 function applySiteSettings() {
     const settings = DataStore.getSiteSettings();
@@ -2092,116 +2060,6 @@ function renderGreetingSection() {
             </div>
         </div>
     `;
-}
-
-// AI Radio For Me - Time-based recommendations
-function renderAIRadioSection() {
-    const container = document.getElementById('aiRadioGrid');
-    if (!container) return;
-    
-    const stations = DataStore.getStations().filter(s => s.status === 'active');
-    const hour = new Date().getHours();
-    
-    // Load AI Radio cards from DataStore
-    const timeMoods = DataStore.getAIRadio().filter(a => a.status === 'active');
-    
-    if (timeMoods.length === 0) return;
-    
-    // Adjust based on time of day
-    let displayMoods = [...timeMoods];
-    if (hour >= 5 && hour < 10) {
-        displayMoods = [timeMoods[3] || timeMoods[0], timeMoods[0], timeMoods[5] || timeMoods[2], timeMoods[1], timeMoods[4] || timeMoods[2], timeMoods[2]];
-    } else if (hour >= 10 && hour < 17) {
-        displayMoods = [timeMoods[5] || timeMoods[2], timeMoods[1], timeMoods[0], timeMoods[4] || timeMoods[2], timeMoods[3] || timeMoods[0], timeMoods[2]];
-    } else if (hour >= 17 && hour < 21) {
-        displayMoods = [timeMoods[4] || timeMoods[2], timeMoods[1], timeMoods[0], timeMoods[5] || timeMoods[2], timeMoods[3] || timeMoods[0], timeMoods[2]];
-    } else {
-        displayMoods = [timeMoods[2], timeMoods[3] || timeMoods[0], timeMoods[0], timeMoods[4] || timeMoods[2], timeMoods[1], timeMoods[5] || timeMoods[2]];
-    }
-    
-    container.innerHTML = displayMoods.map((mood, i) => {
-        const matchStation = stations.find(s => s.genre && s.genre.toLowerCase().includes(mood.filter)) || stations[i % stations.length];
-        return `
-        <div class="ai-radio-card" onclick="playStation('${matchStation ? matchStation.id : ''}')">
-            <div class="ai-radio-icon"><i class="fas ${mood.icon}"></i></div>
-            <div class="ai-radio-title">${mood.title}</div>
-            <div class="ai-radio-desc">${mood.desc}</div>
-        </div>
-        `;
-    }).join('');
-}
-
-// Popular Artists - Sorted by songCount
-function renderPopularArtists() {
-    const container = document.getElementById('popularArtistsTrack');
-    if (!container) return;
-    
-    const artists = DataStore.getArtistHits()
-        .filter(a => a.status === 'active')
-        .sort((a, b) => (b.songCount || 0) - (a.songCount || 0));
-    
-    container.innerHTML = artists.map(hit => {
-        const thumbSrc = hit.thumbnail || '';
-        const initials = hit.name ? hit.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : '♪';
-        return `
-        <div class="artist-glass-card" onclick="openPlaylistPage('${hit.artist}', '${hit.name}', ${hit.songCount || 0})">
-            <div class="artist-glass-img">
-                ${thumbSrc ? `<img src="${thumbSrc}" alt="${hit.name}">` : `<span>${initials}</span>`}
-            </div>
-            <div class="artist-glass-name">${hit.name}</div>
-            <div class="artist-glass-count">${hit.songCount || 0} songs</div>
-        </div>
-        `;
-    }).join('');
-    
-    initCarouselSwipe(container);
-}
-
-// Mood & Genre - Derived from categories
-function renderMoodGenre() {
-    const container = document.getElementById('moodGenreTrack');
-    if (!container) return;
-    
-    const moods = DataStore.getMoods().filter(m => m.status === 'active');
-    
-    container.innerHTML = moods.map(mood => `
-        <div class="mood-glass-card" onclick="YTMusic.navigateTo('explore')" style="background:${mood.gradient || 'linear-gradient(135deg,#6366f1,#8b5cf6)'}">
-            <div class="mood-glass-icon">${mood.emoji}</div>
-            <div class="mood-glass-name">${mood.name}</div>
-        </div>
-    `).join('');
-    
-    initCarouselSwipe(container);
-}
-
-// Top Charts - From trending stations
-function renderTopCharts() {
-    const container = document.getElementById('topChartsTrack');
-    if (!container) return;
-    
-    const trending = DataStore.getTrending().filter(t => t.status === 'active');
-    const stations = DataStore.getStations();
-    
-    container.innerHTML = trending.map((item, i) => {
-        const station = stations.find(s => s.id === item.stationId);
-        if (!station) return '';
-        const initials = station.name ? station.name.substring(0, 2).toUpperCase() : '♪';
-        return `
-        <div class="carousel-card chart-card" onclick="playStation('${station.id}')">
-            <div class="chart-number">${i + 1}</div>
-            <div class="carousel-card-art">
-                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--emerald-400);background:${station.gradient || 'var(--glass-gradient)'}">${initials}</div>
-                <div class="play-overlay">
-                    <div class="play-overlay-btn"><i class="fas fa-play"></i></div>
-                </div>
-            </div>
-            <div class="carousel-card-title">${station.name}</div>
-            <div class="carousel-card-subtitle">${station.genre || 'Tamil FM'}</div>
-        </div>
-        `;
-    }).join('');
-    
-    initCarouselSwipe(container);
 }
 
 // Generic carousel swipe handler
@@ -2300,15 +2158,10 @@ function renderAllDynamicContent() {
     renderGreetingSection();
     renderFeaturedSliderDynamic();
     renderTrendingDynamic();
-    renderAIRadioSection();
     renderCategoriesDynamic();
     renderArtistHitsDynamic();
     initTamilHitsCarousel();
-    renderPopularArtists();
-    renderMoodGenre();
-    renderTopCharts();
     renderAIRecommendedDynamic();
-    renderRecentlyPlayedDynamic();
     renderAllStationsDynamic();
     applySiteSettings();
     
@@ -2333,24 +2186,19 @@ function setupRealtimeSync() {
                 renderFeaturedSliderDynamic();
                 renderTrendingDynamic();
                 renderAIRecommendedDynamic();
-                renderAIRadioSection();
-                renderTopCharts();
                 break;
             case 'FEATURED':
                 renderFeaturedSliderDynamic();
                 break;
             case 'TRENDING':
                 renderTrendingDynamic();
-                renderTopCharts();
                 break;
             case 'CATEGORIES':
                 renderCategoriesDynamic();
-                renderMoodGenre();
                 break;
             case 'ARTIST_HITS':
                 renderArtistHitsDynamic();
                 initTamilHitsCarousel();
-                renderPopularArtists();
                 break;
             case 'QUOTES':
                 initTopHeader();
@@ -2374,8 +2222,6 @@ function setupRealtimeSync() {
                 renderTrendingDynamic();
                 renderArtistHitsDynamic();
                 initTamilHitsCarousel();
-                renderPopularArtists();
-                renderTopCharts();
                 break;
             case 'PLAYLISTS':
                 // Reload playlist-related content
@@ -2385,12 +2231,6 @@ function setupRealtimeSync() {
                 break;
             case 'SETTINGS':
                 // Reload YT Music settings
-                break;
-            case 'MOODS':
-                renderMoodGenre();
-                break;
-            case 'AI_RADIO':
-                renderAIRadioSection();
                 break;
             case 'NAVIGATION':
                 // Navigation visibility changes require page reload
@@ -2407,24 +2247,18 @@ function setupRealtimeSync() {
 // ============================================
 function filterStations() {
     const stationsGrid = document.getElementById('stationsGrid');
-    const stationsSearch = document.getElementById('stationsSearch');
     const stationsCount = document.getElementById('stationsCount');
     if (!stationsGrid) return;
     
     const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
-    const query = stationsSearch?.value.toLowerCase().trim() || '';
     const cards = stationsGrid.querySelectorAll('.station-grid-card');
     let visibleCount = 0;
     
     cards.forEach(card => {
         const genre = card.dataset.genre || '';
-        const name = card.dataset.name?.toLowerCase() || '';
-        const freq = card.dataset.freq?.toLowerCase() || '';
         const matchesFilter = activeFilter === 'all' || genre === activeFilter;
-        const matchesSearch = !query || name.includes(query) || genre.includes(query) || freq.includes(query);
-        const isVisible = matchesFilter && matchesSearch;
-        card.classList.toggle('hidden', !isVisible);
-        if (isVisible) visibleCount++;
+        card.classList.toggle('hidden', !matchesFilter);
+        if (matchesFilter) visibleCount++;
     });
     
     if (stationsCount) stationsCount.textContent = `${visibleCount} station${visibleCount !== 1 ? 's' : ''}`;
@@ -2466,9 +2300,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize recently added marquee
     initRecentlyAdded();
     
-    // Setup filter and search after a small delay to ensure DOM is ready
+    // Setup filter buttons
     setTimeout(() => {
-        // Re-bind filter buttons
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -2476,13 +2309,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 filterStations();
             });
         });
-        
-        // Re-bind search
-        const searchInput = document.getElementById('stationsSearch');
-        if (searchInput) {
-            searchInput.addEventListener('input', filterStations);
-        }
-        
+    
         // Apply filter
         filterStations();
     }, 200);
@@ -2778,3 +2605,10 @@ if (typeof window !== 'undefined') {
     window.playStation = playStation;
     window.playTickerSong = playTickerSong;
 }
+
+
+
+
+
+
+

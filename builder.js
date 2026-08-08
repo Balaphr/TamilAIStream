@@ -460,34 +460,36 @@ async function saveSong(e) {
         duration: document.getElementById('songDuration').value.trim(),
         description: document.getElementById('songDescription').value.trim(),
         status: 'published',
-        updatedAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
         createdBy: currentUser?.uid || 'unknown'
     };
 
     try {
+        AIUploadOverlay.update(2, 'Preparing', 'Starting upload…');
         showToast('Saving song...', 'info');
-        
+
         const albumFile = document.getElementById('albumImage').files[0];
         if (albumFile) {
-            showToast('Uploading album cover...', 'info');
+            AIUploadOverlay.update(3, 'Album cover', 'Uploading album cover…');
             try {
                 const albumResult = await R2Uploader.uploadImage(albumFile, 'tamil-ai-stream/albums', (pct) => {
-                    showToast('Album cover: ' + pct + '%', 'info');
+                    AIUploadOverlay.update(3 + pct * 0.3, 'Album cover', 'Uploading album cover… ' + pct + '%');
                 });
                 songData.albumCover = albumResult.url;
                 songData.albumPublicId = albumResult.publicId;
             } catch (err) {
                 console.warn('Album upload failed:', err);
                 showToast('Album cover upload failed: ' + err.message, 'error');
+                AIUploadOverlay.hide();
             }
         }
 
         const audioFile = document.getElementById('audioFile').files[0];
         if (audioFile) {
-            showToast('Uploading audio file...', 'info');
+            AIUploadOverlay.update(35, 'Audio', 'Checking audio file…');
             try {
                 const audioResult = await R2Uploader.uploadAudio(audioFile, 'tamil-ai-stream/audio', (pct) => {
-                    showToast('Audio: ' + pct + '%', 'info');
+                    AIUploadOverlay.update(35 + pct * 0.6, 'Audio', 'Uploading audio… ' + pct + '%');
                 });
                 songData.audioUrl = audioResult.url;
                 songData.audioPublicId = audioResult.publicId;
@@ -496,15 +498,17 @@ async function saveSong(e) {
                 songData.audioFileName = audioFile.name;
             } catch (err) {
                 console.error('Audio upload error:', err);
+                AIUploadOverlay.error('Audio upload failed: ' + err.message);
                 showToast('Audio upload failed: ' + err.message, 'error');
                 return;
             }
         }
 
+        AIUploadOverlay.update(97, 'Publishing', 'Saving to live website…');
         showToast('Saving to database...', 'info');
-        
+
         const songs = DataStore.getSongs();
-        
+
         if (currentSongId) {
             const idx = songs.findIndex(s => s.id === currentSongId);
             if (idx !== -1) {
@@ -519,6 +523,7 @@ async function saveSong(e) {
 
         DataStore.setSongs(songs);
 
+        AIUploadOverlay.success('Song published to Tamil AI Stream!');
         showToast('Song saved successfully!', 'success');
         resetSongForm();
         loadAllSongs();
@@ -526,6 +531,7 @@ async function saveSong(e) {
         addActivity('Song Added', 'Added "' + songData.title + '"');
     } catch (error) {
         console.error('Error saving song:', error);
+        AIUploadOverlay.error('Error: ' + error.message);
         showToast('Error: ' + error.message, 'error');
     }
 }
@@ -1329,6 +1335,82 @@ function formatFileSize(bytes) {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
+/* ============================================================
+ * AI Animated Upload Status Overlay
+ * A glowing, circular progress ring that shows real upload %
+ * while a song (album cover + audio) is being saved.
+ * ============================================================ */
+const AIUploadOverlay = {
+    R: 52,
+    el: null, ring: null, track: null, pctEl: null, phaseEl: null, statusEl: null,
+    orbit: null, timer: null, shown: false,
+
+    init() {
+        this.el = document.getElementById('aiUploadOverlay');
+        if (!this.el) return;
+        this.ring = document.getElementById('aiUploadRing');
+        this.track = document.getElementById('aiUploadTrack');
+        this.pctEl = document.getElementById('aiUploadPct');
+        this.phaseEl = document.getElementById('aiUploadPhase');
+        this.statusEl = document.getElementById('aiUploadStatus');
+        this.orbit = this.el.querySelector('.ai-upload-orbit');
+        const C = this.circ();
+        if (this.ring) { this.ring.style.strokeDasharray = C; this.ring.style.strokeDashoffset = C; }
+        if (this.track) { this.track.style.strokeDasharray = C; }
+        document.getElementById('aiUploadClose')?.addEventListener('click', () => this.hide());
+    },
+
+    circ() { return 2 * Math.PI * this.R; },
+
+    show() {
+        if (!this.el) return;
+        this.shown = true;
+        this.el.style.display = 'flex';
+        this.el.classList.remove('ai-upload-done', 'ai-upload-error');
+        if (this.orbit) this.orbit.style.animationPlayState = 'running';
+    },
+
+    update(pct, phase, status) {
+        if (!this.shown) this.show();
+        const p = Math.min(100, Math.max(0, Math.round(pct)));
+        const C = this.circ();
+        if (this.ring) this.ring.style.strokeDashoffset = C * (1 - p / 100);
+        if (this.pctEl) this.pctEl.textContent = p + '%';
+        if (this.phaseEl) this.phaseEl.textContent = phase || '';
+        if (this.statusEl) this.statusEl.textContent = status || '';
+        if (this.el) this.el.classList.remove('ai-upload-done', 'ai-upload-error');
+        if (this.orbit) this.orbit.style.animationPlayState = 'running';
+    },
+
+    success(msg) {
+        this.update(100, 'Done', msg || 'Song saved to Tamil AI Stream!');
+        if (this.el) this.el.classList.add('ai-upload-done');
+        if (this.orbit) this.orbit.style.animationPlayState = 'paused';
+        this.timer = setTimeout(() => this.hide(), 1800);
+    },
+
+    error(msg) {
+        this.update(0, 'Error', msg || 'Upload failed');
+        if (this.el) this.el.classList.add('ai-upload-error');
+        if (this.orbit) this.orbit.style.animationPlayState = 'paused';
+        this.timer = setTimeout(() => this.hide(), 5000);
+    },
+
+    hide() {
+        this.timer && clearTimeout(this.timer);
+        this.shown = false;
+        if (this.el) this.el.style.display = 'none';
+        if (this.orbit) this.orbit.style.animationPlayState = 'paused';
+    },
+
+    setProgress(value, max) {
+        // helper for phases without a precise pct
+        if (max) return this.update(Math.round((value / max) * 100), null, null);
+        return this;
+    }
+};
+window.AIUploadOverlay = AIUploadOverlay;
+
 // ============================================
 // File Upload Handlers
 // ============================================
@@ -1500,11 +1582,14 @@ function handleAlbumPreview(file) {
 }
 
 function handleAudioPreview(file) {
-    if (!file.type.startsWith('audio/')) {
-        showToast('Please upload an audio file', 'error');
+    const AUDIO_RE = /\.(mp3|wav|ogg|oga|aac|m4a|flac|opus|webm)$/i;
+    // Some browsers report an empty MIME type for .mp3/.wav files, so accept
+    // the file by extension as well as by type.
+    if (!file.type.startsWith('audio/') && !AUDIO_RE.test(file.name)) {
+        showToast('Please upload an audio file (MP3, WAV, OGG, M4A)', 'error');
         return;
     }
-    
+
     document.getElementById('audioFileName').textContent = file.name;
     document.getElementById('audioFileSize').textContent = formatFileSize(file.size);
     document.getElementById('audioPreview').style.display = 'flex';

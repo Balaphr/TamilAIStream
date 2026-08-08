@@ -19,13 +19,19 @@ const R2Uploader = {
             throw new Error('No file selected or file is empty');
         }
 
-        const isImage = file.type.startsWith('image/');
-        const isAudio = file.type.startsWith('audio/');
+        const AUDIO_RE = /\.(mp3|wav|ogg|oga|aac|m4a|flac|opus|webm)$/i;
+        const IMAGE_RE = /\.(jpe?g|png|gif|webp|svg|bmp|ico|avif)$/i;
+
+        // Some browsers report an EMPTY MIME type for .mp3/.wav files, so we
+        // also recognise audio/images by their file extension.
+        const isImage = file.type.startsWith('image/') || IMAGE_RE.test(file.name || '');
+        const isAudio = file.type.startsWith('audio/') || AUDIO_RE.test(file.name || '');
         const isJson = file.type === 'application/json' || file.name?.toLowerCase().endsWith('.json');
         const isRaw = options.resourceType === 'raw' || isJson;
 
         if (!isImage && !isAudio && !isRaw) {
-            throw new Error('Unsupported file type: ' + file.type);
+            const guess = /\.([a-z0-9]{1,5})$/i.exec(file.name || '');
+            throw new Error('Unsupported file type' + (guess ? " ('." + guess[1] + "')" : '') + ': ' + (file.type || file.name || 'unknown'));
         }
 
         if (isImage && file.size > MAX_IMAGE_SIZE) {
