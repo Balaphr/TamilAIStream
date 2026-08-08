@@ -39,46 +39,9 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Debug secrets
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          echo "--- DEBUG SECRETS ---"
-          echo "CLOUDFLARE_API_TOKEN length: ${#CLOUDFLARE_API_TOKEN}"
-          echo "CLOUDFLARE_ACCOUNT_ID length: ${#CLOUDFLARE_ACCOUNT_ID}"
-          if [ "${#CLOUDFLARE_API_TOKEN}" -gt 0 ]; then
-            echo "API Token prefix: ${CLOUDFLARE_API_TOKEN:0:5}..."
-          fi
-          if [ "${#CLOUDFLARE_ACCOUNT_ID}" -gt 0 ]; then
-            echo "Account ID prefix: ${CLOUDFLARE_ACCOUNT_ID:0:5}..."
-          fi
-          echo "--- END DEBUG ---"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
       - name: Deploy to Cloudflare Workers
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::error::CLOUDFLARE_API_TOKEN is empty. Add it at https://github.com/Balaphr/TamilAIStream/settings/secrets/actions"
-            exit 1
-          fi
-          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::error::CLOUDFLARE_ACCOUNT_ID is empty. Add it at https://github.com/Balaphr/TamilAIStream/settings/secrets/actions"
-            exit 1
-          fi
-          echo "Deploying to Cloudflare Workers..."
-          npx wrangler deploy
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      - name: Purge Cloudflare Cache
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
-            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}' || echo "Cache purge skipped (set CLOUDFLARE_ZONE_ID secret to enable)"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
