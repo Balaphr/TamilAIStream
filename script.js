@@ -1481,19 +1481,31 @@ function updateUserProfile(userData) {
 // Authentication Check & Logout (localStorage)
 // ============================================
 function checkAuth() {
-    // Strict guard: only a valid, unexpired, un-tampered session is allowed.
-    // Unauthenticated/expired visitors are redirected to login.html.
-    if (!Auth.isAuthenticated()) {
+    // Allow unauthenticated users to view the home page (public radio site).
+    // Only redirect to login for protected routes.
+    const page = window.location.pathname.split('/').pop() || 'index.html';
+    const protectedPages = ['admin.html', 'admin-login.html', 'builder.html', 'admin-upload.html'];
+    if (protectedPages.includes(page) && !Auth.isAuthenticated()) {
         Auth.requireAuth();
         return false;
     }
-    const user = Auth.currentUser();
-    if (user) {
+    if (Auth.isAuthenticated()) {
+        const user = Auth.currentUser();
+        if (user) {
+            updateUserProfile({
+                name: user.name || 'User',
+                email: user.email || '',
+                photoURL: user.photoURL || '',
+                isGuest: !!user.isGuest
+            });
+        }
+    } else {
+        // Guest mode - show guest profile
         updateUserProfile({
-            name: user.name || 'User',
-            email: user.email || '',
-            photoURL: user.photoURL || '',
-            isGuest: !!user.isGuest
+            name: 'Guest',
+            email: '',
+            photoURL: '',
+            isGuest: true
         });
     }
     return true;
