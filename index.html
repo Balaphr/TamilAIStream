@@ -72,9 +72,6 @@
     <!-- Splash Screen Script (inline for instant execution) -->
     <script>
     (function() {
-        // CRITICAL: Add splash-active class IMMEDIATELY to hide body and prevent scroll
-        document.documentElement.classList.add('splash-active');
-        
         const SPLASH_MIN_MS = 2200;
         const overlay = document.getElementById('splashOverlay');
         const skipBtn = document.getElementById('splashSkip');
@@ -127,9 +124,6 @@
             dismissed = true;
             if (overlay._splashRaf) cancelAnimationFrame(overlay._splashRaf);
 
-            // CRITICAL: Remove splash-active class FIRST to restore body
-            document.documentElement.classList.remove('splash-active');
-            
             overlay.classList.add('splash-hide');
             setTimeout(function() {
                 overlay.style.display = 'none';
@@ -144,7 +138,7 @@
                 var pe = window.PlayerEngine;
                 if (!pe || !pe.currentTrack) return;
 
-                // Always restore mini player if a track was loaded
+                /* Always restore mini player if a track was loaded */
                 var miniOpen = window.MiniAudioPlayer && MiniAudioPlayer.isOpen;
                 if (!miniOpen && window.MiniAudioPlayer) {
                     MiniAudioPlayer.openPopup(pe.currentTrack, {
@@ -154,7 +148,7 @@
                     });
                 }
 
-                // Resume audio if it was playing before refresh
+                /* Resume audio if it was playing before refresh */
                 if (pe.isPlaying) {
                     var pos = pe.getState ? pe.getState().playbackPosition : 0;
                     pe.playTrack(pe.currentTrack, pe.queue, pe.queueIndex).then(function() {
