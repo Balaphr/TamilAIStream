@@ -23,8 +23,151 @@
     <link rel="stylesheet" href="search-ui.css">
     <link rel="stylesheet" href="responsive.css">
     <link rel="stylesheet" href="ai-glass.css">
+    <link rel="stylesheet" href="splash.css">
 </head>
 <body>
+    <!-- Startup Splash Screen -->
+    <div class="splash-overlay" id="splashOverlay">
+        <div class="splash-grid"></div>
+        <div class="splash-noise"></div>
+        <div class="splash-orb splash-orb-1"></div>
+        <div class="splash-orb splash-orb-2"></div>
+        <div class="splash-orb splash-orb-3"></div>
+        <canvas class="splash-particles" id="splashParticles"></canvas>
+        <div class="splash-content">
+            <div class="splash-logo-wrap">
+                <div class="splash-logo-glow"></div>
+                <div class="splash-logo">
+                    <i class="fas fa-headphones-alt"></i>
+                </div>
+            </div>
+            <div class="splash-title">
+                <span class="highlight">Tamil AI</span> Stream
+            </div>
+            <div class="splash-subtitle">AI-Powered Tamil Radio</div>
+            <div class="splash-equalizer">
+                <div class="splash-eq-bar" style="--eq-min:5px;--eq-max:28px;--eq-duration:0.7s;--eq-delay:0s"></div>
+                <div class="splash-eq-bar" style="--eq-min:8px;--eq-max:36px;--eq-duration:0.55s;--eq-delay:0.1s"></div>
+                <div class="splash-eq-bar" style="--eq-min:4px;--eq-max:22px;--eq-duration:0.85s;--eq-delay:0.2s"></div>
+                <div class="splash-eq-bar" style="--eq-min:10px;--eq-max:40px;--eq-duration:0.5s;--eq-delay:0.05s"></div>
+                <div class="splash-eq-bar" style="--eq-min:6px;--eq-max:30px;--eq-duration:0.65s;--eq-delay:0.15s"></div>
+                <div class="splash-eq-bar" style="--eq-min:3px;--eq-max:20px;--eq-duration:0.9s;--eq-delay:0.25s"></div>
+                <div class="splash-eq-bar" style="--eq-min:8px;--eq-max:34px;--eq-duration:0.58s;--eq-delay:0.08s"></div>
+                <div class="splash-eq-bar" style="--eq-min:5px;--eq-max:26px;--eq-duration:0.75s;--eq-delay:0.18s"></div>
+                <div class="splash-eq-bar" style="--eq-min:9px;--eq-max:38px;--eq-duration:0.52s;--eq-delay:0.12s"></div>
+                <div class="splash-eq-bar" style="--eq-min:4px;--eq-max:24px;--eq-duration:0.82s;--eq-delay:0.22s"></div>
+                <div class="splash-eq-bar" style="--eq-min:7px;--eq-max:32px;--eq-duration:0.62s;--eq-delay:0.03s"></div>
+                <div class="splash-eq-bar" style="--eq-min:6px;--eq-max:28px;--eq-duration:0.72s;--eq-delay:0.16s"></div>
+            </div>
+            <div class="splash-loading">
+                <div class="splash-loading-bar">
+                    <div class="splash-loading-fill"></div>
+                </div>
+                <div class="splash-loading-text">Initializing AI Engine</div>
+            </div>
+        </div>
+        <button class="splash-skip" id="splashSkip" aria-label="Skip splash">Skip</button>
+    </div>
+
+    <!-- Splash Screen Script (inline for instant execution) -->
+    <script>
+    (function() {
+        const SPLASH_MIN_MS = 2200;
+        const overlay = document.getElementById('splashOverlay');
+        const skipBtn = document.getElementById('splashSkip');
+        if (!overlay) return;
+
+        let dismissed = false;
+
+        /* ---------- Splash Particles ---------- */
+        (function initSplashParticles() {
+            const c = document.getElementById('splashParticles');
+            if (!c) return;
+            const ctx = c.getContext('2d');
+            let W, H;
+            const dots = [];
+            const COUNT = 40;
+            function resize() { W = c.width = window.innerWidth; H = c.height = window.innerHeight; }
+            resize();
+            window.addEventListener('resize', resize);
+            for (let i = 0; i < COUNT; i++) {
+                dots.push({
+                    x: Math.random() * W,
+                    y: Math.random() * H,
+                    r: Math.random() * 1.5 + 0.5,
+                    dx: (Math.random() - 0.5) * 0.3,
+                    dy: (Math.random() - 0.5) * 0.3,
+                    o: Math.random() * 0.4 + 0.1
+                });
+            }
+            let raf;
+            function draw() {
+                ctx.clearRect(0, 0, W, H);
+                for (const d of dots) {
+                    d.x += d.dx; d.y += d.dy;
+                    if (d.x < 0) d.x = W; if (d.x > W) d.x = 0;
+                    if (d.y < 0) d.y = H; if (d.y > H) d.y = 0;
+                    ctx.beginPath();
+                    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(120,130,255,' + d.o + ')';
+                    ctx.fill();
+                }
+                raf = requestAnimationFrame(draw);
+            }
+            draw();
+            overlay._splashRaf = raf;
+        })();
+
+        /* ---------- Dismiss splash ---------- */
+        function dismissSplash() {
+            if (dismissed) return;
+            dismissed = true;
+            if (overlay._splashRaf) cancelAnimationFrame(overlay._splashRaf);
+
+            overlay.classList.add('splash-hide');
+            setTimeout(function() {
+                overlay.style.display = 'none';
+                overlay.remove();
+                restorePlayerIfPlaying();
+            }, 650);
+        }
+
+        /* ---------- Restore player after splash ---------- */
+        function restorePlayerIfPlaying() {
+            try {
+                var pe = window.PlayerEngine;
+                if (!pe) return;
+                if (pe.isPlaying && pe.currentTrack) {
+                    var miniOpen = window.MiniAudioPlayer && MiniAudioPlayer.isOpen;
+                    if (!miniOpen) {
+                        MiniAudioPlayer.openPopup(pe.currentTrack, {
+                            station: pe.currentTrack,
+                            queue: pe.queue,
+                            index: pe.queueIndex
+                        });
+                    }
+                }
+            } catch (e) { /* silent */ }
+        }
+
+        /* ---------- Skip button ---------- */
+        skipBtn.addEventListener('click', dismissSplash);
+
+        /* ---------- Auto-dismiss after min time + DOM ready ---------- */
+        var domReady = new Promise(function(resolve) {
+            if (document.readyState !== 'loading') resolve();
+            else document.addEventListener('DOMContentLoaded', resolve);
+        });
+
+        Promise.all([
+            new Promise(function(r) { setTimeout(r, SPLASH_MIN_MS); }),
+            domReady
+        ]).then(function() {
+            setTimeout(dismissSplash, 150);
+        });
+    })();
+    </script>
+
     <!-- Background Container with Gradient Orbs -->
     <div class="bg-container">
         <div class="gradient-orbs">
