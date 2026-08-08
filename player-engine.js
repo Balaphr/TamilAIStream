@@ -64,6 +64,7 @@ const PlayerEngine = (() => {
     function saveState() {
         try {
             const toSave = {
+                isPlaying: state.isPlaying,
                 currentTrack: state.currentTrack,
                 queue: state.queue,
                 queueIndex: state.queueIndex,
@@ -102,6 +103,9 @@ const PlayerEngine = (() => {
             if (saved.queueIndex !== undefined) state.queueIndex = saved.queueIndex;
             if (saved.aiAutomation !== undefined) state.aiAutomation = saved.aiAutomation;
             if (saved.colorTheme !== undefined) state.colorTheme = saved.colorTheme;
+            if (saved.currentTrack) state.currentTrack = saved.currentTrack;
+            if (saved.playbackPosition !== undefined) state.playbackPosition = saved.playbackPosition;
+            if (saved.isPlaying !== undefined) state.isPlaying = saved.isPlaying;
             return saved;
         } catch (e) { return null; }
     }

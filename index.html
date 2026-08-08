@@ -136,16 +136,26 @@
         function restorePlayerIfPlaying() {
             try {
                 var pe = window.PlayerEngine;
-                if (!pe) return;
-                if (pe.isPlaying && pe.currentTrack) {
-                    var miniOpen = window.MiniAudioPlayer && MiniAudioPlayer.isOpen;
-                    if (!miniOpen) {
-                        MiniAudioPlayer.openPopup(pe.currentTrack, {
-                            station: pe.currentTrack,
-                            queue: pe.queue,
-                            index: pe.queueIndex
-                        });
-                    }
+                if (!pe || !pe.currentTrack) return;
+
+                /* Always restore mini player if a track was loaded */
+                var miniOpen = window.MiniAudioPlayer && MiniAudioPlayer.isOpen;
+                if (!miniOpen && window.MiniAudioPlayer) {
+                    MiniAudioPlayer.openPopup(pe.currentTrack, {
+                        station: pe.currentTrack,
+                        queue: pe.queue,
+                        index: pe.queueIndex
+                    });
+                }
+
+                /* Resume audio if it was playing before refresh */
+                if (pe.isPlaying) {
+                    var pos = pe.getState ? pe.getState().playbackPosition : 0;
+                    pe.playTrack(pe.currentTrack, pe.queue, pe.queueIndex).then(function() {
+                        if (pos > 0 && pe.audio) {
+                            pe.audio.currentTime = pos;
+                        }
+                    }).catch(function() {});
                 }
             } catch (e) { /* silent */ }
         }
