@@ -12,7 +12,7 @@ function copyVanillaScripts() {
         'player-engine.js', 'equalizer.js', 'eq-ui.js',
         'playlist-manager.js', 'search-engine.js', 'search-ui.js',
         'premium-effects.js', 'player-ui.js',
-        'ai-music-assistant.js', 'ai-assistant.js',
+        'ai-music-assistant.js',
         'yt-music.js', 'script.js', 'mini-audio-player.js',
         'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js'
