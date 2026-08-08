@@ -14,6 +14,7 @@ function copyVanillaScripts() {
         'playlist-manager.js', 'search-engine.js', 'search-ui.js',
         'premium-effects.js', 'player-ui.js',
         'ai-music-assistant.js',
+        'ai-autofill.js',
         'yt-music.js', 'script.js', 'mini-audio-player.js',
         'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js'
