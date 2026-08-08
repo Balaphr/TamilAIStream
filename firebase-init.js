@@ -1,23 +1,19 @@
 // Firebase Initialization for Tamil AI Stream
-// Import the config
-import { firebaseConfig } from './firebase-config.js';
+// firebaseConfig is loaded globally from firebase-config.js (loaded before this script)
 
 // Initialize Firebase
-if (!firebase.apps.length) {
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
 // Initialize Firebase services
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+const fbAuth = typeof firebase !== 'undefined' ? firebase.auth() : null;
+const fbDb = typeof firebase !== 'undefined' ? firebase.firestore() : null;
+const fbStorage = typeof firebase !== 'undefined' ? firebase.storage() : null;
 
-// Export services for use in other modules
-export { auth, db, storage };
+// Make services available globally for other scripts
+window.FBAuth = fbAuth;
+window.FBDb = fbDb;
+window.FBStorage = fbStorage;
 
-// Test Firebase connection
-console.log('🔥 Firebase initialized successfully');
-console.log('   Project:', firebaseConfig.projectId);
-console.log('   Auth:', auth ? 'Ready' : 'Not available');
-console.log('   Firestore:', db ? 'Ready' : 'Not available');
-console.log('   Storage:', storage ? 'Ready' : 'Not available');
+console.log('🔥 Firebase initialized:', firebaseConfig.projectId);

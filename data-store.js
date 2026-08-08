@@ -113,7 +113,7 @@ const DataStore = {
             keywords: 'Tamil FM, Tamil radio, AI radio, Tamil music, online radio, Tamil AI Stream, live radio',
             ogTitle: 'Tamil AI Stream - AI-Powered Tamil Radio',
             ogDescription: 'Listen to your favorite Tamil FM stations with AI-powered recommendations.',
-            ogUrl: 'https://tamilaistream.com',
+            ogUrl: 'https://tamilai.stream',
             themeColor: '#000000',
             footerText: '© 2024 Tamil AI Stream. All rights reserved.'
         },
