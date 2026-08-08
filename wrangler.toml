@@ -2,6 +2,10 @@ name = "tamil-ai-stream"
 main = "src/index.js"
 compatibility_date = "2024-09-23"
 
+routes = [
+  { pattern = "tamilai.stream/*", zone_name = "tamilai.stream" }
+]
+
 [assets]
 directory = "./dist"
 binding = "ASSETS"
