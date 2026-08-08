@@ -841,7 +841,7 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     .hit-artist-img { width: 60px; height: 60px; }
     .hit-name { font-size: 0.85rem; }
     .hit-count { font-size: 0.7rem; }
-    .hit-play-btn, .hit-shuffle-btn, .hit-fav-btn { width: 36px; height: 36px; font-size: 14px; }
+    .hit-play-btn, .hit-shuffle-btn, .hit-fav-btn { width: 44px; height: 44px; font-size: 16px; }
     .station-card { width: 150px; }
     .station-art { height: 120px; }
     .recent-item { padding: 10px 12px; }
@@ -1167,7 +1167,7 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 }
 
 @media (max-width: 640px) {
-    .home-main { padding-top: 112px; }
+    .home-main { padding-top: 100px; }
 }
 
 /* ============================================
@@ -1308,7 +1308,7 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     .top-header-quote { max-width: 150px; }
     .top-header-value { font-size: 0.65rem; }
     .top-header-icon { font-size: 10px; }
-    .home-main { padding-top: 108px; }
+    .home-main { padding-top: 88px; }
 }
 
 /* ============================================

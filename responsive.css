@@ -27,7 +27,7 @@ body {
 }
 
 /* ---- Bottom Navigation (Mobile) ---- */
-.bottom-nav {
+.ytm-bottom-nav {
     display: none;
     position: fixed;
     bottom: 0;
@@ -41,13 +41,13 @@ body {
     padding: 4px 0 calc(4px + env(safe-area-inset-bottom, 0));
     height: auto;
 }
-.bottom-nav-items {
+.ytm-bottom-nav-items {
     display: flex;
     justify-content: space-around;
     max-width: 500px;
     margin: 0 auto;
 }
-.bottom-nav-item {
+.ytm-bottom-nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -64,9 +64,9 @@ body {
     min-height: 44px;
     justify-content: center;
 }
-.bottom-nav-item i { font-size: 18px; }
-.bottom-nav-item.active { color: var(--emerald-400); }
-.bottom-nav-item.active::after {
+.ytm-bottom-nav-item i { font-size: 18px; }
+.ytm-bottom-nav-item.active { color: var(--emerald-400); }
+.ytm-bottom-nav-item.active::after {
     content: '';
     position: absolute;
     top: 0;
@@ -91,7 +91,9 @@ body {
    MOBILE (375px - 640px) — Base mobile styles
    ============================================ */
 @media (max-width: 640px) {
-    .bottom-nav { display: block; }
+    body, html { overflow-x: hidden; }
+    .ytm-main-content { overflow-x: hidden; }
+    .ytm-bottom-nav { display: block; }
     .container { padding: 0 12px; }
 
     .hide-mobile { display: none !important; }
@@ -284,6 +286,11 @@ body {
     .ytm-player {
         left: 0;
         margin-left: 0;
+        transform: none;
+        width: 100%;
+        max-width: none;
+        border-radius: 0;
+        bottom: 56px;
     }
 
     /* Header bar */
@@ -383,10 +390,10 @@ body {
     .ytm-top-nav { padding: 0 10px; gap: 6px; height: 50px; }
 
     /* Bottom nav — tighter */
-    .bottom-nav { padding: 3px 0 calc(3px + env(safe-area-inset-bottom, 0)); }
-    .bottom-nav-item { padding: 5px 6px; min-width: 40px; }
-    .bottom-nav-item i { font-size: 16px; }
-    .bottom-nav-item { font-size: 0.55rem; }
+    .ytm-bottom-nav { padding: 3px 0 calc(3px + env(safe-area-inset-bottom, 0)); }
+    .ytm-bottom-nav-item { padding: 5px 6px; min-width: 40px; }
+    .ytm-bottom-nav-item i { font-size: 16px; }
+    .ytm-bottom-nav-item { font-size: 0.55rem; }
 
     /* AI FAB */
     .ytm-ai-fab {
@@ -441,7 +448,7 @@ body {
 @media (max-width: 374px) {
     .grid-3 { grid-template-columns: repeat(2, 1fr); }
     .grid-4 { grid-template-columns: repeat(2, 1fr); }
-    .bottom-nav { display: block; }
+    .ytm-bottom-nav { display: block; }
 
     /* Top nav */
     .ytm-top-nav { padding: 0 8px; gap: 4px; height: 46px; }
@@ -504,10 +511,10 @@ body {
     .ytm-player-btn-play { width: 40px; height: 40px; font-size: 16px; }
 
     /* Bottom nav — smallest */
-    .bottom-nav { padding: 2px 0 calc(2px + env(safe-area-inset-bottom, 0)); }
-    .bottom-nav-item { padding: 4px 4px; min-width: 36px; gap: 1px; }
-    .bottom-nav-item i { font-size: 15px; }
-    .bottom-nav-item { font-size: 0.5rem; }
+    .ytm-bottom-nav { padding: 2px 0 calc(2px + env(safe-area-inset-bottom, 0)); }
+    .ytm-bottom-nav-item { padding: 4px 4px; min-width: 36px; gap: 1px; }
+    .ytm-bottom-nav-item i { font-size: 15px; }
+    .ytm-bottom-nav-item { font-size: 0.5rem; }
 
     /* AI FAB */
     .ytm-ai-fab {
@@ -596,7 +603,7 @@ body {
    LANDSCAPE MOBILE
    ============================================ */
 @media (max-width: 640px) and (orientation: landscape) {
-    .bottom-nav { display: none; }
+    .ytm-bottom-nav { display: none; }
     .full-player .fp-container { padding: 8px 16px; }
     .full-player .fp-artwork-container {
         width: min(160px, 35vw);
@@ -661,7 +668,7 @@ body {
    Print
    ============================================ */
 @media print {
-    .mini-player, .full-player, .bottom-nav, .ai-fab, .ai-chat-window,
+    .mini-player, .full-player, .ytm-bottom-nav, .ai-fab, .ai-chat-window,
     .ytm-ai-fab, .ytm-ai-panel { display: none !important; }
 }
 
@@ -709,6 +716,16 @@ body {
 }
 
 @media (max-width: 480px) {
+    .home-main { padding-top: 88px; }
+    .ytm-player {
+        left: 0;
+        margin-left: 0;
+        transform: none;
+        width: 100%;
+        max-width: none;
+        border-radius: 0;
+    }
+
     .greeting-card { padding: 18px; }
     .greeting-title { font-size: 1.2rem; }
     
