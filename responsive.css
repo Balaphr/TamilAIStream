@@ -118,9 +118,28 @@ body {
 
     /* Top nav mobile padding */
     .ytm-top-nav {
-        padding: 0 12px;
-        gap: 8px;
-        height: 56px;
+        padding: 0 10px;
+        gap: 6px;
+        height: 52px;
+    }
+    
+    .ytm-mobile-header {
+        gap: 6px;
+    }
+    
+    .ytm-mobile-search {
+        height: 34px;
+        padding: 0 10px;
+    }
+    
+    .ytm-mobile-search input {
+        font-size: 13px;
+    }
+    
+    .ytm-mobile-action {
+        width: 34px;
+        height: 34px;
+        font-size: 14px;
     }
 
     /* Featured slider mobile */
@@ -299,6 +318,135 @@ body {
     }
     .top-header-quote { max-width: 200px; }
     .home-main { padding-top: 100px; }
+
+    /* ======== HORIZONTAL CAROUSELS ON MOBILE ======== */
+    
+    /* Convert categories grid to horizontal carousel */
+    .categories-grid {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 10px;
+        padding: 0 12px 8px;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+    .categories-grid::-webkit-scrollbar { display: none; }
+    .categories-grid > * {
+        scroll-snap-align: start;
+        flex: 0 0 auto;
+        min-width: 140px;
+    }
+
+    /* Convert stations grid to horizontal carousel */
+    .stations-grid {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 10px;
+        padding: 0 12px 8px;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+    .stations-grid::-webkit-scrollbar { display: none; }
+    .stations-grid > * {
+        scroll-snap-align: start;
+        flex: 0 0 auto;
+        min-width: 140px;
+    }
+
+    /* Convert explore/library grids to horizontal carousels */
+    .ytm-explore-grid,
+    .ytm-library-grid {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 10px;
+        padding: 0 12px 8px;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+    .ytm-explore-grid::-webkit-scrollbar,
+    .ytm-library-grid::-webkit-scrollbar { display: none; }
+    .ytm-explore-grid > *,
+    .ytm-library-grid > * {
+        scroll-snap-align: start;
+        flex: 0 0 auto;
+        min-width: 140px;
+    }
+
+    /* Songs container horizontal carousel */
+    .songs-container {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 10px;
+        padding: 0 12px 8px;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+    .songs-container::-webkit-scrollbar { display: none; }
+    .songs-container > * {
+        scroll-snap-align: start;
+        flex: 0 0 auto;
+        min-width: 200px;
+    }
+    
+    /* Tamil hits already carousel — ensure snap + momentum */
+    .tamil-hits-grid {
+        scroll-snap-type: x mandatory;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+    .tamil-hits-grid::-webkit-scrollbar { display: none; }
+    .tamil-hits-grid > * {
+        scroll-snap-align: start;
+    }
+    
+    /* AI glass carousels — ensure snap */
+    .glass-carousel,
+    .ai-stations-row,
+    .ai-artists-row {
+        scroll-snap-type: x mandatory;
+        overscroll-behavior-x: contain;
+    }
+    .glass-carousel > *,
+    .ai-stations-row > *,
+    .ai-artists-row > * {
+        scroll-snap-align: start;
+    }
+
+    /* ======== 120Hz PERFORMANCE OPTIMIZATIONS ======== */
+    .ytm-top-nav,
+    .ytm-bottom-nav,
+    .ytm-player {
+        will-change: transform;
+    }
+    .ytm-main-content {
+        contain: layout style;
+    }
+    .categories-grid,
+    .stations-grid,
+    .ytm-explore-grid,
+    .ytm-library-grid,
+    .songs-container,
+    .tamil-hits-grid,
+    .glass-carousel,
+    .ai-stations-row,
+    .ai-artists-row {
+        will-change: scroll-position;
+        contain: layout style;
+    }
+    .category-card,
+    .station-card,
+    .hit-card,
+    .tamil-hit-card {
+        will-change: transform;
+    }
 }
 
 /* ============================================
@@ -316,6 +464,13 @@ body {
     .station-card { width: 130px; }
     .station-art { height: 115px; }
     .station-art img { width: 64px; height: 64px; }
+
+    /* Carousel items — smaller at 430px */
+    .categories-grid > * { min-width: 130px; }
+    .stations-grid > * { min-width: 130px; }
+    .ytm-explore-grid > *,
+    .ytm-library-grid > * { min-width: 130px; }
+    .songs-container > * { min-width: 180px; }
 
     /* Songs container — single column below 430px */
     .songs-container {
@@ -388,6 +543,21 @@ body {
 
     /* Top nav — more compact */
     .ytm-top-nav { padding: 0 10px; gap: 6px; height: 50px; }
+    
+    .ytm-mobile-search {
+        height: 32px;
+        padding: 0 8px;
+    }
+    
+    .ytm-mobile-search input {
+        font-size: 12px;
+    }
+    
+    .ytm-mobile-action {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+    }
 
     /* Bottom nav — tighter */
     .ytm-bottom-nav { padding: 3px 0 calc(3px + env(safe-area-inset-bottom, 0)); }
@@ -452,6 +622,27 @@ body {
 
     /* Top nav */
     .ytm-top-nav { padding: 0 8px; gap: 4px; height: 46px; }
+    
+    .ytm-mobile-brand svg {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .ytm-mobile-search {
+        height: 30px;
+        padding: 0 8px;
+        border-radius: 16px;
+    }
+    
+    .ytm-mobile-search input {
+        font-size: 12px;
+    }
+    
+    .ytm-mobile-action {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
 
     /* Featured slider — smallest */
     .slide-card { padding: 12px; gap: 10px; }
@@ -465,6 +656,13 @@ body {
     .station-art { height: 100px; }
     .station-art img { width: 56px; height: 56px; }
     .stations-track { gap: 8px; }
+
+    /* Carousel items — smallest at 374px */
+    .categories-grid > * { min-width: 120px; }
+    .stations-grid > * { min-width: 120px; }
+    .ytm-explore-grid > *,
+    .ytm-library-grid > * { min-width: 120px; }
+    .songs-container > * { min-width: 160px; }
 
     /* Songs container */
     .songs-container { grid-template-columns: 1fr; gap: 8px; }

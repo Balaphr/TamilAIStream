@@ -127,6 +127,28 @@ const YTMusic = {
             });
         }
 
+        // Mobile search input
+        const mobileSearchInput = document.getElementById('ytmMobileSearchInput');
+        if (mobileSearchInput) {
+            mobileSearchInput.addEventListener('input', (e) => {
+                const val = e.target.value;
+                const desktopInput = document.getElementById('ytmSearchInput');
+                if (desktopInput) desktopInput.value = val;
+                this.handleSearch(val);
+            });
+            mobileSearchInput.addEventListener('focus', () => {
+                if (this.currentPage !== 'search') this.navigateTo('search');
+            });
+        }
+
+        // Mobile logout button
+        const mobileLogoutBtn = document.getElementById('ytmMobileLogoutBtn');
+        if (mobileLogoutBtn) {
+            mobileLogoutBtn.addEventListener('click', () => {
+                if (typeof window.logout === 'function') window.logout();
+            });
+        }
+
         // Player progress bar click
         const playerProgress = document.getElementById('ytmPlayerProgress');
         if (playerProgress) {
@@ -507,7 +529,15 @@ const YTMusic = {
             case 'history': this.renderHistoryContent(); break;
             case 'stations': this.renderStationsContent(); break;
             case 'artists': this.renderArtistsContent(); break;
-            case 'search': document.getElementById('ytmSearchInput')?.focus(); break;
+            case 'search':
+                const mobileSI = document.getElementById('ytmMobileSearchInput');
+                const desktopSI = document.getElementById('ytmSearchInput');
+                if (window.innerWidth <= 640 && mobileSI) {
+                    mobileSI.focus();
+                } else if (desktopSI) {
+                    desktopSI.focus();
+                }
+                break;
         }
 
         if (history.pushState) history.pushState(null, null, '#' + page);

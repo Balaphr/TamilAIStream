@@ -273,6 +273,23 @@
                     <i class="fas fa-chevron-right"></i>
                 </button>
                 
+                <!-- Mobile Header (visible only on mobile) -->
+                <div class="ytm-mobile-header">
+                    <div class="ytm-mobile-brand">
+                        <svg width="28" height="28" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" fill="url(#g1)"/><path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/><defs><linearGradient id="g1" x1="0" y1="0" x2="40" y2="40"><stop stop-color="#34d399"/><stop offset="1" stop-color="#10b981"/></linearGradient></defs></svg>
+                    </div>
+                    <div class="ytm-mobile-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="ytmMobileSearchInput" placeholder="Search..." autocomplete="off">
+                    </div>
+                    <button class="ytm-mobile-action" onclick="YTMusic.toggleSettingsPanel()" title="Settings">
+                        <i class="fas fa-gear"></i>
+                    </button>
+                    <button class="ytm-mobile-action" id="ytmMobileLogoutBtn" title="Logout">
+                        <i class="fas fa-right-from-bracket"></i>
+                    </button>
+                </div>
+                
                 <div class="ytm-search-container">
                     <div class="ytm-search-box">
                         <i class="fas fa-search ytm-search-icon"></i>

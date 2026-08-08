@@ -490,6 +490,15 @@
     background: var(--ytm-surface-3);
 }
 
+/* Mobile header — hidden on desktop, shown on mobile via @media */
+.ytm-mobile-header {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
 .ytm-search-container {
     flex: 1;
     max-width: 720px;
@@ -3027,6 +3036,94 @@
         display: none;
     }
     
+    /* Hide desktop nav elements on mobile */
+    .ytm-search-container,
+    .ytm-nav-actions .ytm-nav-btn,
+    .ytm-nav-actions .ytm-user-avatar,
+    .ytm-nav-actions .builder-nav-link {
+        display: none !important;
+    }
+    
+    /* Show mobile header */
+    .ytm-mobile-header {
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+        padding: 0 4px;
+    }
+    
+    .ytm-mobile-brand {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .ytm-mobile-search {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 0 12px;
+        height: 36px;
+        transition: border-color 0.2s, background 0.2s;
+    }
+    
+    .ytm-mobile-search:focus-within {
+        border-color: rgba(52, 211, 153, 0.4);
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .ytm-mobile-search i {
+        font-size: 12px;
+        color: var(--ytm-text-secondary, rgba(255,255,255,0.5));
+        flex-shrink: 0;
+    }
+    
+    .ytm-mobile-search input {
+        flex: 1;
+        min-width: 0;
+        background: none;
+        border: none;
+        outline: none;
+        color: var(--ytm-text-primary, #fff);
+        font-size: 13px;
+        font-family: inherit;
+        padding: 0;
+        height: 100%;
+    }
+    
+    .ytm-mobile-search input::placeholder {
+        color: var(--ytm-text-secondary, rgba(255,255,255,0.4));
+    }
+    
+    .ytm-mobile-action {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: var(--ytm-text-secondary, rgba(255,255,255,0.6));
+        font-size: 15px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: color 0.2s, background 0.2s;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .ytm-mobile-action:active {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--ytm-text-primary, #fff);
+    }
+    
     .ytm-playlist-cover {
         width: 150px;
         height: 150px;
@@ -4026,10 +4123,22 @@ body.home-active .ytm-page-home {
         font-size: 18px;
     }
     
-    /* Grids — use same clean 2-column as Explore */
+    /* Grids — horizontal swipe carousels on mobile */
     .ytm-page-home .categories-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 10px;
+        padding: 0 0 8px;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+    .ytm-page-home .categories-grid::-webkit-scrollbar { display: none; }
+    .ytm-page-home .categories-grid > * {
+        scroll-snap-align: start;
+        flex: 0 0 auto;
+        min-width: 140px;
     }
     
     .ytm-page-home .tamil-hits-grid {
@@ -4066,8 +4175,20 @@ body.home-active .ytm-page-home {
     }
     
     .ytm-page-home .stations-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 10px;
+        padding: 0 0 8px;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+    .ytm-page-home .stations-grid::-webkit-scrollbar { display: none; }
+    .ytm-page-home .stations-grid > * {
+        scroll-snap-align: start;
+        flex: 0 0 auto;
+        min-width: 140px;
     }
     
     /* Override conflicting style.css unscoped rules for Home page elements */
@@ -4152,12 +4273,25 @@ body.home-active .ytm-page-home {
         padding: 0 12px;
     }
     
-    /* Explore/Library grids */
+    /* Explore/Library grids — horizontal carousels on mobile */
     .ytm-explore-grid,
     .ytm-library-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-        padding: 0 12px;
+        display: flex;
+        overflow-x: auto;
+        gap: 10px;
+        padding: 0 0 8px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+    .ytm-explore-grid::-webkit-scrollbar,
+    .ytm-library-grid::-webkit-scrollbar { display: none; }
+    .ytm-explore-grid > *,
+    .ytm-library-grid > * {
+        scroll-snap-align: start;
+        flex: 0 0 auto;
+        min-width: 140px;
     }
     
     .ytm-playlist-tracks {
@@ -4175,10 +4309,22 @@ body.home-active .ytm-page-home {
         font-size: 16px;
     }
     
-    /* Grids — use same clean 2-column as Explore */
+    /* Grids — horizontal swipe carousels on small mobile */
     .ytm-page-home .categories-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        display: flex;
+        overflow-x: auto;
+        gap: 8px;
+        padding: 0 0 6px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+    .ytm-page-home .categories-grid::-webkit-scrollbar { display: none; }
+    .ytm-page-home .categories-grid > * {
+        scroll-snap-align: start;
+        flex: 0 0 auto;
+        min-width: 130px;
     }
     
     /* Tamil Hits — horizontal carousel on small mobile */
@@ -4286,12 +4432,25 @@ body.home-active .ytm-page-home {
         display: none;
     }
     
-    /* Explore/Library grids */
+    /* Explore/Library grids — horizontal carousels on small mobile */
     .ytm-explore-grid,
     .ytm-library-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        padding: 0 10px;
+        display: flex;
+        overflow-x: auto;
+        gap: 8px;
+        padding: 0 0 6px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+    .ytm-explore-grid::-webkit-scrollbar,
+    .ytm-library-grid::-webkit-scrollbar { display: none; }
+    .ytm-explore-grid > *,
+    .ytm-library-grid > * {
+        scroll-snap-align: start;
+        flex: 0 0 auto;
+        min-width: 130px;
     }
     
     .ytm-playlist-tracks {
