@@ -42,6 +42,13 @@
                 siteSettings: global.DataStore.getSiteSettings() || {},
                 layout: global.DataStore.getLayout() || [],
                 images: global.DataStore.getImages() || [],
+                moods: global.DataStore.getMoods() || [],
+                aiRadio: global.DataStore.getAIRadio() || [],
+                notifications: global.DataStore.getNotifications() || [],
+                splash: global.DataStore.getSplash() || {},
+                playerPrefs: global.DataStore.getPlayerPrefs() || {},
+                navigation: global.DataStore.getNavigation() || {},
+                sectionsOrder: global.DataStore.getSectionsOrder() || [],
                 playlists: global.DataStore.getPlaylists() || [],
                 likedSongs: global.DataStore.getLikedSongs() || [],
                 history: global.DataStore.getHistory() || [],
@@ -62,6 +69,13 @@
             siteSettings: readLocalStorage('tamilAIStream_siteSettings', {}),
             layout: readLocalStorage('websiteLayout', []),
             images: readLocalStorage('tamilAIStream_images', []),
+            moods: readLocalStorage('tamilAIStream_moods', []),
+            aiRadio: readLocalStorage('tamilAIStream_aiRadio', []),
+            notifications: readLocalStorage('tamilAIStream_notifications', []),
+            splash: readLocalStorage('tamilAIStream_splash', {}),
+            playerPrefs: readLocalStorage('tamilAIStream_playerPrefs', {}),
+            navigation: readLocalStorage('tamilAIStream_navigation', {}),
+            sectionsOrder: readLocalStorage('tamilAIStream_sectionsOrder', []),
             playlists: readLocalStorage('ytm_playlists', []),
             likedSongs: readLocalStorage('ytm_likedSongs', []),
             history: readLocalStorage('ytm_history', []),
@@ -154,6 +168,13 @@
             if (typeof global.DataStore.setSiteSettings === 'function') global.DataStore.setSiteSettings(data.siteSettings || {});
             if (typeof global.DataStore.setLayout === 'function') global.DataStore.setLayout(data.layout || []);
             if (typeof global.DataStore.setImages === 'function') global.DataStore.setImages(data.images || []);
+            if (typeof global.DataStore.setMoods === 'function') global.DataStore.setMoods(data.moods || []);
+            if (typeof global.DataStore.setAIRadio === 'function') global.DataStore.setAIRadio(data.aiRadio || []);
+            if (typeof global.DataStore.setNotifications === 'function') global.DataStore.setNotifications(data.notifications || []);
+            if (typeof global.DataStore.setSplash === 'function') global.DataStore.setSplash(data.splash || {});
+            if (typeof global.DataStore.setPlayerPrefs === 'function') global.DataStore.setPlayerPrefs(data.playerPrefs || {});
+            if (typeof global.DataStore.setNavigation === 'function') global.DataStore.setNavigation(data.navigation || {});
+            if (typeof global.DataStore.setSectionsOrder === 'function') global.DataStore.setSectionsOrder(data.sectionsOrder || []);
             if (typeof global.DataStore.setPlaylists === 'function') global.DataStore.setPlaylists(data.playlists || []);
             if (typeof global.DataStore.setLikedSongs === 'function') global.DataStore.setLikedSongs(data.likedSongs || []);
             if (typeof global.DataStore.setHistory === 'function') global.DataStore.setHistory(data.history || []);
@@ -171,6 +192,13 @@
         writeLocalStorage('tamilAIStream_siteSettings', data.siteSettings || {});
         writeLocalStorage('websiteLayout', data.layout || []);
         writeLocalStorage('tamilAIStream_images', data.images || []);
+        writeLocalStorage('tamilAIStream_moods', data.moods || []);
+        writeLocalStorage('tamilAIStream_aiRadio', data.aiRadio || []);
+        writeLocalStorage('tamilAIStream_notifications', data.notifications || []);
+        writeLocalStorage('tamilAIStream_splash', data.splash || {});
+        writeLocalStorage('tamilAIStream_playerPrefs', data.playerPrefs || {});
+        writeLocalStorage('tamilAIStream_navigation', data.navigation || {});
+        writeLocalStorage('tamilAIStream_sectionsOrder', data.sectionsOrder || []);
         writeLocalStorage('ytm_playlists', data.playlists || []);
         writeLocalStorage('ytm_likedSongs', data.likedSongs || []);
         writeLocalStorage('ytm_history', data.history || []);

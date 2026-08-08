@@ -121,6 +121,15 @@
                         <button class="builder-nav-item" data-page="settings">
                             <i class="fas fa-cog"></i> Settings
                         </button>
+                        <button class="builder-nav-item" data-page="moods">
+                            <i class="fas fa-smile"></i> Moods
+                        </button>
+                        <button class="builder-nav-item" data-page="airadio">
+                            <i class="fas fa-robot"></i> AI Radio
+                        </button>
+                        <button class="builder-nav-item" data-page="sections">
+                            <i class="fas fa-sort-amount-up"></i> Sections
+                        </button>
                         <button class="builder-nav-item" data-page="preview">
                             <i class="fas fa-eye"></i> Preview
                         </button>
@@ -166,6 +175,27 @@
                             </button>
                             <button class="builder-sidebar-item" data-page="settings">
                                 <i class="fas fa-cog"></i> Site Settings
+                            </button>
+                            <button class="builder-sidebar-item" data-page="moods">
+                                <i class="fas fa-smile"></i> Moods & Genres
+                            </button>
+                            <button class="builder-sidebar-item" data-page="airadio">
+                                <i class="fas fa-robot"></i> AI Radio
+                            </button>
+                            <button class="builder-sidebar-item" data-page="notifications">
+                                <i class="fas fa-bell"></i> Notifications
+                            </button>
+                            <button class="builder-sidebar-item" data-page="splash">
+                                <i class="fas fa-play-circle"></i> Splash Screen
+                            </button>
+                            <button class="builder-sidebar-item" data-page="player">
+                                <i class="fas fa-sliders-h"></i> Player Settings
+                            </button>
+                            <button class="builder-sidebar-item" data-page="navigation">
+                                <i class="fas fa-navicon"></i> Navigation
+                            </button>
+                            <button class="builder-sidebar-item" data-page="sections">
+                                <i class="fas fa-sort-amount-up"></i> Home Sections
                             </button>
                             <button class="builder-sidebar-item" data-page="preview">
                                 <i class="fas fa-eye"></i> Live Preview
@@ -810,6 +840,243 @@
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+
+                    <!-- Moods & Genres Page -->
+                    <div class="builder-page" id="moodsPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Moods & Genres</h1>
+                            <p class="builder-page-subtitle">Manage mood/genre cards for the home page Mood & Genre section</p>
+                        </div>
+                        <div class="builder-content-card">
+                            <div class="builder-card-header">
+                                <h3>All Moods</h3>
+                                <button class="builder-btn primary" onclick="openAddMoodModal()"><i class="fas fa-plus"></i> Add Mood</button>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="builder-table-wrap">
+                                    <table class="builder-table" id="moodsTable">
+                                        <thead><tr><th>Emoji</th><th>Name</th><th>Gradient</th><th>Status</th><th>Actions</th></tr></thead>
+                                        <tbody id="moodsTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Radio Page -->
+                    <div class="builder-page" id="airadioPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">AI Radio Moods</h1>
+                            <p class="builder-page-subtitle">Manage AI Radio recommendation cards shown on the home page</p>
+                        </div>
+                        <div class="builder-content-card">
+                            <div class="builder-card-header">
+                                <h3>AI Radio Cards</h3>
+                                <button class="builder-btn primary" onclick="openAddAIRadioModal()"><i class="fas fa-plus"></i> Add Card</button>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="builder-table-wrap">
+                                    <table class="builder-table" id="airadioTable">
+                                        <thead><tr><th>Icon</th><th>Title</th><th>Description</th><th>Filter</th><th>Status</th><th>Actions</th></tr></thead>
+                                        <tbody id="airadioTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notifications Page -->
+                    <div class="builder-page" id="notificationsPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Notifications</h1>
+                            <p class="builder-page-subtitle">Manage notification messages shown to users</p>
+                        </div>
+                        <div class="builder-content-card">
+                            <div class="builder-card-header">
+                                <h3>All Notifications</h3>
+                                <button class="builder-btn primary" onclick="openAddNotificationModal()"><i class="fas fa-plus"></i> Add Notification</button>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="builder-table-wrap">
+                                    <table class="builder-table" id="notificationsTable">
+                                        <thead><tr><th>Title</th><th>Message</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+                                        <tbody id="notificationsTableBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Splash Screen Page -->
+                    <div class="builder-page" id="splashPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Splash Screen</h1>
+                            <p class="builder-page-subtitle">Configure the startup splash screen animation</p>
+                        </div>
+                        <div class="builder-content-card">
+                            <div class="builder-card-header"><h3>Splash Settings</h3></div>
+                            <div class="builder-card-body">
+                                <form id="splashForm" onsubmit="return saveSplashSettings(event)">
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label class="form-label">Enable Splash Screen</label>
+                                            <select class="form-input" id="splashEnabled"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Duration (ms)</label>
+                                            <input type="number" class="form-input" id="splashDuration" min="1000" max="5000" step="100">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Logo Icon (FA class)</label>
+                                            <input type="text" class="form-input" id="splashLogoIcon" placeholder="fa-headphones-alt">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Title</label>
+                                            <input type="text" class="form-input" id="splashTitle">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Subtitle</label>
+                                            <input type="text" class="form-input" id="splashSubtitle">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Show Equalizer</label>
+                                            <select class="form-input" id="splashShowEqualizer"><option value="true">Yes</option><option value="false">No</option></select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Show Particles</label>
+                                            <select class="form-input" id="splashShowParticles"><option value="true">Yes</option><option value="false">No</option></select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Show Loading Bar</label>
+                                            <select class="form-input" id="splashShowLoadingBar"><option value="true">Yes</option><option value="false">No</option></select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Show Skip Button</label>
+                                            <select class="form-input" id="splashShowSkipButton"><option value="true">Yes</option><option value="false">No</option></select>
+                                        </div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="builder-btn primary"><i class="fas fa-save"></i> Save Splash Settings</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Player Settings Page -->
+                    <div class="builder-page" id="playerPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Player Settings</h1>
+                            <p class="builder-page-subtitle">Configure default player behavior and audio settings</p>
+                        </div>
+                        <div class="builder-content-card">
+                            <div class="builder-card-header"><h3>Playback Defaults</h3></div>
+                            <div class="builder-card-body">
+                                <form id="playerForm" onsubmit="return savePlayerPrefs(event)">
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label class="form-label">Autoplay</label>
+                                            <select class="form-input" id="prefAutoplay"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Crossfade</label>
+                                            <select class="form-input" id="prefCrossfade"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Crossfade Duration (sec)</label>
+                                            <input type="number" class="form-input" id="prefCrossfadeDuration" min="0" max="10" step="0.5">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Default Volume</label>
+                                            <input type="range" class="form-input" id="prefDefaultVolume" min="0" max="1" step="0.05" style="padding:8px;">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">EQ Preset</label>
+                                            <select class="form-input" id="prefEqPreset">
+                                                <option value="flat">Flat</option><option value="bass">Bass Boost</option>
+                                                <option value="treble">Treble Boost</option><option value="vocal">Vocal</option>
+                                                <option value="rock">Rock</option><option value="jazz">Jazz</option>
+                                                <option value="classical">Classical</option><option value="pop">Pop</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Bass Boost</label>
+                                            <input type="range" class="form-input" id="prefBassBoost" min="-12" max="12" step="1" style="padding:8px;">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Treble Boost</label>
+                                            <input type="range" class="form-input" id="prefTrebleBoost" min="-12" max="12" step="1" style="padding:8px;">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Vocal Boost</label>
+                                            <input type="range" class="form-input" id="prefVocalBoost" min="-12" max="12" step="1" style="padding:8px;">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Stereo Balance</label>
+                                            <input type="range" class="form-input" id="prefStereoBalance" min="-1" max="1" step="0.1" style="padding:8px;">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Loudness Normalization</label>
+                                            <select class="form-input" id="prefLoudnessNorm"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Surround Effect</label>
+                                            <select class="form-input" id="prefSurroundEffect"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                        </div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="builder-btn primary"><i class="fas fa-save"></i> Save Player Settings</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Settings Page -->
+                    <div class="builder-page" id="navigationPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Navigation</h1>
+                            <p class="builder-page-subtitle">Show or hide navigation items on the website</p>
+                        </div>
+                        <div class="builder-content-card">
+                            <div class="builder-card-header"><h3>Navigation Items</h3></div>
+                            <div class="builder-card-body">
+                                <form id="navigationForm" onsubmit="return saveNavigation(event)">
+                                    <div class="form-grid">
+                                        <div class="form-group"><label class="form-label">Home</label><select class="form-input" id="navShowHome"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Explore</label><select class="form-input" id="navShowExplore"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Library</label><select class="form-input" id="navShowLibrary"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Search</label><select class="form-input" id="navShowSearch"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Liked Songs</label><select class="form-input" id="navShowLiked"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Stations</label><select class="form-input" id="navShowStations"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Artists</label><select class="form-input" id="navShowArtists"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">History</label><select class="form-input" id="navShowHistory"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Playlists</label><select class="form-input" id="navShowPlaylists"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="builder-btn primary"><i class="fas fa-save"></i> Save Navigation</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Home Sections Order Page -->
+                    <div class="builder-page" id="sectionsPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Home Page Sections</h1>
+                            <p class="builder-page-subtitle">Enable/disable and reorder home page sections</p>
+                        </div>
+                        <div class="builder-content-card">
+                            <div class="builder-card-header">
+                                <h3>Sections Order</h3>
+                                <button class="builder-btn primary" onclick="saveSectionsOrder()"><i class="fas fa-save"></i> Save Order</button>
+                            </div>
+                            <div class="builder-card-body">
+                                <div id="sectionsList" class="sections-drag-list"></div>
+                            </div>
                         </div>
                     </div>
 

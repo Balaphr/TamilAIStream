@@ -22,6 +22,14 @@ const DataStore = {
         SITE_SETTINGS: 'tamilAIStream_siteSettings',
         LAYOUT: 'websiteLayout',
         RECENT_PLAYED: 'tamilAIStream_recent',
+        // New Builder-controlled sections
+        MOODS: 'tamilAIStream_moods',
+        AI_RADIO: 'tamilAIStream_aiRadio',
+        NOTIFICATIONS: 'tamilAIStream_notifications',
+        SPLASH: 'tamilAIStream_splash',
+        PLAYER_PREFS: 'tamilAIStream_playerPrefs',
+        NAVIGATION: 'tamilAIStream_navigation',
+        SECTIONS_ORDER: 'tamilAIStream_sectionsOrder',
         // YouTube Music-like features
         LIKED_SONGS: 'ytm_likedSongs',
         PLAYLISTS: 'ytm_playlists',
@@ -117,7 +125,83 @@ const DataStore = {
             themeColor: '#000000',
             footerText: '© 2024 Tamil AI Stream. All rights reserved.'
         },
-        layout: []
+        layout: [],
+        moods: [
+            { id: 'm_1', emoji: '🎵', name: 'Melody', gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', status: 'active' },
+            { id: 'm_2', emoji: '⚡', name: 'Energy', gradient: 'linear-gradient(135deg,#f59e0b,#ef4444)', status: 'active' },
+            { id: 'm_3', emoji: '💕', name: 'Romance', gradient: 'linear-gradient(135deg,#ec4899,#f43f5e)', status: 'active' },
+            { id: 'm_4', emoji: '🕊️', name: 'Peace', gradient: 'linear-gradient(135deg,#10b981,#06b6d4)', status: 'active' },
+            { id: 'm_5', emoji: '🎉', name: 'Party', gradient: 'linear-gradient(135deg,#8b5cf6,#d946ef)', status: 'active' },
+            { id: 'm_6', emoji: '💪', name: 'Workout', gradient: 'linear-gradient(135deg,#ef4444,#f97316)', status: 'active' },
+            { id: 'm_7', emoji: '🌧️', name: 'Rainy', gradient: 'linear-gradient(135deg,#64748b,#3b82f6)', status: 'active' },
+            { id: 'm_8', emoji: '🌅', name: 'Sunset', gradient: 'linear-gradient(135deg,#f97316,#eab308)', status: 'active' },
+            { id: 'm_9', emoji: '🌙', name: 'Night', gradient: 'linear-gradient(135deg,#1e1b4b,#312e81)', status: 'active' },
+            { id: 'm_10', emoji: '😎', name: 'Chill', gradient: 'linear-gradient(135deg,#06b6d4,#22d3ee)', status: 'active' },
+            { id: 'm_11', emoji: '🔥', name: 'Power', gradient: 'linear-gradient(135deg,#dc2626,#ea580c)', status: 'active' },
+            { id: 'm_12', emoji: '🎶', name: 'Classical', gradient: 'linear-gradient(135deg,#7c3aed,#a855f7)', status: 'active' }
+        ],
+        aiRadio: [
+            { id: 'ar_1', icon: 'fa-sun', title: 'Morning Raga', desc: 'Start your day with soulful Tamil melodies', filter: 'music', status: 'active' },
+            { id: 'ar_2', icon: 'fa-bolt', title: 'Workout Energy', desc: 'High-energy Tamil hits to power your workout', filter: 'music', status: 'active' },
+            { id: 'ar_3', icon: 'fa-moon', title: 'Late Night Jazz', desc: 'Relax with smooth Tamil instrumentals', filter: 'music', status: 'active' },
+            { id: 'ar_4', icon: 'fa-om', title: 'Devotional Flow', desc: 'Peaceful spiritual Tamil hymns', filter: 'devotional', status: 'active' },
+            { id: 'ar_5', icon: 'fa-masks-theater', title: 'Comedy Hour', desc: 'Laugh out loud with Tamil comedy shows', filter: 'comedy', status: 'active' },
+            { id: 'ar_6', icon: 'fa-newspaper', title: 'News Digest', desc: 'Stay updated with Tamil news channels', filter: 'news', status: 'active' }
+        ],
+        notifications: [
+            { id: 'n_1', title: 'Welcome to Tamil AI Stream', message: 'Discover 100+ live Tamil FM stations powered by AI.', type: 'info', status: 'active', timestamp: Date.now() },
+            { id: 'n_2', title: 'New Stations Added', message: 'Check out the latest Tamil radio stations added this week.', type: 'update', status: 'active', timestamp: Date.now() }
+        ],
+        splash: {
+            enabled: true,
+            duration: 2200,
+            showEqualizer: true,
+            showParticles: true,
+            showLoadingBar: true,
+            showSkipButton: true,
+            logoIcon: 'fa-headphones-alt',
+            title: 'Tamil AI Stream',
+            subtitle: 'AI-Powered Tamil Radio'
+        },
+        playerPrefs: {
+            autoplay: true,
+            crossfade: false,
+            crossfadeDuration: 2,
+            defaultVolume: 0.8,
+            eqPreset: 'flat',
+            bassBoost: 0,
+            trebleBoost: 0,
+            vocalBoost: 0,
+            stereoBalance: 0,
+            loudnessNorm: false,
+            surroundEffect: false
+        },
+        navigation: {
+            showHome: true,
+            showExplore: true,
+            showLibrary: true,
+            showSearch: true,
+            showLiked: true,
+            showStations: true,
+            showArtists: true,
+            showHistory: true,
+            showPlaylists: true
+        },
+        sectionsOrder: [
+            { id: 'sec_greeting', name: 'AI Greeting', enabled: true, order: 1 },
+            { id: 'sec_featured', name: 'Featured Stations', enabled: true, order: 2 },
+            { id: 'sec_trending', name: 'Trending Now', enabled: true, order: 3 },
+            { id: 'sec_airadio', name: 'AI Radio For Me', enabled: true, order: 4 },
+            { id: 'sec_categories', name: 'Browse Categories', enabled: true, order: 5 },
+            { id: 'sec_artisthits', name: 'Tamil Hits Collections', enabled: true, order: 6 },
+            { id: 'sec_popular', name: 'Popular Artists', enabled: true, order: 7 },
+            { id: 'sec_moods', name: 'Mood & Genre', enabled: true, order: 8 },
+            { id: 'sec_charts', name: 'Top Charts', enabled: true, order: 9 },
+            { id: 'sec_recent', name: 'Recently Played', enabled: true, order: 10 },
+            { id: 'sec_allstations', name: 'All Tamil FM Stations', enabled: true, order: 11 },
+            { id: 'sec_recentadded', name: 'Recently Added', enabled: true, order: 12 },
+            { id: 'sec_recommended', name: 'AI Recommended', enabled: true, order: 13 }
+        ]
     },
 
     // ============================================
@@ -210,6 +294,34 @@ const DataStore = {
         return this.get(this.KEYS.IMAGES) || [];
     },
 
+    getMoods() {
+        return this.get(this.KEYS.MOODS) || this.DEFAULTS.moods;
+    },
+
+    getAIRadio() {
+        return this.get(this.KEYS.AI_RADIO) || this.DEFAULTS.aiRadio;
+    },
+
+    getNotifications() {
+        return this.get(this.KEYS.NOTIFICATIONS) || this.DEFAULTS.notifications;
+    },
+
+    getSplash() {
+        return this.get(this.KEYS.SPLASH) || this.DEFAULTS.splash;
+    },
+
+    getPlayerPrefs() {
+        return this.get(this.KEYS.PLAYER_PREFS) || this.DEFAULTS.playerPrefs;
+    },
+
+    getNavigation() {
+        return this.get(this.KEYS.NAVIGATION) || this.DEFAULTS.navigation;
+    },
+
+    getSectionsOrder() {
+        return this.get(this.KEYS.SECTIONS_ORDER) || this.DEFAULTS.sectionsOrder;
+    },
+
     // ============================================
     // Typed Setters
     // ============================================
@@ -223,6 +335,13 @@ const DataStore = {
     setSiteSettings(settings) { this.set(this.KEYS.SITE_SETTINGS, settings); },
     setLayout(layout) { this.set(this.KEYS.LAYOUT, layout); },
     setImages(images) { this.set(this.KEYS.IMAGES, images); },
+    setMoods(moods) { this.set(this.KEYS.MOODS, moods); },
+    setAIRadio(radio) { this.set(this.KEYS.AI_RADIO, radio); },
+    setNotifications(notifs) { this.set(this.KEYS.NOTIFICATIONS, notifs); },
+    setSplash(splash) { this.set(this.KEYS.SPLASH, splash); },
+    setPlayerPrefs(prefs) { this.set(this.KEYS.PLAYER_PREFS, prefs); },
+    setNavigation(nav) { this.set(this.KEYS.NAVIGATION, nav); },
+    setSectionsOrder(order) { this.set(this.KEYS.SECTIONS_ORDER, order); },
     
     // YouTube Music-like feature getters
     getLikedSongs() { return this.get(this.KEYS.LIKED_SONGS) || []; },

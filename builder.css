@@ -1070,3 +1070,57 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     background: var(--bg-primary); padding: 4px 10px; border-radius: var(--radius-sm);
     border: 1px solid var(--border-glass);
 }
+
+/* ============================================
+   Sections Drag & Drop List
+   ============================================ */
+.sections-drag-list {
+    display: flex; flex-direction: column; gap: 8px;
+}
+.section-drag-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; border-radius: var(--radius-md);
+    background: var(--bg-primary); border: 1px solid var(--border-glass);
+    cursor: grab; transition: all 0.2s ease;
+}
+.section-drag-item:hover {
+    border-color: var(--emerald-500);
+    background: var(--bg-secondary);
+}
+.section-drag-item.dragging {
+    opacity: 0.5; border-color: var(--emerald-400);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+}
+.section-drag-handle {
+    color: var(--text-muted); font-size: 1rem; cursor: grab;
+}
+.section-drag-info {
+    flex: 1; display: flex; align-items: center; justify-content: space-between;
+}
+.section-drag-name {
+    font-weight: 500; color: var(--text-primary);
+}
+.section-drag-order {
+    font-size: 0.8rem; color: var(--text-muted); background: var(--bg-tertiary);
+    padding: 2px 8px; border-radius: var(--radius-sm);
+}
+.section-toggle {
+    position: relative; display: inline-block; width: 44px; height: 24px;
+}
+.section-toggle input { opacity: 0; width: 0; height: 0; }
+.section-toggle-slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: var(--bg-tertiary); border-radius: 24px; border: 1px solid var(--border-glass);
+    transition: 0.3s;
+}
+.section-toggle-slider::before {
+    content: ''; position: absolute; height: 18px; width: 18px;
+    left: 2px; bottom: 2px; background: var(--text-muted);
+    border-radius: 50%; transition: 0.3s;
+}
+.section-toggle input:checked + .section-toggle-slider {
+    background: var(--emerald-500); border-color: var(--emerald-400);
+}
+.section-toggle input:checked + .section-toggle-slider::before {
+    transform: translateX(20px); background: white;
+}

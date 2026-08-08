@@ -2102,30 +2102,21 @@ function renderAIRadioSection() {
     const stations = DataStore.getStations().filter(s => s.status === 'active');
     const hour = new Date().getHours();
     
-    // Time-based mood categories
-    const timeMoods = [
-        { icon: 'fa-sun', title: 'Morning Raga', desc: 'Start your day with soulful Tamil melodies', filter: 'music' },
-        { icon: 'fa-bolt', title: 'Workout Energy', desc: 'High-energy Tamil hits to power your workout', filter: 'music' },
-        { icon: 'fa-moon', title: 'Late Night Jazz', desc: 'Relax with smooth Tamil instrumentals', filter: 'music' },
-        { icon: 'fa-om', title: 'Devotional Flow', desc: 'Peaceful spiritual Tamil hymns', filter: 'devotional' },
-        { icon: 'fa-masks-theater', title: 'Comedy Hour', desc: 'Laugh out loud with Tamil comedy shows', filter: 'comedy' },
-        { icon: 'fa-newspaper', title: 'News Digest', desc: 'Stay updated with Tamil news channels', filter: 'news' },
-    ];
+    // Load AI Radio cards from DataStore
+    const timeMoods = DataStore.getAIRadio().filter(a => a.status === 'active');
+    
+    if (timeMoods.length === 0) return;
     
     // Adjust based on time of day
     let displayMoods = [...timeMoods];
     if (hour >= 5 && hour < 10) {
-        // Morning - prioritize devotional and morning raga
-        displayMoods = [timeMoods[3], timeMoods[0], timeMoods[5], timeMoods[1], timeMoods[4], timeMoods[2]];
+        displayMoods = [timeMoods[3] || timeMoods[0], timeMoods[0], timeMoods[5] || timeMoods[2], timeMoods[1], timeMoods[4] || timeMoods[2], timeMoods[2]];
     } else if (hour >= 10 && hour < 17) {
-        // Daytime - prioritize news and energy
-        displayMoods = [timeMoods[5], timeMoods[1], timeMoods[0], timeMoods[4], timeMoods[3], timeMoods[2]];
+        displayMoods = [timeMoods[5] || timeMoods[2], timeMoods[1], timeMoods[0], timeMoods[4] || timeMoods[2], timeMoods[3] || timeMoods[0], timeMoods[2]];
     } else if (hour >= 17 && hour < 21) {
-        // Evening - prioritize entertainment
-        displayMoods = [timeMoods[4], timeMoods[1], timeMoods[0], timeMoods[5], timeMoods[3], timeMoods[2]];
+        displayMoods = [timeMoods[4] || timeMoods[2], timeMoods[1], timeMoods[0], timeMoods[5] || timeMoods[2], timeMoods[3] || timeMoods[0], timeMoods[2]];
     } else {
-        // Night - prioritize relaxing
-        displayMoods = [timeMoods[2], timeMoods[3], timeMoods[0], timeMoods[4], timeMoods[1], timeMoods[5]];
+        displayMoods = [timeMoods[2], timeMoods[3] || timeMoods[0], timeMoods[0], timeMoods[4] || timeMoods[2], timeMoods[1], timeMoods[5] || timeMoods[2]];
     }
     
     container.innerHTML = displayMoods.map((mood, i) => {
@@ -2171,24 +2162,11 @@ function renderMoodGenre() {
     const container = document.getElementById('moodGenreTrack');
     if (!container) return;
     
-    const moods = [
-        { icon: '🎵', name: 'Melody' },
-        { icon: '🔥', name: 'Energy' },
-        { icon: '💜', name: 'Romance' },
-        { icon: '🧘', name: 'Peace' },
-        { icon: '🎉', name: 'Party' },
-        { icon: '😤', name: 'Workout' },
-        { icon: '🌧️', name: 'Rainy' },
-        { icon: '🌅', name: 'Sunset' },
-        { icon: '🌙', name: 'Night' },
-        { icon: '☕', name: 'Chill' },
-        { icon: '💪', name: 'Power' },
-        { icon: '🎶', name: 'Classical' },
-    ];
+    const moods = DataStore.getMoods().filter(m => m.status === 'active');
     
     container.innerHTML = moods.map(mood => `
-        <div class="mood-glass-card" onclick="YTMusic.navigateTo('explore')">
-            <div class="mood-glass-icon">${mood.icon}</div>
+        <div class="mood-glass-card" onclick="YTMusic.navigateTo('explore')" style="background:${mood.gradient || 'linear-gradient(135deg,#6366f1,#8b5cf6)'}">
+            <div class="mood-glass-icon">${mood.emoji}</div>
             <div class="mood-glass-name">${mood.name}</div>
         </div>
     `).join('');
@@ -2407,6 +2385,18 @@ function setupRealtimeSync() {
                 break;
             case 'SETTINGS':
                 // Reload YT Music settings
+                break;
+            case 'MOODS':
+                renderMoodGenre();
+                break;
+            case 'AI_RADIO':
+                renderAIRadioSection();
+                break;
+            case 'NAVIGATION':
+                // Navigation visibility changes require page reload
+                break;
+            case 'SECTIONS_ORDER':
+                // Section order changes require page reload
                 break;
         }
     });

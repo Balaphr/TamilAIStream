@@ -317,6 +317,13 @@ function navigateTo(page) {
         'content': 'contentPage',
         'images': 'imagesPage',
         'settings': 'settingsPage',
+        'moods': 'moodsPage',
+        'airadio': 'airadioPage',
+        'notifications': 'notificationsPage',
+        'splash': 'splashPage',
+        'player': 'playerPage',
+        'navigation': 'navigationPage',
+        'sections': 'sectionsPage',
         'preview': 'previewPage'
     };
 
@@ -341,6 +348,13 @@ function navigateTo(page) {
     }
     if (page === 'images') loadAllImages();
     if (page === 'settings') loadSettings();
+    if (page === 'moods') loadMoods();
+    if (page === 'airadio') loadAIRadio();
+    if (page === 'notifications') loadNotifications();
+    if (page === 'splash') loadSplashSettings();
+    if (page === 'player') loadPlayerPrefs();
+    if (page === 'navigation') loadNavigation();
+    if (page === 'sections') loadSectionsOrder();
     if (page === 'preview') updatePreview();
 }
 
@@ -1089,6 +1103,13 @@ function saveDraft() {
             layout: DataStore.getLayout(),
             websiteSections: websiteSections,
             images: DataStore.getImages(),
+            moods: DataStore.getMoods(),
+            aiRadio: DataStore.getAIRadio(),
+            notifications: DataStore.getNotifications(),
+            splash: DataStore.getSplash(),
+            playerPrefs: DataStore.getPlayerPrefs(),
+            navigation: DataStore.getNavigation(),
+            sectionsOrder: DataStore.getSectionsOrder(),
             savedAt: new Date().toISOString()
         };
         localStorage.setItem('builderDraft', JSON.stringify(draftData));
@@ -1179,6 +1200,13 @@ function discardChanges() {
             if (draftData.layout) DataStore.setLayout(draftData.layout);
             if (draftData.websiteSections) { websiteSections = draftData.websiteSections; localStorage.setItem('websiteLayout', JSON.stringify(websiteSections)); }
             if (draftData.images) DataStore.setImages(draftData.images);
+            if (draftData.moods) DataStore.setMoods(draftData.moods);
+            if (draftData.aiRadio) DataStore.setAIRadio(draftData.aiRadio);
+            if (draftData.notifications) DataStore.setNotifications(draftData.notifications);
+            if (draftData.splash) DataStore.setSplash(draftData.splash);
+            if (draftData.playerPrefs) DataStore.setPlayerPrefs(draftData.playerPrefs);
+            if (draftData.navigation) DataStore.setNavigation(draftData.navigation);
+            if (draftData.sectionsOrder) DataStore.setSectionsOrder(draftData.sectionsOrder);
         }
         publishState = 'draft';
         savePublishState();
@@ -3297,6 +3325,403 @@ function deleteQuote(id) {
     DataStore.setQuotes(quotes);
     showToast('Quote deleted', 'success');
     loadQuotes();
+    syncToLiveWebsite();
+}
+
+// ============================================
+// Moods & Genres Management
+// ============================================
+function loadMoods() {
+    const moods = DataStore.getMoods();
+    const tbody = document.getElementById('moodsTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = moods.map(m => `
+        <tr>
+            <td style="font-size:1.5rem">${m.emoji}</td>
+            <td>${m.name}</td>
+            <td><div style="width:80px;height:24px;border-radius:6px;background:${m.gradient}"></div></td>
+            <td><span class="status-badge ${m.status === 'active' ? 'active' : 'inactive'}">${m.status}</span></td>
+            <td><div class="actions">
+                <button class="builder-btn small" onclick="editMood('${m.id}')"><i class="fas fa-edit"></i></button>
+                <button class="builder-btn small danger" onclick="deleteMood('${m.id}')"><i class="fas fa-trash"></i></button>
+            </div></td>
+        </tr>`).join('');
+}
+
+function openAddMoodModal() {
+    const modal = document.createElement('div');
+    modal.className = 'builder-modal-overlay';
+    modal.innerHTML = `<div class="builder-modal"><div class="builder-modal-header"><h3>Add Mood</h3><button class="builder-modal-close" onclick="this.closest('.builder-modal-overlay').remove()">&times;</button></div>
+        <form onsubmit="return saveMood(event)"><div class="builder-modal-body">
+            <div class="form-group"><label class="form-label">Emoji</label><input type="text" class="form-input" id="moodEmoji" placeholder="🎵" required></div>
+            <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="moodName" required></div>
+            <div class="form-group"><label class="form-label">Gradient</label><input type="text" class="form-input" id="moodGradient" placeholder="linear-gradient(135deg,#6366f1,#8b5cf6)"></div>
+        </div><div class="builder-modal-footer"><button type="button" class="builder-btn" onclick="this.closest('.builder-modal-overlay').remove()">Cancel</button><button type="submit" class="builder-btn primary">Save</button></div></form></div>`;
+    document.body.appendChild(modal);
+}
+
+function saveMood(e) {
+    e.preventDefault();
+    const moods = DataStore.getMoods();
+    moods.push({ id: 'm_' + Date.now(), emoji: document.getElementById('moodEmoji').value, name: document.getElementById('moodName').value, gradient: document.getElementById('moodGradient').value || 'linear-gradient(135deg,#6366f1,#8b5cf6)', status: 'active' });
+    DataStore.setMoods(moods); showToast('Mood added', 'success'); loadMoods(); syncToLiveWebsite();
+    document.querySelector('.builder-modal-overlay')?.remove();
+    return false;
+}
+
+function editMood(id) {
+    const moods = DataStore.getMoods();
+    const m = moods.find(x => x.id === id); if (!m) return;
+    const modal = document.createElement('div');
+    modal.className = 'builder-modal-overlay';
+    modal.innerHTML = `<div class="builder-modal"><div class="builder-modal-header"><h3>Edit Mood</h3><button class="builder-modal-close" onclick="this.closest('.builder-modal-overlay').remove()">&times;</button></div>
+        <form onsubmit="return updateMood(event,'${id}')"><div class="builder-modal-body">
+            <div class="form-group"><label class="form-label">Emoji</label><input type="text" class="form-input" id="moodEmoji" value="${m.emoji}" required></div>
+            <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="moodName" value="${m.name}" required></div>
+            <div class="form-group"><label class="form-label">Gradient</label><input type="text" class="form-input" id="moodGradient" value="${m.gradient}"></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-input" id="moodStatus"><option value="active" ${m.status==='active'?'selected':''}>Active</option><option value="inactive" ${m.status==='inactive'?'selected':''}>Inactive</option></select></div>
+        </div><div class="builder-modal-footer"><button type="button" class="builder-btn" onclick="this.closest('.builder-modal-overlay').remove()">Cancel</button><button type="submit" class="builder-btn primary">Update</button></div></form></div>`;
+    document.body.appendChild(modal);
+}
+
+function updateMood(e, id) {
+    e.preventDefault();
+    const moods = DataStore.getMoods();
+    const m = moods.find(x => x.id === id); if (!m) return false;
+    m.emoji = document.getElementById('moodEmoji').value;
+    m.name = document.getElementById('moodName').value;
+    m.gradient = document.getElementById('moodGradient').value;
+    m.status = document.getElementById('moodStatus').value;
+    DataStore.setMoods(moods); showToast('Mood updated', 'success'); loadMoods(); syncToLiveWebsite();
+    document.querySelector('.builder-modal-overlay')?.remove();
+    return false;
+}
+
+function deleteMood(id) {
+    if (!confirm('Delete this mood?')) return;
+    DataStore.setMoods(DataStore.getMoods().filter(m => m.id !== id));
+    showToast('Mood deleted', 'success'); loadMoods(); syncToLiveWebsite();
+}
+
+// ============================================
+// AI Radio Management
+// ============================================
+function loadAIRadio() {
+    const items = DataStore.getAIRadio();
+    const tbody = document.getElementById('airadioTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = items.map(a => `
+        <tr>
+            <td><i class="fas ${a.icon}"></i></td>
+            <td>${a.title}</td>
+            <td>${a.desc}</td>
+            <td>${a.filter}</td>
+            <td><span class="status-badge ${a.status === 'active' ? 'active' : 'inactive'}">${a.status}</span></td>
+            <td><div class="actions">
+                <button class="builder-btn small" onclick="editAIRadio('${a.id}')"><i class="fas fa-edit"></i></button>
+                <button class="builder-btn small danger" onclick="deleteAIRadio('${a.id}')"><i class="fas fa-trash"></i></button>
+            </div></td>
+        </tr>`).join('');
+}
+
+function openAddAIRadioModal() {
+    const modal = document.createElement('div');
+    modal.className = 'builder-modal-overlay';
+    modal.innerHTML = `<div class="builder-modal"><div class="builder-modal-header"><h3>Add AI Radio Card</h3><button class="builder-modal-close" onclick="this.closest('.builder-modal-overlay').remove()">&times;</button></div>
+        <form onsubmit="return saveAIRadio(event)"><div class="builder-modal-body">
+            <div class="form-group"><label class="form-label">Icon (FA class)</label><input type="text" class="form-input" id="arIcon" placeholder="fa-sun" required></div>
+            <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-input" id="arTitle" required></div>
+            <div class="form-group"><label class="form-label">Description</label><input type="text" class="form-input" id="arDesc" required></div>
+            <div class="form-group"><label class="form-label">Filter (genre)</label><input type="text" class="form-input" id="arFilter" placeholder="music"></div>
+        </div><div class="builder-modal-footer"><button type="button" class="builder-btn" onclick="this.closest('.builder-modal-overlay').remove()">Cancel</button><button type="submit" class="builder-btn primary">Save</button></div></form></div>`;
+    document.body.appendChild(modal);
+}
+
+function saveAIRadio(e) {
+    e.preventDefault();
+    const items = DataStore.getAIRadio();
+    items.push({ id: 'ar_' + Date.now(), icon: document.getElementById('arIcon').value, title: document.getElementById('arTitle').value, desc: document.getElementById('arDesc').value, filter: document.getElementById('arFilter').value || 'music', status: 'active' });
+    DataStore.setAIRadio(items); showToast('AI Radio card added', 'success'); loadAIRadio(); syncToLiveWebsite();
+    document.querySelector('.builder-modal-overlay')?.remove();
+    return false;
+}
+
+function editAIRadio(id) {
+    const items = DataStore.getAIRadio();
+    const a = items.find(x => x.id === id); if (!a) return;
+    const modal = document.createElement('div');
+    modal.className = 'builder-modal-overlay';
+    modal.innerHTML = `<div class="builder-modal"><div class="builder-modal-header"><h3>Edit AI Radio Card</h3><button class="builder-modal-close" onclick="this.closest('.builder-modal-overlay').remove()">&times;</button></div>
+        <form onsubmit="return updateAIRadio(event,'${id}')"><div class="builder-modal-body">
+            <div class="form-group"><label class="form-label">Icon</label><input type="text" class="form-input" id="arIcon" value="${a.icon}" required></div>
+            <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-input" id="arTitle" value="${a.title}" required></div>
+            <div class="form-group"><label class="form-label">Description</label><input type="text" class="form-input" id="arDesc" value="${a.desc}" required></div>
+            <div class="form-group"><label class="form-label">Filter</label><input type="text" class="form-input" id="arFilter" value="${a.filter}"></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-input" id="arStatus"><option value="active" ${a.status==='active'?'selected':''}>Active</option><option value="inactive" ${a.status==='inactive'?'selected':''}>Inactive</option></select></div>
+        </div><div class="builder-modal-footer"><button type="button" class="builder-btn" onclick="this.closest('.builder-modal-overlay').remove()">Cancel</button><button type="submit" class="builder-btn primary">Update</button></div></form></div>`;
+    document.body.appendChild(modal);
+}
+
+function updateAIRadio(e, id) {
+    e.preventDefault();
+    const items = DataStore.getAIRadio();
+    const a = items.find(x => x.id === id); if (!a) return false;
+    a.icon = document.getElementById('arIcon').value;
+    a.title = document.getElementById('arTitle').value;
+    a.desc = document.getElementById('arDesc').value;
+    a.filter = document.getElementById('arFilter').value;
+    a.status = document.getElementById('arStatus').value;
+    DataStore.setAIRadio(items); showToast('AI Radio card updated', 'success'); loadAIRadio(); syncToLiveWebsite();
+    document.querySelector('.builder-modal-overlay')?.remove();
+    return false;
+}
+
+function deleteAIRadio(id) {
+    if (!confirm('Delete this AI Radio card?')) return;
+    DataStore.setAIRadio(DataStore.getAIRadio().filter(a => a.id !== id));
+    showToast('AI Radio card deleted', 'success'); loadAIRadio(); syncToLiveWebsite();
+}
+
+// ============================================
+// Notifications Management
+// ============================================
+function loadNotifications() {
+    const items = DataStore.getNotifications();
+    const tbody = document.getElementById('notificationsTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = items.map(n => `
+        <tr>
+            <td>${n.title}</td>
+            <td>${n.message}</td>
+            <td><span class="status-badge">${n.type}</span></td>
+            <td><span class="status-badge ${n.status === 'active' ? 'active' : 'inactive'}">${n.status}</span></td>
+            <td><div class="actions">
+                <button class="builder-btn small" onclick="editNotification('${n.id}')"><i class="fas fa-edit"></i></button>
+                <button class="builder-btn small danger" onclick="deleteNotification('${n.id}')"><i class="fas fa-trash"></i></button>
+            </div></td>
+        </tr>`).join('');
+}
+
+function openAddNotificationModal() {
+    const modal = document.createElement('div');
+    modal.className = 'builder-modal-overlay';
+    modal.innerHTML = `<div class="builder-modal"><div class="builder-modal-header"><h3>Add Notification</h3><button class="builder-modal-close" onclick="this.closest('.builder-modal-overlay').remove()">&times;</button></div>
+        <form onsubmit="return saveNotification(event)"><div class="builder-modal-body">
+            <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-input" id="notifTitle" required></div>
+            <div class="form-group"><label class="form-label">Message</label><textarea class="form-textarea" id="notifMessage" rows="2" required></textarea></div>
+            <div class="form-group"><label class="form-label">Type</label><select class="form-input" id="notifType"><option value="info">Info</option><option value="update">Update</option><option value="alert">Alert</option><option value="success">Success</option></select></div>
+        </div><div class="builder-modal-footer"><button type="button" class="builder-btn" onclick="this.closest('.builder-modal-overlay').remove()">Cancel</button><button type="submit" class="builder-btn primary">Save</button></div></form></div>`;
+    document.body.appendChild(modal);
+}
+
+function saveNotification(e) {
+    e.preventDefault();
+    const items = DataStore.getNotifications();
+    items.push({ id: 'n_' + Date.now(), title: document.getElementById('notifTitle').value, message: document.getElementById('notifMessage').value, type: document.getElementById('notifType').value, status: 'active', timestamp: Date.now() });
+    DataStore.setNotifications(items); showToast('Notification added', 'success'); loadNotifications(); syncToLiveWebsite();
+    document.querySelector('.builder-modal-overlay')?.remove();
+    return false;
+}
+
+function editNotification(id) {
+    const items = DataStore.getNotifications();
+    const n = items.find(x => x.id === id); if (!n) return;
+    const modal = document.createElement('div');
+    modal.className = 'builder-modal-overlay';
+    modal.innerHTML = `<div class="builder-modal"><div class="builder-modal-header"><h3>Edit Notification</h3><button class="builder-modal-close" onclick="this.closest('.builder-modal-overlay').remove()">&times;</button></div>
+        <form onsubmit="return updateNotification(event,'${id}')"><div class="builder-modal-body">
+            <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-input" id="notifTitle" value="${n.title}" required></div>
+            <div class="form-group"><label class="form-label">Message</label><textarea class="form-textarea" id="notifMessage" rows="2" required>${n.message}</textarea></div>
+            <div class="form-group"><label class="form-label">Type</label><select class="form-input" id="notifType"><option value="info" ${n.type==='info'?'selected':''}>Info</option><option value="update" ${n.type==='update'?'selected':''}>Update</option><option value="alert" ${n.type==='alert'?'selected':''}>Alert</option><option value="success" ${n.type==='success'?'selected':''}>Success</option></select></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-input" id="notifStatus"><option value="active" ${n.status==='active'?'selected':''}>Active</option><option value="inactive" ${n.status==='inactive'?'selected':''}>Inactive</option></select></div>
+        </div><div class="builder-modal-footer"><button type="button" class="builder-btn" onclick="this.closest('.builder-modal-overlay').remove()">Cancel</button><button type="submit" class="builder-btn primary">Update</button></div></form></div>`;
+    document.body.appendChild(modal);
+}
+
+function updateNotification(e, id) {
+    e.preventDefault();
+    const items = DataStore.getNotifications();
+    const n = items.find(x => x.id === id); if (!n) return false;
+    n.title = document.getElementById('notifTitle').value;
+    n.message = document.getElementById('notifMessage').value;
+    n.type = document.getElementById('notifType').value;
+    n.status = document.getElementById('notifStatus').value;
+    DataStore.setNotifications(items); showToast('Notification updated', 'success'); loadNotifications(); syncToLiveWebsite();
+    document.querySelector('.builder-modal-overlay')?.remove();
+    return false;
+}
+
+function deleteNotification(id) {
+    if (!confirm('Delete this notification?')) return;
+    DataStore.setNotifications(DataStore.getNotifications().filter(n => n.id !== id));
+    showToast('Notification deleted', 'success'); loadNotifications(); syncToLiveWebsite();
+}
+
+// ============================================
+// Splash Screen Settings
+// ============================================
+function loadSplashSettings() {
+    const s = DataStore.getSplash();
+    document.getElementById('splashEnabled').value = s.enabled !== false ? 'true' : 'false';
+    document.getElementById('splashDuration').value = s.duration || 2200;
+    document.getElementById('splashLogoIcon').value = s.logoIcon || 'fa-headphones-alt';
+    document.getElementById('splashTitle').value = s.title || 'Tamil AI Stream';
+    document.getElementById('splashSubtitle').value = s.subtitle || 'AI-Powered Tamil Radio';
+    document.getElementById('splashShowEqualizer').value = s.showEqualizer !== false ? 'true' : 'false';
+    document.getElementById('splashShowParticles').value = s.showParticles !== false ? 'true' : 'false';
+    document.getElementById('splashShowLoadingBar').value = s.showLoadingBar !== false ? 'true' : 'false';
+    document.getElementById('splashShowSkipButton').value = s.showSkipButton !== false ? 'true' : 'false';
+}
+
+function saveSplashSettings(e) {
+    e.preventDefault();
+    DataStore.setSplash({
+        enabled: document.getElementById('splashEnabled').value === 'true',
+        duration: parseInt(document.getElementById('splashDuration').value) || 2200,
+        logoIcon: document.getElementById('splashLogoIcon').value,
+        title: document.getElementById('splashTitle').value,
+        subtitle: document.getElementById('splashSubtitle').value,
+        showEqualizer: document.getElementById('splashShowEqualizer').value === 'true',
+        showParticles: document.getElementById('splashShowParticles').value === 'true',
+        showLoadingBar: document.getElementById('splashShowLoadingBar').value === 'true',
+        showSkipButton: document.getElementById('splashShowSkipButton').value === 'true'
+    });
+    showToast('Splash settings saved', 'success');
+    syncToLiveWebsite();
+    return false;
+}
+
+// ============================================
+// Player Preferences
+// ============================================
+function loadPlayerPrefs() {
+    const p = DataStore.getPlayerPrefs();
+    document.getElementById('prefAutoplay').value = p.autoplay !== false ? 'true' : 'false';
+    document.getElementById('prefCrossfade').value = p.crossfade ? 'true' : 'false';
+    document.getElementById('prefCrossfadeDuration').value = p.crossfadeDuration || 2;
+    document.getElementById('prefDefaultVolume').value = p.defaultVolume || 0.8;
+    document.getElementById('prefEqPreset').value = p.eqPreset || 'flat';
+    document.getElementById('prefBassBoost').value = p.bassBoost || 0;
+    document.getElementById('prefTrebleBoost').value = p.trebleBoost || 0;
+    document.getElementById('prefVocalBoost').value = p.vocalBoost || 0;
+    document.getElementById('prefStereoBalance').value = p.stereoBalance || 0;
+    document.getElementById('prefLoudnessNorm').value = p.loudnessNorm ? 'true' : 'false';
+    document.getElementById('prefSurroundEffect').value = p.surroundEffect ? 'true' : 'false';
+}
+
+function savePlayerPrefs(e) {
+    e.preventDefault();
+    DataStore.setPlayerPrefs({
+        autoplay: document.getElementById('prefAutoplay').value === 'true',
+        crossfade: document.getElementById('prefCrossfade').value === 'true',
+        crossfadeDuration: parseFloat(document.getElementById('prefCrossfadeDuration').value) || 2,
+        defaultVolume: parseFloat(document.getElementById('prefDefaultVolume').value) || 0.8,
+        eqPreset: document.getElementById('prefEqPreset').value,
+        bassBoost: parseInt(document.getElementById('prefBassBoost').value) || 0,
+        trebleBoost: parseInt(document.getElementById('prefTrebleBoost').value) || 0,
+        vocalBoost: parseInt(document.getElementById('prefVocalBoost').value) || 0,
+        stereoBalance: parseFloat(document.getElementById('prefStereoBalance').value) || 0,
+        loudnessNorm: document.getElementById('prefLoudnessNorm').value === 'true',
+        surroundEffect: document.getElementById('prefSurroundEffect').value === 'true'
+    });
+    showToast('Player settings saved', 'success');
+    syncToLiveWebsite();
+    return false;
+}
+
+// ============================================
+// Navigation Settings
+// ============================================
+function loadNavigation() {
+    const n = DataStore.getNavigation();
+    document.getElementById('navShowHome').value = n.showHome !== false ? 'true' : 'false';
+    document.getElementById('navShowExplore').value = n.showExplore !== false ? 'true' : 'false';
+    document.getElementById('navShowLibrary').value = n.showLibrary !== false ? 'true' : 'false';
+    document.getElementById('navShowSearch').value = n.showSearch !== false ? 'true' : 'false';
+    document.getElementById('navShowLiked').value = n.showLiked !== false ? 'true' : 'false';
+    document.getElementById('navShowStations').value = n.showStations !== false ? 'true' : 'false';
+    document.getElementById('navShowArtists').value = n.showArtists !== false ? 'true' : 'false';
+    document.getElementById('navShowHistory').value = n.showHistory !== false ? 'true' : 'false';
+    document.getElementById('navShowPlaylists').value = n.showPlaylists !== false ? 'true' : 'false';
+}
+
+function saveNavigation(e) {
+    e.preventDefault();
+    DataStore.setNavigation({
+        showHome: document.getElementById('navShowHome').value === 'true',
+        showExplore: document.getElementById('navShowExplore').value === 'true',
+        showLibrary: document.getElementById('navShowLibrary').value === 'true',
+        showSearch: document.getElementById('navShowSearch').value === 'true',
+        showLiked: document.getElementById('navShowLiked').value === 'true',
+        showStations: document.getElementById('navShowStations').value === 'true',
+        showArtists: document.getElementById('navShowArtists').value === 'true',
+        showHistory: document.getElementById('navShowHistory').value === 'true',
+        showPlaylists: document.getElementById('navShowPlaylists').value === 'true'
+    });
+    showToast('Navigation settings saved', 'success');
+    syncToLiveWebsite();
+    return false;
+}
+
+// ============================================
+// Home Sections Order
+// ============================================
+function loadSectionsOrder() {
+    const sections = DataStore.getSectionsOrder();
+    const list = document.getElementById('sectionsList');
+    if (!list) return;
+    list.innerHTML = sections.sort((a, b) => a.order - b.order).map(s => `
+        <div class="section-drag-item" data-id="${s.id}" draggable="true">
+            <div class="section-drag-handle"><i class="fas fa-grip-vertical"></i></div>
+            <div class="section-drag-info">
+                <span class="section-drag-name">${s.name}</span>
+                <span class="section-drag-order">#${s.order}</span>
+            </div>
+            <label class="section-toggle">
+                <input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSection('${s.id}', this.checked)">
+                <span class="section-toggle-slider"></span>
+            </label>
+        </div>`).join('');
+    setupDragAndDrop();
+}
+
+function toggleSection(id, enabled) {
+    const sections = DataStore.getSectionsOrder();
+    const s = sections.find(x => x.id === id);
+    if (s) { s.enabled = enabled; DataStore.setSectionsOrder(sections); }
+}
+
+function setupDragAndDrop() {
+    const list = document.getElementById('sectionsList');
+    if (!list) return;
+    let dragItem = null;
+    list.querySelectorAll('.section-drag-item').forEach(item => {
+        item.addEventListener('dragstart', e => { dragItem = item; item.classList.add('dragging'); });
+        item.addEventListener('dragend', () => { dragItem?.classList.remove('dragging'); dragItem = null; updateSectionOrders(); });
+        item.addEventListener('dragover', e => { e.preventDefault(); if (dragItem && dragItem !== item) {
+            const rect = item.getBoundingClientRect();
+            const mid = rect.top + rect.height / 2;
+            if (e.clientY < mid) list.insertBefore(dragItem, item);
+            else list.insertBefore(dragItem, item.nextSibling);
+        }});
+    });
+}
+
+function updateSectionOrders() {
+    const items = document.querySelectorAll('.section-drag-item');
+    const sections = DataStore.getSectionsOrder();
+    items.forEach((item, i) => {
+        const id = item.dataset.id;
+        const s = sections.find(x => x.id === id);
+        if (s) s.order = i + 1;
+        item.querySelector('.section-drag-order').textContent = '#' + (i + 1);
+    });
+    DataStore.setSectionsOrder(sections);
+}
+
+function saveSectionsOrder() {
+    updateSectionOrders();
+    showToast('Sections order saved', 'success');
     syncToLiveWebsite();
 }
 
