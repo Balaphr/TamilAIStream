@@ -2847,12 +2847,22 @@
     
     .ytm-main-content {
         margin-left: 0;
-        padding-bottom: calc(var(--ytm-player-height) + 56px + 20px);
+        padding-bottom: calc(var(--ytm-player-height) + 56px + 24px);
     }
     
     .ytm-player {
-        left: 0;
-        bottom: 56px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: calc(100% - 24px);
+        max-width: 540px;
+        bottom: calc(56px + 8px);
+        border-radius: 16px;
+        background: rgba(18, 18, 28, 0.88);
+        backdrop-filter: blur(24px) saturate(1.6);
+        -webkit-backdrop-filter: blur(24px) saturate(1.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     
     .ytm-bottom-nav {
@@ -2861,7 +2871,7 @@
     
     .ytm-mini-player {
         left: 16px;
-        bottom: 60px;
+        bottom: 160px;
     }
     
     .ytm-player-extra {
@@ -2902,8 +2912,20 @@
 }
 
 @media (max-width: 640px) {
+    .ytm-player {
+        padding: 0 12px;
+        gap: 10px;
+        height: 64px;
+    }
+    
     .ytm-player-info {
-        max-width: 150px;
+        max-width: 120px;
+        gap: 8px;
+    }
+    
+    .ytm-player-thumb {
+        width: 40px;
+        height: 40px;
     }
     
     .ytm-player-like {
@@ -2914,27 +2936,36 @@
         display: none;
     }
     
-    .ytm-profile-dropdown {
-        width: 240px !important;
-        right: 8px !important;
+    .ytm-player-time {
+        display: none;
     }
     
     .ytm-player-btn:not(.ytm-player-btn-play) {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
+        width: 34px;
+        height: 34px;
+        font-size: 15px;
     }
     
     .ytm-player-btn-play {
-        width: 44px;
-        height: 44px;
-        font-size: 18px;
+        width: 40px;
+        height: 40px;
+        font-size: 17px;
+    }
+    
+    .ytm-player-controls {
+        gap: 4px;
+    }
+    
+    .ytm-profile-dropdown {
+        width: 240px !important;
+        right: 8px !important;
     }
     
     .ytm-mini-player {
         max-width: 280px;
         right: 8px;
         left: 8px;
+        bottom: 140px;
     }
     
     .ytm-fs-body {
@@ -2993,16 +3024,42 @@
 }
 
 @media (max-width: 480px) {
-    .ytm-player-time {
-        display: none;
-    }
-    
-    .ytm-player-controls {
-        gap: 4px;
+    .ytm-player {
+        width: calc(100% - 16px);
+        height: 60px;
+        padding: 0 10px;
+        gap: 8px;
+        bottom: calc(52px + 8px);
     }
     
     .ytm-player-info {
-        max-width: 120px;
+        max-width: 100px;
+        gap: 6px;
+    }
+    
+    .ytm-player-thumb {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .ytm-player-meta .ytm-player-title {
+        font-size: 12px;
+    }
+    
+    .ytm-player-meta .ytm-player-artist {
+        font-size: 10px;
+    }
+    
+    .ytm-player-btn:not(.ytm-player-btn-play) {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+    
+    .ytm-player-btn-play {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
     }
     
     .ytm-profile-dropdown {
@@ -3010,13 +3067,9 @@
         right: 4px !important;
     }
     
-    .ytm-player-thumb {
-        width: 40px;
-        height: 40px;
-    }
-    
     .ytm-mini-player {
         max-width: 260px;
+        bottom: 120px;
     }
     
     .ytm-fs-extra {
@@ -3041,6 +3094,23 @@
     .ytm-search-filter {
         flex-shrink: 0;
     }
+}
+
+/* ============================================
+   Hide Bottom Bar on Home Page
+   ============================================ */
+body.home-active .ytm-player,
+body.home-active .ytm-ticker,
+body.home-active .ytm-bottom-nav {
+    display: none !important;
+}
+
+body.home-active .ytm-main-content {
+    padding-bottom: 0 !important;
+}
+
+body.home-active .ytm-page-home {
+    padding-bottom: 24px !important;
 }
 
 /* ============================================

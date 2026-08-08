@@ -173,18 +173,15 @@ body {
     .stations-track { gap: 12px; }
     .station-card { width: 150px; }
     
-    /* Player bar mobile fine-tuning */
-    .ytm-player { padding: 0 12px; gap: 10px; }
-    
-    /* Bottom spacing for main content — must clear player (bottom:56px, h:80px) + bottom nav (h:56px) */
+    /* Bottom spacing for main content — must clear player (bottom:56px+8px, h:64px) + bottom nav (h:56px) */
     .ytm-page,
     .ytm-page-home {
-        padding-bottom: calc(var(--ytm-player-height) + 56px + 24px);
+        padding-bottom: calc(64px + 56px + 8px + 20px);
     }
     
     /* AI FAB above bottom nav */
     .ytm-ai-fab {
-        bottom: 80px;
+        bottom: 130px;
         right: 16px;
         width: 48px;
         height: 48px;
@@ -194,13 +191,13 @@ body {
     .ytm-ai-panel {
         width: calc(100vw - 16px);
         right: 8px;
-        bottom: 140px;
-        max-height: 60vh;
+        bottom: 200px;
+        max-height: 50vh;
     }
     
     /* Mini audio popup mobile */
     .mini-audio-popup {
-        bottom: 90px;
+        bottom: 160px;
         right: 12px;
         left: 12px;
         width: auto;
@@ -220,6 +217,19 @@ body {
     .slide-art { width: 64px; height: 64px; }
     .slide-info h3 { font-size: 0.9rem; }
     .station-card { width: 130px; }
+    
+    /* Extra small player */
+    .ytm-player {
+        width: calc(100% - 12px);
+        height: 56px;
+        padding: 0 8px;
+        gap: 6px;
+        bottom: calc(48px + 8px);
+        border-radius: 12px;
+    }
+    .ytm-player-thumb { width: 32px; height: 32px; }
+    .ytm-player-btn:not(.ytm-player-btn-play) { width: 28px; height: 28px; font-size: 13px; }
+    .ytm-player-btn-play { width: 34px; height: 34px; font-size: 15px; }
 }
 
 /* Tablet layout */

@@ -46,6 +46,7 @@ const YTMusic = {
         this.setupAudioEvents();
         this.setupKeyboardShortcuts();
         this.renderQueueList();
+        document.body.classList.add('home-active');
         console.log('YTMusic initialized');
     },
 
@@ -486,6 +487,7 @@ const YTMusic = {
     // ========================================
     navigateTo(page) {
         this.currentPage = page;
+        document.body.classList.toggle('home-active', page === 'home');
         document.querySelectorAll('.ytm-sidebar-item[data-page]').forEach(item => {
             item.classList.toggle('active', item.dataset.page === page);
         });
