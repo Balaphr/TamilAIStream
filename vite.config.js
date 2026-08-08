@@ -7,6 +7,7 @@ function copyVanillaScripts() {
     name: 'copy-vanilla-scripts',
     closeBundle() {
       const vanillaFiles = [
+        'auth.js',
         'data-store.js', 'firebase-init.js', 'firebase-config.js',
         'r2-config.js', 'r2-upload.js', 'r2-content-sync.js',
         'player-engine.js', 'equalizer.js', 'eq-ui.js',
