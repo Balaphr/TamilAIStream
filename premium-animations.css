@@ -322,15 +322,13 @@ html {
 }
 
 .progress-glow .player-mini-progress-filled,
-.progress-glow .player-fullscreen-progress-filled,
-.progress-glow .ytm-player-progress-filled {
+.progress-glow .player-fullscreen-progress-filled {
     position: relative;
     transition: width 0.1s linear;
 }
 
 .progress-glow .player-mini-progress-filled::after,
-.progress-glow .player-fullscreen-progress-filled::after,
-.progress-glow .ytm-player-progress-filled::after {
+.progress-glow .player-fullscreen-progress-filled::after {
     content: '';
     position: absolute;
     right: 0;

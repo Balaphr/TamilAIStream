@@ -276,11 +276,6 @@ body {
     .ytm-queue-item { padding: 8px 16px; }
     .ytm-queue-empty { padding: 40px 16px; }
 
-    /* Player controls */
-    .ytm-player-btn { width: 38px; height: 38px; font-size: 16px; }
-    .ytm-player-btn-play { width: 44px; height: 44px; font-size: 18px; }
-    .ytm-player-like { width: 44px; height: 44px; }
-
     /* Settings / Notifications panels */
     .ytm-settings-close,
     .ytm-notifications-close { width: 44px; height: 44px; }
@@ -302,15 +297,7 @@ body {
     .ytm-profile-dropdown { width: 240px; right: 8px; }
 
     /* Bottom player bar spacing */
-    .ytm-player {
-        left: 0;
-        margin-left: 0;
-        transform: none;
-        width: 100%;
-        max-width: none;
-        border-radius: 0;
-        bottom: 56px;
-    }
+    
 
     /* Header bar */
     .top-header-bar {
@@ -423,9 +410,7 @@ body {
     /* ======== 120Hz PERFORMANCE OPTIMIZATIONS ======== */
     .ytm-top-nav,
     .ytm-bottom-nav,
-    .ytm-player {
-        will-change: transform;
-    }
+    
     .ytm-main-content {
         contain: layout style;
     }
@@ -527,19 +512,12 @@ body {
     .ytm-queue-item-thumb { width: 40px; height: 40px; }
 
     /* Player controls — ensure 44px minimum touch targets */
-    .ytm-player {
-        height: 56px;
-        padding: 0 8px;
-        gap: 6px;
-        bottom: calc(52px + 8px);
-        border-radius: 12px;
-        width: calc(100% - 12px);
-    }
-    .ytm-player-thumb { width: 40px; height: 40px; }
-    .ytm-player-info { max-width: 100px; }
-    .ytm-player-btn { width: 36px; height: 36px; font-size: 15px; }
-    .ytm-player-btn-play { width: 44px; height: 44px; font-size: 17px; }
-    .ytm-player-like { width: 44px; height: 44px; }
+    
+    
+    
+    
+    
+    
 
     /* Top nav — more compact */
     .ytm-top-nav { padding: 0 10px; gap: 6px; height: 50px; }
@@ -695,18 +673,11 @@ body {
     .sg-name { font-size: 0.8rem; }
 
     /* Player — compact but functional */
-    .ytm-player {
-        height: 52px;
-        padding: 0 6px;
-        gap: 4px;
-        bottom: calc(48px + 6px);
-        border-radius: 10px;
-        width: calc(100% - 8px);
-    }
-    .ytm-player-thumb { width: 36px; height: 36px; }
-    .ytm-player-info { max-width: 80px; }
-    .ytm-player-btn { width: 34px; height: 34px; font-size: 14px; }
-    .ytm-player-btn-play { width: 40px; height: 40px; font-size: 16px; }
+    
+    
+    
+    
+    
 
     /* Bottom nav — smallest */
     .ytm-bottom-nav { padding: 2px 0 calc(2px + env(safe-area-inset-bottom, 0)); }
@@ -980,9 +951,7 @@ body {
     .ytm-main-content { margin-left: 0; width: 100%; }
 
     /* 5. Home player sits flush to the bottom now the bottom nav is gone */
-    body.home-active .ytm-player {
-        bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-    }
+    body.home-active 
 }
 
 /* Small phones: drop the brand for even more tab space */
@@ -1022,14 +991,7 @@ body {
 
 @media (max-width: 480px) {
     .home-main { padding-top: 88px; }
-    .ytm-player {
-        left: 0;
-        margin-left: 0;
-        transform: none;
-        width: 100%;
-        max-width: none;
-        border-radius: 0;
-    }
+    
 
     .greeting-card { padding: 18px; }
     .greeting-title { font-size: 1.2rem; }
@@ -1048,6 +1010,9 @@ body {
     .greeting-card { padding: 16px; }
     
 }
+
+
+
 
 
 

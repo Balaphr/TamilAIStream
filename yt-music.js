@@ -42,7 +42,6 @@ const YTMusic = {
         this.renderAllPages();
         this.initAssistant();
         this.initVisualizer();
-        this.initPlayerWave();
         this.setupAudioEvents();
         this.setupKeyboardShortcuts();
         this.renderQueueList();
@@ -413,64 +412,6 @@ const YTMusic = {
     stopVisualizer() {
         if (this.visualizerFrame) cancelAnimationFrame(this.visualizerFrame);
         this.visualizerFrame = null;
-    },
-
-    initPlayerWave() {
-        const canvas = document.getElementById('ytmPlayerWaveCanvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        const resize = () => {
-            const parent = canvas.parentElement;
-            if (!parent) return;
-            const ratio = window.devicePixelRatio || 1;
-            canvas.width = parent.clientWidth * ratio;
-            canvas.height = parent.clientHeight * ratio;
-            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-        };
-        resize();
-        window.addEventListener('resize', resize);
-        let frame = null;
-        const draw = () => {
-            const w = canvas.clientWidth;
-            const h = canvas.clientHeight;
-            if (w === 0 || h === 0) { frame = requestAnimationFrame(draw); return; }
-            ctx.clearRect(0, 0, w, h);
-            let freqData = null;
-            let active = false;
-            if (typeof audioFreqData !== 'undefined' && audioFreqData && typeof analyserNode !== 'undefined' && analyserNode) {
-                analyserNode.getByteFrequencyData(audioFreqData);
-                freqData = audioFreqData;
-                active = this.isPlaying;
-            }
-            const mid = h / 2;
-            if (active && freqData) {
-                const sliceWidth = w / 48;
-                for (let i = 0; i < 48; i++) {
-                    const idx = Math.floor((i / 48) * freqData.length);
-                    const val = freqData[idx] / 255;
-                    const barH = Math.max(1, val * h * 0.8);
-                    const x = i * sliceWidth;
-                    const alpha = 0.3 + val * 0.7;
-                    ctx.fillStyle = `rgba(52,211,153,${alpha})`;
-                    ctx.beginPath();
-                    ctx.roundRect(x + 0.5, mid - barH / 2, sliceWidth - 1, barH, 1);
-                    ctx.fill();
-                }
-            } else {
-                ctx.strokeStyle = 'rgba(52,211,153,0.25)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                for (let i = 0; i <= w; i += 3) {
-                    const wave = Math.sin((i / w) * Math.PI * 2 + Date.now() / 2000) * 3;
-                    if (i === 0) ctx.moveTo(i, mid + wave);
-                    else ctx.lineTo(i, mid + wave);
-                }
-                ctx.stroke();
-            }
-            frame = requestAnimationFrame(draw);
-        };
-        draw();
     },
 
     // Audio events bridge
@@ -1054,34 +995,33 @@ const YTMusic = {
     updatePlayerUI() {
         if (!this.currentTrack) return;
         const t = this.currentTrack;
-        this.setText('ytmPlayerTitle', t.title || 'Unknown');
-        this.setText('ytmPlayerArtist', t.artist || t.name || '');
-        this.setSrc('ytmPlayerThumb', t.thumbnail || t.cover || '');
-        this.setPlayIcon('ytmPlayBtn', this.isPlaying);
         this.setPlayIcon('ytmFsPlayBtn', this.isPlaying);
         this.setPlayIcon('ytmMiniPlayBtn', this.isPlaying);
         document.querySelectorAll('[data-action="shuffle"]').forEach((btn) => btn.classList.toggle('active', this.shuffle));
         document.querySelectorAll('[data-action="repeat"]').forEach((btn) => btn.classList.toggle('active', this.repeat !== 'off'));
+        this.updateFullscreenPlayerUI();
+        this.updateMiniPlayerUI();
         this.updateProgressUI();
         this.updateLikeButton();
     },
 
     updateProgressUI() {
         const pct = this.duration ? (this.progress / this.duration) * 100 : 0;
-        this.setWidth('ytmPlayerProgressFilled', pct + '%');
         this.setWidth('ytmFsProgressFilled', pct + '%');
         this.setLeft('ytmFsProgressThumb', pct + '%');
         this.setWidth('ytmMiniProgressFilled', pct + '%');
-        this.setText('ytmCurrentTime', this.formatTime(this.progress));
-        this.setText('ytmTotalTime', this.formatTime(this.duration));
         this.setText('ytmFsCurrentTime', this.formatTime(this.progress));
         this.setText('ytmFsTotalTime', this.formatTime(this.duration));
     },
 
-    updateVolumeUI() {
-        this.setWidth('ytmVolumeFilled', (this.isMuted ? 0 : this.volume * 100) + '%');
-        const icon = document.querySelector('#ytmVolumeBtn i');
-        if (icon) icon.className = this.isMuted || this.volume === 0 ? 'fas fa-volume-xmark' : this.volume < 0.5 ? 'fas fa-volume-low' : 'fas fa-volume-high';
+    updateLikeButton() {
+        const liked = this.isLiked();
+        const fsBtn = document.getElementById('ytmFsLikeBtn');
+        if (fsBtn) {
+            fsBtn.classList.toggle('liked', liked);
+            const icon = fsBtn.querySelector('i');
+            if (icon) icon.className = liked ? 'fas fa-heart' : 'far fa-heart';
+        }
     },
 
     updateFullscreenPlayerUI() {
