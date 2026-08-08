@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Wrangler
+        run: npm install wrangler@3
+
       - name: Generate build version
         run: |
           BUILD_VERSION="${GITHUB_SHA::8}-$(date +%s)"
@@ -35,7 +38,17 @@ jobs:
 
       - name: Deploy to Cloudflare Workers
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: npx wrangler deploy
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN is empty. Add it at https://github.com/Balaphr/TamilAIStream/settings/secrets/actions"
+            exit 1
+          fi
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::CLOUDFLARE_ACCOUNT_ID is empty. Add it at https://github.com/Balaphr/TamilAIStream/settings/secrets/actions"
+            exit 1
+          fi
+          echo "Deploying to Cloudflare Workers..."
+          npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -47,10 +60,5 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -H "Content-Type: application/json" \
             --data '{"purge_everything":true}' || echo "Cache purge skipped (set CLOUDFLARE_ZONE_ID secret to enable)"
-
-      - name: Deploy Preview (PR)
-        if: github.event_name == 'pull_request'
-        run: npx wrangler deploy --dry-run
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
