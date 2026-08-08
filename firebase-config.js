@@ -11,8 +11,4 @@ const firebaseConfig = {
   appId: "1:956713604635:web:59ed64a8fbda660ac64abe"
 };
 
-// Initialize Firebase
-// Note: Firebase SDK is loaded from CDN in index.html
-// This file just exports the config for use in other modules
-
-export { firebaseConfig };
+// Firebase config is available globally as `firebaseConfig`
