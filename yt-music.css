@@ -494,9 +494,14 @@
 .ytm-mobile-header {
     display: none;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex: 1;
     min-width: 0;
+}
+
+/* Mobile nav icons — hidden on desktop */
+.ytm-mobile-nav {
+    display: none;
 }
 
 .ytm-search-container {
@@ -2831,7 +2836,7 @@
 /* ============================================
    Responsive Design
    ============================================ */
-@media (max-width: 1200px) {
+@media (max-width: 1200px) and (min-width: 1025px) {
     .ytm-sidebar {
         width: 72px;
     }
@@ -2871,7 +2876,7 @@
     }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
     .ytm-sidebar {
         display: none;
     }
@@ -3035,8 +3040,13 @@
     .ytm-nav-forward {
         display: none;
     }
-    
-    /* Hide desktop nav elements on mobile */
+}
+
+/* ============================================
+   MOBILE/TABLET HEADER (≤1024px)
+   ============================================ */
+@media (max-width: 1024px) {
+    /* Hide desktop nav elements */
     .ytm-search-container,
     .ytm-nav-actions .ytm-nav-btn,
     .ytm-nav-actions .ytm-user-avatar,
@@ -3044,14 +3054,50 @@
         display: none !important;
     }
     
+    .ytm-nav-back,
+    .ytm-nav-forward {
+        display: none;
+    }
+    
     /* Show mobile header */
     .ytm-mobile-header {
         display: flex !important;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         flex: 1;
         min-width: 0;
-        padding: 0 4px;
+    }
+    
+    /* Show mobile nav icons */
+    .ytm-mobile-nav {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        flex-shrink: 0;
+    }
+    
+    .ytm-mobile-nav-item {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.5);
+        font-size: 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: color 0.2s, background 0.2s;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .ytm-mobile-nav-item:active {
+        background: rgba(255,255,255,0.1);
+    }
+    
+    .ytm-mobile-nav-item.active {
+        color: #34d399;
     }
     
     .ytm-mobile-brand {
@@ -3123,6 +3169,79 @@
         background: rgba(255, 255, 255, 0.1);
         color: var(--ytm-text-primary, #fff);
     }
+}
+
+@media (max-width: 640px) {
+    .ytm-player {
+        padding: 0 12px;
+        gap: 10px;
+        height: 64px;
+    }
+    
+    .ytm-player-info {
+        max-width: 120px;
+        gap: 8px;
+    }
+    
+    .ytm-player-thumb {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .ytm-player-like {
+        display: none;
+    }
+    
+    .ytm-player-volume {
+        display: none;
+    }
+    
+    .ytm-player-time {
+        display: none;
+    }
+    
+    .ytm-player-btn:not(.ytm-player-btn-play) {
+        width: 38px;
+        height: 38px;
+        font-size: 15px;
+    }
+    
+    .ytm-player-btn-play {
+        width: 44px;
+        height: 44px;
+        font-size: 17px;
+    }
+    
+    .ytm-player-controls {
+        gap: 4px;
+    }
+    
+    .ytm-profile-dropdown {
+        width: 240px !important;
+        right: 8px !important;
+    }
+    
+    .ytm-mini-player {
+        max-width: 280px;
+        right: 8px;
+        left: 8px;
+        bottom: 140px;
+    }
+    
+    .ytm-fs-body {
+        padding: 24px 16px;
+    }
+    
+    .ytm-fs-btn-play {
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+    }
+    
+    .ytm-nav-back,
+    .ytm-nav-forward {
+        display: none;
+    }
     
     .ytm-playlist-cover {
         width: 150px;
@@ -3139,6 +3258,16 @@
     
     .ytm-explore-grid {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+    
+    .ytm-search-filters {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 8px;
+    }
+    
+    .ytm-search-filter {
+        flex-shrink: 0;
     }
 }
 
@@ -3203,15 +3332,26 @@
     .ytm-playlist-title {
         font-size: 20px;
     }
-    
-    .ytm-search-filters {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        padding-bottom: 8px;
+
+    .ytm-mobile-nav-item {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
     }
     
-    .ytm-search-filter {
-        flex-shrink: 0;
+    .ytm-mobile-search {
+        height: 32px;
+        padding: 0 10px;
+    }
+    
+    .ytm-mobile-search input {
+        font-size: 12px;
+    }
+    
+    .ytm-mobile-action {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
     }
 }
 

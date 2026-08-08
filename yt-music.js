@@ -112,6 +112,11 @@ const YTMusic = {
             item.addEventListener('click', () => this.navigateTo(item.dataset.page));
         });
 
+        // Mobile header nav navigation
+        document.querySelectorAll('.ytm-mobile-nav-item[data-page]').forEach(item => {
+            item.addEventListener('click', () => this.navigateTo(item.dataset.page));
+        });
+
         // Search input
         const searchInput = document.getElementById('ytmSearchInput');
         if (searchInput) {
@@ -514,6 +519,9 @@ const YTMusic = {
             item.classList.toggle('active', item.dataset.page === page);
         });
         document.querySelectorAll('.ytm-bottom-nav-item[data-page]').forEach(item => {
+            item.classList.toggle('active', item.dataset.page === page);
+        });
+        document.querySelectorAll('.ytm-mobile-nav-item[data-page]').forEach(item => {
             item.classList.toggle('active', item.dataset.page === page);
         });
         document.querySelectorAll('.ytm-page').forEach(p => p.classList.remove('active'));

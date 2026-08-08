@@ -273,11 +273,18 @@
                     <i class="fas fa-chevron-right"></i>
                 </button>
                 
-                <!-- Mobile Header (visible only on mobile) -->
+                <!-- Mobile Header (visible only on mobile/tablet) -->
                 <div class="ytm-mobile-header">
                     <div class="ytm-mobile-brand">
-                        <svg width="28" height="28" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" fill="url(#g1)"/><path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/><defs><linearGradient id="g1" x1="0" y1="0" x2="40" y2="40"><stop stop-color="#34d399"/><stop offset="1" stop-color="#10b981"/></linearGradient></defs></svg>
+                        <svg width="24" height="24" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" fill="url(#g1)"/><path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/><defs><linearGradient id="g1" x1="0" y1="0" x2="40" y2="40"><stop stop-color="#34d399"/><stop offset="1" stop-color="#10b981"/></linearGradient></defs></svg>
                     </div>
+                    <nav class="ytm-mobile-nav">
+                        <button class="ytm-mobile-nav-item active" data-page="home"><i class="fas fa-house"></i></button>
+                        <button class="ytm-mobile-nav-item" data-page="explore"><i class="fas fa-compass"></i></button>
+                        <button class="ytm-mobile-nav-item" data-page="library"><i class="fas fa-book-open"></i></button>
+                        <button class="ytm-mobile-nav-item" data-page="search"><i class="fas fa-search"></i></button>
+                        <button class="ytm-mobile-nav-item" data-page="liked"><i class="fas fa-heart"></i></button>
+                    </nav>
                     <div class="ytm-mobile-search">
                         <i class="fas fa-search"></i>
                         <input type="text" id="ytmMobileSearchInput" placeholder="Search..." autocomplete="off">
