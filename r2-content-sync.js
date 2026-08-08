@@ -92,11 +92,17 @@
             const localValue = localData[key];
 
             if (sharedKeys.includes(key)) {
-                // Shared content: ALWAYS prefer remote (R2) as single source of truth
-                if (remoteValue !== undefined && remoteValue !== null) {
+                // Shared content: prefer remote (R2), BUT fall back to local when
+                // R2 value is empty (empty array/object) — the built-in defaults
+                // in DataStore are richer than an empty manifest.
+                const remoteIsEmpty = (Array.isArray(remoteValue) && remoteValue.length === 0) ||
+                    (remoteValue && typeof remoteValue === 'object' && !Array.isArray(remoteValue) && Object.keys(remoteValue).length === 0);
+                if (remoteValue !== undefined && remoteValue !== null && !remoteIsEmpty) {
                     mergedData[key] = remoteValue;
+                } else if (localValue !== undefined && localValue !== null) {
+                    mergedData[key] = localValue;
                 } else {
-                    mergedData[key] = localValue !== undefined ? localValue : (Array.isArray(remoteValue) ? [] : {});
+                    mergedData[key] = Array.isArray(remoteValue) ? [] : {};
                 }
             } else if (userKeys.includes(key)) {
                 // User-specific content: newer timestamp wins
