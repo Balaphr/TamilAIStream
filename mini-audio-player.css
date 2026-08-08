@@ -181,8 +181,8 @@
 }
 
 .map-icon-btn {
-    width: 28px;
-    height: 28px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -193,6 +193,8 @@
     cursor: pointer;
     transition: all 0.25s;
     font-size: 13px;
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .map-icon-btn:hover {
@@ -341,7 +343,7 @@
 
 .map-progress {
     flex: 1;
-    height: 4px;
+    height: 6px;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.08);
     position: relative;
@@ -350,7 +352,7 @@
 }
 
 .map-progress:hover {
-    height: 6px;
+    height: 8px;
 }
 
 .map-progress-buffered {
@@ -407,8 +409,8 @@
 }
 
 .map-ctrl-btn {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -419,6 +421,8 @@
     cursor: pointer;
     transition: all 0.25s;
     font-size: 14px;
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .map-ctrl-btn:hover {
@@ -643,8 +647,8 @@
 }
 
 .map-ai-sug-play {
-    width: 26px;
-    height: 26px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -656,6 +660,8 @@
     cursor: pointer;
     transition: all 0.25s;
     flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .map-ai-sug-play:hover {
@@ -717,8 +723,8 @@
 }
 
 .map-collapsed-play {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -730,6 +736,8 @@
     cursor: pointer;
     transition: all 0.25s;
     flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .map-collapsed-play:hover {
@@ -738,8 +746,8 @@
 }
 
 .map-collapsed-expand {
-    width: 30px;
-    height: 30px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -751,6 +759,8 @@
     cursor: pointer;
     transition: all 0.25s;
     flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .map-collapsed-expand:hover {

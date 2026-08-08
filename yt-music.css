@@ -451,8 +451,8 @@
 }
 
 .ytm-nav-back {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: transparent;
     border: none;
@@ -463,6 +463,8 @@
     align-items: center;
     justify-content: center;
     transition: background var(--ytm-transition);
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .ytm-nav-back:hover {
@@ -470,8 +472,8 @@
 }
 
 .ytm-nav-forward {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: transparent;
     border: none;
@@ -551,8 +553,8 @@
 }
 
 .ytm-nav-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: transparent;
     border: none;
@@ -563,6 +565,8 @@
     align-items: center;
     justify-content: center;
     position: relative;
+    min-width: 44px;
+    min-height: 44px;
     transition: background var(--ytm-transition);
 }
 
@@ -638,8 +642,8 @@
 }
 
 .ytm-fs-close {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: transparent;
     border: none;
@@ -650,6 +654,8 @@
     align-items: center;
     justify-content: center;
     transition: background var(--ytm-transition);
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .ytm-fs-close:hover {
@@ -664,8 +670,8 @@
 }
 
 .ytm-fs-options {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: transparent;
     border: none;
@@ -948,8 +954,8 @@
 }
 
 .ytm-fs-extra-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: transparent;
     border: none;
@@ -1063,8 +1069,8 @@
 
 .ytm-queue-action-btn,
 .ytm-queue-close {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: transparent;
     border: none;
@@ -1075,6 +1081,8 @@
     align-items: center;
     justify-content: center;
     transition: background var(--ytm-transition);
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .ytm-queue-action-btn:hover,
@@ -1514,8 +1522,8 @@
 }
 
 .ytm-mini-player-btn {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: transparent;
     border: none;
@@ -1526,6 +1534,8 @@
     align-items: center;
     justify-content: center;
     transition: background var(--ytm-transition);
+    min-width: 36px;
+    min-height: 36px;
 }
 
 .ytm-mini-player-btn:hover {
@@ -2094,8 +2104,8 @@
 }
 
 .ytm-modal-close {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: transparent;
     border: none;
@@ -2106,6 +2116,8 @@
     align-items: center;
     justify-content: center;
     transition: background var(--ytm-transition);
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .ytm-modal-close:hover {
@@ -2212,8 +2224,8 @@
 }
 
 .ytm-settings-close {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: transparent;
     border: none;
@@ -2224,6 +2236,8 @@
     align-items: center;
     justify-content: center;
     transition: background var(--ytm-transition);
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .ytm-settings-close:hover {
@@ -2350,8 +2364,8 @@
 }
 
 .ytm-notifications-close {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: transparent;
     border: none;
@@ -2362,6 +2376,8 @@
     align-items: center;
     justify-content: center;
     transition: background var(--ytm-transition);
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .ytm-notifications-close:hover {
@@ -2594,16 +2610,18 @@
     position: fixed;
     right: 24px;
     bottom: 96px;
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
     border: none;
     border-radius: 50%;
     background: linear-gradient(135deg, #34d399, #3ea6ff);
     color: white;
-    font-size: 22px;
+    font-size: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.35);
     cursor: pointer;
     z-index: 1600;
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .ytm-ai-fab.active {
@@ -2613,9 +2631,9 @@
 .ytm-ai-panel {
     position: fixed;
     right: 24px;
-    bottom: 168px;
+    bottom: 160px;
     width: min(360px, calc(100vw - 32px));
-    max-height: 70vh;
+    max-height: 65vh;
     background: rgba(15, 15, 24, 0.94);
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 20px;
@@ -2647,13 +2665,15 @@
 }
 
 .ytm-ai-close {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: none;
     background: transparent;
     color: var(--ytm-text);
     cursor: pointer;
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .ytm-ai-messages {
@@ -2720,13 +2740,15 @@
 
 .ytm-ai-send,
 .ytm-ai-voice {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border: none;
     border-radius: 50%;
     background: rgba(255,255,255,0.08);
     color: var(--ytm-text);
     cursor: pointer;
+    min-width: 44px;
+    min-height: 44px;
 }
 
 /* ============================================
@@ -2941,14 +2963,14 @@
     }
     
     .ytm-player-btn:not(.ytm-player-btn-play) {
-        width: 34px;
-        height: 34px;
+        width: 38px;
+        height: 38px;
         font-size: 15px;
     }
     
     .ytm-player-btn-play {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         font-size: 17px;
     }
     
@@ -3051,14 +3073,14 @@
     }
     
     .ytm-player-btn:not(.ytm-player-btn-play) {
-        width: 30px;
-        height: 30px;
+        width: 36px;
+        height: 36px;
         font-size: 14px;
     }
     
     .ytm-player-btn-play {
-        width: 36px;
-        height: 36px;
+        width: 44px;
+        height: 44px;
         font-size: 16px;
     }
     
@@ -3093,6 +3115,321 @@
     
     .ytm-search-filter {
         flex-shrink: 0;
+    }
+}
+
+/* ============================================
+   Recently Added Songs Marquee
+   ============================================ */
+.recently-added-section {
+    width: 100%;
+    overflow: hidden;
+    padding: 0 !important;
+}
+
+.recently-added-section .section-header {
+    padding: 0 24px;
+    margin-bottom: 16px;
+}
+
+.recently-added-viewport {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    padding: 8px 0;
+    cursor: grab;
+}
+
+.recently-added-viewport:active {
+    cursor: grabbing;
+}
+
+/* Edge fade gradients */
+.recently-added-viewport::before,
+.recently-added-viewport::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 60px;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.recently-added-viewport::before {
+    left: 0;
+    background: linear-gradient(90deg, rgba(0,0,0,0.95), transparent);
+}
+
+.recently-added-viewport::after {
+    right: 0;
+    background: linear-gradient(270deg, rgba(0,0,0,0.95), transparent);
+}
+
+/* Scrolling track */
+.recently-added-track {
+    display: flex;
+    gap: 16px;
+    animation: recentlyAddedMarquee 40s linear infinite;
+    width: max-content;
+    will-change: transform;
+}
+
+.recently-added-viewport:hover .recently-added-track {
+    animation-play-state: paused;
+}
+
+.recently-added-viewport.touching .recently-added-track {
+    animation-play-state: paused;
+}
+
+@keyframes recentlyAddedMarquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* Song Card */
+.recently-added-card {
+    flex: 0 0 auto;
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.3),
+        0 1px 4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: pointer;
+    position: relative;
+}
+
+.recently-added-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 1;
+    transition: opacity 0.35s ease;
+    opacity: 0;
+}
+
+.recently-added-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    border-color: rgba(16, 185, 129, 0.2);
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.45),
+        0 4px 16px rgba(16, 185, 129, 0.1),
+        0 0 0 1px rgba(16, 185, 129, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.recently-added-card:hover::before {
+    opacity: 1;
+}
+
+/* Card artwork */
+.recently-added-card-art {
+    width: 100%;
+    aspect-ratio: 1;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0d1f2d 0%, #0a1628 100%);
+}
+
+.recently-added-card-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.recently-added-card:hover .recently-added-card-art img {
+    transform: scale(1.08);
+}
+
+/* Default artwork placeholder */
+.recently-added-card-art-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0d1f2d, #1a1a3e, #0f2b3e);
+    font-size: 40px;
+    color: rgba(255, 255, 255, 0.15);
+}
+
+/* Play overlay on artwork */
+.recently-added-card-play-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 2;
+}
+
+.recently-added-card:hover .recently-added-card-play-overlay {
+    opacity: 1;
+}
+
+.recently-added-card-play-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.9);
+    border: none;
+    color: #fff;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+    transform: scale(0.85);
+}
+
+.recently-added-card:hover .recently-added-card-play-btn {
+    transform: scale(1);
+}
+
+.recently-added-card-play-btn:hover {
+    background: rgba(16, 185, 129, 1);
+    transform: scale(1.1) !important;
+    box-shadow: 0 6px 24px rgba(16, 185, 129, 0.5);
+}
+
+/* Card info */
+.recently-added-card-info {
+    padding: 12px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    z-index: 2;
+}
+
+.recently-added-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.recently-added-card-artist {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recently-added-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.recently-added-card-badge {
+    font-size: 9px;
+    padding: 2px 7px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 20px;
+    color: #34d399;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.recently-added-card-plays {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Empty state */
+.recently-added-empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.recently-added-empty i {
+    font-size: 36px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+    color: var(--emerald-400);
+}
+
+.recently-added-empty p {
+    font-size: 14px;
+}
+
+/* Responsive: Tablet */
+@media (max-width: 900px) {
+    .recently-added-card {
+        width: 170px;
+    }
+    .recently-added-card-play-btn {
+        width: 42px;
+        height: 42px;
+        font-size: 16px;
+    }
+}
+
+/* Responsive: Mobile */
+@media (max-width: 640px) {
+    .recently-added-section .section-header {
+        padding: 0 12px;
+    }
+    .recently-added-card {
+        width: 155px;
+    }
+    .recently-added-card-info {
+        padding: 10px 12px 12px;
+    }
+    .recently-added-card-title {
+        font-size: 12px;
+    }
+    .recently-added-card-artist {
+        font-size: 10px;
+    }
+    .recently-added-card-play-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 15px;
+    }
+    .recently-added-track {
+        gap: 12px;
+    }
+}
+
+/* Responsive: Small Mobile */
+@media (max-width: 480px) {
+    .recently-added-card {
+        width: 140px;
+    }
+    .recently-added-card-art {
+        aspect-ratio: 1;
+    }
+    .recently-added-card-art-placeholder {
+        font-size: 32px;
     }
 }
 
@@ -3647,6 +3984,7 @@ body.home-active .ytm-page-home {
 
 /* ============================================
    Responsive Home Page Sections
+   Match Explore page mobile layout exactly
    ============================================ */
 @media (max-width: 1200px) {
     .ytm-page-home .section {
@@ -3681,18 +4019,52 @@ body.home-active .ytm-page-home {
 }
 
 @media (max-width: 640px) {
+    /* Section spacing — match Explore */
     .ytm-page-home .section {
         padding: 0 12px;
     }
     
+    .ytm-page-home .section-title {
+        font-size: 18px;
+    }
+    
+    /* Grids — use same clean 2-column as Explore */
     .ytm-page-home .categories-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
     }
     
     .ytm-page-home .tamil-hits-grid {
-        grid-template-columns: repeat(2, 1fr);
+        display: flex;
         gap: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding-bottom: 8px;
+        touch-action: pan-x;
+    }
+    
+    .ytm-page-home .tamil-hits-grid::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .ytm-page-home .tamil-hits-grid .tamil-hit-card {
+        flex: 0 0 160px;
+        min-height: auto;
+        scroll-snap-align: start;
+    }
+    
+    .ytm-page-home .tamil-hits-grid .tamil-hit-card .hit-card-content {
+        min-height: auto;
+        padding: 12px;
+    }
+    
+    .ytm-page-home .tamil-hits-grid .tamil-hit-card .hit-artist-image {
+        height: 100px;
     }
     
     .ytm-page-home .stations-grid {
@@ -3700,10 +4072,89 @@ body.home-active .ytm-page-home {
         gap: 12px;
     }
     
-    .ytm-page-home .section-title {
-        font-size: 18px;
+    /* Override conflicting style.css unscoped rules for Home page elements */
+    .ytm-page-home .category-card {
+        padding: 16px 12px;
+        min-height: auto;
     }
     
+    .ytm-page-home .hit-card {
+        min-height: auto;
+    }
+    
+    .ytm-page-home .hit-card-content {
+        min-height: auto;
+        padding: 12px;
+    }
+    
+    .ytm-page-home .station-card {
+        width: 100%;
+    }
+    
+    .ytm-page-home .station-grid-card {
+        min-height: auto;
+    }
+    
+    .ytm-page-home .sg-card-content {
+        min-height: auto;
+        padding: 12px;
+    }
+    
+    /* Featured slider mobile — match Explore card sizing */
+    .ytm-page-home .slide-card {
+        padding: 20px;
+        gap: 16px;
+        min-height: auto;
+    }
+    
+    .ytm-page-home .slide-art {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .ytm-page-home .slide-info h3 {
+        font-size: 1rem;
+    }
+    
+    .ytm-page-home .slide-info p {
+        font-size: 0.8rem;
+    }
+    
+    .ytm-page-home .slide-listeners {
+        display: none;
+    }
+    
+    .ytm-page-home .slide-play-btn {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+    }
+    
+    /* Stations track horizontal scroll */
+    .ytm-page-home .stations-track {
+        gap: 12px;
+    }
+    
+    .ytm-page-home .stations-track .station-card {
+        width: 150px;
+    }
+    
+    /* Filter bar mobile */
+    .ytm-page-home .filter-bar {
+        gap: 6px;
+        padding: 0 12px;
+    }
+    
+    .ytm-page-home .filter-btn {
+        padding: 6px 14px;
+        font-size: 0.75rem;
+    }
+    
+    /* Stations search */
+    .ytm-page-home .stations-search {
+        padding: 0 12px;
+    }
+    
+    /* Explore/Library grids */
     .ytm-explore-grid,
     .ytm-library-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -3717,29 +4168,127 @@ body.home-active .ytm-page-home {
 }
 
 @media (max-width: 480px) {
+    /* Section spacing — match Explore */
     .ytm-page-home .section {
         padding: 0 10px;
-    }
-    
-    .ytm-page-home .categories-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-    
-    .ytm-page-home .tamil-hits-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-    
-    .ytm-page-home .stations-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
     }
     
     .ytm-page-home .section-title {
         font-size: 16px;
     }
     
+    /* Grids — use same clean 2-column as Explore */
+    .ytm-page-home .categories-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    /* Tamil Hits — horizontal carousel on small mobile */
+    .ytm-page-home .tamil-hits-grid {
+        gap: 10px;
+        padding-bottom: 6px;
+    }
+    
+    .ytm-page-home .tamil-hits-grid .tamil-hit-card {
+        flex: 0 0 145px;
+    }
+    
+    .ytm-page-home .tamil-hits-grid .tamil-hit-card .hit-artist-image {
+        height: 80px;
+    }
+    
+    .ytm-page-home .stations-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    /* Override conflicting style.css unscoped rules for Home page elements */
+    .ytm-page-home .category-card {
+        padding: 14px 10px;
+    }
+    
+    .ytm-page-home .tamil-hit-card .hit-artist-image {
+        height: 80px;
+    }
+    
+    .ytm-page-home .hit-artist-img {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .ytm-page-home .hit-name {
+        font-size: 0.85rem;
+    }
+    
+    .ytm-page-home .hit-count {
+        font-size: 0.7rem;
+    }
+    
+    .ytm-page-home .hit-play-btn,
+    .ytm-page-home .hit-shuffle-btn,
+    .ytm-page-home .hit-fav-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+    
+    .ytm-page-home .station-card {
+        width: 100%;
+    }
+    
+    .ytm-page-home .station-grid-card {
+        min-height: auto;
+    }
+    
+    .ytm-page-home .sg-card-content {
+        min-height: auto;
+        padding: 10px;
+    }
+    
+    .ytm-page-home .sg-logo {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .ytm-page-home .sg-logo img {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .ytm-page-home .sg-name {
+        font-size: 0.85rem;
+    }
+    
+    .ytm-page-home .sg-genre {
+        font-size: 0.72rem;
+    }
+    
+    /* Featured slider mobile */
+    .ytm-page-home .slide-card {
+        padding: 16px;
+        gap: 12px;
+    }
+    
+    .ytm-page-home .slide-art {
+        width: 64px;
+        height: 64px;
+    }
+    
+    .ytm-page-home .slide-info h3 {
+        font-size: 0.9rem;
+    }
+    
+    /* Stations track horizontal scroll */
+    .ytm-page-home .stations-track .station-card {
+        width: 140px;
+    }
+    
+    /* Slider controls hidden on small mobile */
+    .ytm-page-home .slider-controls {
+        display: none;
+    }
+    
+    /* Explore/Library grids */
     .ytm-explore-grid,
     .ytm-library-grid {
         grid-template-columns: repeat(2, 1fr);

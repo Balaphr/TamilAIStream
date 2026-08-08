@@ -1811,6 +1811,102 @@ function renderArtistHitsDynamic() {
     });
 }
 
+// ============================================
+// Tamil Hits Carousel — Touch/Swipe Support
+// ============================================
+function initTamilHitsCarousel() {
+    const grid = document.getElementById('tamilHitsGrid');
+    if (!grid) return;
+
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let velocity = 0;
+    let lastX = 0;
+    let lastTime = 0;
+    let rafId = null;
+
+    // Mouse drag (desktop)
+    grid.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button')) return;
+        isDown = true;
+        grid.style.cursor = 'grabbing';
+        startX = e.pageX - grid.offsetLeft;
+        scrollLeft = grid.scrollLeft;
+        lastX = startX;
+        lastTime = Date.now();
+        velocity = 0;
+        if (rafId) cancelAnimationFrame(rafId);
+    });
+
+    grid.addEventListener('mouseleave', () => {
+        isDown = false;
+        grid.style.cursor = '';
+    });
+
+    grid.addEventListener('mouseup', () => {
+        isDown = false;
+        grid.style.cursor = '';
+        // Momentum scrolling
+        if (Math.abs(velocity) > 0.5) {
+            const decelerate = () => {
+                velocity *= 0.95;
+                grid.scrollLeft -= velocity;
+                if (Math.abs(velocity) > 0.5) {
+                    rafId = requestAnimationFrame(decelerate);
+                }
+            };
+            decelerate();
+        }
+    });
+
+    grid.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - grid.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        const now = Date.now();
+        const dt = now - lastTime;
+        if (dt > 0) {
+            velocity = (x - lastX) / dt * 16;
+        }
+        lastX = x;
+        lastTime = now;
+        grid.scrollLeft = scrollLeft - walk;
+    });
+
+    // Touch handling (mobile) — native scroll is primary, we just prevent page scroll conflict
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isHorizontalSwipe = null;
+
+    grid.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isHorizontalSwipe = null;
+        if (rafId) cancelAnimationFrame(rafId);
+    }, { passive: true });
+
+    grid.addEventListener('touchmove', (e) => {
+        if (isHorizontalSwipe === null) {
+            const dx = Math.abs(e.touches[0].clientX - touchStartX);
+            const dy = Math.abs(e.touches[0].clientY - touchStartY);
+            isHorizontalSwipe = dx > dy;
+        }
+        // If horizontal swipe, prevent vertical page scroll
+        if (isHorizontalSwipe) {
+            e.stopPropagation();
+        }
+    }, { passive: true });
+
+    // Wheel scroll support (desktop trackpad)
+    grid.addEventListener('wheel', (e) => {
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+            e.stopPropagation();
+        }
+    }, { passive: true });
+}
+
 // Render All FM Stations from DataStore
 function renderAllStationsDynamic() {
     const container = document.getElementById('stationsGrid');
@@ -1967,15 +2063,275 @@ function applySiteSettings() {
     if (footerText) footerText.textContent = settings.footerText || '';
 }
 
+// ============================================
+// AI Glass Premium Home Sections
+// ============================================
+
+// Greeting Section - Time-based
+function renderGreetingSection() {
+    const container = document.querySelector('.greeting-section');
+    if (!container) return;
+    
+    const hour = new Date().getHours();
+    let greeting, emoji;
+    if (hour < 12) { greeting = 'Good Morning'; emoji = '☀️'; }
+    else if (hour < 17) { greeting = 'Good Afternoon'; emoji = '🌤️'; }
+    else if (hour < 21) { greeting = 'Good Evening'; emoji = '🌅'; }
+    else { greeting = 'Good Night'; emoji = '🌙'; }
+    
+    const quotes = DataStore.getQuotes().filter(q => q.status === 'active');
+    const quote = quotes.length > 0 ? quotes[Math.floor(Math.random() * quotes.length)].text : '';
+    
+    container.innerHTML = `
+        <div class="greeting-card">
+            <div class="greeting-text">
+                <div class="greeting-label">${greeting}</div>
+                <h1 class="greeting-title">Welcome to Tamil AI Stream <span class="greeting-wave">${emoji}</span></h1>
+                <p class="greeting-subtitle">Discover the best of Tamil music, powered by AI</p>
+                ${quote ? `<div class="greeting-quote">"${quote}"</div>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+// AI Radio For Me - Time-based recommendations
+function renderAIRadioSection() {
+    const container = document.getElementById('aiRadioGrid');
+    if (!container) return;
+    
+    const stations = DataStore.getStations().filter(s => s.status === 'active');
+    const hour = new Date().getHours();
+    
+    // Time-based mood categories
+    const timeMoods = [
+        { icon: 'fa-sun', title: 'Morning Raga', desc: 'Start your day with soulful Tamil melodies', filter: 'music' },
+        { icon: 'fa-bolt', title: 'Workout Energy', desc: 'High-energy Tamil hits to power your workout', filter: 'music' },
+        { icon: 'fa-moon', title: 'Late Night Jazz', desc: 'Relax with smooth Tamil instrumentals', filter: 'music' },
+        { icon: 'fa-om', title: 'Devotional Flow', desc: 'Peaceful spiritual Tamil hymns', filter: 'devotional' },
+        { icon: 'fa-masks-theater', title: 'Comedy Hour', desc: 'Laugh out loud with Tamil comedy shows', filter: 'comedy' },
+        { icon: 'fa-newspaper', title: 'News Digest', desc: 'Stay updated with Tamil news channels', filter: 'news' },
+    ];
+    
+    // Adjust based on time of day
+    let displayMoods = [...timeMoods];
+    if (hour >= 5 && hour < 10) {
+        // Morning - prioritize devotional and morning raga
+        displayMoods = [timeMoods[3], timeMoods[0], timeMoods[5], timeMoods[1], timeMoods[4], timeMoods[2]];
+    } else if (hour >= 10 && hour < 17) {
+        // Daytime - prioritize news and energy
+        displayMoods = [timeMoods[5], timeMoods[1], timeMoods[0], timeMoods[4], timeMoods[3], timeMoods[2]];
+    } else if (hour >= 17 && hour < 21) {
+        // Evening - prioritize entertainment
+        displayMoods = [timeMoods[4], timeMoods[1], timeMoods[0], timeMoods[5], timeMoods[3], timeMoods[2]];
+    } else {
+        // Night - prioritize relaxing
+        displayMoods = [timeMoods[2], timeMoods[3], timeMoods[0], timeMoods[4], timeMoods[1], timeMoods[5]];
+    }
+    
+    container.innerHTML = displayMoods.map((mood, i) => {
+        const matchStation = stations.find(s => s.genre && s.genre.toLowerCase().includes(mood.filter)) || stations[i % stations.length];
+        return `
+        <div class="ai-radio-card" onclick="playStation('${matchStation ? matchStation.id : ''}')">
+            <div class="ai-radio-icon"><i class="fas ${mood.icon}"></i></div>
+            <div class="ai-radio-title">${mood.title}</div>
+            <div class="ai-radio-desc">${mood.desc}</div>
+        </div>
+        `;
+    }).join('');
+}
+
+// Popular Artists - Sorted by songCount
+function renderPopularArtists() {
+    const container = document.getElementById('popularArtistsTrack');
+    if (!container) return;
+    
+    const artists = DataStore.getArtistHits()
+        .filter(a => a.status === 'active')
+        .sort((a, b) => (b.songCount || 0) - (a.songCount || 0));
+    
+    container.innerHTML = artists.map(hit => {
+        const thumbSrc = hit.thumbnail || '';
+        const initials = hit.name ? hit.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : '♪';
+        return `
+        <div class="artist-glass-card" onclick="openPlaylistPage('${hit.artist}', '${hit.name}', ${hit.songCount || 0})">
+            <div class="artist-glass-img">
+                ${thumbSrc ? `<img src="${thumbSrc}" alt="${hit.name}">` : `<span>${initials}</span>`}
+            </div>
+            <div class="artist-glass-name">${hit.name}</div>
+            <div class="artist-glass-count">${hit.songCount || 0} songs</div>
+        </div>
+        `;
+    }).join('');
+    
+    initCarouselSwipe(container);
+}
+
+// Mood & Genre - Derived from categories
+function renderMoodGenre() {
+    const container = document.getElementById('moodGenreTrack');
+    if (!container) return;
+    
+    const moods = [
+        { icon: '🎵', name: 'Melody' },
+        { icon: '🔥', name: 'Energy' },
+        { icon: '💜', name: 'Romance' },
+        { icon: '🧘', name: 'Peace' },
+        { icon: '🎉', name: 'Party' },
+        { icon: '😤', name: 'Workout' },
+        { icon: '🌧️', name: 'Rainy' },
+        { icon: '🌅', name: 'Sunset' },
+        { icon: '🌙', name: 'Night' },
+        { icon: '☕', name: 'Chill' },
+        { icon: '💪', name: 'Power' },
+        { icon: '🎶', name: 'Classical' },
+    ];
+    
+    container.innerHTML = moods.map(mood => `
+        <div class="mood-glass-card" onclick="YTMusic.navigateTo('explore')">
+            <div class="mood-glass-icon">${mood.icon}</div>
+            <div class="mood-glass-name">${mood.name}</div>
+        </div>
+    `).join('');
+    
+    initCarouselSwipe(container);
+}
+
+// Top Charts - From trending stations
+function renderTopCharts() {
+    const container = document.getElementById('topChartsTrack');
+    if (!container) return;
+    
+    const trending = DataStore.getTrending().filter(t => t.status === 'active');
+    const stations = DataStore.getStations();
+    
+    container.innerHTML = trending.map((item, i) => {
+        const station = stations.find(s => s.id === item.stationId);
+        if (!station) return '';
+        const initials = station.name ? station.name.substring(0, 2).toUpperCase() : '♪';
+        return `
+        <div class="carousel-card chart-card" onclick="playStation('${station.id}')">
+            <div class="chart-number">${i + 1}</div>
+            <div class="carousel-card-art">
+                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--emerald-400);background:${station.gradient || 'var(--glass-gradient)'}">${initials}</div>
+                <div class="play-overlay">
+                    <div class="play-overlay-btn"><i class="fas fa-play"></i></div>
+                </div>
+            </div>
+            <div class="carousel-card-title">${station.name}</div>
+            <div class="carousel-card-subtitle">${station.genre || 'Tamil FM'}</div>
+        </div>
+        `;
+    }).join('');
+    
+    initCarouselSwipe(container);
+}
+
+// Generic carousel swipe handler
+function initCarouselSwipe(track) {
+    if (!track) return;
+    
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let velocity = 0;
+    let lastX = 0;
+    let lastTime = 0;
+    let rafId = null;
+    
+    track.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button')) return;
+        isDown = true;
+        track.style.cursor = 'grabbing';
+        startX = e.pageX - track.offsetLeft;
+        scrollLeft = track.scrollLeft;
+        lastX = startX;
+        lastTime = Date.now();
+        velocity = 0;
+        if (rafId) cancelAnimationFrame(rafId);
+    });
+    
+    track.addEventListener('mouseleave', () => {
+        isDown = false;
+        track.style.cursor = '';
+    });
+    
+    track.addEventListener('mouseup', () => {
+        isDown = false;
+        track.style.cursor = '';
+        if (Math.abs(velocity) > 0.5) {
+            const decelerate = () => {
+                velocity *= 0.95;
+                track.scrollLeft -= velocity;
+                if (Math.abs(velocity) > 0.5) {
+                    rafId = requestAnimationFrame(decelerate);
+                }
+            };
+            decelerate();
+        }
+    });
+    
+    track.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - track.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        const now = Date.now();
+        const dt = now - lastTime;
+        if (dt > 0) {
+            velocity = (x - lastX) / dt * 16;
+        }
+        lastX = x;
+        lastTime = now;
+        track.scrollLeft = scrollLeft - walk;
+    });
+    
+    // Touch
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isHorizontalSwipe = null;
+    
+    track.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isHorizontalSwipe = null;
+    }, { passive: true });
+    
+    track.addEventListener('touchmove', (e) => {
+        if (isHorizontalSwipe === null) {
+            const dx = Math.abs(e.touches[0].clientX - touchStartX);
+            const dy = Math.abs(e.touches[0].clientY - touchStartY);
+            isHorizontalSwipe = dx > dy;
+        }
+        if (isHorizontalSwipe) {
+            e.stopPropagation();
+        }
+    }, { passive: true });
+    
+    // Scroll buttons
+    const section = track.closest('.carousel-section');
+    if (section) {
+        const leftBtn = section.querySelector('.scroll-left');
+        const rightBtn = section.querySelector('.scroll-right');
+        if (leftBtn) leftBtn.addEventListener('click', () => track.scrollBy({ left: -200, behavior: 'smooth' }));
+        if (rightBtn) rightBtn.addEventListener('click', () => track.scrollBy({ left: 200, behavior: 'smooth' }));
+    }
+}
+
 // Render all dynamic content
 function renderAllDynamicContent() {
+    renderGreetingSection();
     renderFeaturedSliderDynamic();
     renderTrendingDynamic();
+    renderAIRadioSection();
     renderCategoriesDynamic();
     renderArtistHitsDynamic();
-    renderAllStationsDynamic();
+    initTamilHitsCarousel();
+    renderPopularArtists();
+    renderMoodGenre();
+    renderTopCharts();
     renderAIRecommendedDynamic();
     renderRecentlyPlayedDynamic();
+    renderAllStationsDynamic();
     applySiteSettings();
     
     // Re-render songs
@@ -1999,21 +2355,28 @@ function setupRealtimeSync() {
                 renderFeaturedSliderDynamic();
                 renderTrendingDynamic();
                 renderAIRecommendedDynamic();
+                renderAIRadioSection();
+                renderTopCharts();
                 break;
             case 'FEATURED':
                 renderFeaturedSliderDynamic();
                 break;
             case 'TRENDING':
                 renderTrendingDynamic();
+                renderTopCharts();
                 break;
             case 'CATEGORIES':
                 renderCategoriesDynamic();
+                renderMoodGenre();
                 break;
             case 'ARTIST_HITS':
                 renderArtistHitsDynamic();
+                initTamilHitsCarousel();
+                renderPopularArtists();
                 break;
             case 'QUOTES':
                 initTopHeader();
+                renderGreetingSection();
                 break;
             case 'SITE_SETTINGS':
                 applySiteSettings();
@@ -2032,6 +2395,9 @@ function setupRealtimeSync() {
                 renderFeaturedSliderDynamic();
                 renderTrendingDynamic();
                 renderArtistHitsDynamic();
+                initTamilHitsCarousel();
+                renderPopularArtists();
+                renderTopCharts();
                 break;
             case 'PLAYLISTS':
                 // Reload playlist-related content
@@ -2103,6 +2469,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Initialize ticker
     initTicker();
+
+    // Setup recently added sync
+    setupRecentlyAddedSync();
+
+    // Initialize recently added marquee
+    initRecentlyAdded();
     
     // Setup filter and search after a small delay to ensure DOM is ready
     setTimeout(() => {
@@ -2258,6 +2630,147 @@ function setupTickerSync() {
         if (event.keyName === 'SONGS') {
             loadSongs(true).then(songs => {
                 renderTickerItems(songs);
+            });
+        }
+    });
+}
+
+// ============================================
+// Recently Added Songs Marquee (Dashboard)
+// ============================================
+let recentlyAddedInitialized = false;
+
+function renderRecentlyAdded(songs) {
+    const track = document.getElementById('recentlyAddedTrack');
+    const viewport = document.getElementById('recentlyAddedViewport');
+    if (!track || !viewport) return;
+
+    const publishedSongs = (songs || [])
+        .filter(s => s.status === 'published')
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, 20);
+
+    if (publishedSongs.length === 0) {
+        viewport.innerHTML = `
+            <div class="recently-added-empty">
+                <i class="fas fa-record-vinyl"></i>
+                <p>No songs added yet</p>
+            </div>`;
+        return;
+    }
+
+    const allSongs = publishedSongs;
+
+    const cards = publishedSongs.map(song => {
+        const artwork = song.albumCover || song.cover || '';
+        const artHtml = artwork
+            ? `<img src="${artwork}" alt="${song.title || 'Song'}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'recently-added-card-art-placeholder\\'><i class=\\'fas fa-music\\'></i></div>'">`
+            : `<div class="recently-added-card-art-placeholder"><i class="fas fa-music"></i></div>`;
+
+        return `
+            <div class="recently-added-card" data-song-id="${song.id}">
+                <div class="recently-added-card-art">
+                    ${artHtml}
+                    <div class="recently-added-card-play-overlay">
+                        <button class="recently-added-card-play-btn" data-song-id="${song.id}" title="Play ${song.title || 'Song'}">
+                            <i class="fas fa-play" style="margin-left:2px;"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="recently-added-card-info">
+                    <div class="recently-added-card-title" title="${song.title || 'Untitled'}">${song.title || 'Untitled'}</div>
+                    <div class="recently-added-card-artist" title="${song.artist || 'Unknown Artist'}">${song.artist || 'Unknown Artist'}</div>
+                    <div class="recently-added-card-meta">
+                        <span class="recently-added-card-badge">NEW</span>
+                    </div>
+                </div>
+            </div>`;
+    }).join('');
+
+    // Duplicate for seamless loop
+    track.innerHTML = cards + cards;
+
+    // Bind play buttons
+    track.querySelectorAll('.recently-added-card-play-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            const songId = this.dataset.songId;
+            const song = allSongs.find(s => s.id === songId);
+            if (song) {
+                playSong(song, allSongs);
+                if (typeof showToast === 'function') showToast(`Now playing: ${song.title}`, 'success');
+            }
+        });
+    });
+
+    // Bind card click (play the song)
+    track.querySelectorAll('.recently-added-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.closest('.recently-added-card-play-btn')) return;
+            const songId = this.dataset.songId;
+            const song = allSongs.find(s => s.id === songId);
+            if (song) {
+                playSong(song, allSongs);
+                if (typeof showToast === 'function') showToast(`Now playing: ${song.title}`, 'success');
+            }
+        });
+    });
+}
+
+function initRecentlyAdded() {
+    if (recentlyAddedInitialized) return;
+    recentlyAddedInitialized = true;
+
+    loadSongs(true).then(songs => {
+        renderRecentlyAdded(songs);
+    });
+
+    const viewport = document.getElementById('recentlyAddedViewport');
+    if (!viewport) return;
+
+    // Desktop: hover pauses marquee (handled via CSS :hover)
+    // But also support JS for reliability
+    viewport.addEventListener('mouseenter', () => {
+        viewport.classList.add('hovering');
+    });
+    viewport.addEventListener('mouseleave', () => {
+        viewport.classList.remove('hovering');
+        viewport.classList.remove('touching');
+    });
+
+    // Mobile: touch swipe pauses marquee, allows manual scroll
+    let touchStartX = 0;
+    let touchScrollLeft = 0;
+    let isTouching = false;
+
+    viewport.addEventListener('touchstart', (e) => {
+        isTouching = true;
+        touchStartX = e.touches[0].clientX;
+        viewport.classList.add('touching');
+    }, { passive: true });
+
+    viewport.addEventListener('touchmove', (e) => {
+        if (!isTouching) return;
+        const x = e.touches[0].clientX;
+        const diff = touchStartX - x;
+        // Allow natural scroll, marquee is paused via CSS
+    }, { passive: true });
+
+    viewport.addEventListener('touchend', () => {
+        isTouching = false;
+        // Small delay before resuming marquee
+        setTimeout(() => {
+            viewport.classList.remove('touching');
+        }, 800);
+    }, { passive: true });
+}
+
+function setupRecentlyAddedSync() {
+    DataStore.on('change', (event) => {
+        if (event.keyName === 'SONGS') {
+            loadSongs(true).then(songs => {
+                renderRecentlyAdded(songs);
             });
         }
     });

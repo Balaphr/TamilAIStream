@@ -263,8 +263,8 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 
 .songs-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
     margin-top: 24px;
 }
 
@@ -406,8 +406,8 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 }
 
 .song-play-btn {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -418,6 +418,8 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     cursor: pointer;
     font-size: 14px;
     transition: all var(--transition-base);
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .song-play-btn:hover {
@@ -426,8 +428,8 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 }
 
 .song-fav-btn {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -438,6 +440,8 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     cursor: pointer;
     font-size: 14px;
     transition: all var(--transition-base);
+    min-width: 44px;
+    min-height: 44px;
 }
 
 .song-fav-btn:hover {
@@ -593,7 +597,7 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 }
 .hit-play-btn, .hit-shuffle-btn, .hit-fav-btn {
     flex: 1;
-    height: 40px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -602,6 +606,7 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     cursor: pointer;
     font-size: 14px;
     transition: all var(--transition-bounce);
+    min-height: 44px;
 }
 .hit-play-btn {
     background: var(--gradient-brand);
@@ -775,9 +780,10 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 .recent-info p { font-size: 0.72rem; color: var(--text-muted); }
 .recent-time { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; }
 .recent-play-btn {
-    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
     background: var(--bg-glass); border: 1px solid var(--border-glass); border-radius: var(--radius-full);
     color: var(--text-secondary); cursor: pointer; font-size: 14px; transition: all var(--transition-base);
+    min-width: 44px; min-height: 44px;
 }
 .recent-play-btn:hover { background: var(--gradient-brand); color: white; border-color: transparent; }
 
@@ -808,10 +814,10 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     .hits-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
     .tamil-hits-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
     .category-card { padding: 20px 12px; }
-    .hit-card { min-height: 180px; }
-    .hit-card-content { padding: 16px; min-height: 180px; }
-    .tamil-hit-card { min-height: 240px; }
-    .tamil-hit-card .hit-card-content { min-height: 240px; }
+    .hit-card { min-height: auto; }
+    .hit-card-content { padding: 16px; min-height: auto; }
+    .tamil-hit-card { min-height: auto; }
+    .tamil-hit-card .hit-card-content { min-height: auto; }
     .tamil-hit-card .hit-artist-image { height: 120px; }
     .hit-artist-img { width: 70px; height: 70px; }
     .hit-name { font-size: 0.9rem; }
@@ -915,9 +921,10 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 .hit-card:hover .hit-actions { opacity: 1; transform: translateY(0); }
 
 .hit-play-btn, .hit-shuffle-btn, .hit-fav-btn {
-    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
     border: none; border-radius: var(--radius-full); cursor: pointer;
     font-size: 15px; transition: all var(--transition-bounce);
+    min-width: 44px; min-height: 44px;
 }
 .hit-play-btn {
     background: var(--gradient-brand); color: white;
@@ -1017,9 +1024,10 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 .sg-card-actions { display: flex; gap: 8px; opacity: 0; transform: translateY(10px); transition: all var(--transition-base); }
 .station-grid-card:hover .sg-card-actions { opacity: 1; transform: translateY(0); }
 .sg-play-btn, .sg-fav-btn {
-    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
     border: none; border-radius: var(--radius-full); cursor: pointer;
     font-size: 15px; transition: all var(--transition-bounce);
+    min-width: 44px; min-height: 44px;
 }
 .sg-play-btn { background: var(--gradient-brand); color: white; box-shadow: 0 4px 16px rgba(16,185,129,0.4); }
 .sg-play-btn:hover { transform: scale(1.1); }
@@ -1029,10 +1037,11 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 .sg-fav-btn.active i { font-weight: 900; }
 .stations-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 28px; animation: fadeInUp 0.6s ease-out both; }
 .page-btn {
-    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
     background: var(--bg-glass); border: 1px solid var(--border-glass); border-radius: var(--radius-md);
     color: var(--text-secondary); cursor: pointer; font-family: var(--font-family);
     font-size: 0.85rem; font-weight: 500; transition: all var(--transition-base);
+    min-width: 44px; min-height: 44px;
 }
 .page-btn:hover { background: var(--bg-glass-hover); border-color: var(--border-glass-hover); color: var(--text-primary); }
 .page-btn.active { background: var(--gradient-brand); border-color: transparent; color: white; box-shadow: 0 4px 16px rgba(16,185,129,0.3); }
@@ -1044,16 +1053,16 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 }
 @media (max-width: 640px) {
     .stations-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-    .station-grid-card { min-height: 240px; }
-    .sg-card-content { padding: 16px; min-height: 240px; }
+    .station-grid-card { min-height: auto; }
+    .sg-card-content { padding: 16px; min-height: auto; }
     .sg-name { font-size: 0.9rem; }
     .filter-bar { gap: 6px; }
     .filter-btn { padding: 6px 14px; font-size: 0.75rem; }
 }
 @media (max-width: 480px) {
     .stations-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-    .station-grid-card { min-height: 220px; }
-    .sg-card-content { padding: 14px; min-height: 220px; }
+    .station-grid-card { min-height: auto; }
+    .sg-card-content { padding: 14px; min-height: auto; }
     .sg-logo { width: 48px; height: 48px; }
     .sg-logo img { width: 32px; height: 32px; }
     .sg-name { font-size: 0.85rem; }

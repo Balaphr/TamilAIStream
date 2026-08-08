@@ -19,7 +19,7 @@ const SearchUI = (() => {
                 <div class="search-header">
                     <div class="search-input-wrap">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="searchInput" class="search-input" placeholder="Search songs, artists, stations..." autocomplete="off">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search songs, artists, stations... or try '90s Tamil melody'" autocomplete="off">
                         <button class="search-clear-btn" id="searchClear"><i class="fas fa-times"></i></button>
                         <button class="search-voice-btn" id="searchVoice"><i class="fas fa-microphone"></i></button>
                     </div>
@@ -31,7 +31,7 @@ const SearchUI = (() => {
                     <button class="search-filter" data-type="song">Songs</button>
                     <button class="search-filter" data-type="station">Stations</button>
                     <button class="search-filter" data-type="artist">Artists</button>
-                    <button class="search-filter" data-type="album">Albums</button>
+                    <button class="search-filter" data-type="category">Categories</button>
                 </div>
 
                 <div class="search-body" id="searchBody">

@@ -62,8 +62,8 @@
 
 .search-clear-btn,
 .search-voice-btn {
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: none;
     background: none;
@@ -74,6 +74,8 @@
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s;
+    min-width: 44px;
+    min-height: 44px;
 }
 .search-clear-btn:hover,
 .search-voice-btn:hover { color: white; background: rgba(255,255,255,0.08); }
@@ -88,8 +90,8 @@
 }
 
 .search-close-btn {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: none;
     background: rgba(255,255,255,0.05);
@@ -100,6 +102,8 @@
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
+    min-width: 44px;
+    min-height: 44px;
 }
 .search-close-btn:hover { color: white; background: rgba(255,255,255,0.1); }
 
@@ -219,8 +223,8 @@
 }
 
 .search-result-play {
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: none;
     background: rgba(16,185,129,0.15);
@@ -233,6 +237,8 @@
     transition: all 0.2s;
     flex-shrink: 0;
     opacity: 0;
+    min-width: 44px;
+    min-height: 44px;
 }
 .search-result-item:hover .search-result-play { opacity: 1; }
 .search-result-play:hover { background: rgba(16,185,129,0.3); transform: scale(1.1); }

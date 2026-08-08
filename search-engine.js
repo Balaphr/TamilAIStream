@@ -107,8 +107,26 @@ const SearchEngine = (() => {
         const q = query.toLowerCase().trim();
         let results = [];
 
+        // Natural language query parsing
+        const nlQuery = parseNaturalLanguage(q);
+
         for (const item of searchIndex) {
-            let score = matchScore(q, item.keywords);
+            let score = matchScore(nlQuery.processedQuery, item.keywords);
+            
+            // Boost score for natural language matches
+            if (nlQuery.genre && item.genre && item.genre.toLowerCase().includes(nlQuery.genre)) {
+                score += 2;
+            }
+            if (nlQuery.mood && item.keywords.includes(nlQuery.mood)) {
+                score += 1.5;
+            }
+            if (nlQuery.decade && item.keywords.includes(nlQuery.decade)) {
+                score += 1;
+            }
+            if (nlQuery.artist && item.title && item.title.toLowerCase().includes(nlQuery.artist)) {
+                score += 3;
+            }
+            
             if (score < 0.3) continue;
 
             if (filters.type && item.type !== filters.type) continue;
@@ -125,6 +143,72 @@ const SearchEngine = (() => {
         return results;
     }
 
+    // Natural language query parser
+    function parseNaturalLanguage(query) {
+        const result = {
+            processedQuery: query,
+            genre: null,
+            mood: null,
+            decade: null,
+            artist: null,
+        };
+
+        // Genre detection
+        const genrePatterns = {
+            'melody': 'melody',
+            'romantic': 'romantic',
+            'love': 'romantic',
+            'devotional': 'devotional',
+            'spiritual': 'devotional',
+            'classical': 'classical',
+            'folk': 'folk',
+            'rock': 'rock',
+            'hip-hop': 'hip-hop',
+            'dance': 'dance',
+            'comedy': 'comedy',
+            'news': 'news',
+            'sports': 'sports',
+            'talk': 'talk',
+            'music': 'music',
+        };
+
+        for (const [keyword, genre] of Object.entries(genrePatterns)) {
+            if (query.includes(keyword)) {
+                result.genre = genre;
+                break;
+            }
+        }
+
+        // Mood detection
+        const moodPatterns = ['happy', 'sad', 'energetic', 'calm', 'relaxing', 'workout', 'party', 'chill', 'romantic', 'peaceful'];
+        for (const mood of moodPatterns) {
+            if (query.includes(mood)) {
+                result.mood = mood;
+                break;
+            }
+        }
+
+        // Decade detection
+        const decadeMatch = query.match(/\b(90s|2000s|1990s|2000|90|2000)\b/);
+        if (decadeMatch) {
+            result.decade = decadeMatch[0];
+        }
+
+        // Artist detection (for queries like "songs by AR Rahman")
+        const artistMatch = query.match(/\b(?:by|from|artist)\s+([a-zA-Z\s]+?)(?:\s+(?:songs|music|hits|collection)|$)/i);
+        if (artistMatch) {
+            result.artist = artistMatch[1].trim().toLowerCase();
+        }
+
+        // "songs similar to" pattern
+        const similarMatch = query.match(/(?:songs?\s+)?similar\s+to\s+([a-zA-Z\s]+?)(?:\s*$)/i);
+        if (similarMatch) {
+            result.artist = similarMatch[1].trim().toLowerCase();
+        }
+
+        return result;
+    }
+
     function getSuggestions(query) {
         if (!query || query.length < 2) return [];
         const q = query.toLowerCase();
@@ -132,6 +216,28 @@ const SearchEngine = (() => {
         const suggestions = [];
         const seen = new Set();
 
+        // Natural language suggestions
+        const nlSuggestions = [
+            { text: '90s Tamil melody songs', type: 'suggestion', subtitle: 'Classic 90s melodies' },
+            { text: 'songs similar to this', type: 'suggestion', subtitle: 'Find similar tracks' },
+            { text: 'devotional Tamil songs', type: 'suggestion', subtitle: 'Spiritual hymns' },
+            { text: 'romantic Tamil hits', type: 'suggestion', subtitle: 'Love songs collection' },
+            { text: 'Tamil comedy shows', type: 'suggestion', subtitle: 'Laugh out loud' },
+            { text: 'morning raga', type: 'suggestion', subtitle: 'Start your day right' },
+            { text: 'workout energy', type: 'suggestion', subtitle: 'High-energy tracks' },
+            { text: 'Tamil news today', type: 'suggestion', subtitle: 'Stay updated' },
+        ];
+
+        // Add matching NL suggestions
+        for (const sug of nlSuggestions) {
+            if (sug.text.includes(q) && !seen.has(sug.text)) {
+                seen.add(sug.text);
+                suggestions.push(sug);
+            }
+            if (suggestions.length >= 3) break;
+        }
+
+        // Add matching index suggestions
         for (const item of searchIndex) {
             if (item.title && item.title.toLowerCase().includes(q) && !seen.has(item.title)) {
                 seen.add(item.title);

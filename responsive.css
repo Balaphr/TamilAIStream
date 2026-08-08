@@ -38,7 +38,8 @@ body {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid rgba(255,255,255,0.06);
-    padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0));
+    padding: 4px 0 calc(4px + env(safe-area-inset-bottom, 0));
+    height: auto;
 }
 .bottom-nav-items {
     display: flex;
@@ -51,7 +52,7 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    padding: 6px 12px;
+    padding: 6px 8px;
     border: none;
     background: none;
     color: var(--text-muted);
@@ -59,6 +60,9 @@ body {
     font-family: var(--font-family);
     transition: color 0.2s;
     position: relative;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
 }
 .bottom-nav-item i { font-size: 18px; }
 .bottom-nav-item.active { color: var(--emerald-400); }
@@ -72,16 +76,20 @@ body {
     background: var(--emerald-400);
 }
 
-/* ---- Responsive Breakpoints ---- */
-
-/* Mobile Small (320px - 374px) */
-@media (max-width: 374px) {
-    .grid-3 { grid-template-columns: repeat(2, 1fr); }
-    .grid-4 { grid-template-columns: repeat(2, 1fr); }
-    .bottom-nav { display: block; }
+/* ============================================
+   TABLET (641px - 1024px)
+   ============================================ */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .container { padding: 0 24px; }
+    .hide-tablet { display: none !important; }
+    .show-tablet { display: block !important; }
+    .grid-3 { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+    .slide-art { width: 120px; height: 120px; }
 }
 
-/* Mobile (375px - 640px) */
+/* ============================================
+   MOBILE (375px - 640px) — Base mobile styles
+   ============================================ */
 @media (max-width: 640px) {
     .bottom-nav { display: block; }
     .container { padding: 0 12px; }
@@ -105,18 +113,509 @@ body {
     }
     .mobile-scroll::-webkit-scrollbar { display: none; }
     .mobile-scroll > * { scroll-snap-align: start; }
+
+    /* Top nav mobile padding */
+    .ytm-top-nav {
+        padding: 0 12px;
+        gap: 8px;
+        height: 56px;
+    }
+
+    /* Featured slider mobile */
+    .slide-card {
+        padding: 16px;
+        gap: 14px;
+        min-height: auto;
+    }
+    .slide-art { width: 80px; height: 80px; }
+    .slide-info h3 { font-size: 1rem; }
+    .slide-info p { font-size: 0.8rem; }
+    .slide-listeners { display: none; }
+    .slide-play-btn { padding: 8px 18px; font-size: 0.85rem; }
+
+    /* Stations scroll touch-friendly */
+    .stations-track { gap: 12px; }
+    .station-card { width: 140px; }
+    .station-art { height: 130px; }
+    .station-art img { width: 70px; height: 70px; }
+
+    /* Bottom spacing for main content */
+    .ytm-page,
+    .ytm-page-home {
+        padding-bottom: calc(60px + 52px + 8px + 16px);
+    }
+
+    /* AI FAB above bottom nav — clear the player */
+    .ytm-ai-fab {
+        bottom: 120px;
+        right: 12px;
+        width: 48px;
+        height: 48px;
+    }
+
+    /* AI panel — prevent viewport overflow */
+    .ytm-ai-panel {
+        width: calc(100vw - 16px);
+        right: 8px;
+        bottom: 120px;
+        max-height: 45vh;
+    }
+
+    /* Mini audio popup mobile */
+    .mini-audio-popup {
+        bottom: 130px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+        max-width: none;
+    }
+
+    /* Search overlay mobile */
+    .search-overlay .search-container {
+        padding: 10px;
+    }
+
+    /* Section padding */
+    .songs-section,
+    .tamil-hits-section { padding: 24px 0; }
+
+    /* Songs container grid — prevent overflow */
+    .songs-container {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 12px;
+    }
+
+    /* Song card compact */
+    .song-card { padding: 12px; }
+    .song-card-header { gap: 12px; }
+    .song-thumbnail { width: 64px; height: 64px; }
+    .song-play-btn,
+    .song-fav-btn { width: 44px; height: 44px; }
+
+    /* Tamil hits section */
+    .tamil-hits-grid { gap: 16px; }
+    .hit-card-content { padding: 16px; min-height: auto; }
+
+    /* Category cards */
+    .category-card { padding: 20px 14px; min-height: auto; }
+    .category-icon { width: 48px; height: 48px; font-size: 20px; }
+
+    /* Station grid cards */
+    .station-grid-card { min-height: auto; }
+    .sg-card-content { padding: 16px; min-height: auto; }
+    .sg-logo { width: 52px; height: 52px; }
+    .sg-logo img { width: 36px; height: 36px; }
+    .sg-play-btn,
+    .sg-fav-btn { width: 44px; height: 44px; }
+    .stations-grid { gap: 12px; }
+    .stations-controls { gap: 12px; margin-bottom: 16px; }
+    .stations-search-wrapper { padding: 0 12px; }
+    .stations-pagination { margin-top: 20px; }
+
+    /* Page-level padding */
+    .ytm-search-page,
+    .ytm-explore-page,
+    .ytm-library-page,
+    .ytm-playlist-page { padding: 16px; }
+
+    /* Explore section */
+    .ytm-explore-section { margin-bottom: 28px; }
+    .ytm-explore-title { font-size: 18px; }
+
+    /* Search page */
+    .ytm-search-results { gap: 16px; }
+    .ytm-search-section { margin-bottom: 24px; }
+    .ytm-search-section-title { font-size: 16px; }
+
+    /* Full screen player mobile */
+    .ytm-fs-header { padding: 12px 16px; }
+    .ytm-fs-close { width: 44px; height: 44px; }
+    .ytm-fs-options { width: 44px; height: 44px; }
+    .ytm-fs-body { padding: 24px 16px; }
+    .ytm-fs-artwork { max-width: 260px; margin-bottom: 24px; }
+    .ytm-fs-info { margin-bottom: 20px; }
+    .ytm-fs-song-title { font-size: 18px; }
+    .ytm-fs-controls { margin-bottom: 24px; }
+    .ytm-fs-btn { width: 44px; height: 44px; }
+    .ytm-fs-btn-play { width: 56px; height: 56px; font-size: 22px; }
+    .ytm-fs-buttons { gap: 16px; }
+    .ytm-fs-extra-btn { width: 44px; height: 44px; }
+
+    /* Waveform / EQ */
+    .ytm-waveform-canvas { height: 60px; }
+    .ytm-eq-bars { height: 32px; }
+
+    /* Lyrics panel */
+    .ytm-lyrics-panel { padding: 24px 16px; }
+    .ytm-lyrics-content { font-size: 17px; }
+
+    /* Queue panel */
+    .ytm-queue-action-btn,
+    .ytm-queue-close { width: 44px; height: 44px; }
+    .ytm-queue-item { padding: 8px 16px; }
+    .ytm-queue-empty { padding: 40px 16px; }
+
+    /* Player controls */
+    .ytm-player-btn { width: 38px; height: 38px; font-size: 16px; }
+    .ytm-player-btn-play { width: 44px; height: 44px; font-size: 18px; }
+    .ytm-player-like { width: 44px; height: 44px; }
+
+    /* Settings / Notifications panels */
+    .ytm-settings-close,
+    .ytm-notifications-close { width: 44px; height: 44px; }
+    .ytm-settings-header,
+    .ytm-notifications-header { padding: 12px 16px; }
+
+    /* Modal */
+    .ytm-modal-close { width: 44px; height: 44px; }
+    .ytm-modal-header { padding: 16px; }
+
+    /* Playlist */
+    .ytm-playlist-cover { width: 150px; height: 150px; }
+    .ytm-playlist-title { font-size: 22px; }
+    .ytm-playlist-play-btn { padding: 10px 24px; }
+    .ytm-playlist-shuffle-btn { padding: 10px 18px; }
+    .ytm-playlist-track-thumb { width: 44px; height: 44px; }
+
+    /* Profile dropdown */
+    .ytm-profile-dropdown { width: 240px; right: 8px; }
+
+    /* Bottom player bar spacing */
+    .ytm-player {
+        left: 0;
+        margin-left: 0;
+    }
+
+    /* Header bar */
+    .top-header-bar {
+        padding: 6px 12px;
+    }
+    .top-header-quote { max-width: 200px; }
+    .home-main { padding-top: 100px; }
 }
 
-/* Tablet (641px - 1024px) */
-@media (min-width: 641px) and (max-width: 1024px) {
-    .container { padding: 0 24px; }
-    .hide-tablet { display: none !important; }
-    .show-tablet { display: block !important; }
+/* ============================================
+   SMALL MOBILE (320px - 430px)
+   Extra compact for phones
+   ============================================ */
+@media (max-width: 430px) {
+    /* Featured slider — more compact */
+    .slide-card { padding: 14px; gap: 12px; }
+    .slide-art { width: 70px; height: 70px; }
+    .slide-info h3 { font-size: 0.9rem; }
+    .slide-play-btn { padding: 7px 14px; font-size: 0.8rem; }
+    
+    /* Stations */
+    .station-card { width: 130px; }
+    .station-art { height: 115px; }
+    .station-art img { width: 64px; height: 64px; }
 
-    .grid-3 { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+    /* Songs container — single column below 430px */
+    .songs-container {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    /* Category cards — compact */
+    .category-card { padding: 16px 12px; }
+    .category-icon { width: 44px; height: 44px; font-size: 18px; }
+
+    /* Station grid */
+    .stations-grid { gap: 10px; }
+    .sg-logo { width: 48px; height: 48px; }
+    .sg-logo img { width: 32px; height: 32px; }
+    .sg-play-btn,
+    .sg-fav-btn { width: 40px; height: 40px; }
+    .sg-name { font-size: 0.85rem; }
+
+    /* Section titles */
+    .section-title { font-size: 16px; }
+
+    /* Search page */
+    .ytm-search-page { padding: 12px; }
+
+    /* Explore page */
+    .ytm-explore-page { padding: 12px; }
+    .ytm-explore-title { font-size: 16px; }
+
+    /* Library page */
+    .ytm-library-page { padding: 12px; }
+
+    /* Playlist page */
+    .ytm-playlist-page { padding: 12px; }
+    .ytm-playlist-cover { width: 120px; height: 120px; }
+    .ytm-playlist-title { font-size: 18px; }
+
+    /* Full screen player */
+    .ytm-fs-body { padding: 16px 12px; }
+    .ytm-fs-artwork { max-width: 220px; margin-bottom: 16px; }
+    .ytm-fs-info { margin-bottom: 14px; }
+    .ytm-fs-song-title { font-size: 16px; }
+    .ytm-fs-controls { margin-bottom: 16px; }
+    .ytm-fs-btn { width: 40px; height: 40px; }
+    .ytm-fs-btn-play { width: 52px; height: 52px; font-size: 20px; }
+    .ytm-fs-buttons { gap: 12px; }
+    .ytm-waveform-canvas { height: 50px; }
+
+    /* Lyrics */
+    .ytm-lyrics-panel { padding: 16px 12px; }
+    .ytm-lyrics-content { font-size: 15px; }
+
+    /* Queue */
+    .ytm-queue-item-thumb { width: 40px; height: 40px; }
+
+    /* Player controls — ensure 44px minimum touch targets */
+    .ytm-player {
+        height: 56px;
+        padding: 0 8px;
+        gap: 6px;
+        bottom: calc(52px + 8px);
+        border-radius: 12px;
+        width: calc(100% - 12px);
+    }
+    .ytm-player-thumb { width: 40px; height: 40px; }
+    .ytm-player-info { max-width: 100px; }
+    .ytm-player-btn { width: 36px; height: 36px; font-size: 15px; }
+    .ytm-player-btn-play { width: 44px; height: 44px; font-size: 17px; }
+    .ytm-player-like { width: 44px; height: 44px; }
+
+    /* Top nav — more compact */
+    .ytm-top-nav { padding: 0 10px; gap: 6px; height: 50px; }
+
+    /* Bottom nav — tighter */
+    .bottom-nav { padding: 3px 0 calc(3px + env(safe-area-inset-bottom, 0)); }
+    .bottom-nav-item { padding: 5px 6px; min-width: 40px; }
+    .bottom-nav-item i { font-size: 16px; }
+    .bottom-nav-item { font-size: 0.55rem; }
+
+    /* AI FAB */
+    .ytm-ai-fab {
+        bottom: 110px;
+        right: 10px;
+        width: 44px;
+        height: 44px;
+    }
+    .ytm-ai-fab i { font-size: 18px; }
+
+    /* AI panel — prevent viewport overflow */
+    .ytm-ai-panel {
+        bottom: 100px;
+        max-height: 40vh;
+        border-radius: 16px;
+    }
+
+    /* Mini audio popup */
+    .mini-audio-popup {
+        bottom: 115px;
+        right: 8px;
+        left: 8px;
+    }
+
+    /* Header */
+    .top-header-bar { padding: 4px 10px; }
+    .top-header-quote { max-width: 160px; font-size: 0.7rem; }
+    .home-main { padding-top: 88px; }
+
+    /* Songs empty state */
+    .songs-empty { padding: 40px 16px; }
+    .songs-empty-icon { font-size: 40px; }
+    .songs-empty-title { font-size: 1.1rem; }
+    .songs-empty-text { max-width: 280px; }
+
+    /* Pagination */
+    .page-btn { width: 44px; height: 44px; }
+
+    /* Recently added */
+    .recently-added-section .section-header { padding: 0 10px; }
+    .recently-added-card { width: 140px; }
+    .recently-added-card-play-btn { width: 44px; height: 44px; }
+
+    /* Ticker */
+    .ytm-ticker-item { padding: 0 8px; }
 }
 
-/* Desktop (1025px - 1440px) */
+/* ============================================
+   TINY MOBILE (320px - 374px)
+   Most compact — iPhone SE, Galaxy Mini
+   ============================================ */
+@media (max-width: 374px) {
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .bottom-nav { display: block; }
+
+    /* Top nav */
+    .ytm-top-nav { padding: 0 8px; gap: 4px; height: 46px; }
+
+    /* Featured slider — smallest */
+    .slide-card { padding: 12px; gap: 10px; }
+    .slide-art { width: 56px; height: 56px; }
+    .slide-info h3 { font-size: 0.85rem; }
+    .slide-info p { font-size: 0.75rem; }
+    .slide-play-btn { padding: 6px 12px; font-size: 0.75rem; }
+
+    /* Stations */
+    .station-card { width: 120px; }
+    .station-art { height: 100px; }
+    .station-art img { width: 56px; height: 56px; }
+    .stations-track { gap: 8px; }
+
+    /* Songs container */
+    .songs-container { grid-template-columns: 1fr; gap: 8px; }
+
+    /* Song card */
+    .song-card { padding: 10px; gap: 10px; }
+    .song-thumbnail { width: 56px; height: 56px; }
+    .song-title { font-size: 0.9rem; }
+    .song-play-btn,
+    .song-fav-btn { width: 44px; height: 44px; }
+
+    /* Tamil hits */
+    .tamil-hits-grid .tamil-hit-card { flex: 0 0 135px; }
+    .hit-card-content { padding: 12px; }
+    .hit-artist-image { height: 85px; }
+    .hit-info h3 { font-size: 0.9rem; }
+
+    /* Category */
+    .categories-grid { gap: 8px; }
+    .category-card { padding: 14px 10px; }
+    .category-icon { width: 40px; height: 40px; font-size: 16px; }
+
+    /* Station grid */
+    .stations-grid { gap: 8px; }
+    .sg-card-content { padding: 12px; }
+    .sg-logo { width: 44px; height: 44px; }
+    .sg-logo img { width: 28px; height: 28px; }
+    .sg-play-btn,
+    .sg-fav-btn { width: 38px; height: 38px; }
+    .sg-name { font-size: 0.8rem; }
+
+    /* Player — compact but functional */
+    .ytm-player {
+        height: 52px;
+        padding: 0 6px;
+        gap: 4px;
+        bottom: calc(48px + 6px);
+        border-radius: 10px;
+        width: calc(100% - 8px);
+    }
+    .ytm-player-thumb { width: 36px; height: 36px; }
+    .ytm-player-info { max-width: 80px; }
+    .ytm-player-btn { width: 34px; height: 34px; font-size: 14px; }
+    .ytm-player-btn-play { width: 40px; height: 40px; font-size: 16px; }
+
+    /* Bottom nav — smallest */
+    .bottom-nav { padding: 2px 0 calc(2px + env(safe-area-inset-bottom, 0)); }
+    .bottom-nav-item { padding: 4px 4px; min-width: 36px; gap: 1px; }
+    .bottom-nav-item i { font-size: 15px; }
+    .bottom-nav-item { font-size: 0.5rem; }
+
+    /* AI FAB */
+    .ytm-ai-fab {
+        bottom: 100px;
+        right: 8px;
+        width: 42px;
+        height: 42px;
+    }
+
+    /* AI panel */
+    .ytm-ai-panel {
+        bottom: 90px;
+        max-height: 35vh;
+        width: calc(100vw - 12px);
+        right: 6px;
+        border-radius: 14px;
+    }
+    .ytm-ai-header { padding: 10px 12px; }
+    .ytm-ai-close { width: 40px; height: 40px; }
+    .ytm-ai-send,
+    .ytm-ai-voice { width: 40px; height: 40px; }
+
+    /* Mini audio popup */
+    .mini-audio-popup { bottom: 105px; right: 6px; left: 6px; }
+
+    /* Full screen player */
+    .ytm-fs-header { padding: 10px 12px; }
+    .ytm-fs-close { width: 40px; height: 40px; }
+    .ytm-fs-options { width: 40px; height: 40px; }
+    .ytm-fs-body { padding: 12px 10px; }
+    .ytm-fs-artwork { max-width: 200px; margin-bottom: 12px; }
+    .ytm-fs-info { margin-bottom: 10px; }
+    .ytm-fs-song-title { font-size: 15px; }
+    .ytm-fs-controls { margin-bottom: 12px; }
+    .ytm-fs-btn { width: 38px; height: 38px; }
+    .ytm-fs-btn-play { width: 48px; height: 48px; font-size: 18px; }
+    .ytm-fs-buttons { gap: 10px; }
+    .ytm-waveform-canvas { height: 40px; }
+
+    /* Queue */
+    .ytm-queue-action-btn,
+    .ytm-queue-close { width: 40px; height: 40px; }
+    .ytm-queue-item { padding: 6px 12px; }
+    .ytm-queue-item-thumb { width: 36px; height: 36px; }
+
+    /* Search page */
+    .ytm-search-page { padding: 10px; }
+    .ytm-search-section-title { font-size: 15px; }
+
+    /* Explore */
+    .ytm-explore-page { padding: 10px; }
+    .ytm-explore-title { font-size: 15px; }
+    .ytm-explore-section { margin-bottom: 20px; }
+
+    /* Library */
+    .ytm-library-page { padding: 10px; }
+
+    /* Playlist */
+    .ytm-playlist-page { padding: 10px; }
+    .ytm-playlist-cover { width: 100px; height: 100px; }
+    .ytm-playlist-title { font-size: 16px; }
+    .ytm-playlist-play-btn { padding: 8px 18px; font-size: 0.85rem; }
+    .ytm-playlist-shuffle-btn { padding: 8px 14px; font-size: 0.85rem; }
+
+    /* Section titles */
+    .section-title { font-size: 15px; }
+
+    /* Songs empty */
+    .songs-empty { padding: 30px 12px; }
+    .songs-empty-icon { font-size: 32px; }
+    .songs-empty-title { font-size: 1rem; }
+    .songs-empty-text { max-width: 240px; font-size: 0.85rem; }
+
+    /* Recently added */
+    .recently-added-card { width: 130px; }
+    .recently-added-card-play-btn { width: 40px; height: 40px; }
+
+    /* Home main top spacing */
+    .home-main { padding-top: 76px; }
+
+    /* Header quote */
+    .top-header-quote { max-width: 130px; font-size: 0.65rem; }
+}
+
+/* ============================================
+   LANDSCAPE MOBILE
+   ============================================ */
+@media (max-width: 640px) and (orientation: landscape) {
+    .bottom-nav { display: none; }
+    .full-player .fp-container { padding: 8px 16px; }
+    .full-player .fp-artwork-container {
+        width: min(160px, 35vw);
+        height: min(160px, 35vw);
+    }
+}
+
+/* ============================================
+   Safe Area (Notch phones)
+   ============================================ */
+@supports (padding: env(safe-area-inset-top)) {
+    .top-safe { padding-top: env(safe-area-inset-top); }
+    .bottom-safe { padding-bottom: env(safe-area-inset-bottom); }
+    .ytm-top-nav { padding-top: env(safe-area-inset-top); }
+}
+
+/* ============================================
+   Desktop (1025px+)
+   ============================================ */
 @media (min-width: 1025px) {
     .container { padding: 0 32px; }
     .hide-desktop { display: none !important; }
@@ -133,111 +632,9 @@ body {
     .container { max-width: 2000px; }
 }
 
-/* ---- Landscape Mobile ---- */
-@media (max-width: 640px) and (orientation: landscape) {
-    .bottom-nav { display: none; }
-    .full-player .fp-container { padding: 8px 16px; }
-    .full-player .fp-artwork-container {
-        width: min(180px, 40vw);
-        height: min(180px, 40vw);
-    }
-}
-
-/* ---- Safe Area (Notch phones) ---- */
-@supports (padding: env(safe-area-inset-top)) {
-    .top-safe { padding-top: env(safe-area-inset-top); }
-    .bottom-safe { padding-bottom: env(safe-area-inset-bottom); }
-}
-
-/* ---- Mobile Layout Fixes ---- */
-
-/* Top nav mobile padding */
-@media (max-width: 640px) {
-    .ytm-top-nav {
-        padding: 0 12px;
-        gap: 8px;
-    }
-    
-    /* Featured slider mobile */
-    .slide-card {
-        padding: 20px;
-        gap: 16px;
-        min-height: auto;
-    }
-    .slide-art { width: 80px; height: 80px; }
-    .slide-info h3 { font-size: 1rem; }
-    .slide-info p { font-size: 0.8rem; }
-    .slide-listeners { display: none; }
-    
-    /* Stations scroll touch-friendly */
-    .stations-track { gap: 12px; }
-    .station-card { width: 150px; }
-    
-    /* Bottom spacing for main content — must clear player (bottom:56px+8px, h:64px) + bottom nav (h:56px) */
-    .ytm-page,
-    .ytm-page-home {
-        padding-bottom: calc(64px + 56px + 8px + 20px);
-    }
-    
-    /* AI FAB above bottom nav */
-    .ytm-ai-fab {
-        bottom: 130px;
-        right: 16px;
-        width: 48px;
-        height: 48px;
-    }
-    
-    /* AI panel full width on mobile */
-    .ytm-ai-panel {
-        width: calc(100vw - 16px);
-        right: 8px;
-        bottom: 200px;
-        max-height: 50vh;
-    }
-    
-    /* Mini audio popup mobile */
-    .mini-audio-popup {
-        bottom: 160px;
-        right: 12px;
-        left: 12px;
-        width: auto;
-        max-width: none;
-    }
-    
-    /* Search overlay mobile */
-    .search-overlay .search-container {
-        padding: 12px;
-    }
-}
-
-/* Very small screens (320px-374px) */
-@media (max-width: 374px) {
-    .ytm-top-nav { padding: 0 8px; gap: 6px; }
-    .slide-card { padding: 16px; gap: 12px; }
-    .slide-art { width: 64px; height: 64px; }
-    .slide-info h3 { font-size: 0.9rem; }
-    .station-card { width: 130px; }
-    
-    /* Extra small player */
-    .ytm-player {
-        width: calc(100% - 12px);
-        height: 56px;
-        padding: 0 8px;
-        gap: 6px;
-        bottom: calc(48px + 8px);
-        border-radius: 12px;
-    }
-    .ytm-player-thumb { width: 32px; height: 32px; }
-    .ytm-player-btn:not(.ytm-player-btn-play) { width: 28px; height: 28px; font-size: 13px; }
-    .ytm-player-btn-play { width: 34px; height: 34px; font-size: 15px; }
-}
-
-/* Tablet layout */
-@media (min-width: 641px) and (max-width: 1024px) {
-    .slide-art { width: 120px; height: 120px; }
-}
-
-/* ---- Dark mode is default, light mode support ---- */
+/* ============================================
+   Dark mode is default, light mode support
+   ============================================ */
 @media (prefers-color-scheme: light) {
     :root {
         --text-primary: rgba(0,0,0,0.88);
@@ -249,7 +646,9 @@ body {
     body { background: #f8fafc; }
 }
 
-/* ---- Reduced Motion ---- */
+/* ============================================
+   Reduced Motion
+   ============================================ */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -258,8 +657,93 @@ body {
     }
 }
 
-/* ---- Print ---- */
+/* ============================================
+   Print
+   ============================================ */
 @media print {
     .mini-player, .full-player, .bottom-nav, .ai-fab, .ai-chat-window,
     .ytm-ai-fab, .ytm-ai-panel { display: none !important; }
+}
+
+/* ============================================
+   AI Glass Sections - Mobile Responsive
+   ============================================ */
+@media (max-width: 640px) {
+    .greeting-card { padding: 20px; }
+    .greeting-title { font-size: 1.3rem; }
+    .greeting-subtitle { font-size: 0.8rem; }
+    
+    .ai-radio-grid { grid-template-columns: 1fr; gap: 10px; }
+    .ai-radio-card { padding: 14px; }
+    .ai-radio-icon { width: 40px; height: 40px; font-size: 16px; }
+    
+    .carousel-section { margin-bottom: 24px; }
+    .carousel-card { flex: 0 0 140px; padding: 12px; }
+    .carousel-card-art { margin-bottom: 8px; }
+    .carousel-card-title { font-size: 0.8rem; }
+    .carousel-card-subtitle { font-size: 0.7rem; }
+    .chart-number { width: 24px; height: 24px; font-size: 0.65rem; }
+    
+    .station-glass-card { flex: 0 0 120px; padding: 10px; }
+    .station-glass-logo { width: 48px; height: 48px; font-size: 18px; }
+    .station-glass-name { font-size: 0.75rem; }
+    
+    .artist-glass-card { flex: 0 0 100px; }
+    .artist-glass-img { width: 72px; height: 72px; }
+    .artist-glass-name { font-size: 0.75rem; }
+    
+    .mood-glass-card { flex: 0 0 110px; padding: 12px; }
+    .mood-glass-icon { font-size: 24px; }
+    .mood-glass-name { font-size: 0.75rem; }
+    
+    .category-glass-card { padding: 16px 12px; }
+    .category-glass-icon { width: 44px; height: 44px; font-size: 18px; }
+    .category-glass-name { font-size: 0.8rem; }
+    
+    .recent-glass-card { padding: 8px; gap: 8px; }
+    .recent-glass-thumb { width: 40px; height: 40px; }
+    .recent-glass-title { font-size: 0.8rem; }
+    .recent-glass-play { width: 32px; height: 32px; font-size: 10px; }
+    
+    .carousel-controls { display: none; }
+}
+
+@media (max-width: 480px) {
+    .greeting-card { padding: 18px; }
+    .greeting-title { font-size: 1.2rem; }
+    
+    .ai-radio-grid { grid-template-columns: 1fr; gap: 8px; }
+    .ai-radio-card { padding: 12px; }
+    
+    .carousel-card { flex: 0 0 130px; padding: 10px; }
+    .station-glass-card { flex: 0 0 110px; }
+    .artist-glass-card { flex: 0 0 95px; }
+    .artist-glass-img { width: 68px; height: 68px; }
+    .mood-glass-card { flex: 0 0 105px; padding: 10px; }
+    .category-glass-card { padding: 14px 10px; }
+    
+    .chart-number { width: 22px; height: 22px; font-size: 0.6rem; }
+    .recent-glass-thumb { width: 38px; height: 38px; }
+}
+
+@media (max-width: 374px) {
+    .greeting-title { font-size: 1.1rem; }
+    .greeting-card { padding: 16px; }
+    
+    .ai-radio-card { padding: 12px; }
+    .ai-radio-icon { width: 36px; height: 36px; font-size: 14px; }
+    
+    .carousel-card { flex: 0 0 120px; }
+    .station-glass-card { flex: 0 0 105px; }
+    .artist-glass-card { flex: 0 0 90px; }
+    .artist-glass-img { width: 64px; height: 64px; }
+    .mood-glass-card { flex: 0 0 100px; }
+}
+
+@media (min-width: 1024px) {
+    .ai-radio-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 1440px) {
+    .ai-radio-grid { grid-template-columns: repeat(4, 1fr); }
 }
