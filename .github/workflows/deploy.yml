@@ -33,19 +33,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Verify Cloudflare secrets
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
-            echo "::error::CLOUDFLARE_API_TOKEN secret is not set! Go to Settings > Secrets and Variables > Actions in your repo and add it."
-            exit 1
-          fi
-          if [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
-            echo "::error::CLOUDFLARE_ACCOUNT_ID secret is not set! Go to Settings > Secrets and Variables > Actions in your repo and add it."
-            exit 1
-          fi
-          echo "Cloudflare secrets are configured."
-
       - name: Deploy to Cloudflare Workers
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: npx wrangler deploy --verbose
