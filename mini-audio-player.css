@@ -8,14 +8,14 @@
     position: fixed;
     bottom: 90px;
     right: 24px;
-    width: 380px;
+    width: 320px;
     max-width: calc(100vw - 32px);
     z-index: 2000;
     background: rgba(13, 15, 28, 0.92);
     backdrop-filter: blur(28px) saturate(1.5);
     -webkit-backdrop-filter: blur(28px) saturate(1.5);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
+    border-radius: 16px;
     box-shadow:
         0 12px 40px rgba(0, 0, 0, 0.55),
         0 4px 12px rgba(52, 211, 153, 0.08),
@@ -61,9 +61,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 8px 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     background: rgba(255, 255, 255, 0.02);
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .map-header-left {
@@ -74,17 +76,17 @@
 
 .map-ai-badge {
     position: relative;
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 10px;
+    border-radius: 8px;
     background: rgba(255, 255, 255, 0.06);
     color: rgba(255, 255, 255, 0.6);
     cursor: pointer;
     transition: all 0.3s;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 .map-ai-badge:hover {
@@ -181,20 +183,20 @@
 }
 
 .map-icon-btn {
-    width: 44px;
-    height: 44px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     background: transparent;
     color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
     transition: all 0.25s;
-    font-size: 13px;
-    min-width: 44px;
-    min-height: 44px;
+    font-size: 12px;
+    min-width: 32px;
+    min-height: 32px;
 }
 
 .map-icon-btn:hover {
@@ -204,22 +206,22 @@
 
 /* ---- Body ---- */
 .map-body {
-    padding: 16px;
+    padding: 12px;
 }
 
 /* Artwork Row */
 .map-art-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-bottom: 14px;
+    gap: 12px;
+    margin-bottom: 10px;
 }
 
 .map-artwork {
     position: relative;
-    width: 74px;
-    height: 74px;
-    border-radius: 16px;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
     flex-shrink: 0;
     overflow: hidden;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -228,7 +230,7 @@
 .map-artwork-img {
     width: 100%;
     height: 100%;
-    border-radius: 16px;
+    border-radius: 12px;
     background: linear-gradient(135deg, #0f3b2e, #064e3b);
     position: relative;
     overflow: hidden;
@@ -246,18 +248,18 @@
 
 .map-eq {
     position: absolute;
-    bottom: 6px;
+    bottom: 4px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: flex-end;
-    gap: 2.5px;
-    height: 16px;
+    gap: 2px;
+    height: 14px;
     z-index: 2;
 }
 
 .map-eq span {
-    width: 3px;
+    width: 2.5px;
     background: linear-gradient(180deg, #34d399, #3b82f6);
     border-radius: 2px;
     height: 3px;
@@ -285,7 +287,7 @@
 }
 
 .map-track-name {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     color: white;
     white-space: nowrap;
@@ -295,18 +297,18 @@
 }
 
 .map-track-artist {
-    font-size: 13px;
+    font-size: 12px;
     color: rgba(255, 255, 255, 0.6);
-    margin-top: 2px;
+    margin-top: 1px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .map-track-meta {
-    font-size: 11px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.35);
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 .map-track-tags {
@@ -329,22 +331,22 @@
 .map-progress-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
+    gap: 8px;
+    margin-bottom: 6px;
 }
 
 .map-time {
-    font-size: 11px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.4);
     font-variant-numeric: tabular-nums;
-    min-width: 34px;
+    min-width: 30px;
     text-align: center;
 }
 
 .map-progress {
     flex: 1;
-    height: 6px;
-    border-radius: 6px;
+    height: 4px;
+    border-radius: 4px;
     background: rgba(255, 255, 255, 0.08);
     position: relative;
     cursor: pointer;
@@ -352,7 +354,7 @@
 }
 
 .map-progress:hover {
-    height: 8px;
+    height: 6px;
 }
 
 .map-progress-buffered {
@@ -404,13 +406,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
-    margin-bottom: 14px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
 .map-ctrl-btn {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -437,8 +439,8 @@
 }
 
 .map-play-btn {
-    width: 52px;
-    height: 52px;
+    width: 42px;
+    height: 42px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -446,7 +448,7 @@
     border-radius: 50%;
     background: linear-gradient(135deg, #34d399, #3b82f6);
     color: white;
-    font-size: 19px;
+    font-size: 16px;
     cursor: pointer;
     transition: all 0.3s;
     box-shadow: 0 4px 20px rgba(52, 211, 153, 0.35);
@@ -477,21 +479,21 @@
 .map-secondary {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding-top: 12px;
+    gap: 2px;
+    padding-top: 8px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .map-s-btn {
     display: flex;
     align-items: center;
-    gap: 5px;
-    padding: 6px 10px;
+    gap: 4px;
+    padding: 5px 8px;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     background: transparent;
     color: rgba(255, 255, 255, 0.5);
-    font-size: 12px;
+    font-size: 11px;
     cursor: pointer;
     transition: all 0.25s;
     font-family: inherit;
@@ -681,14 +683,14 @@
 .map-collapsed {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
+    gap: 8px;
+    padding: 8px 12px;
 }
 
 .map-collapsed-art {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     background: linear-gradient(135deg, #0f3b2e, #064e3b);
     display: flex;
     align-items: center;
@@ -706,7 +708,7 @@
 }
 
 .map-collapsed-title {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: white;
     white-space: nowrap;
@@ -715,7 +717,7 @@
 }
 
 .map-collapsed-artist {
-    font-size: 11px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.4);
     white-space: nowrap;
     overflow: hidden;
@@ -723,8 +725,8 @@
 }
 
 .map-collapsed-play {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -732,12 +734,12 @@
     border-radius: 50%;
     background: linear-gradient(135deg, #34d399, #3b82f6);
     color: white;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
     transition: all 0.25s;
     flex-shrink: 0;
-    min-width: 44px;
-    min-height: 44px;
+    min-width: 36px;
+    min-height: 36px;
 }
 
 .map-collapsed-play:hover {
@@ -746,21 +748,21 @@
 }
 
 .map-collapsed-expand {
-    width: 44px;
-    height: 44px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     background: transparent;
     color: rgba(255, 255, 255, 0.5);
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.25s;
     flex-shrink: 0;
-    min-width: 44px;
-    min-height: 44px;
+    min-width: 32px;
+    min-height: 32px;
 }
 
 .map-collapsed-expand:hover {

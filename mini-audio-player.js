@@ -11,10 +11,15 @@ const MiniAudioPlayer = (() => {
     let isOpen = false;
     let isExpanded = false;
     let isDraggingSeek = false;
+    let isDraggingPopup = false;
     let isAIActive = false;
     let autoTimer = null;
     let stationInterval = null;
     let currentPlayback = null;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let popupStartX = 0;
+    let popupStartY = 0;
 
     /* ============================================
        Create the Popup Modal
@@ -167,6 +172,21 @@ const MiniAudioPlayer = (() => {
             togglePlayPause();
         });
 
+        // Drag functionality on header
+        const header = popupEl?.querySelector('.map-header');
+        if (header) {
+            header.style.cursor = 'grab';
+            header.addEventListener('mousedown', onDragStart);
+            header.addEventListener('touchstart', onDragStart, { passive: false });
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+            document.addEventListener('touchmove', onDragMove, { passive: false });
+            document.addEventListener('touchend', onDragEnd);
+        }
+
+        // Restore saved position
+        restorePosition();
+
         // Main Play/Pause
         document.getElementById('mapPlayBtn')?.addEventListener('click', () => {
             togglePlayPause();
@@ -273,19 +293,24 @@ const MiniAudioPlayer = (() => {
         if (progressWrap) {
             const seek = (e) => {
                 const rect = progressWrap.getBoundingClientRect();
-                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                if (typeof audioPlayer !== 'undefined' && audioPlayer && !isNaN(audioPlayer.duration)) {
-                    audioPlayer.currentTime = pct * audioPlayer.duration;
+                if (!rect || rect.width <= 0) return;
+                const clientX = (e.clientX !== undefined) ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+                if (typeof audioPlayer !== 'undefined' && audioPlayer) {
+                    const dur = audioPlayer.duration;
+                    if (dur && isFinite(dur) && dur > 0) {
+                        audioPlayer.currentTime = pct * dur;
+                    }
                 } else if (typeof PlayerEngine !== 'undefined') {
                     PlayerEngine.seekToPercent(pct);
                 }
                 updateProgressUI();
             };
-            progressWrap.addEventListener('mousedown', (e) => { isDraggingSeek = true; seek(e); });
+            progressWrap.addEventListener('mousedown', (e) => { isDraggingSeek = true; seek(e); e.preventDefault(); });
             document.addEventListener('mousemove', (e) => { if (isDraggingSeek) seek(e); });
             document.addEventListener('mouseup', () => { isDraggingSeek = false; });
             progressWrap.addEventListener('touchstart', (e) => { isDraggingSeek = true; seek(e.touches[0]); }, { passive: true });
-            progressWrap.addEventListener('touchmove', (e) => { if (isDraggingSeek) seek(e.touches[0]); }, { passive: true });
+            progressWrap.addEventListener('touchmove', (e) => { if (isDraggingSeek) { e.preventDefault(); seek(e.touches[0]); } }, { passive: false });
             document.addEventListener('touchend', () => { isDraggingSeek = false; });
         }
 
@@ -768,6 +793,88 @@ const MiniAudioPlayer = (() => {
             if (range) range.value = vol * 100;
             updateVolumeBtn(vol);
         }
+    }
+
+    /* ============================================
+       Drag Functionality
+       ============================================ */
+    function onDragStart(e) {
+        if (!popupEl) return;
+        isDraggingPopup = true;
+        const touch = e.touches ? e.touches[0] : e;
+        dragStartX = touch.clientX;
+        dragStartY = touch.clientY;
+        const rect = popupEl.getBoundingClientRect();
+        popupStartX = rect.left;
+        popupStartY = rect.top;
+        popupEl.style.transition = 'none';
+        popupEl.style.cursor = 'grabbing';
+        if (e.preventDefault) e.preventDefault();
+    }
+
+    function onDragMove(e) {
+        if (!isDraggingPopup || !popupEl) return;
+        const touch = e.touches ? e.touches[0] : e;
+        const dx = touch.clientX - dragStartX;
+        const dy = touch.clientY - dragStartY;
+        let newX = popupStartX + dx;
+        let newY = popupStartY + dy;
+        const result = clampToViewport(newX, newY);
+        popupEl.style.left = result.x + 'px';
+        popupEl.style.top = result.y + 'px';
+        popupEl.style.right = 'auto';
+        popupEl.style.bottom = 'auto';
+        if (e.preventDefault) e.preventDefault();
+    }
+
+    function onDragEnd() {
+        if (!isDraggingPopup) return;
+        isDraggingPopup = false;
+        if (popupEl) {
+            popupEl.style.transition = '';
+            popupEl.style.cursor = '';
+        }
+        savePosition();
+    }
+
+    function clampToViewport(x, y) {
+        const rect = popupEl ? popupEl.getBoundingClientRect() : { width: 320, height: 400 };
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const minVisible = 60;
+        const maxX = vw - minVisible;
+        const maxY = vh - minVisible;
+        const minX = -(rect.width - minVisible);
+        const minY = 0;
+        return {
+            x: Math.max(minX, Math.min(maxX, x)),
+            y: Math.max(minY, Math.min(maxY, y))
+        };
+    }
+
+    function savePosition() {
+        if (!popupEl) return;
+        const rect = popupEl.getBoundingClientRect();
+        try {
+            localStorage.setItem('miniAudioPlayerPos', JSON.stringify({
+                x: rect.left,
+                y: rect.top
+            }));
+        } catch (e) {}
+    }
+
+    function restorePosition() {
+        if (!popupEl) return;
+        try {
+            const saved = JSON.parse(localStorage.getItem('miniAudioPlayerPos'));
+            if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+                const result = clampToViewport(saved.x, saved.y);
+                popupEl.style.left = result.x + 'px';
+                popupEl.style.top = result.y + 'px';
+                popupEl.style.right = 'auto';
+                popupEl.style.bottom = 'auto';
+            }
+        } catch (e) {}
     }
 
     /* ============================================

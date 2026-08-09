@@ -557,6 +557,14 @@ function stopCurrentStream() {
     currentPlaybackMode = 'station';
 }
 
+function toggleStationFromCard(btn, stationName) {
+    if (isStreamPlaying && currentStation === stationName) {
+        pauseStation();
+    } else {
+        playStation(stationName);
+    }
+}
+
 function playStation(stationName) {
     initAudioPlayer();
     stopCurrentStream();
@@ -932,15 +940,27 @@ function showLiveStatus(isLive) {
 }
 
 function updateStationCardStates(playing) {
-    // Update play/pause icon on station cards to reflect actual state
     document.querySelectorAll('.station-card, .station-grid-card, .slide-card').forEach(card => {
         const cardName = card.querySelector('h3, h4')?.textContent || '';
         const playBtn = card.querySelector('.slide-play-btn, .sg-play-btn, .station-play-overlay i');
         if (!playBtn) return;
         if (cardName === currentStation && playing) {
-            playBtn.className = 'fas fa-pause';
+            card.classList.add('active-station', 'playing-station');
+            if (playBtn.classList.contains('slide-play-btn') || playBtn.classList.contains('sg-play-btn')) {
+                playBtn.classList.add('wave-active');
+                playBtn.classList.remove('pulse-active');
+                playBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            } else {
+                playBtn.className = 'fas fa-pause';
+            }
         } else {
-            playBtn.className = 'fas fa-play';
+            card.classList.remove('active-station', 'playing-station');
+            if (playBtn.classList.contains('slide-play-btn') || playBtn.classList.contains('sg-play-btn')) {
+                playBtn.classList.remove('wave-active', 'pulse-active');
+                playBtn.innerHTML = '<i class="fas fa-play"></i> Listen Now';
+            } else {
+                playBtn.className = 'fas fa-play';
+            }
         }
     });
 }
@@ -1741,7 +1761,7 @@ function renderFeaturedSliderDynamic() {
                     <h3>${item.title || station.name || 'Station'}</h3>
                     <p>${item.subtitle || station.freq + ' â€¢ ' + station.city || ''}</p>
                     <span class="slide-listeners"><i class="fas fa-headphones"></i> ${(item.listeners || station.listeners || 0).toLocaleString()} listening</span>
-                    <button class="slide-play-btn" onclick="playStation('${station.name || item.title}')"><i class="fas fa-play"></i> Listen Now</button>
+                    <button class="slide-play-btn" onclick="toggleStationFromCard(this, '${station.name || item.title}')"><i class="fas fa-play"></i> Listen Now</button>
                 </div>
             </div>
         `;
@@ -1769,7 +1789,7 @@ function renderTrendingDynamic() {
         const station = stations.find(s => s.id === item.stationId) || {};
         const thumbSrc = station.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='50' fill='%2334d399' opacity='0.2'/%3E%3Ccircle cx='60' cy='60' r='30' fill='%2334d399' opacity='0.35'/%3E%3Cpath d='M50 45 L50 80 L80 62.5 Z' fill='%2334d399' opacity='0.5'/%3E%3C/svg%3E";
         return `
-            <div class="station-card" data-genre="${(station.genre || '').toLowerCase()}" onclick="playStation('${station.name || ''}')">
+            <div class="station-card" data-genre="${(station.genre || '').toLowerCase()}" onclick="toggleStationFromCard(this, '${station.name || ''}')">
                 <div class="station-art" style="background:${station.gradient || 'linear-gradient(135deg,#1e3a5f,#0d1f3c)'};">
                     <img src="${thumbSrc}" alt="${station.name || ''}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''}>
                     <div class="station-play-overlay"><i class="fas fa-play"></i></div>
@@ -2061,7 +2081,7 @@ function renderAIRecommendedDynamic() {
     container.innerHTML = recommended.map((station, i) => {
         const thumbSrc = station.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='50' fill='%2334d399' opacity='0.2'/%3E%3Ccircle cx='60' cy='60' r='30' fill='%2334d399' opacity='0.35'/%3E%3Cpath d='M50 45 L50 80 L80 62.5 Z' fill='%2334d399' opacity='0.5'/%3E%3C/svg%3E";
         return `
-        <div class="station-card recommended" data-genre="${(station.genre || '').toLowerCase()}" onclick="playStation('${station.name}')">
+        <div class="station-card recommended" data-genre="${(station.genre || '').toLowerCase()}" onclick="toggleStationFromCard(this, '${station.name}')">
             <div class="station-art" style="background:${station.gradient || 'linear-gradient(135deg,#0f3b2e,#064e3b)'};">
                 <img src="${thumbSrc}" alt="${station.name}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''}>
                 <div class="station-play-overlay"><i class="fas fa-play"></i></div>
@@ -2753,6 +2773,7 @@ if (typeof window !== 'undefined') {
     window.toggleFavorite = toggleFavorite;
     window.logout = logout;
     window.playStation = playStation;
+    window.toggleStationFromCard = toggleStationFromCard;
     window.playTickerSong = playTickerSong;
 }
 
