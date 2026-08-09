@@ -1403,6 +1403,47 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 .ve-comp-item:active { cursor: grabbing; transform: scale(0.97); }
 .ve-comp-item i { font-size: 12px; color: var(--emerald-400); width: 16px; text-align: center; }
 
+/* Sections Component List (in Components tab) */
+.ve-sections-component-list { display: flex; flex-direction: column; gap: 4px; max-height: 320px; overflow-y: auto; }
+.ve-section-comp-item {
+    display: flex; align-items: center; gap: 6px; padding: 8px 10px;
+    background: var(--bg-glass); border: 1px solid var(--border-glass);
+    border-radius: var(--radius-sm); font-size: 0.78rem;
+    color: var(--text-secondary); transition: all var(--transition-fast);
+    cursor: pointer; position: relative;
+}
+.ve-section-comp-item:hover { border-color: var(--emerald-400); background: rgba(16,185,129,0.06); color: var(--text-primary); }
+.ve-section-comp-item.selected { border-color: var(--emerald-400); background: rgba(16,185,129,0.12); color: var(--text-primary); }
+.ve-section-comp-item.ve-hidden-section { opacity: 0.45; }
+.ve-section-comp-item.ve-hidden-section .ve-sec-vis-icon { color: var(--text-muted); }
+.ve-section-comp-icon { font-size: 12px; color: var(--emerald-400); width: 16px; text-align: center; flex-shrink: 0; }
+.ve-section-comp-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.ve-section-comp-tag { font-size: 0.6rem; padding: 1px 5px; border-radius: 3px; background: rgba(16,185,129,0.12); color: var(--emerald-400); font-family: monospace; flex-shrink: 0; }
+.ve-section-comp-actions { display: flex; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
+.ve-section-comp-item:hover .ve-section-comp-actions { opacity: 1; }
+.ve-sec-act-btn {
+    width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+    border: none; background: rgba(255,255,255,0.06); color: var(--text-muted);
+    border-radius: 4px; cursor: pointer; font-size: 10px; transition: all 0.15s;
+}
+.ve-sec-act-btn:hover { background: rgba(16,185,129,0.2); color: var(--emerald-400); }
+.ve-sec-act-btn.ve-sec-delete:hover { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+/* Sections Order Panel (bottom of left panel) */
+.ve-sections-list { display: flex; flex-direction: column; gap: 3px; max-height: 250px; overflow-y: auto; padding: 0 4px 4px; }
+.ve-section-order-item {
+    display: flex; align-items: center; gap: 6px; padding: 6px 8px;
+    background: var(--bg-glass); border: 1px solid var(--border-glass);
+    border-radius: var(--radius-sm); font-size: 0.75rem;
+    color: var(--text-secondary); cursor: grab; transition: all var(--transition-fast);
+}
+.ve-section-order-item:hover { border-color: var(--emerald-400); background: rgba(16,185,129,0.06); }
+.ve-section-order-item.selected { border-color: var(--emerald-400); background: rgba(16,185,129,0.12); }
+.ve-section-order-num { font-size: 0.6rem; font-weight: 700; color: var(--emerald-400); width: 16px; text-align: center; flex-shrink: 0; }
+.ve-section-order-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ve-section-order-actions { display: flex; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
+.ve-section-order-item:hover .ve-section-order-actions { opacity: 1; }
+
 /* History Panel */
 .ve-history-list { display: flex; flex-direction: column; gap: 3px; }
 .ve-history-item {

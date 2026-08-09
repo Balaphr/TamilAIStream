@@ -41,9 +41,11 @@ const YTMusic = {
         this.setupEventListeners();
         this.renderAllPages();
         this.initAssistant();
-        this.initVisualizer();
-        this.setupAudioEvents();
-        this.setupKeyboardShortcuts();
+        if (!window.__BUILDER_PREVIEW__) {
+            this.initVisualizer();
+            this.setupAudioEvents();
+            this.setupKeyboardShortcuts();
+        }
         this.renderQueueList();
         document.body.classList.add('home-active');
         console.log('YTMusic initialized');
@@ -567,12 +569,14 @@ const YTMusic = {
     // Player Controls
     // ========================================
     togglePlay() {
+        if (window.__BUILDER_PREVIEW__) return;
         if (this.isPlaying) this.pause();
         else this.resume();
     },
 
     playTrack(track) {
         if (!track) return;
+        if (window.__BUILDER_PREVIEW__) return;
         if (typeof window.playTrackFromYTMusic === 'function') {
             window.playTrackFromYTMusic(track, {
                 queue: this.queue,
@@ -591,6 +595,7 @@ const YTMusic = {
     },
 
     pause() {
+        if (window.__BUILDER_PREVIEW__) return;
         if (typeof window.pausePlayback === 'function') {
             window.pausePlayback();
         } else {
@@ -616,6 +621,7 @@ const YTMusic = {
     },
 
     nextTrack() {
+        if (window.__BUILDER_PREVIEW__) return;
         if (typeof window.playNextTrack === 'function') {
             window.playNextTrack();
             return;
@@ -627,6 +633,7 @@ const YTMusic = {
     },
 
     previousTrack() {
+        if (window.__BUILDER_PREVIEW__) return;
         if (typeof window.playPreviousTrack === 'function') {
             window.playPreviousTrack();
             return;

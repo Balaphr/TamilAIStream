@@ -1532,4 +1532,38 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 }
 
 
+/* ============================================
+   Builder Preview Mode
+   Disables all interactive/audio behaviors
+   ============================================ */
+body.builder-preview .splash-overlay,
+body.builder-preview .splash-screen { display: none !important; }
+body.builder-preview { overflow: auto !important; visibility: visible !important; }
+html.builder-preview, html.builder-preview body { overflow: auto !important; height: auto !important; visibility: visible !important; }
+
+body.builder-preview [onclick*="playStation"],
+body.builder-preview [onclick*="playSong"],
+body.builder-preview [onclick*="togglePlayPause"],
+body.builder-preview [onclick*="MiniAudioPlayer"],
+body.builder-preview [onclick*="YTMusic.playTrack"],
+body.builder-preview [onclick*="PlayerEngine.play"],
+body.builder-preview .station-card-play-btn,
+body.builder-preview .song-play-btn,
+body.builder-preview .np-play-btn,
+body.builder-preview .ytm-play-btn,
+body.builder-preview .map-play-btn,
+body.builder-preview .map-pause-btn {
+    pointer-events: none !important;
+    opacity: 0.5 !important;
+}
+
+body.builder-preview .splash-overlay,
+body.builder-preview #splashOverlay,
+body.builder-preview #eqOverlay,
+body.builder-preview .toast-container,
+body.builder-preview .ytm-ai-chat {
+    pointer-events: none !important;
+}
+
+
 

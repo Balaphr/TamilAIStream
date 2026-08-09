@@ -3,6 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        // Detect if loaded inside Builder iframe — disable all audio/playback
+        if (window.parent !== window) {
+            window.__BUILDER_PREVIEW__ = true;
+            window.__origPlay__ = HTMLAudioElement.prototype.play;
+            HTMLAudioElement.prototype.play = function() { return Promise.resolve(); };
+            document.documentElement.classList.add('builder-preview');
+            document.documentElement.style.overflow = 'auto';
+            document.documentElement.style.visibility = 'visible';
+            document.documentElement.style.height = 'auto';
+        }
+    </script>
     <title>Tamil AI Stream - AI-Powered Tamil Radio | Home</title>
     <meta name="description" content="Listen to your favorite Tamil FM stations with AI-powered recommendations. Discover 100+ live Tamil radio stations curated by artificial intelligence.">
     <meta name="keywords" content="Tamil FM, Tamil radio, AI radio, Tamil music, online radio, Tamil AI Stream, live radio">

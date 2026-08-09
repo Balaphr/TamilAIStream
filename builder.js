@@ -3960,21 +3960,43 @@ let veSnapThreshold = 5;
 let veElementCount = 0;
 
 function initVisualEditor() {
-    if (veInitialized) return;
+    if (veInitialized) {
+        // Re-scan if revisited
+        if (veIframe && veIframeDoc) scanIframeElements();
+        return;
+    }
     veInitialized = true;
 
     veIframe = document.getElementById('veFrame');
     if (!veIframe) return;
 
-    veIframe.addEventListener('load', () => {
-        veIframeDoc = veIframe.contentDocument || veIframe.contentWindow.document;
-        scanIframeElements();
-        setupIframeInteraction();
-        addVEHistoryEntry('Page loaded');
-    });
+    veIframe.addEventListener('load', onVEIframeLoad);
+
+    // Handle already-loaded iframe (cached)
+    if (veIframe.contentDocument && veIframe.contentDocument.body) {
+        onVEIframeLoad();
+    } else {
+        setTimeout(onVEIframeLoad, 1000);
+    }
 
     bindVisualEditorEvents();
     loadVEDraft();
+}
+
+function onVEIframeLoad() {
+    try {
+        veIframeDoc = veIframe.contentDocument || veIframe.contentWindow?.document;
+        if (!veIframeDoc || !veIframeDoc.body) {
+            setTimeout(onVEIframeLoad, 500);
+            return;
+        }
+        scanIframeElements();
+        setupIframeInteraction();
+        addVEHistoryEntry('Page loaded');
+    } catch (err) {
+        console.warn('[VE] iframe access error, retrying:', err);
+        setTimeout(onVEIframeLoad, 1000);
+    }
 }
 
 function bindVisualEditorEvents() {
@@ -4093,14 +4115,19 @@ function toggleVEGuides() {
 
 // --- Element scanning ---
 function scanIframeElements() {
-    if (!veIframeDoc) return;
+    if (!veIframeDoc || !veIframeDoc.body) return;
     veAllElements = [];
     veElementCount = 0;
+
+    const SKIP_SELF = new Set(['SCRIPT', 'STYLE', 'LINK', 'META', 'TITLE', 'NOSCRIPT', 'TEMPLATE']);
+    const SKIP_IDS = new Set(['splashOverlay', 'eqOverlay', 'mapMiniPlayer']);
 
     const walker = (node, depth, parentPath) => {
         if (node.nodeType !== 1) return;
         const el = node;
-        if (el.closest && el.closest('#mapMiniPlayer, #eqOverlay, .splash-screen, .toast-container, script, style, link, meta, title')) return;
+        if (SKIP_SELF.has(el.tagName)) return;
+        if (el.id && SKIP_IDS.has(el.id)) return;
+        if (el.classList?.contains('toast-container') || el.classList?.contains('splash-screen')) return;
 
         const path = parentPath ? parentPath + ' > ' + getVEShortSelector(el) : getVEShortSelector(el);
         const tag = el.tagName.toLowerCase();
@@ -4181,24 +4208,31 @@ function renderVEElementTree() {
 
         veVisibleElements.push(item);
         const isSelected = veSelectedElement === item.el;
-        const indent = item.depth * 16;
-        const hasKids = item.hasChildren;
+        const indent = Math.min(item.depth, 8) * 14;
 
         html += `<div class="ve-tree-item${isSelected ? ' selected' : ''}${item.hidden ? ' ve-hidden-el' : ''}${item.locked ? ' ve-locked-el' : ''}"
-            style="padding-left:${indent + 8}px" data-ve-tree-idx="${visibleIdx}"
-            onclick="veSelectTreeItem(${visibleIdx})" title="${item.path}">
-            ${hasKids ? '<i class="fas fa-caret-down ve-tree-toggle"></i>' : '<span style="width:14px;display:inline-block"></span>'}
+            style="padding-left:${indent + 8}px" data-ve-tree-idx="${visibleIdx}" title="${item.path}">
             <span class="ve-tree-icon"><i class="fas ${veGetTagIcon(item.tag)}"></i></span>
             <span class="ve-tree-tag">&lt;${item.tag}&gt;</span>
             ${item.id ? '<span class="ve-tree-id">#' + item.id + '</span>' : ''}
             ${item.cls ? '<span class="ve-tree-cls">.' + item.cls + '</span>' : ''}
-            ${item.hidden ? '<i class="fas fa-eye-slash" style="opacity:0.4"></i>' : ''}
-            ${item.locked ? '<i class="fas fa-lock" style="opacity:0.4"></i>' : ''}
+            ${item.hidden ? '<i class="fas fa-eye-slash" style="opacity:0.4;margin-left:auto"></i>' : ''}
+            ${item.locked ? '<i class="fas fa-lock" style="opacity:0.4;margin-left:2px"></i>' : ''}
         </div>`;
         visibleIdx++;
     }
 
     tree.innerHTML = html || '<div class="ve-empty-hint"><i class="fas fa-search"></i><p>No elements found</p></div>';
+
+    // Event delegation for tree item clicks
+    tree.onclick = (e) => {
+        const item = e.target.closest('.ve-tree-item');
+        if (!item) return;
+        const idx = parseInt(item.dataset.veTreeIdx, 10);
+        if (!isNaN(idx) && veVisibleElements[idx]) {
+            selectVEElement(veVisibleElements[idx].el);
+        }
+    };
 }
 
 function veGetTagIcon(tag) {
@@ -4209,20 +4243,124 @@ function veGetTagIcon(tag) {
         p: 'fa-paragraph', a: 'fa-link', button: 'fa-button-pointer', img: 'fa-image',
         video: 'fa-video', audio: 'fa-music', form: 'fa-form', input: 'fa-i-cursor',
         ul: 'fa-list', ol: 'fa-list-ol', li: 'fa-list-item', table: 'fa-table',
-        canvas: 'fa-paint-roller', svg: 'fa-bezier-curve'
+        canvas: 'fa-paint-roller', svg: 'fa-bezier-curve', i: 'fa-icons', span: 'fa-font',
+        label: 'fa-tag', select: 'fa-caret-down', option: 'fa-caret-down',
+        textarea: 'fa-i-cursor', iframe: 'fa-window-maximize', picture: 'fa-image',
+        source: 'fa-link', strong: 'fa-bold', em: 'fa-italic', br: 'fa-corner-down-left'
     };
     return icons[tag] || 'fa-code';
 }
 
 function renderVESections() {
-    const sections = document.getElementById('veSectionsList');
-    if (!sections) return;
+    if (!veIframeDoc) return;
 
-    const sectionEls = veIframeDoc ? veIframeDoc.querySelectorAll('section, [data-section], .home-section, main > div[id]') : [];
-    sections.innerHTML = Array.from(sectionEls).map((el, i) => {
-        const label = el.getAttribute('data-section') || el.id || el.className?.split(' ')[0] || 'Section ' + (i + 1);
-        return `<div class="ve-section-item" onclick="veSelectSection(${i})"><i class="fas fa-layer-group"></i> ${label}</div>`;
-    }).join('') || '<div class="ve-empty-hint"><p>No sections found</p></div>';
+    const sectionEls = veIframeDoc.querySelectorAll(
+        'section, [data-section], header, nav, footer, main, [class*="section"], .home-section, .site-footer, .top-header'
+    );
+    const meaningful = Array.from(sectionEls).filter(el => el.id || el.getAttribute('data-section') || el.children.length > 0);
+
+    const buildItem = (el, i) => {
+        const label = el.getAttribute('data-section') || el.id || el.className?.split(' ')[0] || el.tagName.toLowerCase() + ' ' + (i + 1);
+        const tag = el.tagName.toLowerCase();
+        const isHidden = el.style.display === 'none' || el.hidden;
+        const isSelected = veSelectedElement === el;
+        return { el, label, tag, isHidden, isSelected, idx: i };
+    };
+
+    // 1. Components tab
+    const compList = document.getElementById('veSectionsComponentList');
+    if (compList) {
+        if (meaningful.length === 0) {
+            compList.innerHTML = '<div class="ve-empty-hint"><i class="fas fa-layer-group"></i><p>No sections found</p></div>';
+        } else {
+            compList.innerHTML = meaningful.map((el, i) => {
+                const s = buildItem(el, i);
+                const icon = veGetSectionIcon(s.label);
+                return `<div class="ve-section-comp-item${s.isSelected ? ' selected' : ''}${s.isHidden ? ' ve-hidden-section' : ''}" data-ve-sec-idx="${s.idx}">
+                    <i class="${icon} ve-section-comp-icon"></i>
+                    <span class="ve-section-comp-label">${s.label}</span>
+                    <span class="ve-section-comp-tag">&lt;${s.tag}&gt;</span>
+                    <div class="ve-section-comp-actions">
+                        <button class="ve-sec-act-btn" title="Toggle Visibility" data-action="toggle-vis" data-idx="${s.idx}"><i class="fas ${s.isHidden ? 'fa-eye-slash' : 'fa-eye'} ve-sec-vis-icon"></i></button>
+                        <button class="ve-sec-act-btn" title="Duplicate" data-action="duplicate" data-idx="${s.idx}"><i class="fas fa-copy"></i></button>
+                        <button class="ve-sec-act-btn" title="Move Up" data-action="move-up" data-idx="${s.idx}"><i class="fas fa-arrow-up"></i></button>
+                        <button class="ve-sec-act-btn" title="Move Down" data-action="move-down" data-idx="${s.idx}"><i class="fas fa-arrow-down"></i></button>
+                        <button class="ve-sec-act-btn" title="Edit HTML" data-action="edit-html" data-idx="${s.idx}"><i class="fas fa-code"></i></button>
+                        <button class="ve-sec-act-btn ve-sec-delete" title="Delete" data-action="delete" data-idx="${s.idx}"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        compList.onclick = (e) => {
+            const btn = e.target.closest('.ve-sec-act-btn');
+            if (btn) { e.stopPropagation(); handleSectionAction(btn.dataset.action, parseInt(btn.dataset.idx, 10)); return; }
+            const item = e.target.closest('.ve-section-comp-item');
+            if (item) veSelectSection(parseInt(item.dataset.veSecIdx, 10));
+        };
+    }
+
+    // 2. Sections Order panel
+    const orderList = document.getElementById('veSectionsList');
+    if (orderList) {
+        if (meaningful.length === 0) {
+            orderList.innerHTML = '<div class="ve-empty-hint"><p>No sections</p></div>';
+        } else {
+            orderList.innerHTML = meaningful.map((el, i) => {
+                const s = buildItem(el, i);
+                return `<div class="ve-section-order-item${s.isSelected ? ' selected' : ''}${s.isHidden ? ' ve-hidden-section' : ''}" data-ve-sec-idx="${s.idx}">
+                    <span class="ve-section-order-num">#${i + 1}</span>
+                    <span class="ve-section-order-label">${s.label}</span>
+                    <div class="ve-section-order-actions">
+                        <button class="ve-sec-act-btn" title="Toggle Visibility" data-action="toggle-vis" data-idx="${s.idx}"><i class="fas ${s.isHidden ? 'fa-eye-slash' : 'fa-eye'}"></i></button>
+                        <button class="ve-sec-act-btn" title="Move Up" data-action="move-up" data-idx="${s.idx}"><i class="fas fa-arrow-up"></i></button>
+                        <button class="ve-sec-act-btn" title="Move Down" data-action="move-down" data-idx="${s.idx}"><i class="fas fa-arrow-down"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        orderList.onclick = (e) => {
+            const btn = e.target.closest('.ve-sec-act-btn');
+            if (btn) { e.stopPropagation(); handleSectionAction(btn.dataset.action, parseInt(btn.dataset.idx, 10)); return; }
+            const item = e.target.closest('.ve-section-order-item');
+            if (item) veSelectSection(parseInt(item.dataset.veSecIdx, 10));
+        };
+    }
+}
+
+function handleSectionAction(action, idx) {
+    const sectionEls = veIframeDoc.querySelectorAll(
+        'section, [data-section], header, nav, footer, main, [class*="section"], .home-section, .site-footer, .top-header'
+    );
+    const meaningful = Array.from(sectionEls).filter(el => el.id || el.getAttribute('data-section') || el.children.length > 0);
+    const el = meaningful[idx];
+    if (!el) return;
+    switch (action) {
+        case 'toggle-vis': veToggleSectionVisibility(idx); break;
+        case 'duplicate': veDuplicateSection(idx); break;
+        case 'move-up': veMoveSection(idx, 'up'); break;
+        case 'move-down': veMoveSection(idx, 'down'); break;
+        case 'edit-html': selectVEElement(el); veEditHTML(); break;
+        case 'delete': veDeleteSection(idx); break;
+    }
+}
+
+function veGetSectionIcon(label) {
+    const l = label.toLowerCase();
+    if (l.includes('header') || l.includes('nav') || l.includes('top')) return 'fas fa-bars';
+    if (l.includes('hero') || l.includes('banner') || l.includes('splash')) return 'fas fa-star';
+    if (l.includes('station') || l.includes('fm') || l.includes('radio')) return 'fas fa-broadcast-tower';
+    if (l.includes('song') || l.includes('music') || l.includes('track')) return 'fas fa-music';
+    if (l.includes('artist') || l.includes('singer')) return 'fas fa-user';
+    if (l.includes('chart') || l.includes('top') || l.includes('trending')) return 'fas fa-ranking-star';
+    if (l.includes('featured') || l.includes('curated') || l.includes('made')) return 'fas fa-sparkles';
+    if (l.includes('new') || l.includes('release') || l.includes('recent')) return 'fas fa-clock-rotate-left';
+    if (l.includes('search') || l.includes('filter')) return 'fas fa-search';
+    if (l.includes('player') || l.includes('mini')) return 'fas fa-headphones';
+    if (l.includes('footer')) return 'fas fa-shoe-prints';
+    if (l.includes('ticker') || l.includes('marquee')) return 'fas fa-scroll';
+    if (l.includes('category') || l.includes('genre') || l.includes('mood')) return 'fas fa-grip';
+    if (l.includes('ai') || l.includes('assist')) return 'fas fa-robot';
+    return 'fas fa-layer-group';
 }
 
 function veSelectTreeItem(idx) {
@@ -4232,8 +4370,82 @@ function veSelectTreeItem(idx) {
 }
 
 function veSelectSection(idx) {
-    const sectionEls = veIframeDoc.querySelectorAll('section, [data-section], .home-section, main > div[id]');
-    if (sectionEls[idx]) selectVEElement(sectionEls[idx]);
+    const sectionEls = veIframeDoc.querySelectorAll(
+        'section, [data-section], header, nav, footer, main, [class*="section"], .home-section, .site-footer, .top-header'
+    );
+    const meaningful = Array.from(sectionEls).filter(el => el.id || el.getAttribute('data-section') || el.children.length > 0);
+    if (meaningful[idx]) { selectVEElement(meaningful[idx]); renderVESections(); }
+}
+
+function veToggleSectionVisibility(idx) {
+    const sectionEls = veIframeDoc.querySelectorAll(
+        'section, [data-section], header, nav, footer, main, [class*="section"], .home-section, .site-footer, .top-header'
+    );
+    const meaningful = Array.from(sectionEls).filter(el => el.id || el.getAttribute('data-section') || el.children.length > 0);
+    const el = meaningful[idx];
+    if (!el) return;
+    pushVEUndo('Toggle section visibility');
+    const isHidden = el.style.display === 'none' || el.hidden;
+    el.style.display = isHidden ? '' : 'none';
+    addVEHistoryEntry((isHidden ? 'Showed ' : 'Hidden ') + (el.getAttribute('data-section') || el.id || 'section'));
+    scanIframeElements();
+}
+
+function veDuplicateSection(idx) {
+    const sectionEls = veIframeDoc.querySelectorAll(
+        'section, [data-section], header, nav, footer, main, [class*="section"], .home-section, .site-footer, .top-header'
+    );
+    const meaningful = Array.from(sectionEls).filter(el => el.id || el.getAttribute('data-section') || el.children.length > 0);
+    const el = meaningful[idx];
+    if (!el) return;
+    pushVEUndo('Duplicate section');
+    const clone = el.cloneNode(true);
+    clone.removeAttribute('id');
+    el.parentElement.insertBefore(clone, el.nextSibling);
+    addVEHistoryEntry('Duplicated ' + (el.getAttribute('data-section') || el.id || 'section'));
+    scanIframeElements();
+    selectVEElement(clone);
+}
+
+function veMoveSection(idx, dir) {
+    const sectionEls = veIframeDoc.querySelectorAll(
+        'section, [data-section], header, nav, footer, main, [class*="section"], .home-section, .site-footer, .top-header'
+    );
+    const meaningful = Array.from(sectionEls).filter(el => el.id || el.getAttribute('data-section') || el.children.length > 0);
+    const el = meaningful[idx];
+    if (!el || !el.parentElement) return;
+    pushVEUndo('Move section ' + dir);
+    if (dir === 'up' && el.previousElementSibling) el.parentElement.insertBefore(el, el.previousElementSibling);
+    else if (dir === 'down' && el.nextElementSibling) el.parentElement.insertBefore(el.nextElementSibling, el);
+    addVEHistoryEntry('Moved section ' + dir);
+    scanIframeElements();
+}
+
+function veEditSectionHTML(idx) {
+    const sectionEls = veIframeDoc.querySelectorAll(
+        'section, [data-section], header, nav, footer, main, [class*="section"], .home-section, .site-footer, .top-header'
+    );
+    const meaningful = Array.from(sectionEls).filter(el => el.id || el.getAttribute('data-section') || el.children.length > 0);
+    const el = meaningful[idx];
+    if (!el) return;
+    selectVEElement(el);
+    veEditHTML();
+}
+
+function veDeleteSection(idx) {
+    const sectionEls = veIframeDoc.querySelectorAll(
+        'section, [data-section], header, nav, footer, main, [class*="section"], .home-section, .site-footer, .top-header'
+    );
+    const meaningful = Array.from(sectionEls).filter(el => el.id || el.getAttribute('data-section') || el.children.length > 0);
+    const el = meaningful[idx];
+    if (!el) return;
+    const label = el.getAttribute('data-section') || el.id || 'section';
+    if (!confirm('Delete section "' + label + '"? This can be undone with Ctrl+Z.')) return;
+    pushVEUndo('Delete section');
+    el.remove();
+    addVEHistoryEntry('Deleted section: ' + label);
+    scanIframeElements();
+    clearVESelection();
 }
 
 // --- Iframe interaction ---
@@ -4368,6 +4580,7 @@ function selectVEElement(el) {
     showVEProperties(veSelectedSelector);
     updateVEActionsBar(true);
     highlightVETreeItem();
+    renderVESections();
     updateVEStatusBar();
 }
 
@@ -4404,6 +4617,7 @@ function clearVESelection() {
         propsBody.innerHTML = '<div class="ve-empty-state"><i class="fas fa-mouse-pointer"></i><p>Click any element on the canvas to edit its properties</p></div>';
     }
     highlightVETreeItem();
+    renderVESections();
     updateVEStatusBar();
 }
 
@@ -4959,6 +5173,12 @@ if (typeof window !== 'undefined') {
     window.veSelectSection = veSelectSection;
     window.veSetProp = veSetProp;
     window.veApplyHTMLEdit = veApplyHTMLEdit;
+    window.veToggleSectionVisibility = veToggleSectionVisibility;
+    window.veDuplicateSection = veDuplicateSection;
+    window.veMoveSection = veMoveSection;
+    window.veEditSectionHTML = veEditSectionHTML;
+    window.veDeleteSection = veDeleteSection;
+    window.handleSectionAction = handleSectionAction;
     window.loadMiniPlayerSettings = loadMiniPlayerSettings;
     window.saveMiniPlayerSettings = saveMiniPlayerSettings;
     window.resetMiniPlayerSettings = resetMiniPlayerSettings;

@@ -15,6 +15,20 @@ html.splash-active body {
     visibility: hidden;
 }
 
+/* Builder Preview: override splash lock */
+html.builder-preview,
+html.builder-preview body,
+html.builder-preview.splash-active,
+html.builder-preview.splash-active body {
+    overflow: auto !important;
+    height: auto !important;
+    visibility: visible !important;
+}
+html.builder-preview .splash-overlay,
+html.builder-preview .splash-screen {
+    display: none !important;
+}
+
 /* Splash Overlay */
 .splash-overlay {
     position: fixed;

@@ -437,6 +437,7 @@ function getStationStreamUrl(stationName) {
 }
 
 function initAudioPlayer() {
+    if (window.__BUILDER_PREVIEW__) return;
     if (!audioPlayer) {
         audioPlayer = new Audio();
         audioPlayer.preload = 'auto';
@@ -540,6 +541,7 @@ function initAudioPlayer() {
 }
 
 function stopCurrentStream() {
+    if (window.__BUILDER_PREVIEW__) return;
     if (audioPlayer) {
         audioPlayer.pause();
         audioPlayer.currentTime = 0;
@@ -566,6 +568,7 @@ function toggleStationFromCard(btn, stationName) {
 }
 
 function playStation(stationName) {
+    if (window.__BUILDER_PREVIEW__) return;
     initAudioPlayer();
     stopCurrentStream();
     userPaused = false;
@@ -645,6 +648,7 @@ function playStation(stationName) {
 }
 
 async function playSong(song, playlist = []) {
+    if (window.__BUILDER_PREVIEW__) return;
     initAudioPlayer();
     stopCurrentStream();
     userPaused = false;
@@ -761,6 +765,7 @@ function resumePlayback() {
 }
 
 function seekPlaybackToPercent(percent) {
+    if (window.__BUILDER_PREVIEW__) return;
     if (!audioPlayer) return;
     const derived = Math.max(0, Math.min(1, percent));
     const dur = audioPlayer.duration;
@@ -786,6 +791,7 @@ function setPlaybackVolume(volume) {
 }
 
 function playNextTrack() {
+    if (window.__BUILDER_PREVIEW__) return;
     if (currentPlaybackQueue.length === 0) return;
     if (playbackShuffle) {
         currentPlaybackQueueIndex = Math.floor(Math.random() * currentPlaybackQueue.length);
@@ -804,6 +810,7 @@ function playNextTrack() {
 }
 
 function playPreviousTrack() {
+    if (window.__BUILDER_PREVIEW__) return;
     if (currentPlaybackQueue.length === 0) return;
     if (currentPlaybackQueueIndex < 0) currentPlaybackQueueIndex = 0;
     if (playbackShuffle) {
@@ -850,6 +857,7 @@ function pauseStation() {
 }
 
 function togglePlayPause() {
+    if (window.__BUILDER_PREVIEW__) return;
     if (isStreamPlaying) {
         pausePlayback();
     } else if (currentStation || currentPlaybackTrack) {
@@ -2490,13 +2498,22 @@ function filterStations() {
 // Initialize
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
+    // Builder preview mode: skip auth, splash, particles — keep rendering only
+    if (window.__BUILDER_PREVIEW__) {
+        const splash = document.getElementById('splashOverlay');
+        if (splash) splash.style.display = 'none';
+        document.body.classList.add('builder-preview');
+    }
+
     if (!checkAuth()) return;
     
     // Check admin and show builder link
     checkAdminAndShowBuilder();
     
-    // Initialize UI components
-    new ParticleSystem('particles-canvas');
+    // Initialize UI components (skip particles in builder preview)
+    if (!window.__BUILDER_PREVIEW__) {
+        new ParticleSystem('particles-canvas');
+    }
     
     // Initialize top header
     initTopHeader();

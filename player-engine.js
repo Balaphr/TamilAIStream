@@ -111,6 +111,7 @@ const PlayerEngine = (() => {
     }
 
     function initAudio() {
+        if (window.__BUILDER_PREVIEW__) return;
         if (audio) return;
         audio = new Audio();
         audio.crossOrigin = 'anonymous';
@@ -293,6 +294,7 @@ const PlayerEngine = (() => {
     function getColorTheme() { return state.colorTheme; }
 
     async function playTrack(track, queue, index) {
+        if (window.__BUILDER_PREVIEW__) return;
         initAudio();
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
 
@@ -339,21 +341,25 @@ const PlayerEngine = (() => {
     }
 
     function play() {
+        if (window.__BUILDER_PREVIEW__) return;
         initAudio();
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         audio.play().catch(() => {});
     }
 
     function pause() {
+        if (window.__BUILDER_PREVIEW__) return;
         if (audio) audio.pause();
     }
 
     function togglePlay() {
+        if (window.__BUILDER_PREVIEW__) return;
         if (state.isPlaying) pause();
         else play();
     }
 
     function stop() {
+        if (window.__BUILDER_PREVIEW__) return;
         if (audio) {
             audio.pause();
             audio.currentTime = 0;
@@ -392,14 +398,17 @@ const PlayerEngine = (() => {
     }
 
     function seekTo(time) {
+        if (window.__BUILDER_PREVIEW__) return;
         if (audio) audio.currentTime = Math.max(0, Math.min(time, audio.duration || 0));
     }
 
     function seekToPercent(pct) {
+        if (window.__BUILDER_PREVIEW__) return;
         if (audio && audio.duration) seekTo(pct * audio.duration);
     }
 
     function setVolume(v) {
+        if (window.__BUILDER_PREVIEW__) return;
         state.volume = Math.max(0, Math.min(1, v));
         if (audio) audio.volume = state.muted ? 0 : state.volume;
         if (gainNode && audioCtx) gainNode.gain.setValueAtTime(state.volume, audioCtx.currentTime);
@@ -408,6 +417,7 @@ const PlayerEngine = (() => {
     }
 
     function toggleMute() {
+        if (window.__BUILDER_PREVIEW__) return;
         state.muted = !state.muted;
         if (audio) audio.volume = state.muted ? 0 : state.volume;
         saveState();

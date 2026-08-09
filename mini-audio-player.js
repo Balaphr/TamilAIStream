@@ -934,6 +934,7 @@ const MiniAudioPlayer = (() => {
     }
 
     function openPopup(track, meta = {}) {
+        if (window.__BUILDER_PREVIEW__) return;
         createPopup();
         if (!popupEl) return;
 
@@ -995,6 +996,7 @@ const MiniAudioPlayer = (() => {
        Init - Monkey patch playStation/playSong
        ============================================ */
     function init() {
+        if (window.__BUILDER_PREVIEW__) return;
         createPopup();
 
         // Patch playStation to open popup
@@ -1088,9 +1090,11 @@ const MiniAudioPlayer = (() => {
     };
 })();
 
-// Auto-init on DOM ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => MiniAudioPlayer.init());
-} else {
-    MiniAudioPlayer.init();
+// Auto-init on DOM ready (skip in Builder preview)
+if (!window.__BUILDER_PREVIEW__) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => MiniAudioPlayer.init());
+    } else {
+        MiniAudioPlayer.init();
+    }
 }
