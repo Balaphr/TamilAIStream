@@ -2275,6 +2275,14 @@ function renderAllDynamicContent() {
         // Update songs count
         const countEl = document.getElementById('songsCount');
         if (countEl) countEl.textContent = songs.length + ' songs';
+
+        // Render Apple Music Premium sections
+        if (typeof AMPremium !== 'undefined') {
+            setTimeout(() => {
+                AMPremium.renderAllSections();
+                setTimeout(() => AMPremium.initScrollReveal(), 100);
+            }, 100);
+        }
     });
 }
 
@@ -2295,6 +2303,7 @@ function setupRealtimeSync() {
                 renderFeaturedSliderDynamic();
                 renderTrendingDynamic();
                 renderAIRecommendedDynamic();
+                if (typeof AMPremium !== 'undefined') { AMPremium.renderAllSections(); setTimeout(() => AMPremium.initScrollReveal(), 100); }
                 break;
             case 'FEATURED':
                 renderFeaturedSliderDynamic();
@@ -2308,6 +2317,7 @@ function setupRealtimeSync() {
             case 'ARTIST_HITS':
                 renderArtistHitsDynamic();
                 initTamilHitsCarousel();
+                if (typeof AMPremium !== 'undefined') { AMPremium.renderArtistEssentials(); AMPremium.renderMadeForYou(); }
                 break;
             case 'QUOTES':
                 initTopHeader();
@@ -2318,6 +2328,7 @@ function setupRealtimeSync() {
                 break;
             case 'SONGS':
                 handleSongsUpdate();
+                if (typeof AMPremium !== 'undefined') { setTimeout(() => { AMPremium.renderNewReleases(); AMPremium.renderTopCharts(); AMPremium.renderCuratedPlaylists(); AMPremium.initScrollReveal(); }, 200); }
                 break;
             case 'LAYOUT':
                 setupLayoutSync();
