@@ -4019,6 +4019,15 @@ function bindVisualEditorEvents() {
     document.getElementById('vePublishBtn')?.addEventListener('click', publishVEChanges);
     document.getElementById('veCloseProps')?.addEventListener('click', clearVESelection);
 
+    // Panel Undo/Redo/Save buttons (Layers tab)
+    document.getElementById('vePanelUndo')?.addEventListener('click', veUndo);
+    document.getElementById('vePanelRedo')?.addEventListener('click', veRedo);
+    document.getElementById('vePanelSave')?.addEventListener('click', saveVEDraft);
+    // Panel Undo/Redo/Save buttons (Components tab)
+    document.getElementById('vePanelUndo2')?.addEventListener('click', veUndo);
+    document.getElementById('vePanelRedo2')?.addEventListener('click', veRedo);
+    document.getElementById('vePanelSave2')?.addEventListener('click', saveVEDraft);
+
     document.querySelectorAll('.ve-panel-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             const tabId = tab.dataset.veLtab;
@@ -4943,10 +4952,23 @@ function veRedo() {
 }
 
 function updateVEUndoRedoBtns() {
+    const canUndo = veUndoStack.length > 0;
+    const canRedo = veRedoStack.length > 0;
+    // Canvas toolbar
     const undoBtn = document.getElementById('veUndoBtn');
     const redoBtn = document.getElementById('veRedoBtn');
-    if (undoBtn) undoBtn.disabled = veUndoStack.length === 0;
-    if (redoBtn) redoBtn.disabled = veRedoStack.length === 0;
+    if (undoBtn) undoBtn.disabled = !canUndo;
+    if (redoBtn) redoBtn.disabled = !canRedo;
+    // Panel buttons (Layers tab)
+    const pUndo = document.getElementById('vePanelUndo');
+    const pRedo = document.getElementById('vePanelRedo');
+    if (pUndo) pUndo.disabled = !canUndo;
+    if (pRedo) pRedo.disabled = !canRedo;
+    // Panel buttons (Components tab)
+    const pUndo2 = document.getElementById('vePanelUndo2');
+    const pRedo2 = document.getElementById('vePanelRedo2');
+    if (pUndo2) pUndo2.disabled = !canUndo;
+    if (pRedo2) pRedo2.disabled = !canRedo;
 }
 
 // --- History panel ---

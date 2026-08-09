@@ -1351,6 +1351,25 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 }
 .ve-sm-btn:hover { background: var(--bg-glass-hover); color: var(--text-primary); }
 
+/* Layers/Components Action Bar (Undo, Redo, Save) */
+.ve-layers-actions {
+    display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--border-glass);
+    background: rgba(0,0,0,0.15);
+}
+.ve-layer-action-btn {
+    display: flex; align-items: center; gap: 5px; padding: 6px 14px;
+    background: var(--bg-glass); border: 1px solid var(--border-glass);
+    border-radius: var(--radius-sm); color: var(--text-secondary);
+    font-size: 0.75rem; font-weight: 600; cursor: pointer;
+    transition: all var(--transition-fast); white-space: nowrap;
+}
+.ve-layer-action-btn:hover { background: var(--bg-glass-hover); color: var(--text-primary); border-color: var(--emerald-400); }
+.ve-layer-action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.ve-layer-action-btn:disabled:hover { background: var(--bg-glass); color: var(--text-secondary); border-color: var(--border-glass); }
+.ve-layer-action-btn i { font-size: 11px; }
+.ve-layer-save { background: rgba(16,185,129,0.15); color: var(--emerald-400); border-color: rgba(16,185,129,0.35); font-weight: 700; }
+.ve-layer-save:hover { background: rgba(16,185,129,0.3); color: #34d399; border-color: var(--emerald-400); }
+
 /* Element Tree */
 .ve-tree { display: flex; flex-direction: column; gap: 1px; }
 .ve-tree-item {
@@ -1489,6 +1508,11 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 }
 .ve-action-btn:hover { background: var(--bg-glass-hover); color: var(--text-primary); }
 .ve-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ve-action-btn.ve-save-btn {
+    background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); color: var(--emerald-400);
+    font-weight: 600;
+}
+.ve-action-btn.ve-save-btn:hover { background: rgba(16,185,129,0.3); border-color: var(--emerald-400); box-shadow: 0 2px 10px rgba(16,185,129,0.3); }
 .ve-action-btn.ve-publish {
     background: var(--gradient-brand); border-color: transparent; color: white;
     box-shadow: 0 2px 8px rgba(16,185,129,0.3);

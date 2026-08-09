@@ -1109,10 +1109,20 @@
                                         <button class="ve-sm-btn" id="veExpandAll" title="Expand All"><i class="fas fa-expand"></i></button>
                                         <button class="ve-sm-btn" id="veCollapseAll" title="Collapse All"><i class="fas fa-compress"></i></button>
                                     </div>
+                                    <div class="ve-layers-actions">
+                                        <button class="ve-layer-action-btn" id="vePanelUndo" title="Undo (Ctrl+Z)"><i class="fas fa-rotate-left"></i> Undo</button>
+                                        <button class="ve-layer-action-btn" id="vePanelRedo" title="Redo (Ctrl+Y)"><i class="fas fa-rotate-right"></i> Redo</button>
+                                        <button class="ve-layer-action-btn ve-layer-save" id="vePanelSave" title="Save Draft (Ctrl+S)"><i class="fas fa-save"></i> Save</button>
+                                    </div>
                                     <div class="ve-tree" id="veElementTree"></div>
                                 </div>
                                 <!-- Components Tab -->
                                 <div class="ve-panel-content" id="veComponentsTab" style="display:none;">
+                                    <div class="ve-layers-actions">
+                                        <button class="ve-layer-action-btn" id="vePanelUndo2" title="Undo (Ctrl+Z)"><i class="fas fa-rotate-left"></i> Undo</button>
+                                        <button class="ve-layer-action-btn" id="vePanelRedo2" title="Redo (Ctrl+Y)"><i class="fas fa-rotate-right"></i> Redo</button>
+                                        <button class="ve-layer-action-btn ve-layer-save" id="vePanelSave2" title="Save Draft (Ctrl+S)"><i class="fas fa-save"></i> Save</button>
+                                    </div>
                                     <div class="ve-component-group">
                                         <div class="ve-comp-group-title"><i class="fas fa-layer-group"></i> Website Sections</div>
                                         <div id="veSectionsComponentList" class="ve-sections-component-list">
@@ -1171,7 +1181,7 @@
                                         <button class="ve-action-btn" id="veUndoBtn" title="Undo (Ctrl+Z)"><i class="fas fa-rotate-left"></i></button>
                                         <button class="ve-action-btn" id="veRedoBtn" title="Redo (Ctrl+Y)"><i class="fas fa-rotate-right"></i></button>
                                         <div class="ve-divider"></div>
-                                        <button class="ve-action-btn" id="veSaveDraft" title="Save Draft (Ctrl+S)"><i class="fas fa-save"></i> Draft</button>
+                                        <button class="ve-action-btn ve-save-btn" id="veSaveDraft" title="Save Draft (Ctrl+S)"><i class="fas fa-save"></i> Save</button>
                                         <button class="ve-action-btn ve-publish" id="vePublishBtn" title="Publish to Live"><i class="fas fa-rocket"></i> Publish</button>
                                     </div>
                                 </div>
