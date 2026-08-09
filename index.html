@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="yt-music.css">
     <link rel="stylesheet" href="player.css">
     <link rel="stylesheet" href="mini-audio-player.css">
+    <link rel="stylesheet" href="listening-history.css">
     <link rel="stylesheet" href="search-ui.css">
     <link rel="stylesheet" href="responsive.css">
     <link rel="stylesheet" href="ai-glass.css">
@@ -707,6 +708,38 @@
         </div>
     </div>
 
+    <!-- ============ LISTENING HISTORY ============ -->
+    <button class="lh-fab" id="lhFab" title="Listening History">
+        <i class="fas fa-wave-square"></i>
+    </button>
+    <div class="lh-panel" id="lhPanel">
+        <div class="lh-header">
+            <div class="lh-title">
+                <i class="fas fa-wave-square"></i>
+                <span>Listening History</span>
+            </div>
+            <button class="lh-close" id="lhClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="lh-body" id="lhBody">
+            <div class="lh-section" id="lhContinueSection" style="display:none;">
+                <div class="lh-section-title"><i class="fas fa-play-circle"></i> Continue Listening</div>
+                <div class="lh-list" id="lhContinueList"></div>
+            </div>
+            <div class="lh-section" id="lhRecentSection" style="display:none;">
+                <div class="lh-section-title"><i class="fas fa-clock-rotate-left"></i> Recently Played</div>
+                <div class="lh-list" id="lhRecentList"></div>
+            </div>
+            <div class="lh-section" id="lhPicksSection" style="display:none;">
+                <div class="lh-section-title"><i class="fas fa-wand-magic-sparkles"></i> AI Picks For You</div>
+                <div class="lh-list" id="lhPicksList"></div>
+            </div>
+            <div class="lh-empty" id="lhEmpty">
+                <i class="fas fa-headphones"></i>
+                <p>Start listening to see your history here</p>
+            </div>
+        </div>
+    </div>
+
     <!-- ============ AI ASSISTANT ============ -->
     <button class="ytm-ai-fab" id="ytmAiFab" title="AI Assistant">
         <i class="fas fa-robot"></i>
@@ -762,6 +795,7 @@
     <script src="script.js"></script>
 
     <script src="mini-audio-player.js"></script>
+    <script src="listening-history.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             PlayerEngine.init();

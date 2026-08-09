@@ -622,6 +622,9 @@ function playStation(stationName) {
                 const stationInfo = getStationInfo(stationName);
                 updateNowPlayingBar(stationInfo.name, stationInfo.freq);
                 updateStationCardStates(true);
+                if (typeof ListeningHistory !== 'undefined') {
+                    ListeningHistory.trackPlayback(currentPlaybackTrack, 'station');
+                }
                 if (typeof YTMusic !== 'undefined') {
                     YTMusic.currentTrack = currentPlaybackTrack;
                     YTMusic.isPlaying = true;
@@ -673,6 +676,9 @@ async function playSong(song, playlist = []) {
             persistPlaybackState();
             updatePlayPauseButton(true);
             updateNowPlayingBar(song.title, `${song.artist} â€¢ ${song.movie}`);
+            if (typeof ListeningHistory !== 'undefined') {
+                ListeningHistory.trackPlayback(currentPlaybackTrack, 'song');
+            }
             if (typeof YTMusic !== 'undefined') {
                 YTMusic.currentTrack = currentPlaybackTrack;
                 YTMusic.queue = currentPlaybackQueue;
