@@ -1542,17 +1542,26 @@ function setupLayoutSync() {
         const mainContent = allSections[0]?.parentElement;
         if (!mainContent) return;
         
+        // Reorder sections that are in the saved layout
         sectionOrder.forEach(type => {
             const section = mainContent.querySelector(`[data-section="${type}"]`);
             if (section) mainContent.appendChild(section);
         });
         
+        // Show/hide sections based on saved layout
+        // New sections not in saved layout are shown by default (additive approach)
         allSections.forEach(section => {
             const type = section.dataset.section;
-            if (!sectionOrder.includes(type)) {
-                section.style.display = 'none';
-            } else {
+            if (sectionOrder.includes(type)) {
                 section.style.display = '';
+            } else if (type.startsWith('made-for-') || type.startsWith('new-releases') || 
+                       type.startsWith('top-charts') || type.startsWith('curated-playlists') ||
+                       type.startsWith('recently-played') || type.startsWith('artist-essentials')) {
+                // Premium sections: show by default
+                section.style.display = '';
+            } else {
+                // Other unknown sections: hide
+                section.style.display = 'none';
             }
         });
     } catch (err) {
@@ -2354,15 +2363,40 @@ function setupRealtimeSync() {
     window.addEventListener('storage-sync', () => {
         console.log('[Sync] Received storage-sync event from Builder');
         handleSongsUpdate();
+        // Re-render premium sections on Builder sync
+        if (typeof AMPremium !== 'undefined') {
+            setTimeout(() => {
+                AMPremium.renderAllSections();
+                setTimeout(() => AMPremium.initScrollReveal(), 100);
+            }, 200);
+        }
+    });
+
+    // Method 2b: Listen for premium-sections-sync event from Builder
+    window.addEventListener('premium-sections-sync', () => {
+        console.log('[Sync] Received premium-sections-sync event');
+        if (typeof AMPremium !== 'undefined') {
+            setTimeout(() => {
+                AMPremium.renderAllSections();
+                setTimeout(() => AMPremium.initScrollReveal(), 100);
+            }, 100);
+        }
     });
 
     // Method 3: BroadcastChannel (modern browsers)
     try {
         const channel = new BroadcastChannel('tamilAIStream_sync');
         channel.onmessage = (event) => {
-            if (event.data && event.data.type === 'songs-updated') {
-                console.log('[Sync] Received BroadcastChannel message');
+            if (event.data && (event.data.type === 'songs-updated' || event.data.type === 'content-updated')) {
+                console.log('[Sync] Received BroadcastChannel message:', event.data.type);
                 handleSongsUpdate();
+                // Re-render premium sections on any content update
+                if (typeof AMPremium !== 'undefined') {
+                    setTimeout(() => {
+                        AMPremium.renderAllSections();
+                        setTimeout(() => AMPremium.initScrollReveal(), 100);
+                    }, 200);
+                }
             }
         };
         window._syncChannel = channel;
@@ -2387,6 +2421,17 @@ function handleSongsUpdate() {
         const publishedSongs = songs.filter(s => s.status === 'published');
         if (publishedSongs.length > 0) {
             renderRecentlyAdded(songs);
+        }
+
+        // Re-render Apple Music Premium sections
+        if (typeof AMPremium !== 'undefined') {
+            setTimeout(() => {
+                AMPremium.renderNewReleases();
+                AMPremium.renderTopCharts();
+                AMPremium.renderCuratedPlaylists();
+                AMPremium.renderRecentlyPlayed();
+                AMPremium.initScrollReveal();
+            }, 200);
         }
     });
 }

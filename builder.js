@@ -1106,13 +1106,20 @@ async function syncToLiveWebsite() {
         try {
             const channel = new BroadcastChannel('tamilAIStream_sync');
             channel.postMessage({
-                type: 'songs-updated',
+                type: 'content-updated',
                 timestamp: Date.now(),
-                songCount: DataStore.getSongs().length
+                songCount: DataStore.getSongs().length,
+                stationCount: DataStore.getStations().length,
+                sections: ['songs', 'stations', 'featured', 'trending', 'artistHits', 'categories', 'premium']
             });
         } catch (e) {
             console.warn('[Builder] BroadcastChannel not supported');
         }
+        
+        // Method 4: Dispatch premium section re-render event
+        window.dispatchEvent(new CustomEvent('premium-sections-sync', {
+            detail: { timestamp: Date.now() }
+        }));
         
         console.log('[Builder] Sync signals sent successfully');
     } catch (e) {
@@ -1141,6 +1148,7 @@ function saveDraft() {
             playerPrefs: DataStore.getPlayerPrefs(),
             navigation: DataStore.getNavigation(),
             sectionsOrder: DataStore.getSectionsOrder(),
+            miniPlayerSettings: DataStore.getMiniPlayerSettings(),
             savedAt: new Date().toISOString()
         };
         localStorage.setItem('builderDraft', JSON.stringify(draftData));
@@ -1184,7 +1192,8 @@ async function publishChanges() {
                 trending: DataStore.getTrending().length,
                 artistHits: DataStore.getArtistHits().length,
                 quotes: DataStore.getQuotes().length,
-                sections: DataStore.getLayout().length
+                sections: DataStore.getLayout().length,
+                miniPlayer: Object.keys(DataStore.getMiniPlayerSettings()).length > 0
             }
         };
         publishHistory.unshift(publishEntry);
@@ -1238,6 +1247,7 @@ function discardChanges() {
             if (draftData.playerPrefs) DataStore.setPlayerPrefs(draftData.playerPrefs);
             if (draftData.navigation) DataStore.setNavigation(draftData.navigation);
             if (draftData.sectionsOrder) DataStore.setSectionsOrder(draftData.sectionsOrder);
+            if (draftData.miniPlayerSettings) DataStore.setMiniPlayerSettings(draftData.miniPlayerSettings);
         }
         publishState = 'draft';
         savePublishState();

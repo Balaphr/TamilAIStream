@@ -49,6 +49,7 @@
                 playerPrefs: global.DataStore.getPlayerPrefs() || {},
                 navigation: global.DataStore.getNavigation() || {},
                 sectionsOrder: global.DataStore.getSectionsOrder() || [],
+                miniPlayerSettings: global.DataStore.getMiniPlayerSettings() || {},
                 playlists: global.DataStore.getPlaylists() || [],
                 likedSongs: global.DataStore.getLikedSongs() || [],
                 history: global.DataStore.getHistory() || [],
@@ -76,6 +77,7 @@
             playerPrefs: readLocalStorage('tamilAIStream_playerPrefs', {}),
             navigation: readLocalStorage('tamilAIStream_navigation', {}),
             sectionsOrder: readLocalStorage('tamilAIStream_sectionsOrder', []),
+            miniPlayerSettings: readLocalStorage('tamilAIStream_miniPlayerSettings', {}),
             playlists: readLocalStorage('ytm_playlists', []),
             likedSongs: readLocalStorage('ytm_likedSongs', []),
             history: readLocalStorage('ytm_history', []),
@@ -187,6 +189,7 @@
             if (typeof global.DataStore.setPlayerPrefs === 'function') global.DataStore.setPlayerPrefs(data.playerPrefs || {});
             if (typeof global.DataStore.setNavigation === 'function') global.DataStore.setNavigation(data.navigation || {});
             if (typeof global.DataStore.setSectionsOrder === 'function') global.DataStore.setSectionsOrder(data.sectionsOrder || []);
+            if (typeof global.DataStore.setMiniPlayerSettings === 'function') global.DataStore.setMiniPlayerSettings(data.miniPlayerSettings || {});
             if (typeof global.DataStore.setPlaylists === 'function') global.DataStore.setPlaylists(data.playlists || []);
             if (typeof global.DataStore.setLikedSongs === 'function') global.DataStore.setLikedSongs(data.likedSongs || []);
             if (typeof global.DataStore.setHistory === 'function') global.DataStore.setHistory(data.history || []);
@@ -211,6 +214,7 @@
         writeLocalStorage('tamilAIStream_playerPrefs', data.playerPrefs || {});
         writeLocalStorage('tamilAIStream_navigation', data.navigation || {});
         writeLocalStorage('tamilAIStream_sectionsOrder', data.sectionsOrder || []);
+        writeLocalStorage('tamilAIStream_miniPlayerSettings', data.miniPlayerSettings || {});
         writeLocalStorage('ytm_playlists', data.playlists || []);
         writeLocalStorage('ytm_likedSongs', data.likedSongs || []);
         writeLocalStorage('ytm_history', data.history || []);

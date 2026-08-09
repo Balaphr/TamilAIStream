@@ -345,12 +345,19 @@ const AMPremium = {
     // Render All Sections
     // ============================================
     renderAllSections() {
-        this.renderMadeForYou();
-        this.renderNewReleases();
-        this.renderTopCharts();
-        this.renderCuratedPlaylists();
-        this.renderRecentlyPlayed();
-        this.renderArtistEssentials();
+        // Check section visibility from SiteConfig
+        const isSectionVisible = (id) => {
+            if (typeof SiteConfig === 'undefined') return true;
+            const section = (SiteConfig.sections || []).find(s => s.id === id);
+            return section ? section.visible !== false : true;
+        };
+
+        if (isSectionVisible('madeForYou')) this.renderMadeForYou();
+        if (isSectionVisible('newReleases')) this.renderNewReleases();
+        if (isSectionVisible('topCharts')) this.renderTopCharts();
+        if (isSectionVisible('curatedPlaylists')) this.renderCuratedPlaylists();
+        if (isSectionVisible('recentlyPlayedCarousel')) this.renderRecentlyPlayed();
+        if (isSectionVisible('artistEssentials')) this.renderArtistEssentials();
     },
 
     // ============================================
@@ -420,4 +427,29 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         AMPremium.init();
     }, 350);
+
+    // Listen for cross-tab sync events
+    window.addEventListener('storage', (e) => {
+        if (e.key && e.key.startsWith('tamilAIStream_')) {
+            setTimeout(() => {
+                AMPremium.renderAllSections();
+                setTimeout(() => AMPremium.initScrollReveal(), 100);
+            }, 300);
+        }
+    });
+
+    // Listen for Builder sync events
+    window.addEventListener('storage-sync', () => {
+        setTimeout(() => {
+            AMPremium.renderAllSections();
+            setTimeout(() => AMPremium.initScrollReveal(), 100);
+        }, 200);
+    });
+
+    window.addEventListener('premium-sections-sync', () => {
+        setTimeout(() => {
+            AMPremium.renderAllSections();
+            setTimeout(() => AMPremium.initScrollReveal(), 100);
+        }, 100);
+    });
 });
