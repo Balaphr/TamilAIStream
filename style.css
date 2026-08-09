@@ -26,8 +26,8 @@
     --z-bg: 0; --z-shapes: 1; --z-particles: 2; --z-content: 10; --z-nav: 100; --z-bottom: 200; --z-playing: 150; --z-overlay: 20;
 }
 
-html { font-size: 16px; scroll-behavior: smooth; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
-body { font-family: var(--font-family); background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; position: relative; overflow-x: hidden; }
+html { font-size: 16px; scroll-behavior: smooth; -webkit-font-smoothing: antialiased; overflow-x: hidden; overflow-x: clip; }
+body { font-family: var(--font-family); background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; position: relative; overflow-x: hidden; overflow-x: clip; }
 
 /* Noise Overlay */
 .noise-overlay {

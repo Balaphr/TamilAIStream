@@ -169,8 +169,8 @@ const YTMusic = {
             fsProgressBar.addEventListener('mousedown', (e) => { fsDragging = true; this.seekTo(e); });
             document.addEventListener('mousemove', (e) => { if (fsDragging) this.seekTo(e); });
             document.addEventListener('mouseup', () => { fsDragging = false; });
-            fsProgressBar.addEventListener('touchstart', (e) => { fsDragging = true; this.seekTo(e.touches[0]); }, { passive: true });
-            fsProgressBar.addEventListener('touchmove', (e) => { if (fsDragging) this.seekTo(e.touches[0]); }, { passive: true });
+                        fsProgressBar.addEventListener('touchstart', (e) => { fsDragging = true; this.seekTo(e.touches[0]); e.preventDefault(); e.stopPropagation(); }, { passive: false });
+            fsProgressBar.addEventListener('touchmove', (e) => { if (fsDragging) { e.preventDefault(); this.seekTo(e.touches[0]); } }, { passive: false });
             document.addEventListener('touchend', () => { fsDragging = false; });
         }
 
@@ -189,7 +189,7 @@ const YTMusic = {
             miniProgress.addEventListener('mousedown', (e) => { miniDragging = true; miniSeek(e); e.preventDefault(); });
             document.addEventListener('mousemove', (e) => { if (miniDragging) miniSeek(e); });
             document.addEventListener('mouseup', () => { miniDragging = false; });
-            miniProgress.addEventListener('touchstart', (e) => { miniDragging = true; miniSeek(e.touches[0]); }, { passive: true });
+            miniProgress.addEventListener('touchstart', (e) => { miniDragging = true; miniSeek(e.touches[0]); e.preventDefault(); e.stopPropagation(); }, { passive: false });
             miniProgress.addEventListener('touchmove', (e) => { if (miniDragging) { e.preventDefault(); miniSeek(e.touches[0]); } }, { passive: false });
             document.addEventListener('touchend', () => { miniDragging = false; });
         }
@@ -651,15 +651,23 @@ const YTMusic = {
         this.seekToPercent(percent);
     },
 
-    seekToPercent(percent) {
+        seekToPercent(percent) {
         percent = Math.max(0, Math.min(1, percent));
-        const actualDuration = (typeof audioPlayer !== 'undefined' && audioPlayer && audioPlayer.duration && isFinite(audioPlayer.duration))
-            ? audioPlayer.duration : this.duration;
-        if (!actualDuration || !isFinite(actualDuration) || actualDuration <= 0) return;
-        this.progress = percent * actualDuration;
-        this.duration = actualDuration;
+        const actualDuration = (typeof window.getPlaybackDuration === 'function')
+            ? window.getPlaybackDuration()
+            : ((typeof audioPlayer !== 'undefined' && audioPlayer && isFinite(audioPlayer.duration) && audioPlayer.duration > 0)
+                ? audioPlayer.duration : this.duration);
+        // Do NOT bail out when duration is unknown: defer the seek to the global
+        // seeker (which waits for metadata) so seeks at 0:00 are not lost and the
+        // bar never snaps back to 0:00.
+        if (actualDuration && isFinite(actualDuration) && actualDuration > 0) {
+            this.duration = actualDuration;
+            this.progress = percent * actualDuration;
+        }
         if (typeof window.seekPlaybackToPercent === 'function') {
             window.seekPlaybackToPercent(percent);
+        } else if (typeof audioPlayer !== 'undefined' && audioPlayer) {
+            try { audioPlayer.currentTime = percent * (actualDuration || 0); } catch (e) {}
         }
         this.updateProgressUI();
     },

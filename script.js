@@ -768,21 +768,109 @@ function resumePlayback() {
     }
 }
 
+// ---- Robust seek support ----
+// Resolves a playback duration from the most reliable source available:
+//   1. audioPlayer.duration (when metadata has loaded)
+//   2. duration metadata from the current track / yt-player / queue
+//   3. the seekable end of the media element (for non-seekable streams)
+let _pendingSeekPct = null;
+let _pendingSeekTimer = null;
+function getPlaybackDuration() {
+    if (audioPlayer && typeof audioPlayer.duration === 'number' && isFinite(audioPlayer.duration) && audioPlayer.duration > 0) {
+        return audioPlayer.duration;
+    }
+    if (currentPlaybackTrack) {
+        const d = parseTrackDuration(currentPlaybackTrack);
+        if (d > 0) return d;
+    }
+    if (typeof YTMusic !== 'undefined' && YTMusic.duration > 0) return YTMusic.duration;
+    if (audioPlayer && audioPlayer.seekable && audioPlayer.seekable.length > 0) {
+        const end = audioPlayer.seekable.end(audioPlayer.seekable.length - 1);
+        if (isFinite(end) && end > 0) return end;
+    }
+    return 0;
+}
+function parseTrackDuration(track) {
+    if (!track) return 0;
+    let d = track.duration;
+    if (typeof d === 'number' && isFinite(d) && d > 0) return d;
+    if (typeof d === 'string') {
+        const m = String(d).match(/^(\d+):(\d{1,2})$/);
+        if (m) return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+        const n = parseFloat(d);
+        if (isFinite(n) && n > 0) return n;
+    }
+    return 0;
+}
+function applyPlaybackSeek(el, seconds) {
+    if (!el) return;
+    let target = seconds;
+    try {
+        if (el.seekable && el.seekable.length > 0) {
+            const max = el.seekable.end(el.seekable.length - 1);
+            if (isFinite(max) && max > 0) target = Math.min(seconds, max);
+        }
+    } catch (e) {}
+    target = Math.max(0, target);
+    try {
+        if (typeof el.fastSeek === 'function') {
+            try { el.fastSeek(target); } catch (e2) { el.currentTime = target; }
+        } else {
+            el.currentTime = target;
+        }
+    } catch (e3) {
+        try { el.currentTime = target; } catch (e4) {}
+    }
+    persistPlaybackState();
+    // Keep playing if it was playing before the seek
+    if (window.isStreamPlaying && el.paused) {
+        el.play().catch(() => {});
+    }
+}
 function seekPlaybackToPercent(percent) {
     if (window.__BUILDER_PREVIEW__) return;
     if (!audioPlayer) return;
     const derived = Math.max(0, Math.min(1, percent));
-    const dur = audioPlayer.duration;
-    if (!dur || !isFinite(dur) || dur <= 0) return;
-    audioPlayer.currentTime = derived * dur;
-    persistPlaybackState();
-    if (typeof YTMusic !== 'undefined') {
-        YTMusic.progress = audioPlayer.currentTime;
-        YTMusic.duration = dur;
+        const dur = getPlaybackDuration();
+    // Immediately preview the requested position on all UIs so the bar/thumb
+    // never snap back to 0:00 while the engine seeks.
+    _pendingSeekPct = derived;
+    if (typeof YTMusic !== 'undefined' && YTMusic.updateProgressUI) {
+        if (dur && isFinite(dur) && dur > 0) {
+            YTMusic.progress = derived * dur;
+            YTMusic.duration = dur;
+        }
         YTMusic.updateProgressUI();
     }
-    if (typeof MiniAudioPlayer !== 'undefined') {
-        MiniAudioPlayer.updateProgressUI();
+    if (typeof MiniAudioPlayer !== 'undefined' && typeof MiniAudioPlayer.setSeekPreview === 'function') {
+        MiniAudioPlayer.setSeekPreview(derived, dur);
+    }
+    if (dur && isFinite(dur) && dur > 0) {
+        // Duration is known: seek immediately.
+        if (_pendingSeekTimer) { clearTimeout(_pendingSeekTimer); _pendingSeekTimer = null; }
+        applyPlaybackSeek(audioPlayer, derived * dur);
+    } else {
+        // Duration not ready yet (typical at 0:00 before metadata loads).
+        // Defer the actual seek until the duration becomes available, but
+        // keep the UI preview at the requested position.
+        if (_pendingSeekTimer) clearTimeout(_pendingSeekTimer);
+        const finish = () => {
+            _pendingSeekTimer = null;
+            const d2 = getPlaybackDuration();
+            if (d2 && isFinite(d2) && d2 > 0 && _pendingSeekPct !== null) {
+                applyPlaybackSeek(audioPlayer, _pendingSeekPct * d2);
+            }
+            _pendingSeekPct = null;
+        };
+        audioPlayer.addEventListener('loadedmetadata', finish, { once: true });
+        audioPlayer.addEventListener('durationchange', finish, { once: true });
+        _pendingSeekTimer = setTimeout(() => {
+            const d2 = getPlaybackDuration();
+            if (d2 && isFinite(d2) && d2 > 0 && _pendingSeekPct !== null) {
+                applyPlaybackSeek(audioPlayer, _pendingSeekPct * d2);
+            }
+            _pendingSeekPct = null;
+        }, 800);
     }
 }
 

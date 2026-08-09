@@ -11,6 +11,7 @@ const MiniAudioPlayer = (() => {
     let isOpen = false;
     let isExpanded = false;
     let isDraggingSeek = false;
+    let dragPercent = null;
     let isDraggingPopup = false;
     let isAIActive = false;
     let autoTimer = null;
@@ -306,21 +307,27 @@ const MiniAudioPlayer = (() => {
         // Progress Seek
         const progressWrap = document.getElementById('mapProgressWrap');
         if (progressWrap) {
-            let lastTouchEnd = 0;
+                        let lastTouchEnd = 0;
             const seek = (e) => {
                 const rect = progressWrap.getBoundingClientRect();
                 if (!rect || rect.width <= 0) return;
                 const clientX = (e.clientX !== undefined) ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
                 const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+                // Track the live preview position so the bar/thumb follow the pointer
+                // and never snap back to 0:00 while seeking.
+                dragPercent = pct;
                 if (typeof seekPlaybackToPercent === 'function') {
                     seekPlaybackToPercent(pct);
                 } else if (typeof audioPlayer !== 'undefined' && audioPlayer) {
                     const dur = audioPlayer.duration;
                     if (dur && isFinite(dur) && dur > 0) {
-                        audioPlayer.currentTime = pct * dur;
+                        applyPlaybackSeek(audioPlayer, pct * dur);
                     }
                 } else if (typeof PlayerEngine !== 'undefined') {
                     PlayerEngine.seekToPercent(pct);
+                }
+                if (typeof MiniAudioPlayer !== 'undefined' && typeof MiniAudioPlayer.setSeekPreview === 'function') {
+                    MiniAudioPlayer.setSeekPreview(pct, typeof audioPlayer !== 'undefined' && audioPlayer ? audioPlayer.duration : 0);
                 }
                 updateProgressUI();
             };
@@ -328,22 +335,32 @@ const MiniAudioPlayer = (() => {
                 // Skip synthetic click after touch
                 if (Date.now() - lastTouchEnd < 400) return;
                 isDraggingSeek = true;
+                dragPercent = null;
                 seek(e);
                 e.preventDefault();
                 e.stopPropagation();
             });
             document.addEventListener('mousemove', (e) => { if (isDraggingSeek) seek(e); });
-            document.addEventListener('mouseup', () => { isDraggingSeek = false; });
+            document.addEventListener('mouseup', () => {
+                isDraggingSeek = false;
+                dragPercent = null;
+                updateProgressUI();
+            });
             progressWrap.addEventListener('touchstart', (e) => {
                 isDraggingSeek = true;
+                dragPercent = null;
                 seek(e.touches[0]);
-            }, { passive: true });
+                e.preventDefault();
+                e.stopPropagation();
+            }, { passive: false });
             progressWrap.addEventListener('touchmove', (e) => {
                 if (isDraggingSeek) { e.preventDefault(); seek(e.touches[0]); }
             }, { passive: false });
             document.addEventListener('touchend', () => {
                 isDraggingSeek = false;
+                dragPercent = null;
                 lastTouchEnd = Date.now();
+                updateProgressUI();
             });
         }
 
@@ -627,7 +644,7 @@ const MiniAudioPlayer = (() => {
         updateFavBtn(isFavorite(currentPlayback.track));
     }
 
-    function updateProgressUI() {
+        function updateProgressUI() {
         if (!isOpen) return;
         let current = 0;
         let duration = 0;
@@ -636,12 +653,21 @@ const MiniAudioPlayer = (() => {
             current = audioPlayer.currentTime || 0;
             duration = audioPlayer.duration || 0;
         } else if (typeof PlayerEngine !== 'undefined') {
-            current = PlayerEngine.currentTime;
-            duration = PlayerEngine.duration;
+            current = PlayerEngine.currentTime || 0;
+            duration = PlayerEngine.duration || 0;
+        }
+
+        // Duration fallback: use the current track's known duration metadata
+        // so the seek bar / time labels stay accurate even before the media
+        // element has loaded metadata (e.g. right after clicking a song).
+        if ((!duration || !isFinite(duration) || isNaN(duration)) && currentPlayback && currentPlayback.track) {
+            const md = parseTrackDuration(currentPlayback.track);
+            if (md > 0) duration = md;
         }
 
         const isStation = currentPlayback?.isStation;
         const progressWrap = document.getElementById('mapProgressWrap');
+        // Stations with unknown duration render as LIVE
         if (isStation && (duration === Infinity || isNaN(duration))) {
             const curEl = document.getElementById('mapCurrentTime');
             const durEl = document.getElementById('mapDuration');
@@ -653,18 +679,33 @@ const MiniAudioPlayer = (() => {
 
         if (progressWrap) progressWrap.classList.remove('map-live-progress');
 
-        const pct = duration > 0 ? (current / duration) * 100 : 0;
+        // While dragging, render the live preview position so the thumb / bar
+        // follow the finger and never snap back to 0:00.
+        const isLiveDrag = isDraggingSeek && dragPercent !== null && dragPercent !== undefined;
+        const curForUi = isLiveDrag ? (dragPercent * (duration || 1)) : current;
+        const pct = duration > 0 ? (curForUi / duration) * 100 : 0;
         const curEl = document.getElementById('mapCurrentTime');
         const durEl = document.getElementById('mapDuration');
-        if (curEl) curEl.textContent = formatTime(current);
+        if (curEl) curEl.textContent = formatTime(curForUi);
         if (durEl) durEl.textContent = formatTime(duration);
 
-        if (!isDraggingSeek) {
-            const filled = document.getElementById('mapProgressFilled');
-            const thumb = document.getElementById('mapProgressThumb');
-            if (filled) filled.style.width = pct + '%';
-            if (thumb) thumb.style.left = pct + '%';
+        const filled = document.getElementById('mapProgressFilled');
+        const thumb = document.getElementById('mapProgressThumb');
+        if (filled) filled.style.width = pct + '%';
+        if (thumb) thumb.style.left = pct + '%';
+    }
+
+    function setSeekPreview(percent, duration) {
+        // Called by script.js#seekPlaybackToPercent so the popup mirrors the
+        // exact seek position immediately (no 0:00 bounce) and keeps playing.
+        dragPercent = Math.max(0, Math.min(1, percent));
+        if (isFinite(duration) && duration > 0) {
+            const curEl = document.getElementById('mapCurrentTime');
+            const durEl = document.getElementById('mapDuration');
+            if (curEl) curEl.textContent = formatTime(dragPercent * duration);
+            if (durEl) durEl.textContent = formatTime(duration);
         }
+        isOpen && updateProgressUI();
     }
 
     function syncPlayingUI() {
@@ -1077,7 +1118,7 @@ const MiniAudioPlayer = (() => {
         return m + ':' + String(s).padStart(2, '0');
     }
 
-    return {
+        return {
         init,
         openPopup,
         closePopup,
@@ -1085,6 +1126,7 @@ const MiniAudioPlayer = (() => {
         syncPlayingUI,
         syncPausedUI,
         updateProgressUI,
+        setSeekPreview,
         get isOpen() { return isOpen; },
         get isAIActive() { return isAIActive; }
     };

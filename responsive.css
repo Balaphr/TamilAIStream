@@ -4,7 +4,7 @@
    ============================================ */
 
 /* Global overflow-x fix */
-html { overflow-x: hidden; }
+html { overflow-x: hidden; overflow-x: clip; }
 
 body {
     min-height: 100vh;
@@ -91,7 +91,7 @@ body {
    MOBILE (375px - 640px) — Base mobile styles
    ============================================ */
 @media (max-width: 640px) {
-    body, html { overflow-x: hidden; }
+    body, html { overflow-x: hidden; overflow-x: clip; }
     .ytm-main-content { overflow-x: hidden; }
     .ytm-bottom-nav { display: block; }
     .container { padding: 0 12px; }
@@ -407,13 +407,9 @@ body {
         scroll-snap-align: start;
     }
 
-    /* ======== 120Hz PERFORMANCE OPTIMIZATIONS ======== */
-    .ytm-top-nav,
-    .ytm-bottom-nav,
-    
-    .ytm-main-content {
-        contain: layout style;
-    }
+    /* ======== Mobile perf: native momentum & light compositing ======== */
+    html { scroll-behavior: auto; }            /* a smooth-scrolling ROOT causes the stuck/scroll-bounce & extra-swipe on Android */
+    .ytm-main-content { contain: layout; }       /* no style-containment so scroll anchoring keeps working */
     .categories-grid,
     .stations-grid,
     .ytm-explore-grid,
@@ -423,13 +419,15 @@ body {
     .glass-carousel,
     .ai-stations-row,
     .ai-artists-row {
-        will-change: scroll-position;
-        contain: layout style;
+        /* Let the page scroll vertically while these scroll horizontally */
+        touch-action: auto;
     }
-    .category-card,
-    .station-card,
-    .hit-card,
-    .tamil-hit-card {
+    .category-card:hover,
+    .station-card:hover,
+    .hit-card:hover,
+    .tamil-hit-card:hover {
+        /* Promote to a compositor layer only on hover (desktop), avoiding the
+           constant layer thrash that caused jank on 60/120Hz mobile. */
         will-change: transform;
     }
 }

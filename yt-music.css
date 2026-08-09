@@ -4066,18 +4066,19 @@ body.home-active .ytm-page-home {
         min-width: 140px;
     }
     
-    .ytm-page-home .tamil-hits-grid {
+        .ytm-page-home .tamil-hits-grid {
         display: flex;
         gap: 12px;
         overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
-        scroll-snap-type: x mandatory;
+        scroll-snap-type: x proximity;
         scroll-behavior: smooth;
         scrollbar-width: none;
         -ms-overflow-style: none;
         padding-bottom: 8px;
-        touch-action: pan-x;
+        /* Allow vertical page scroll while seeking horizontally on mobile */
+        touch-action: auto;
     }
     
     .ytm-page-home .tamil-hits-grid::-webkit-scrollbar {

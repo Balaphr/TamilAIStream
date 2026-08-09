@@ -225,31 +225,52 @@ const ListeningHistory = (() => {
         } else if (type === 'song') {
             const songs = typeof DataStore !== 'undefined' ? DataStore.getSongs() : [];
             const song = songs.find(s => s.id === id);
-            if (song && song.audioUrl) {
+            if (song) {
                 const savedHistory = getHistory().find(h => h.id === id && h.type === 'song');
                 const resumeAt = savedHistory ? savedHistory.progress : 0;
                 if (typeof playSong === 'function') {
                     playSong(song, [song]);
                 }
-                // Seek to saved position after a short delay to let audio load
+                // Resume from the saved position once metadata has loaded.
+                // playSong() handles BOTH real (audioUrl) and demo songs and records
+                // the item via trackPlayback; here we (re)apply the saved position so
+                // playback jumps to e.g. 2:00 instead of restarting from 0:00.
                 if (resumeAt > 0) {
-                    setTimeout(() => {
-                        if (typeof audioPlayer !== 'undefined' && audioPlayer && audioPlayer.duration) {
-                            audioPlayer.currentTime = resumeAt;
+                    const resumeSeek = () => {
+                        if (typeof audioPlayer !== 'undefined' && audioPlayer && isFinite(audioPlayer.duration) && audioPlayer.duration > 0) {
+                            if (typeof applyPlaybackSeek === 'function') {
+                                applyPlaybackSeek(audioPlayer, resumeAt);
+                            } else {
+                                audioPlayer.currentTime = resumeAt;
+                            }
                             if (typeof persistPlaybackState === 'function') persistPlaybackState();
+                            addOrUpdate({
+                                id: song.id,
+                                type: 'song',
+                                title: song.title,
+                                artist: song.artist || '',
+                                thumbnail: song.albumCover || song.cover || '',
+                                audioUrl: song.audioUrl || '',
+                                progress: resumeAt,
+                                duration: song.duration || audioPlayer.duration || 0
+                            });
+                        } else {
+                            setTimeout(resumeSeek, 150);
                         }
-                    }, 600);
+                    };
+                    setTimeout(resumeSeek, 300);
+                } else {
+                    addOrUpdate({
+                        id: song.id,
+                        type: 'song',
+                        title: song.title,
+                        artist: song.artist || '',
+                        thumbnail: song.albumCover || song.cover || '',
+                        audioUrl: song.audioUrl || '',
+                        progress: 0,
+                        duration: song.duration || 0
+                    });
                 }
-                addOrUpdate({
-                    id: song.id,
-                    type: 'song',
-                    title: song.title,
-                    artist: song.artist || '',
-                    thumbnail: song.albumCover || song.cover || '',
-                    audioUrl: song.audioUrl,
-                    progress: resumeAt,
-                    duration: song.duration || 0
-                });
             }
         }
         closePanel();
@@ -258,7 +279,7 @@ const ListeningHistory = (() => {
     function playSongFromStore(songId) {
         const songs = typeof DataStore !== 'undefined' ? DataStore.getSongs() : [];
         const song = songs.find(s => s.id === songId);
-        if (song && song.audioUrl) {
+        if (song) {
             if (typeof playSong === 'function') {
                 playSong(song, [song]);
             }
