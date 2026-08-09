@@ -146,43 +146,6 @@ const SiteConfig = {
             }
         },
         {
-            id: 'madeForYou',
-            name: 'Made for You (Premium)',
-            visible: true,
-            order: 8,
-            config: {
-                title: { text: 'Made for You', fontSize: 28, fontWeight: 800 },
-                subtitle: { text: 'Personalized picks powered by AI' },
-                layout: { cardWidth: 340, cardHeight: 400, gap: 20 },
-                cards: { borderRadius: 20, glassEffect: true, hoverEffect: 'translateY(-8px)' },
-                features: { showBadge: true, showPlayButton: true, autoScroll: false }
-            }
-        },
-        {
-            id: 'newReleases',
-            name: 'New Releases (Premium)',
-            visible: true,
-            order: 9,
-            config: {
-                title: { text: 'New Releases', fontSize: 28, fontWeight: 800 },
-                layout: { cardWidth: 200, cardHeight: 260, gap: 20 },
-                cards: { borderRadius: 16, hoverEffect: 'translateY(-4px)' },
-                features: { showPlayButton: true, sortBy: 'createdAt' }
-            }
-        },
-        {
-            id: 'topCharts',
-            name: 'Top Charts (Premium)',
-            visible: true,
-            order: 10,
-            config: {
-                title: { text: 'Top Charts', fontSize: 28, fontWeight: 800 },
-                layout: { showRank: true, showArtwork: true, showDuration: true },
-                cards: { borderRadius: 20, hoverBackground: true },
-                features: { maxItems: 10, showPlayButton: true }
-            }
-        },
-        {
             id: 'aiAssistant',
             name: 'AI Assistant',
             visible: true,

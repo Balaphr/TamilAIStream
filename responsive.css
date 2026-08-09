@@ -1009,51 +1009,6 @@ body {
     .greeting-card { padding: 16px; }
     
 }
-
-
-/* ============================================
-   Apple Music Premium - Responsive
-   ============================================ */
-
-/* Tablet */
-@media (min-width: 641px) and (max-width: 1024px) {
-    .am-section { padding: 40px 20px; }
-    .am-section-title { font-size: 1.5rem; }
-    .am-mfy-card { width: 280px; }
-    .am-mfy-card-art { height: 230px; }
-}
-
-/* Mobile */
-@media (max-width: 640px) {
-    .am-section { padding: 32px 16px; }
-    .am-section-title { font-size: 1.3rem; }
-    .am-section-label { font-size: 0.65rem; }
-    .am-carousel-controls { display: none; }
-    .am-carousel { margin: 0 -16px; padding: 0 16px; }
-
-    .am-mfy-card { width: 260px; }
-    .am-mfy-card-art { height: 210px; }
-    .am-mfy-card-play { opacity: 1; transform: translateY(0); width: 44px; height: 44px; }
-    .am-mfy-card-info { padding: 12px 16px; }
-
-    .am-new-release-card { width: 150px; }
-    .am-new-release-art { width: 150px; height: 150px; }
-    .am-new-release-play { opacity: 1; transform: scale(1); width: 40px; height: 40px; }
-
-    .am-chart-rank { width: 24px; font-size: 0.85rem; }
-    .am-chart-art { width: 40px; height: 40px; }
-    .am-chart-duration { display: none; }
-    .am-chart-play { opacity: 1; }
-
-    .am-see-all-btn { font-size: 0.8rem; padding: 6px 10px; }
-}
-
-/* Small mobile */
-@media (max-width: 375px) {
-    .am-mfy-card { width: 240px; }
-    .am-mfy-card-art { height: 190px; }
-    .am-new-release-card { width: 130px; }
-    .am-new-release-art { width: 130px; height: 130px; }
 }
 
 
