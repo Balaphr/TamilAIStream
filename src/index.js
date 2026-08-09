@@ -100,7 +100,7 @@ function wrapResponse(resp, pathname) {
   const cacheHeaders = getCacheHeaders(pathname);
   Object.entries(cacheHeaders).forEach(([k, v]) => headers.set(k, v));
   headers.set('X-Content-Type-Options', 'nosniff');
-  headers.set('X-Frame-Options', 'DENY');
+  headers.set('X-Frame-Options', 'SAMEORIGIN');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Vary', 'Accept-Encoding');
   const contentType = headers.get('Content-Type') || '';
