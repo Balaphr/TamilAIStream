@@ -695,21 +695,34 @@ function pausePlayback() {
     if (audioPlayer) {
         userPaused = true;
         audioPlayer.pause();
-        audioPlayer.currentTime = 0;
-        if (currentPlaybackMode === 'station') {
-            audioPlayer.removeAttribute('src');
-        }
         isStreamPlaying = false;
         updatePlayPauseButton(false);
         showLiveStatus(false);
         persistPlaybackState();
+        if (typeof YTMusic !== 'undefined') {
+            YTMusic.isPlaying = false;
+            YTMusic.updatePlayerUI();
+        }
+        if (typeof MiniAudioPlayer !== 'undefined') {
+            MiniAudioPlayer.syncPausedUI();
+        }
     }
 }
 
 function resumePlayback() {
     if (!audioPlayer) return;
     if (audioPlayer.paused) {
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         audioPlayer.play().catch(() => {});
+        isStreamPlaying = true;
+        updatePlayPauseButton(true);
+        if (typeof YTMusic !== 'undefined') {
+            YTMusic.isPlaying = true;
+            YTMusic.updatePlayerUI();
+        }
+        if (typeof MiniAudioPlayer !== 'undefined') {
+            MiniAudioPlayer.syncPlayingUI();
+        }
     }
 }
 
@@ -718,6 +731,13 @@ function seekPlaybackToPercent(percent) {
     const derived = Math.max(0, Math.min(1, percent));
     audioPlayer.currentTime = derived * audioPlayer.duration;
     persistPlaybackState();
+    if (typeof YTMusic !== 'undefined') {
+        YTMusic.progress = audioPlayer.currentTime;
+        YTMusic.updateProgressUI();
+    }
+    if (typeof MiniAudioPlayer !== 'undefined') {
+        MiniAudioPlayer.updateProgressUI();
+    }
 }
 
 function setPlaybackVolume(volume) {
@@ -796,6 +816,13 @@ function togglePlayPause() {
             audioPlayer.play().catch(() => {});
             isStreamPlaying = true;
             updatePlayPauseButton(true);
+            if (typeof YTMusic !== 'undefined') {
+                YTMusic.isPlaying = true;
+                YTMusic.updatePlayerUI();
+            }
+            if (typeof MiniAudioPlayer !== 'undefined') {
+                MiniAudioPlayer.syncPlayingUI();
+            }
         } else {
             showToast('Please select a station or song to play', 'info');
         }

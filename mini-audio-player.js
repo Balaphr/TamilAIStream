@@ -932,6 +932,9 @@ const MiniAudioPlayer = (() => {
         openPopup,
         closePopup,
         toggleAIAutomation,
+        syncPlayingUI,
+        syncPausedUI,
+        updateProgressUI,
         get isOpen() { return isOpen; },
         get isAIActive() { return isAIActive; }
     };

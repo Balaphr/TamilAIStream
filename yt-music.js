@@ -163,6 +163,31 @@ const YTMusic = {
         const fsProgressBar = document.getElementById('ytmFsProgressBar');
         if (fsProgressBar) {
             fsProgressBar.addEventListener('click', (e) => this.seekTo(e));
+            let fsDragging = false;
+            fsProgressBar.addEventListener('mousedown', (e) => { fsDragging = true; this.seekTo(e); });
+            document.addEventListener('mousemove', (e) => { if (fsDragging) this.seekTo(e); });
+            document.addEventListener('mouseup', () => { fsDragging = false; });
+            fsProgressBar.addEventListener('touchstart', (e) => { fsDragging = true; this.seekTo(e.touches[0]); }, { passive: true });
+            fsProgressBar.addEventListener('touchmove', (e) => { if (fsDragging) this.seekTo(e.touches[0]); }, { passive: true });
+            document.addEventListener('touchend', () => { fsDragging = false; });
+        }
+
+        // Mini player progress bar seek
+        const miniProgress = document.querySelector('.ytm-mini-player-progress');
+        if (miniProgress) {
+            let miniDragging = false;
+            const miniSeek = (e) => {
+                const rect = miniProgress.getBoundingClientRect();
+                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                this.seekToPercent(pct);
+            };
+            miniProgress.addEventListener('click', (e) => miniSeek(e));
+            miniProgress.addEventListener('mousedown', (e) => { miniDragging = true; miniSeek(e); e.preventDefault(); });
+            document.addEventListener('mousemove', (e) => { if (miniDragging) miniSeek(e); });
+            document.addEventListener('mouseup', () => { miniDragging = false; });
+            miniProgress.addEventListener('touchstart', (e) => { miniDragging = true; miniSeek(e.touches[0]); }, { passive: true });
+            miniProgress.addEventListener('touchmove', (e) => { if (miniDragging) miniSeek(e.touches[0]); }, { passive: true });
+            document.addEventListener('touchend', () => { miniDragging = false; });
         }
 
         // Volume slider click
@@ -999,6 +1024,11 @@ const YTMusic = {
         this.setPlayIcon('ytmMiniPlayBtn', this.isPlaying);
         document.querySelectorAll('[data-action="shuffle"]').forEach((btn) => btn.classList.toggle('active', this.shuffle));
         document.querySelectorAll('[data-action="repeat"]').forEach((btn) => btn.classList.toggle('active', this.repeat !== 'off'));
+        
+        // Sync mini player eq animation
+        const miniEq = document.getElementById('ytmMiniEq');
+        if (miniEq) miniEq.classList.toggle('active', this.isPlaying);
+        
         this.updateFullscreenPlayerUI();
         this.updateMiniPlayerUI();
         this.updateProgressUI();
