@@ -3956,7 +3956,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ============================================
-// Visual Editor — Comprehensive Implementation
+// Visual Editor ï¿½ Comprehensive Implementation
 // ============================================
 let veInitialized = false;
 let veIframe = null;
@@ -4009,30 +4009,7 @@ function initVisualEditor() {
 
     bindVisualEditorEvents();
     loadVEDraft();
-    initV2Enhancements();
-}
-function initVisualEditor() {
-    if (veInitialized) {
-        // Re-scan if revisited
-        if (veIframe && veIframeDoc) scanIframeElements();
-        return;
-    }
-    veInitialized = true;
-
-    veIframe = document.getElementById('veFrame');
-    if (!veIframe) return;
-
-    veIframe.addEventListener('load', onVEIframeLoad);
-
-    // Handle already-loaded iframe (cached)
-    if (veIframe.contentDocument && veIframe.contentDocument.body) {
-        onVEIframeLoad();
-    } else {
-        setTimeout(onVEIframeLoad, 1000);
-    }
-
-    bindVisualEditorEvents();
-    loadVEDraft();
+    if (typeof initV2Enhancements === 'function') initV2Enhancements();
 }
 
 function onVEIframeLoad() {
@@ -4078,6 +4055,7 @@ function bindVisualEditorEvents() {
     // Panel Undo/Redo/Save buttons (Components tab)
     document.getElementById('vePanelUndo2')?.addEventListener('click', veUndo);
     document.getElementById('vePanelRedo2')?.addEventListener('click', veRedo);
+    document.getElementById('vePanelSave2')?.addEventListener('click', saveVEDraft);
     document.getElementById('vePanelSave2')?.addEventListener('click', saveVEDraft);
 
     document.querySelectorAll('.ve-panel-tab').forEach(tab => {
@@ -4898,7 +4876,6 @@ function veSetProp(prop, value) {
         veOverrides[veSelectedSelector][bp][prop] = value;
     }
     updateVEOverlay();
-    updateVEOverlay();
 }
 
 // Builder V2 Enhanced Properties
@@ -4960,7 +4937,6 @@ function enhanceVEProperties() {
             </select></div>
         </div>
     `;
-}
 }
 
 // --- Element actions ---
@@ -5315,18 +5291,7 @@ function saveMiniPlayerSettings(e) {
         return el ? el.value : '';
     };
     const getNum = (id) => parseFloat(get(id)) || 0;
-    window.resetMiniPlayerSettings = resetMiniPlayerSettings;
-    window.resetMiniPlayerSettings = resetMiniPlayerSettings;
-}
 
-// Builder V2 Enhanced Functions
-
-function veRgbToHex(rgb) {
-    if (!rgb || rgb === 'transparent') return '#000000';
-    const result = rgb.match(/\d+/g);
-    if (!result || result.length < 3) return '#000000';
-    return '#' + result.slice(0,3).map(x => parseInt(x).toString(16).padStart(2,'0')).join('');
-}
     const getBool = (id) => get(id) === 'true';
 
     const settings = {
@@ -5390,38 +5355,8 @@ if (typeof window !== 'undefined') {
     window.loadMiniPlayerSettings = loadMiniPlayerSettings;
     window.saveMiniPlayerSettings = saveMiniPlayerSettings;
     window.resetMiniPlayerSettings = resetMiniPlayerSettings;
-    window.initV2Enhancements = initV2Enhancements;
+    if (typeof initV2Enhancements === 'function') window.initV2Enhancements = initV2Enhancements;
     window.showVEToast = showVEToast;
     window.openVEPreview = openVEPreview;
     window.closeVEPreview = closeVEPreview;
 }
-// Export functions for global access
-if (typeof window !== 'undefined') {
-    window.signInWithEmail = signInWithEmail;
-    window.signUpWithEmail = signUpWithEmail;
-    window.signInWithGoogle = signInWithGoogle;
-    window.signInAsGuest = signInAsGuest;
-    window.signOut = signOut;
-    window.openEditArtistSongsModal = openEditArtistSongsModal;
-    window.switchArtistSongTab = switchArtistSongTab;
-    window.addSongToArtistCollection = addSongToArtistCollection;
-    window.saveArtistSongs = saveArtistSongs;
-    window.removeSongFromArtistCollection = removeSongFromArtistCollection;
-    window.saveMiniPlayerSettings = saveMiniPlayerSettings;
-    window.resetMiniPlayerSettings = resetMiniPlayerSettings;
-    window.editArtistSongInCollection = editArtistSongInCollection;
-    window.initVisualEditor = initVisualEditor;
-    window.veSelectTreeItem = veSelectTreeItem;
-    window.veSelectSection = veSelectSection;
-    window.veSetProp = veSetProp;
-    window.veApplyHTMLEdit = veApplyHTMLEdit;
-    window.veToggleSectionVisibility = veToggleSectionVisibility;
-    window.veDuplicateSection = veDuplicateSection;
-    window.veMoveSection = veMoveSection;
-    window.veEditSectionHTML = veEditSectionHTML;
-    window.veDeleteSection = veDeleteSection;
-    window.handleSectionAction = handleSectionAction;
-    window.loadMiniPlayerSettings = loadMiniPlayerSettings;
-    window.saveMiniPlayerSettings = saveMiniPlayerSettings;
-    window.resetMiniPlayerSettings = resetMiniPlayerSettings;
-    window.resetMiniPlayerSettings = resetMiniPlayerSettings;
