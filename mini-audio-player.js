@@ -312,7 +312,9 @@ const MiniAudioPlayer = (() => {
                 if (!rect || rect.width <= 0) return;
                 const clientX = (e.clientX !== undefined) ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
                 const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-                if (typeof audioPlayer !== 'undefined' && audioPlayer) {
+                if (typeof seekPlaybackToPercent === 'function') {
+                    seekPlaybackToPercent(pct);
+                } else if (typeof audioPlayer !== 'undefined' && audioPlayer) {
                     const dur = audioPlayer.duration;
                     if (dur && isFinite(dur) && dur > 0) {
                         audioPlayer.currentTime = pct * dur;
@@ -328,6 +330,7 @@ const MiniAudioPlayer = (() => {
                 isDraggingSeek = true;
                 seek(e);
                 e.preventDefault();
+                e.stopPropagation();
             });
             document.addEventListener('mousemove', (e) => { if (isDraggingSeek) seek(e); });
             document.addEventListener('mouseup', () => { isDraggingSeek = false; });

@@ -183,42 +183,6 @@ const SiteConfig = {
             }
         },
         {
-            id: 'curatedPlaylists',
-            name: 'Curated Playlists (Premium)',
-            visible: true,
-            order: 11,
-            config: {
-                title: { text: 'Curated Playlists', fontSize: 28, fontWeight: 800 },
-                layout: { cardWidth: 280, cardHeight: 340, gap: 20 },
-                cards: { borderRadius: 20, glassEffect: true, hoverEffect: 'translateY(-4px)' },
-                features: { showOverlay: true, showPlayButton: true }
-            }
-        },
-        {
-            id: 'recentlyPlayedCarousel',
-            name: 'Recently Played Carousel (Premium)',
-            visible: true,
-            order: 12,
-            config: {
-                title: { text: 'Recently Played', fontSize: 28, fontWeight: 800 },
-                layout: { cardWidth: 200, cardHeight: 260, gap: 20 },
-                cards: { borderRadius: 16 },
-                features: { maxItems: 12, showPlayButton: true }
-            }
-        },
-        {
-            id: 'artistEssentials',
-            name: 'Artist Essentials (Premium)',
-            visible: true,
-            order: 13,
-            config: {
-                title: { text: 'Artist Essentials', fontSize: 28, fontWeight: 800 },
-                layout: { cardWidth: 160, avatarSize: 140, gap: 20 },
-                cards: { borderRadius: 9999, hoverBorder: true },
-                features: { showPlayOverlay: true, showSongCount: true }
-            }
-        },
-        {
             id: 'aiAssistant',
             name: 'AI Assistant',
             visible: true,

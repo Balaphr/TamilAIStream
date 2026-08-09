@@ -1023,10 +1023,6 @@ body {
     .am-section-title { font-size: 1.5rem; }
     .am-mfy-card { width: 280px; }
     .am-mfy-card-art { height: 230px; }
-    .am-curated-art { width: 240px; height: 240px; }
-    .am-curated-card { width: 240px; }
-    .am-artist-avatar { width: 120px; height: 120px; }
-    .am-artist-card { width: 140px; }
 }
 
 /* Mobile */
@@ -1051,12 +1047,6 @@ body {
     .am-chart-duration { display: none; }
     .am-chart-play { opacity: 1; }
 
-    .am-curated-art { width: 220px; height: 220px; }
-    .am-curated-card { width: 220px; }
-
-    .am-artist-avatar { width: 110px; height: 110px; }
-    .am-artist-card { width: 120px; }
-
     .am-see-all-btn { font-size: 0.8rem; padding: 6px 10px; }
 }
 
@@ -1066,10 +1056,6 @@ body {
     .am-mfy-card-art { height: 190px; }
     .am-new-release-card { width: 130px; }
     .am-new-release-art { width: 130px; height: 130px; }
-    .am-curated-art { width: 200px; height: 200px; }
-    .am-curated-card { width: 200px; }
-    .am-artist-avatar { width: 100px; height: 100px; }
-    .am-artist-card { width: 110px; }
 }
 
 

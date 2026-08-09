@@ -3926,7 +3926,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ============================================
-// Visual Editor
+// Visual Editor — Comprehensive Implementation
 // ============================================
 let veInitialized = false;
 let veIframe = null;
@@ -3940,6 +3940,24 @@ let veRedoStack = [];
 let veMaxHistory = 50;
 let veOverrides = {};
 let veCurrentBreakpoint = 'desktop';
+let veAllElements = [];
+let veVisibleElements = [];
+let veTreeSearchTerm = '';
+let veHistoryEntries = [];
+let veIsDragging = false;
+let veDragStartX = 0;
+let veDragStartY = 0;
+let veDragOrigX = 0;
+let veDragOrigY = 0;
+let veResizing = false;
+let veResizeHandle = '';
+let veResizeStartX = 0;
+let veResizeStartY = 0;
+let veResizeOrigRect = null;
+let veGridEnabled = false;
+let veGuidesEnabled = true;
+let veSnapThreshold = 5;
+let veElementCount = 0;
 
 function initVisualEditor() {
     if (veInitialized) return;
@@ -3951,7 +3969,8 @@ function initVisualEditor() {
     veIframe.addEventListener('load', () => {
         veIframeDoc = veIframe.contentDocument || veIframe.contentWindow.document;
         scanIframeElements();
-        setupIframeClickHandler();
+        setupIframeInteraction();
+        addVEHistoryEntry('Page loaded');
     });
 
     bindVisualEditorEvents();
@@ -3969,12 +3988,26 @@ function bindVisualEditorEvents() {
 
     document.getElementById('veZoomIn')?.addEventListener('click', () => setVEZoom(veZoom + 10));
     document.getElementById('veZoomOut')?.addEventListener('click', () => setVEZoom(veZoom - 10));
+    document.getElementById('veZoomFit')?.addEventListener('click', () => setVEZoom(100));
     document.getElementById('veToggleGrid')?.addEventListener('click', toggleVEGrid);
+    document.getElementById('veToggleGuides')?.addEventListener('click', toggleVEGuides);
     document.getElementById('veUndoBtn')?.addEventListener('click', veUndo);
     document.getElementById('veRedoBtn')?.addEventListener('click', veRedo);
     document.getElementById('veSaveDraft')?.addEventListener('click', saveVEDraft);
     document.getElementById('vePublishBtn')?.addEventListener('click', publishVEChanges);
     document.getElementById('veCloseProps')?.addEventListener('click', clearVESelection);
+
+    document.querySelectorAll('.ve-panel-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabId = tab.dataset.veLtab;
+            tab.parentElement.querySelectorAll('.ve-panel-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            document.querySelectorAll('.ve-panel-content').forEach(c => c.style.display = 'none');
+            if (tabId === 'layers') document.getElementById('veLayersTab').style.display = '';
+            else if (tabId === 'components') document.getElementById('veComponentsTab').style.display = '';
+            else if (tabId === 'history') document.getElementById('veHistoryTab').style.display = '';
+        });
+    });
 
     document.querySelectorAll('.ve-resp-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -3985,67 +4018,122 @@ function bindVisualEditorEvents() {
         });
     });
 
+    document.getElementById('veLayerSearch')?.addEventListener('input', (e) => {
+        veTreeSearchTerm = e.target.value.toLowerCase();
+        renderVEElementTree();
+    });
+
+    document.getElementById('veExpandAll')?.addEventListener('click', () => {
+        document.querySelectorAll('.ve-tree-node.collapsed').forEach(n => n.classList.remove('collapsed'));
+    });
+    document.getElementById('veCollapseAll')?.addEventListener('click', () => {
+        document.querySelectorAll('.ve-tree-node').forEach(n => n.classList.add('collapsed'));
+    });
+
+    document.getElementById('veActDuplicate')?.addEventListener('click', veDuplicateElement);
+    document.getElementById('veActDelete')?.addEventListener('click', veDeleteElement);
+    document.getElementById('veActHide')?.addEventListener('click', veToggleHide);
+    document.getElementById('veActLock')?.addEventListener('click', veToggleLock);
+    document.getElementById('veActMoveUp')?.addEventListener('click', () => veMoveElement('up'));
+    document.getElementById('veActMoveDown')?.addEventListener('click', () => veMoveElement('down'));
+    document.getElementById('veActWrap')?.addEventListener('click', veWrapInContainer);
+    document.getElementById('veActEditHTML')?.addEventListener('click', veEditHTML);
+
+    setupComponentDrag();
+
     document.addEventListener('keydown', (e) => {
-        if (!document.getElementById('visualeditorPage')?.style.display ||
-            document.getElementById('visualeditorPage').style.display === 'none') return;
+        const vePage = document.getElementById('visualeditorPage');
+        if (!vePage || vePage.style.display === 'none') return;
         if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); veUndo(); }
         if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); veRedo(); }
         if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveVEDraft(); }
         if (e.key === 'Escape') clearVESelection();
+        if (e.key === 'Delete' && veSelectedElement && !e.target.matches('input, textarea, select')) { e.preventDefault(); veDeleteElement(); }
+        if (e.key === 'd' && (e.ctrlKey || e.metaKey) && veSelectedElement) { e.preventDefault(); veDuplicateElement(); }
     });
 }
 
+// --- Device / Zoom ---
 function setVEDevice(device) {
     veCurrentDevice = device;
     const wrapper = document.getElementById('veCanvasWrapper');
+    const label = document.getElementById('veDeviceLabel');
     if (!wrapper) return;
     const widths = { desktop: '100%', tablet: '768px', mobile: '375px' };
+    const labels = { desktop: 'Desktop', tablet: 'Tablet', mobile: 'Mobile' };
     veIframe.style.width = widths[device] || '100%';
     veIframe.style.maxWidth = '100%';
     wrapper.style.justifyContent = device === 'desktop' ? 'stretch' : 'center';
+    if (label) label.textContent = labels[device] || device;
+    updateVEStatusBar();
 }
 
 function setVEZoom(level) {
-    veZoom = Math.max(50, Math.min(150, level));
-    document.getElementById('veZoomLabel').textContent = veZoom + '%';
+    veZoom = Math.max(25, Math.min(200, level));
+    const label = document.getElementById('veZoomLabel');
+    if (label) label.textContent = veZoom + '%';
     veIframe.style.transform = `scale(${veZoom / 100})`;
     veIframe.style.transformOrigin = 'top center';
+    updateVEOverlay();
 }
 
 function toggleVEGrid() {
-    const wrapper = document.getElementById('veCanvasWrapper');
-    wrapper?.classList.toggle('ve-show-grid');
+    veGridEnabled = !veGridEnabled;
+    const grid = document.getElementById('veSnapGrid');
+    const btn = document.getElementById('veToggleGrid');
+    if (grid) grid.style.display = veGridEnabled ? 'block' : 'none';
+    if (btn) btn.classList.toggle('active', veGridEnabled);
 }
 
-function setupIframeClickHandler() {
+function toggleVEGuides() {
+    veGuidesEnabled = !veGuidesEnabled;
+    const btn = document.getElementById('veToggleGuides');
+    if (btn) btn.classList.toggle('active', veGuidesEnabled);
+}
+
+// --- Element scanning ---
+function scanIframeElements() {
     if (!veIframeDoc) return;
-    veIframeDoc.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const target = e.target;
-        if (!target || target === veIframeDoc.body) { clearVESelection(); return; }
-        selectVEElement(target);
-    });
-}
+    veAllElements = [];
+    veElementCount = 0;
 
-function selectVEElement(el) {
-    clearVEOverlay();
-    veSelectedElement = el;
-    veSelectedSelector = getVEUniqueSelector(el);
+    const walker = (node, depth, parentPath) => {
+        if (node.nodeType !== 1) return;
+        const el = node;
+        if (el.closest && el.closest('#mapMiniPlayer, #eqOverlay, .splash-screen, .toast-container, script, style, link, meta, title')) return;
 
-    const rect = el.getBoundingClientRect();
-    const iframeRect = veIframe.getBoundingClientRect();
-    const overlay = document.getElementById('veOverlay');
-    if (overlay) {
-        overlay.style.display = 'block';
-        overlay.style.left = (rect.left - iframeRect.left + veIframe.contentWindow.scrollX) + 'px';
-        overlay.style.top = (rect.top - iframeRect.top + veIframe.contentWindow.scrollY) + 'px';
-        overlay.style.width = rect.width + 'px';
-        overlay.style.height = rect.height + 'px';
+        const path = parentPath ? parentPath + ' > ' + getVEShortSelector(el) : getVEShortSelector(el);
+        const tag = el.tagName.toLowerCase();
+        const id = el.id || '';
+        const cls = (typeof el.className === 'string' ? el.className.split(/\s+/).filter(Boolean).slice(0, 3).join('.') : '');
+        const hasChildren = el.children.length > 0;
+        const hidden = el.style.display === 'none' || el.hidden;
+        const locked = el.dataset.veLocked === 'true';
+
+        veAllElements.push({ el, tag, id, cls, depth, path, hasChildren, hidden, locked });
+        veElementCount++;
+
+        for (const child of el.children) {
+            walker(child, depth + 1, path);
+        }
+    };
+
+    for (const child of veIframeDoc.body.children) {
+        walker(child, 0, '');
     }
 
-    showVEProperties(veSelectedSelector);
-    highlightVETreeItem(veSelectedSelector);
+    renderVEElementTree();
+    renderVESections();
+    updateVEStatusBar();
+}
+
+function getVEShortSelector(el) {
+    let s = el.tagName.toLowerCase();
+    if (el.id) s += '#' + el.id;
+    else if (el.className && typeof el.className === 'string') {
+        s += '.' + el.className.split(/\s+/).filter(Boolean).slice(0, 2).join('.');
+    }
+    return s;
 }
 
 function getVEUniqueSelector(el) {
@@ -4073,22 +4161,299 @@ function getVEUniqueSelector(el) {
     return parts.join(' > ');
 }
 
+// --- Layers tree ---
+function renderVEElementTree() {
+    const tree = document.getElementById('veElementTree');
+    if (!tree) return;
+
+    let html = '';
+    let visibleIdx = 0;
+    veVisibleElements = [];
+
+    for (const item of veAllElements) {
+        const matchSearch = !veTreeSearchTerm ||
+            item.tag.includes(veTreeSearchTerm) ||
+            item.id.toLowerCase().includes(veTreeSearchTerm) ||
+            item.cls.toLowerCase().includes(veTreeSearchTerm) ||
+            item.path.toLowerCase().includes(veTreeSearchTerm);
+
+        if (!matchSearch && veTreeSearchTerm) continue;
+
+        veVisibleElements.push(item);
+        const isSelected = veSelectedElement === item.el;
+        const indent = item.depth * 16;
+        const hasKids = item.hasChildren;
+
+        html += `<div class="ve-tree-item${isSelected ? ' selected' : ''}${item.hidden ? ' ve-hidden-el' : ''}${item.locked ? ' ve-locked-el' : ''}"
+            style="padding-left:${indent + 8}px" data-ve-tree-idx="${visibleIdx}"
+            onclick="veSelectTreeItem(${visibleIdx})" title="${item.path}">
+            ${hasKids ? '<i class="fas fa-caret-down ve-tree-toggle"></i>' : '<span style="width:14px;display:inline-block"></span>'}
+            <span class="ve-tree-icon"><i class="fas ${veGetTagIcon(item.tag)}"></i></span>
+            <span class="ve-tree-tag">&lt;${item.tag}&gt;</span>
+            ${item.id ? '<span class="ve-tree-id">#' + item.id + '</span>' : ''}
+            ${item.cls ? '<span class="ve-tree-cls">.' + item.cls + '</span>' : ''}
+            ${item.hidden ? '<i class="fas fa-eye-slash" style="opacity:0.4"></i>' : ''}
+            ${item.locked ? '<i class="fas fa-lock" style="opacity:0.4"></i>' : ''}
+        </div>`;
+        visibleIdx++;
+    }
+
+    tree.innerHTML = html || '<div class="ve-empty-hint"><i class="fas fa-search"></i><p>No elements found</p></div>';
+}
+
+function veGetTagIcon(tag) {
+    const icons = {
+        header: 'fa-heading', nav: 'fa-bars', main: 'fa-desktop', section: 'fa-square',
+        div: 'fa-table-cells', footer: 'fa-shoe-prints',
+        h1: 'fa-heading', h2: 'fa-heading', h3: 'fa-heading', h4: 'fa-heading', h5: 'fa-heading', h6: 'fa-heading',
+        p: 'fa-paragraph', a: 'fa-link', button: 'fa-button-pointer', img: 'fa-image',
+        video: 'fa-video', audio: 'fa-music', form: 'fa-form', input: 'fa-i-cursor',
+        ul: 'fa-list', ol: 'fa-list-ol', li: 'fa-list-item', table: 'fa-table',
+        canvas: 'fa-paint-roller', svg: 'fa-bezier-curve'
+    };
+    return icons[tag] || 'fa-code';
+}
+
+function renderVESections() {
+    const sections = document.getElementById('veSectionsList');
+    if (!sections) return;
+
+    const sectionEls = veIframeDoc ? veIframeDoc.querySelectorAll('section, [data-section], .home-section, main > div[id]') : [];
+    sections.innerHTML = Array.from(sectionEls).map((el, i) => {
+        const label = el.getAttribute('data-section') || el.id || el.className?.split(' ')[0] || 'Section ' + (i + 1);
+        return `<div class="ve-section-item" onclick="veSelectSection(${i})"><i class="fas fa-layer-group"></i> ${label}</div>`;
+    }).join('') || '<div class="ve-empty-hint"><p>No sections found</p></div>';
+}
+
+function veSelectTreeItem(idx) {
+    const item = veVisibleElements[idx];
+    if (!item) return;
+    selectVEElement(item.el);
+}
+
+function veSelectSection(idx) {
+    const sectionEls = veIframeDoc.querySelectorAll('section, [data-section], .home-section, main > div[id]');
+    if (sectionEls[idx]) selectVEElement(sectionEls[idx]);
+}
+
+// --- Iframe interaction ---
+function setupIframeInteraction() {
+    if (!veIframeDoc) return;
+
+    veIframeDoc.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = e.target;
+        if (!target || target === veIframeDoc.body) { clearVESelection(); return; }
+        selectVEElement(target);
+    });
+
+    veIframeDoc.addEventListener('mousedown', (e) => {
+        if (!veSelectedElement || e.target !== veSelectedElement) return;
+        const rect = veSelectedElement.getBoundingClientRect();
+        const handles = { 'n': 'top', 's': 'bottom', 'e': 'right', 'w': 'left',
+            'ne': 'top-right', 'nw': 'top-left', 'se': 'bottom-right', 'sw': 'bottom-left' };
+        const targetClass = e.target?.className || '';
+        let matchedHandle = null;
+        for (const h of Object.keys(handles)) { if (targetClass.includes(' ' + h) || targetClass === h) { matchedHandle = h; break; } }
+        if (matchedHandle) {
+            veResizing = true;
+            veResizeHandle = handles[matchedHandle];
+            veResizeStartX = e.clientX;
+            veResizeStartY = e.clientY;
+            veResizeOrigRect = rect;
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        veIsDragging = true;
+        veDragStartX = e.clientX;
+        veDragStartY = e.clientY;
+        veDragOrigX = parseFloat(veSelectedElement.style.left) || 0;
+        veDragOrigY = parseFloat(veSelectedElement.style.top) || 0;
+        veSelectedElement.style.position = veSelectedElement.style.position || 'relative';
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    veIframeDoc.addEventListener('mousemove', (e) => {
+        if (veIsDragging && veSelectedElement) {
+            const dx = (e.clientX - veDragStartX) / (veZoom / 100);
+            const dy = (e.clientY - veDragStartY) / (veZoom / 100);
+            const newX = Math.round(veDragOrigX + dx);
+            const newY = Math.round(veDragOrigY + dy);
+            veSelectedElement.style.left = newX + 'px';
+            veSelectedElement.style.top = newY + 'px';
+            updateVEOverlay();
+            if (veGuidesEnabled) showVESnapGuides(veSelectedElement);
+        }
+        if (veResizing && veSelectedElement) {
+            const dx = (e.clientX - veResizeStartX) / (veZoom / 100);
+            const dy = (e.clientY - veResizeStartY) / (veZoom / 100);
+            veApplyResize(veResizeHandle, dx, dy);
+            updateVEOverlay();
+        }
+    });
+
+    veIframeDoc.addEventListener('mouseup', () => {
+        if (veIsDragging) {
+            veIsDragging = false;
+            hideVESnapGuides();
+            if (veSelectedSelector) {
+                const bp = veCurrentBreakpoint;
+                if (!veOverrides[veSelectedSelector]) veOverrides[veSelectedSelector] = {};
+                if (!veOverrides[veSelectedSelector][bp]) veOverrides[veSelectedSelector][bp] = {};
+                veOverrides[veSelectedSelector][bp].left = veSelectedElement.style.left;
+                veOverrides[veSelectedSelector][bp].top = veSelectedElement.style.top;
+            }
+        }
+        if (veResizing) {
+            veResizing = false;
+            if (veSelectedSelector) {
+                const bp = veCurrentBreakpoint;
+                if (!veOverrides[veSelectedSelector]) veOverrides[veSelectedSelector] = {};
+                if (!veOverrides[veSelectedSelector][bp]) veOverrides[veSelectedSelector][bp] = {};
+                veOverrides[veSelectedSelector][bp].width = veSelectedElement.style.width;
+                veOverrides[veSelectedSelector][bp].height = veSelectedElement.style.height;
+            }
+        }
+    });
+}
+
+function veApplyResize(handle, dx, dy) {
+    if (!veSelectedElement || !veResizeOrigRect) return;
+    const el = veSelectedElement;
+    const orig = veResizeOrigRect;
+    const w = orig.width;
+    const h = orig.height;
+
+    if (handle.includes('right')) el.style.width = Math.max(20, Math.round(w + dx)) + 'px';
+    if (handle.includes('left')) { el.style.width = Math.max(20, Math.round(w - dx)) + 'px'; el.style.left = Math.round(veDragOrigX + dx) + 'px'; }
+    if (handle.includes('bottom')) el.style.height = Math.max(20, Math.round(h + dy)) + 'px';
+    if (handle.includes('top')) { el.style.height = Math.max(20, Math.round(h - dy)) + 'px'; el.style.top = Math.round(veDragOrigY + dy) + 'px'; }
+}
+
+function showVESnapGuides(el) {
+    if (!el || !veIframeDoc) return;
+    const rect = el.getBoundingClientRect();
+    const iframeRect = veIframe.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2 - iframeRect.left;
+    const cy = rect.top + rect.height / 2 - iframeRect.top;
+    const guideH = document.getElementById('veGuideH');
+    const guideV = document.getElementById('veGuideV');
+    const iframeW = iframeRect.width;
+
+    if (guideV && Math.abs(cx - iframeW / 2) < veSnapThreshold) {
+        guideV.style.display = 'block';
+        guideV.style.left = (iframeW / 2) + 'px';
+    } else if (guideV) guideV.style.display = 'none';
+
+    if (guideH && Math.abs(cy - 30) < veSnapThreshold) {
+        guideH.style.display = 'block';
+        guideH.style.top = '30px';
+    } else if (guideH) guideH.style.display = 'none';
+}
+
+function hideVESnapGuides() {
+    document.getElementById('veGuideH').style.display = 'none';
+    document.getElementById('veGuideV').style.display = 'none';
+}
+
+// --- Selection ---
+function selectVEElement(el) {
+    clearVEOverlay();
+    veSelectedElement = el;
+    veSelectedSelector = getVEUniqueSelector(el);
+    updateVEOverlay();
+    showVEProperties(veSelectedSelector);
+    updateVEActionsBar(true);
+    highlightVETreeItem();
+    updateVEStatusBar();
+}
+
+function updateVEOverlay() {
+    if (!veSelectedElement || !veIframe) return;
+    const rect = veSelectedElement.getBoundingClientRect();
+    const iframeRect = veIframe.getBoundingClientRect();
+    const overlay = document.getElementById('veOverlay');
+    if (!overlay) return;
+
+    overlay.style.display = 'block';
+    overlay.style.left = (rect.left - iframeRect.left + veIframe.contentWindow.scrollX) + 'px';
+    overlay.style.top = (rect.top - iframeRect.top + veIframe.contentWindow.scrollY) + 'px';
+    overlay.style.width = rect.width + 'px';
+    overlay.style.height = rect.height + 'px';
+
+    overlay.innerHTML = `<div class="ve-resize-handle n"></div><div class="ve-resize-handle s"></div>
+        <div class="ve-resize-handle e"></div><div class="ve-resize-handle w"></div>
+        <div class="ve-resize-handle ne"></div><div class="ve-resize-handle nw"></div>
+        <div class="ve-resize-handle se"></div><div class="ve-resize-handle sw"></div>`;
+
+    overlay.querySelectorAll('.ve-resize-handle').forEach(h => {
+        h.addEventListener('mousedown', (e) => e.stopPropagation());
+    });
+}
+
 function clearVESelection() {
     veSelectedElement = null;
     veSelectedSelector = '';
     clearVEOverlay();
+    updateVEActionsBar(false);
     const propsBody = document.getElementById('vePropsBody');
     if (propsBody) {
         propsBody.innerHTML = '<div class="ve-empty-state"><i class="fas fa-mouse-pointer"></i><p>Click any element on the canvas to edit its properties</p></div>';
     }
-    document.querySelectorAll('.ve-tree-item').forEach(i => i.classList.remove('selected'));
+    highlightVETreeItem();
+    updateVEStatusBar();
 }
 
 function clearVEOverlay() {
     const overlay = document.getElementById('veOverlay');
-    if (overlay) overlay.style.display = 'none';
+    if (overlay) { overlay.style.display = 'none'; overlay.innerHTML = ''; }
 }
 
+function updateVEActionsBar(show) {
+    const header = document.getElementById('veActionsHeader');
+    const bar = document.getElementById('veActionsBar');
+    if (header) header.style.display = show ? '' : 'none';
+    if (bar) bar.style.display = show ? '' : 'none';
+    if (show && veSelectedElement) {
+        const hideBtn = document.getElementById('veActHide');
+        const lockBtn = document.getElementById('veActLock');
+        if (hideBtn) hideBtn.querySelector('i').className = veSelectedElement.style.display === 'none' ? 'fas fa-eye-slash' : 'fas fa-eye';
+        if (lockBtn) lockBtn.querySelector('i').className = veSelectedElement.dataset.veLocked === 'true' ? 'fas fa-unlock' : 'fas fa-lock';
+    }
+}
+
+function highlightVETreeItem() {
+    document.querySelectorAll('.ve-tree-item').forEach(i => i.classList.remove('selected'));
+    if (!veSelectedElement) return;
+    const idx = veVisibleElements.findIndex(item => item.el === veSelectedElement);
+    if (idx >= 0) {
+        const treeItem = document.querySelector(`.ve-tree-item[data-ve-tree-idx="${idx}"]`);
+        if (treeItem) { treeItem.classList.add('selected'); treeItem.scrollIntoView({ block: 'nearest' }); }
+    }
+}
+
+function updateVEStatusBar() {
+    const elInfo = document.getElementById('veStatusElement');
+    const posInfo = document.getElementById('veStatusPos');
+    const sizeInfo = document.getElementById('veStatusSize');
+    if (!veSelectedElement) {
+        if (elInfo) elInfo.textContent = 'No element selected';
+        if (posInfo) posInfo.textContent = '';
+        if (sizeInfo) sizeInfo.textContent = '';
+        return;
+    }
+    const tag = veSelectedElement.tagName.toLowerCase();
+    const id = veSelectedElement.id ? '#' + veSelectedElement.id : '';
+    if (elInfo) elInfo.textContent = `<${tag}>${id}`;
+    const rect = veSelectedElement.getBoundingClientRect();
+    if (posInfo) posInfo.textContent = `X: ${Math.round(rect.left)} Y: ${Math.round(rect.top)}`;
+    if (sizeInfo) sizeInfo.textContent = `${Math.round(rect.width)} x ${Math.round(rect.height)}`;
+}
+
+// --- Properties panel ---
 function showVEProperties(selector) {
     const propsBody = document.getElementById('vePropsBody');
     if (!propsBody || !veSelectedElement) return;
@@ -4098,70 +4463,105 @@ function showVEProperties(selector) {
     const tag = el.tagName.toLowerCase();
     const id = el.id || '';
     const cls = (typeof el.className === 'string' ? el.className : '').trim();
-    const text = el.textContent?.trim().substring(0, 80) || '';
+    const text = el.textContent?.trim().substring(0, 100) || '';
 
     const bp = veCurrentBreakpoint;
     const key = selector;
     if (!veOverrides[key]) veOverrides[key] = {};
     const ov = veOverrides[key][bp] || {};
-
     const getVal = (prop, fallback) => ov[prop] !== undefined ? ov[prop] : fallback;
 
     propsBody.innerHTML = `
         <div class="ve-props-section">
             <div class="ve-props-label">Element Info</div>
             <div class="ve-props-info">
-                <span class="ve-tag">${tag}</span>
-                ${id ? '<span class="ve-id">#' + id + '</span>' : ''}
+                <span class="ve-tag">${tag}</span> ${id ? '<span class="ve-id">#' + id + '</span>' : ''}
                 <div class="ve-classes">${cls || 'no classes'}</div>
-                ${text ? '<div class="ve-text-preview">"' + text + '..."</div>' : ''}
+                ${text ? '<div class="ve-text-preview">"' + text.substring(0, 50) + '..."</div>' : ''}
             </div>
         </div>
+
         <div class="ve-props-section">
             <div class="ve-props-label">Content</div>
-            <div class="ve-prop-row"><label>Text</label><input type="text" id="vePropText" value="${escapeVEAttr(el.textContent?.trim() || '')}" onchange="veSetProp('text', this.value)"></div>
+            <div class="ve-prop-row"><label>Text</label><input type="text" value="${escapeVEAttr(el.textContent?.trim() || '')}" onchange="veSetProp('text', this.value)"></div>
+            ${tag === 'img' ? `<div class="ve-prop-row"><label>Src</label><input type="text" value="${escapeVEAttr(el.src || '')}" onchange="veSetProp('src', this.value)"></div>
+            <div class="ve-prop-row"><label>Alt</label><input type="text" value="${escapeVEAttr(el.alt || '')}" onchange="veSetProp('alt', this.value)"></div>` : ''}
+            ${tag === 'a' ? `<div class="ve-prop-row"><label>Href</label><input type="text" value="${escapeVEAttr(el.href || '')}" onchange="veSetProp('href', this.value)"></div>` : ''}
         </div>
+
         <div class="ve-props-section">
             <div class="ve-props-label">Typography</div>
-            <div class="ve-prop-row"><label>Font Size</label><input type="text" id="vePropFontSize" value="${getVal('fontSize', computed.fontSize)}" onchange="veSetProp('fontSize', this.value)"></div>
-            <div class="ve-prop-row"><label>Font Weight</label><select id="vePropFontWeight" onchange="veSetProp('fontWeight', this.value)">
-                ${[100,200,300,400,500,600,700,800,900].map(w => `<option value="${w}" ${computed.fontWeight == w ? 'selected' : ''}>${w}</option>`).join('')}
+            <div class="ve-prop-row"><label>Font Size</label><input type="text" value="${getVal('fontSize', computed.fontSize)}" onchange="veSetProp('fontSize', this.value)"></div>
+            <div class="ve-prop-row"><label>Font Weight</label><select onchange="veSetProp('fontWeight', this.value)">
+                ${[100,200,300,400,500,600,700,800,900].map(w => '<option value="'+w+'" '+(computed.fontWeight==w?'selected':'')+'>'+w+'</option>').join('')}
             </select></div>
-            <div class="ve-prop-row"><label>Color</label><div class="ve-color-wrap"><input type="color" id="vePropColor" value="${veRgbToHex(computed.color)}" onchange="veSetProp('color', this.value)"><input type="text" value="${veRgbToHex(computed.color)}" onchange="document.getElementById('vePropColor').value=this.value;veSetProp('color',this.value)"></div></div>
-            <div class="ve-prop-row"><label>Text Align</label><select id="vePropTextAlign" onchange="veSetProp('textAlign', this.value)">
-                ${['left','center','right','justify'].map(v => `<option value="${v}" ${computed.textAlign===v?'selected':''}>${v}</option>`).join('')}
+            <div class="ve-prop-row"><label>Font Family</label><select onchange="veSetProp('fontFamily', this.value)">
+                ${['','system-ui, sans-serif','serif','monospace','cursive'].map(f => '<option value="'+f+'" '+(computed.fontFamily===f?'selected':'')+'>'+(f||'Default')+'</option>').join('')}
+            </select></div>
+            <div class="ve-prop-row"><label>Color</label><div class="ve-color-wrap"><input type="color" value="${veRgbToHex(computed.color)}" onchange="veSetProp('color', this.value)"><input type="text" value="${veRgbToHex(computed.color)}" onchange="this.previousElementSibling.value=this.value;veSetProp('color',this.value)"></div></div>
+            <div class="ve-prop-row"><label>Text Align</label><select onchange="veSetProp('textAlign', this.value)">
+                ${['left','center','right','justify'].map(v => '<option value="'+v+'" '+(computed.textAlign===v?'selected':'')+'>'+v+'</option>').join('')}
             </select></div>
             <div class="ve-prop-row"><label>Line Height</label><input type="text" value="${getVal('lineHeight', computed.lineHeight)}" onchange="veSetProp('lineHeight', this.value)"></div>
             <div class="ve-prop-row"><label>Letter Spacing</label><input type="text" value="${getVal('letterSpacing', computed.letterSpacing)}" onchange="veSetProp('letterSpacing', this.value)"></div>
+            <div class="ve-prop-row"><label>Text Transform</label><select onchange="veSetProp('textTransform', this.value)">
+                ${['none','uppercase','lowercase','capitalize'].map(v => '<option value="'+v+'" '+(computed.textTransform===v?'selected':'')+'>'+v+'</option>').join('')}
+            </select></div>
+            <div class="ve-prop-row"><label>Text Decoration</label><select onchange="veSetProp('textDecoration', this.value)">
+                ${['none','underline','overline','line-through'].map(v => '<option value="'+v+'" '+(computed.textDecoration===v?'selected':'')+'>'+v+'</option>').join('')}
+            </select></div>
         </div>
+
         <div class="ve-props-section">
             <div class="ve-props-label">Spacing</div>
             <div class="ve-prop-row"><label>Margin</label><input type="text" value="${getVal('margin', computed.margin)}" onchange="veSetProp('margin', this.value)"></div>
             <div class="ve-prop-row"><label>Padding</label><input type="text" value="${getVal('padding', computed.padding)}" onchange="veSetProp('padding', this.value)"></div>
         </div>
+
         <div class="ve-props-section">
             <div class="ve-props-label">Size</div>
             <div class="ve-prop-row"><label>Width</label><input type="text" value="${getVal('width', computed.width)}" onchange="veSetProp('width', this.value)"></div>
             <div class="ve-prop-row"><label>Height</label><input type="text" value="${getVal('height', computed.height)}" onchange="veSetProp('height', this.value)"></div>
-            <div class="ve-prop-row"><label>Min Width</label><input type="text" value="${getVal('minWidth', computed.minWidth)}" onchange="veSetProp('minWidth', this.value)"></div>
-            <div class="ve-prop-row"><label>Max Width</label><input type="text" value="${getVal('maxWidth', computed.maxWidth)}" onchange="veSetProp('maxWidth', this.value)"></div>
+            <div class="ve-prop-row"><label>Min W</label><input type="text" value="${getVal('minWidth', computed.minWidth)}" onchange="veSetProp('minWidth', this.value)"></div>
+            <div class="ve-prop-row"><label>Max W</label><input type="text" value="${getVal('maxWidth', computed.maxWidth)}" onchange="veSetProp('maxWidth', this.value)"></div>
+            <div class="ve-prop-row"><label>Min H</label><input type="text" value="${getVal('minHeight', computed.minHeight)}" onchange="veSetProp('minHeight', this.value)"></div>
+            <div class="ve-prop-row"><label>Max H</label><input type="text" value="${getVal('maxHeight', computed.maxHeight)}" onchange="veSetProp('maxHeight', this.value)"></div>
         </div>
+
         <div class="ve-props-section">
             <div class="ve-props-label">Background</div>
-            <div class="ve-prop-row"><label>BG Color</label><div class="ve-color-wrap"><input type="color" id="vePropBgColor" value="${veRgbToHex(computed.backgroundColor)}" onchange="veSetProp('backgroundColor', this.value)"><input type="text" value="${veRgbToHex(computed.backgroundColor)}" onchange="document.getElementById('vePropBgColor').value=this.value;veSetProp('backgroundColor',this.value)"></div></div>
+            <div class="ve-prop-row"><label>BG Color</label><div class="ve-color-wrap"><input type="color" value="${veRgbToHex(computed.backgroundColor)}" onchange="veSetProp('backgroundColor', this.value)"><input type="text" value="${veRgbToHex(computed.backgroundColor)}" onchange="this.previousElementSibling.value=this.value;veSetProp('backgroundColor',this.value)"></div></div>
             <div class="ve-prop-row"><label>Border Radius</label><input type="text" value="${getVal('borderRadius', computed.borderRadius)}" onchange="veSetProp('borderRadius', this.value)"></div>
             <div class="ve-prop-row"><label>Opacity</label><input type="range" min="0" max="1" step="0.05" value="${getVal('opacity', computed.opacity)}" onchange="veSetProp('opacity', this.value)"></div>
             <div class="ve-prop-row"><label>Border</label><input type="text" value="${getVal('border', computed.border)}" onchange="veSetProp('border', this.value)"></div>
+            <div class="ve-prop-row"><label>Shadow</label><input type="text" value="${getVal('boxShadow', computed.boxShadow)}" onchange="veSetProp('boxShadow', this.value)"></div>
+            <div class="ve-prop-row"><label>Backdrop Blur</label><input type="text" value="${getVal('backdropFilter', computed.backdropFilter)}" onchange="veSetProp('backdropFilter', this.value)"></div>
         </div>
+
+        <div class="ve-props-section">
+            <div class="ve-props-label">Layout</div>
+            <div class="ve-prop-row"><label>Display</label><select onchange="veSetProp('display', this.value)">
+                ${['block','inline','inline-block','flex','grid','none'].map(v => '<option value="'+v+'" '+(computed.display===v?'selected':'')+'>'+v+'</option>').join('')}
+            </select></div>
+            <div class="ve-prop-row"><label>Position</label><select onchange="veSetProp('position', this.value)">
+                ${['static','relative','absolute','fixed','sticky'].map(v => '<option value="'+v+'" '+(computed.position===v?'selected':'')+'>'+v+'</option>').join('')}
+            </select></div>
+            <div class="ve-prop-row"><label>Z-Index</label><input type="number" value="${getVal('zIndex', computed.zIndex)}" onchange="veSetProp('zIndex', this.value)"></div>
+            <div class="ve-prop-row"><label>Overflow</label><select onchange="veSetProp('overflow', this.value)">
+                ${['visible','hidden','scroll','auto'].map(v => '<option value="'+v+'" '+(computed.overflow===v?'selected':'')+'>'+v+'</option>').join('')}
+            </select></div>
+        </div>
+
         <div class="ve-props-section">
             <div class="ve-props-label">Visibility</div>
-            <div class="ve-prop-row"><label>Display</label><select onchange="veSetProp('display', this.value)">
-                ${['block','inline','inline-block','flex','grid','none'].map(v => `<option value="${v}" ${computed.display===v?'selected':''}>${v}</option>`).join('')}
-            </select></div>
             <div class="ve-prop-row"><label>Visibility</label><select onchange="veSetProp('visibility', this.value)">
-                ${['visible','hidden'].map(v => `<option value="${v}" ${computed.visibility===v?'selected':''}>${v}</option>`).join('')}
+                ${['visible','hidden'].map(v => '<option value="'+v+'" '+(computed.visibility===v?'selected':'')+'>'+v+'</option>').join('')}
+            </select></div>
+            <div class="ve-prop-row"><label>Cursor</label><select onchange="veSetProp('cursor', this.value)">
+                ${['default','pointer','move','not-allowed','grab','grabbing'].map(v => '<option value="'+v+'" '+(computed.cursor===v?'selected':'')+'>'+v+'</option>').join('')}
             </select></div>
         </div>
+
         <div class="ve-props-section">
             <div class="ve-props-label">Animation</div>
             <div class="ve-prop-row"><label>Transition</label><input type="text" value="${getVal('transition', computed.transition)}" onchange="veSetProp('transition', this.value)"></div>
@@ -4172,10 +4572,16 @@ function showVEProperties(selector) {
 
 function veSetProp(prop, value) {
     if (!veSelectedElement) return;
-    pushVEUndo();
+    pushVEUndo('Set ' + prop);
 
     if (prop === 'text') {
         veSelectedElement.textContent = value;
+    } else if (prop === 'src') {
+        veSelectedElement.src = value;
+    } else if (prop === 'alt') {
+        veSelectedElement.alt = value;
+    } else if (prop === 'href') {
+        veSelectedElement.href = value;
     } else {
         veSelectedElement.style[prop] = value;
         const bp = veCurrentBreakpoint;
@@ -4183,11 +4589,118 @@ function veSetProp(prop, value) {
         if (!veOverrides[veSelectedSelector][bp]) veOverrides[veSelectedSelector][bp] = {};
         veOverrides[veSelectedSelector][bp][prop] = value;
     }
+    updateVEOverlay();
 }
 
-function pushVEUndo() {
+// --- Element actions ---
+function veDuplicateElement() {
+    if (!veSelectedElement) return;
+    pushVEUndo('Duplicate element');
+    const clone = veSelectedElement.cloneNode(true);
+    clone.removeAttribute('id');
+    veSelectedElement.parentElement.insertBefore(clone, veSelectedElement.nextSibling);
+    addVEHistoryEntry('Duplicated ' + veSelectedElement.tagName.toLowerCase());
+    scanIframeElements();
+    selectVEElement(clone);
+}
+
+function veDeleteElement() {
+    if (!veSelectedElement) return;
+    pushVEUndo('Delete element');
+    const tag = veSelectedElement.tagName.toLowerCase();
+    veSelectedElement.remove();
+    addVEHistoryEntry('Deleted <' + tag + '>');
+    scanIframeElements();
+    clearVESelection();
+}
+
+function veToggleHide() {
+    if (!veSelectedElement) return;
+    const hidden = veSelectedElement.style.display === 'none';
+    veSelectedElement.style.display = hidden ? '' : 'none';
+    addVEHistoryEntry((hidden ? 'Showed ' : 'Hidden ') + veSelectedElement.tagName.toLowerCase());
+    scanIframeElements();
+    updateVEActionsBar(true);
+}
+
+function veToggleLock() {
+    if (!veSelectedElement) return;
+    const locked = veSelectedElement.dataset.veLocked === 'true';
+    veSelectedElement.dataset.veLocked = locked ? 'false' : 'true';
+    addVEHistoryEntry((locked ? 'Unlocked ' : 'Locked ') + veSelectedElement.tagName.toLowerCase());
+    scanIframeElements();
+    updateVEActionsBar(true);
+}
+
+function veMoveElement(dir) {
+    if (!veSelectedElement || !veSelectedElement.parentElement) return;
+    pushVEUndo('Move element ' + dir);
+    const parent = veSelectedElement.parentElement;
+    if (dir === 'up' && veSelectedElement.previousElementSibling) {
+        parent.insertBefore(veSelectedElement, veSelectedElement.previousElementSibling);
+    } else if (dir === 'down' && veSelectedElement.nextElementSibling) {
+        parent.insertBefore(veSelectedElement.nextElementSibling, veSelectedElement);
+    }
+    addVEHistoryEntry('Moved ' + veSelectedElement.tagName.toLowerCase() + ' ' + dir);
+    scanIframeElements();
+    updateVEOverlay();
+}
+
+function veWrapInContainer() {
+    if (!veSelectedElement) return;
+    pushVEUndo('Wrap in container');
+    const wrapper = veIframeDoc.createElement('div');
+    wrapper.style.padding = '16px';
+    wrapper.style.border = '1px dashed rgba(255,255,255,0.3)';
+    wrapper.style.borderRadius = '8px';
+    veSelectedElement.parentElement.insertBefore(wrapper, veSelectedElement);
+    wrapper.appendChild(veSelectedElement);
+    addVEHistoryEntry('Wrapped element in container');
+    scanIframeElements();
+    selectVEElement(wrapper);
+}
+
+function veEditHTML() {
+    if (!veSelectedElement) return;
+    const currentHTML = veSelectedElement.outerHTML;
+    const overlay = document.createElement('div');
+    overlay.className = 've-html-editor';
+    overlay.innerHTML = `<div class="ve-html-editor-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-glass);"><span style="font-weight:600;color:var(--text-primary)">Edit HTML</span><button class="ve-html-close" onclick="this.closest('.ve-html-editor').remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;"><i class="fas fa-times"></i></button></div>
+        <textarea spellcheck="false">${escapeVEAttr(currentHTML)}</textarea>
+        <div class="ve-html-editor-actions">
+            <button class="ve-btn-secondary" onclick="this.closest('.ve-html-editor').remove()">Cancel</button>
+            <button class="ve-btn-primary" onclick="veApplyHTMLEdit(this)">Apply</button>
+        </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('textarea').focus();
+}
+
+function veApplyHTMLEdit(btn) {
+    const modal = btn.closest('.ve-html-editor');
+    const textarea = modal.querySelector('textarea');
+    const newHTML = textarea.value.trim();
+    if (!newHTML || !veSelectedElement) { modal.remove(); return; }
+    pushVEUndo('Edit HTML');
+    const temp = veIframeDoc.createElement('div');
+    temp.innerHTML = newHTML;
+    const newEl = temp.firstChild;
+    if (newEl) {
+        veSelectedElement.parentElement.replaceChild(newEl, veSelectedElement);
+        veSelectedElement = newEl;
+        veSelectedSelector = getVEUniqueSelector(newEl);
+        addVEHistoryEntry('Edited HTML');
+        scanIframeElements();
+        updateVEOverlay();
+    }
+    modal.remove();
+}
+
+// --- Undo / Redo ---
+function pushVEUndo(action) {
     if (!veIframeDoc) return;
-    veUndoStack.push(veIframeDoc.documentElement.outerHTML);
+    veUndoStack.push({ html: veIframeDoc.documentElement.outerHTML, action: action || 'Edit', time: new Date().toLocaleTimeString() });
     if (veUndoStack.length > veMaxHistory) veUndoStack.shift();
     veRedoStack = [];
     updateVEUndoRedoBtns();
@@ -4195,19 +4708,23 @@ function pushVEUndo() {
 
 function veUndo() {
     if (veUndoStack.length === 0) return;
-    veRedoStack.push(veIframeDoc.documentElement.outerHTML);
+    veRedoStack.push({ html: veIframeDoc.documentElement.outerHTML, action: 'Undo', time: new Date().toLocaleTimeString() });
     const prev = veUndoStack.pop();
-    veIframeDoc.documentElement.innerHTML = new DOMParser().parseFromString(prev, 'text/html').documentElement.innerHTML;
+    veIframeDoc.documentElement.innerHTML = new DOMParser().parseFromString(prev.html, 'text/html').documentElement.innerHTML;
     updateVEUndoRedoBtns();
+    addVEHistoryEntry('Undo: ' + prev.action);
+    scanIframeElements();
     clearVESelection();
 }
 
 function veRedo() {
     if (veRedoStack.length === 0) return;
-    veUndoStack.push(veIframeDoc.documentElement.outerHTML);
+    veUndoStack.push({ html: veIframeDoc.documentElement.outerHTML, action: 'Redo', time: new Date().toLocaleTimeString() });
     const next = veRedoStack.pop();
-    veIframeDoc.documentElement.innerHTML = new DOMParser().parseFromString(next, 'text/html').documentElement.innerHTML;
+    veIframeDoc.documentElement.innerHTML = new DOMParser().parseFromString(next.html, 'text/html').documentElement.innerHTML;
     updateVEUndoRedoBtns();
+    addVEHistoryEntry('Redo');
+    scanIframeElements();
     clearVESelection();
 }
 
@@ -4218,70 +4735,85 @@ function updateVEUndoRedoBtns() {
     if (redoBtn) redoBtn.disabled = veRedoStack.length === 0;
 }
 
-function scanIframeElements() {
+// --- History panel ---
+function addVEHistoryEntry(action) {
+    const entry = { action, time: new Date().toLocaleTimeString() };
+    veHistoryEntries.push(entry);
+    if (veHistoryEntries.length > 100) veHistoryEntries.shift();
+    renderVEHistory();
+}
+
+function renderVEHistory() {
+    const list = document.getElementById('veHistoryList');
+    if (!list) return;
+    if (veHistoryEntries.length === 0) {
+        list.innerHTML = '<div class="ve-empty-hint"><i class="fas fa-clock"></i><p>No changes yet</p></div>';
+        return;
+    }
+    list.innerHTML = veHistoryEntries.slice().reverse().map((e, i) =>
+        `<div class="ve-history-entry"><span class="ve-history-action">${e.action}</span><span class="ve-history-time">${e.time}</span></div>`
+    ).join('');
+}
+
+// --- Component drag & drop ---
+function setupComponentDrag() {
+    document.querySelectorAll('.ve-comp-item').forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', item.dataset.compType);
+            e.dataTransfer.effectAllowed = 'copy';
+        });
+    });
+
+    const wrapper = document.getElementById('veCanvasWrapper');
+    if (wrapper) {
+        wrapper.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+        wrapper.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const type = e.dataTransfer.getData('text/plain');
+            if (type) veInsertComponent(type);
+        });
+    }
+}
+
+function veInsertComponent(type) {
     if (!veIframeDoc) return;
-    const tree = document.getElementById('veElementTree');
-    const sections = document.getElementById('veSectionsList');
-    if (!tree || !sections) return;
+    pushVEUndo('Insert ' + type);
+    let el;
+    switch (type) {
+        case 'section': el = veIframeDoc.createElement('section'); el.style.padding = '60px 20px'; el.style.minHeight = '300px'; break;
+        case 'div': el = veIframeDoc.createElement('div'); el.style.padding = '20px'; el.style.border = '1px dashed rgba(255,255,255,0.3)'; el.style.borderRadius = '8px'; break;
+        case 'grid': el = veIframeDoc.createElement('div'); el.style.display = 'grid'; el.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))'; el.style.gap = '16px'; el.style.padding = '20px'; break;
+        case 'heading': el = veIframeDoc.createElement('h2'); el.textContent = 'Heading'; el.style.color = '#ffffff'; break;
+        case 'text': el = veIframeDoc.createElement('p'); el.textContent = 'Text content goes here.'; el.style.color = '#b3b3b3'; break;
+        case 'image': el = veIframeDoc.createElement('img'); el.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect fill="%23333" width="200" height="200"/><text fill="%23666" x="50%" y="50%" text-anchor="middle" dy=".3em">Image</text></svg>'; el.style.maxWidth = '100%'; el.style.borderRadius = '8px'; break;
+        case 'icon': el = veIframeDoc.createElement('i'); el.className = 'fas fa-star'; el.style.color = '#1db954'; el.style.fontSize = '24px'; break;
+        case 'button': el = veIframeDoc.createElement('button'); el.textContent = 'Button'; el.style.padding = '10px 24px'; el.style.borderRadius = '24px'; el.style.background = '#1db954'; el.style.color = '#fff'; el.style.border = 'none'; el.style.cursor = 'pointer'; break;
+        case 'link': el = veIframeDoc.createElement('a'); el.textContent = 'Link'; el.href = '#'; el.style.color = '#1db954'; break;
+        case 'song-card': el = veIframeDoc.createElement('div'); el.className = 'song-card'; el.innerHTML = '<div style="width:100%;aspect-ratio:1;background:#333;border-radius:8px"></div><p style="margin:8px 0 0;color:#fff">Song Title</p>'; break;
+        case 'station-card': el = veIframeDoc.createElement('div'); el.className = 'station-card'; el.innerHTML = '<div style="width:100%;aspect-ratio:1;background:#1a1a2e;border-radius:12px"></div><p style="margin:8px 0 0;color:#fff">Station</p>'; break;
+        case 'artist-card': el = veIframeDoc.createElement('div'); el.className = 'artist-card'; el.innerHTML = '<div style="width:80px;height:80px;border-radius:50%;background:#333;margin:0 auto"></div><p style="margin:8px 0 0;color:#fff;text-align:center">Artist</p>'; break;
+        case 'carousel': el = veIframeDoc.createElement('div'); el.style.display = 'flex'; el.style.gap = '16px'; el.style.overflow = 'auto'; el.style.padding = '16px'; for (let i = 0; i < 4; i++) { const c = veIframeDoc.createElement('div'); c.style.minWidth = '200px'; c.style.height = '200px'; c.style.background = '#222'; c.style.borderRadius = '8px'; el.appendChild(c); } break;
+        case 'chart-list': el = veIframeDoc.createElement('div'); el.className = 'chart-list'; el.innerHTML = '<div style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.1);color:#fff">1. Song Title</div><div style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.1);color:#fff">2. Song Title</div>'; break;
+        default: el = veIframeDoc.createElement('div'); el.textContent = type; el.style.padding = '16px';
+    }
 
-    const sectionsData = [];
-    veIframeDoc.querySelectorAll('section, [data-section], .home-section, main > div').forEach((el, i) => {
-        const label = el.getAttribute('data-section') || el.className?.split(' ')[0] || el.tagName + ' ' + (i + 1);
-        sectionsData.push({ el, label });
-    });
-
-    sections.innerHTML = sectionsData.map((s, i) => `
-        <div class="ve-section-item" data-ve-idx="${i}" onclick="veSelectSection(${i})">
-            <i class="fas fa-layer-group"></i> ${s.label}
-        </div>
-    `).join('');
-
-    const treeItems = [];
-    veIframeDoc.querySelectorAll('h1, h2, h3, h4, h5, h6, p, a, button, img, nav, header, footer, section, main, .card, .btn, .nav-item, [class*="section"]').forEach(el => {
-        if (!el.closest('#mapMiniPlayer, #eqOverlay, .splash-screen, .toast-container')) {
-            treeItems.push(el);
-        }
-    });
-
-    tree.innerHTML = treeItems.slice(0, 100).map((el, i) => {
-        const tag = el.tagName.toLowerCase();
-        const id = el.id ? '#' + el.id : '';
-        const cls = (typeof el.className === 'string' ? el.className.split(' ')[0] : '') || '';
-        const text = (el.textContent || '').trim().substring(0, 30);
-        return `<div class="ve-tree-item" data-ve-idx="${i}" onclick="veSelectTreeItem(${i})" title="${tag}${id}">
-            <span class="ve-tree-tag">&lt;${tag}&gt;</span>
-            <span class="ve-tree-id">${id}</span>
-            <span class="ve-tree-cls">${cls ? '.' + cls : ''}</span>
-            <span class="ve-tree-text">${text ? '"' + text + '"' : ''}</span>
-        </div>`;
-    }).join('');
-
-    window._veTreeItems = treeItems;
+    veIframeDoc.body.appendChild(el);
+    addVEHistoryEntry('Inserted ' + type);
+    scanIframeElements();
+    selectVEElement(el);
 }
 
-function veSelectTreeItem(idx) {
-    const items = window._veTreeItems;
-    if (!items || !items[idx]) return;
-    selectVEElement(items[idx]);
-}
-
-function veSelectSection(idx) {
-    const sections = veIframeDoc.querySelectorAll('section, [data-section], .home-section, main > div');
-    if (sections[idx]) selectVEElement(sections[idx]);
-}
-
-function highlightVETreeItem(selector) {
-    document.querySelectorAll('.ve-tree-item').forEach(i => i.classList.remove('selected'));
-}
-
+// --- Draft / Publish ---
 function saveVEDraft() {
     try {
         const draft = {
             overrides: veOverrides,
             html: veIframeDoc?.documentElement?.outerHTML || '',
+            history: veHistoryEntries,
             savedAt: new Date().toISOString()
         };
         localStorage.setItem('veDraft', JSON.stringify(draft));
+        addVEHistoryEntry('Draft saved');
         showToast('Visual editor draft saved!', 'success');
     } catch (e) {
         showToast('Failed to save draft', 'error');
@@ -4294,16 +4826,20 @@ function loadVEDraft() {
         if (raw) {
             const draft = JSON.parse(raw);
             if (draft.overrides) veOverrides = draft.overrides;
+            if (draft.history) veHistoryEntries = draft.history;
         }
     } catch (e) { /* ignore */ }
 }
 
 function publishVEChanges() {
+    if (!confirm('Publish visual editor changes to the live site?')) return;
     saveVEDraft();
     syncToLiveWebsite();
+    addVEHistoryEntry('Published to live');
     showToast('Visual editor changes published!', 'success');
 }
 
+// --- Helpers ---
 function escapeVEAttr(str) {
     return str.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -4422,6 +4958,7 @@ if (typeof window !== 'undefined') {
     window.veSelectTreeItem = veSelectTreeItem;
     window.veSelectSection = veSelectSection;
     window.veSetProp = veSetProp;
+    window.veApplyHTMLEdit = veApplyHTMLEdit;
     window.loadMiniPlayerSettings = loadMiniPlayerSettings;
     window.saveMiniPlayerSettings = saveMiniPlayerSettings;
     window.resetMiniPlayerSettings = resetMiniPlayerSettings;

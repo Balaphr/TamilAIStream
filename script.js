@@ -2326,7 +2326,7 @@ function setupRealtimeSync() {
             case 'ARTIST_HITS':
                 renderArtistHitsDynamic();
                 initTamilHitsCarousel();
-                if (typeof AMPremium !== 'undefined') { AMPremium.renderArtistEssentials(); AMPremium.renderMadeForYou(); }
+                if (typeof AMPremium !== 'undefined') { AMPremium.renderMadeForYou(); }
                 break;
             case 'QUOTES':
                 initTopHeader();
@@ -2337,7 +2337,7 @@ function setupRealtimeSync() {
                 break;
             case 'SONGS':
                 handleSongsUpdate();
-                if (typeof AMPremium !== 'undefined') { setTimeout(() => { AMPremium.renderNewReleases(); AMPremium.renderTopCharts(); AMPremium.renderCuratedPlaylists(); AMPremium.initScrollReveal(); }, 200); }
+                if (typeof AMPremium !== 'undefined') { setTimeout(() => { AMPremium.renderNewReleases(); AMPremium.renderTopCharts(); AMPremium.initScrollReveal(); }, 200); }
                 break;
             case 'LAYOUT':
                 setupLayoutSync();
@@ -2428,8 +2428,6 @@ function handleSongsUpdate() {
             setTimeout(() => {
                 AMPremium.renderNewReleases();
                 AMPremium.renderTopCharts();
-                AMPremium.renderCuratedPlaylists();
-                AMPremium.renderRecentlyPlayed();
                 AMPremium.initScrollReveal();
             }, 200);
         }
