@@ -164,13 +164,28 @@ const MiniAudioPlayer = (() => {
        Bind All Button Events
        ============================================ */
     function bindEvents() {
-        // Header buttons
-        document.getElementById('mapCloseBtn')?.addEventListener('click', closePopup);
-        document.getElementById('mapMinimizeBtn')?.addEventListener('click', toggleCollapse);
-        document.getElementById('mapCollapsedExpand')?.addEventListener('click', toggleCollapse);
-        document.getElementById('mapCollapsedPlay')?.addEventListener('click', () => {
-            togglePlayPause();
-        });
+        // Header buttons - use both click and touchstart for mobile compatibility
+        const closeBtn = document.getElementById('mapCloseBtn');
+        const minimizeBtn = document.getElementById('mapMinimizeBtn');
+        const expandBtn = document.getElementById('mapCollapsedExpand');
+        const collapsedPlay = document.getElementById('mapCollapsedPlay');
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closePopup);
+            closeBtn.addEventListener('touchend', (e) => { e.preventDefault(); closePopup(); }, { passive: false });
+        }
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', toggleCollapse);
+            minimizeBtn.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); toggleCollapse(); }, { passive: false });
+        }
+        if (expandBtn) {
+            expandBtn.addEventListener('click', toggleCollapse);
+            expandBtn.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); toggleCollapse(); }, { passive: false });
+        }
+        if (collapsedPlay) {
+            collapsedPlay.addEventListener('click', () => togglePlayPause());
+            collapsedPlay.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); togglePlayPause(); }, { passive: false });
+        }
 
         // Drag functionality on header
         const header = popupEl?.querySelector('.map-header');
@@ -291,6 +306,7 @@ const MiniAudioPlayer = (() => {
         // Progress Seek
         const progressWrap = document.getElementById('mapProgressWrap');
         if (progressWrap) {
+            let lastTouchEnd = 0;
             const seek = (e) => {
                 const rect = progressWrap.getBoundingClientRect();
                 if (!rect || rect.width <= 0) return;
@@ -306,12 +322,26 @@ const MiniAudioPlayer = (() => {
                 }
                 updateProgressUI();
             };
-            progressWrap.addEventListener('mousedown', (e) => { isDraggingSeek = true; seek(e); e.preventDefault(); });
+            progressWrap.addEventListener('mousedown', (e) => {
+                // Skip synthetic click after touch
+                if (Date.now() - lastTouchEnd < 400) return;
+                isDraggingSeek = true;
+                seek(e);
+                e.preventDefault();
+            });
             document.addEventListener('mousemove', (e) => { if (isDraggingSeek) seek(e); });
             document.addEventListener('mouseup', () => { isDraggingSeek = false; });
-            progressWrap.addEventListener('touchstart', (e) => { isDraggingSeek = true; seek(e.touches[0]); }, { passive: true });
-            progressWrap.addEventListener('touchmove', (e) => { if (isDraggingSeek) { e.preventDefault(); seek(e.touches[0]); } }, { passive: false });
-            document.addEventListener('touchend', () => { isDraggingSeek = false; });
+            progressWrap.addEventListener('touchstart', (e) => {
+                isDraggingSeek = true;
+                seek(e.touches[0]);
+            }, { passive: true });
+            progressWrap.addEventListener('touchmove', (e) => {
+                if (isDraggingSeek) { e.preventDefault(); seek(e.touches[0]); }
+            }, { passive: false });
+            document.addEventListener('touchend', () => {
+                isDraggingSeek = false;
+                lastTouchEnd = Date.now();
+            });
         }
 
         // Keyboard shortcut
@@ -800,6 +830,9 @@ const MiniAudioPlayer = (() => {
        ============================================ */
     function onDragStart(e) {
         if (!popupEl) return;
+        // Don't start drag if touching a button or interactive element
+        const target = e.target;
+        if (target.closest('button') || target.closest('input')) return;
         isDraggingPopup = true;
         const touch = e.touches ? e.touches[0] : e;
         dragStartX = touch.clientX;
