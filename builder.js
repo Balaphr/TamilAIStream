@@ -324,6 +324,8 @@ function navigateTo(page) {
         'player': 'playerPage',
         'navigation': 'navigationPage',
         'sections': 'sectionsPage',
+        'visualeditor': 'visualeditorPage',
+        'miniplayersettings': 'miniplayersettingsPage',
         'preview': 'previewPage'
     };
 
@@ -355,6 +357,8 @@ function navigateTo(page) {
     if (page === 'player') loadPlayerPrefs();
     if (page === 'navigation') loadNavigation();
     if (page === 'sections') loadSectionsOrder();
+    if (page === 'visualeditor') initVisualEditor();
+    if (page === 'miniplayersettings') loadMiniPlayerSettings();
     if (page === 'preview') updatePreview();
 }
 
@@ -3911,6 +3915,486 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// ============================================
+// Visual Editor
+// ============================================
+let veInitialized = false;
+let veIframe = null;
+let veIframeDoc = null;
+let veSelectedElement = null;
+let veSelectedSelector = '';
+let veCurrentDevice = 'desktop';
+let veZoom = 100;
+let veUndoStack = [];
+let veRedoStack = [];
+let veMaxHistory = 50;
+let veOverrides = {};
+let veCurrentBreakpoint = 'desktop';
+
+function initVisualEditor() {
+    if (veInitialized) return;
+    veInitialized = true;
+
+    veIframe = document.getElementById('veFrame');
+    if (!veIframe) return;
+
+    veIframe.addEventListener('load', () => {
+        veIframeDoc = veIframe.contentDocument || veIframe.contentWindow.document;
+        scanIframeElements();
+        setupIframeClickHandler();
+    });
+
+    bindVisualEditorEvents();
+    loadVEDraft();
+}
+
+function bindVisualEditorEvents() {
+    document.querySelectorAll('.ve-device-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.ve-device-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            setVEDevice(btn.dataset.veDevice);
+        });
+    });
+
+    document.getElementById('veZoomIn')?.addEventListener('click', () => setVEZoom(veZoom + 10));
+    document.getElementById('veZoomOut')?.addEventListener('click', () => setVEZoom(veZoom - 10));
+    document.getElementById('veToggleGrid')?.addEventListener('click', toggleVEGrid);
+    document.getElementById('veUndoBtn')?.addEventListener('click', veUndo);
+    document.getElementById('veRedoBtn')?.addEventListener('click', veRedo);
+    document.getElementById('veSaveDraft')?.addEventListener('click', saveVEDraft);
+    document.getElementById('vePublishBtn')?.addEventListener('click', publishVEChanges);
+    document.getElementById('veCloseProps')?.addEventListener('click', clearVESelection);
+
+    document.querySelectorAll('.ve-resp-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.ve-resp-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            veCurrentBreakpoint = tab.dataset.veResp;
+            if (veSelectedElement) showVEProperties(veSelectedSelector);
+        });
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (!document.getElementById('visualeditorPage')?.style.display ||
+            document.getElementById('visualeditorPage').style.display === 'none') return;
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); veUndo(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); veRedo(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveVEDraft(); }
+        if (e.key === 'Escape') clearVESelection();
+    });
+}
+
+function setVEDevice(device) {
+    veCurrentDevice = device;
+    const wrapper = document.getElementById('veCanvasWrapper');
+    if (!wrapper) return;
+    const widths = { desktop: '100%', tablet: '768px', mobile: '375px' };
+    veIframe.style.width = widths[device] || '100%';
+    veIframe.style.maxWidth = '100%';
+    wrapper.style.justifyContent = device === 'desktop' ? 'stretch' : 'center';
+}
+
+function setVEZoom(level) {
+    veZoom = Math.max(50, Math.min(150, level));
+    document.getElementById('veZoomLabel').textContent = veZoom + '%';
+    veIframe.style.transform = `scale(${veZoom / 100})`;
+    veIframe.style.transformOrigin = 'top center';
+}
+
+function toggleVEGrid() {
+    const wrapper = document.getElementById('veCanvasWrapper');
+    wrapper?.classList.toggle('ve-show-grid');
+}
+
+function setupIframeClickHandler() {
+    if (!veIframeDoc) return;
+    veIframeDoc.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = e.target;
+        if (!target || target === veIframeDoc.body) { clearVESelection(); return; }
+        selectVEElement(target);
+    });
+}
+
+function selectVEElement(el) {
+    clearVEOverlay();
+    veSelectedElement = el;
+    veSelectedSelector = getVEUniqueSelector(el);
+
+    const rect = el.getBoundingClientRect();
+    const iframeRect = veIframe.getBoundingClientRect();
+    const overlay = document.getElementById('veOverlay');
+    if (overlay) {
+        overlay.style.display = 'block';
+        overlay.style.left = (rect.left - iframeRect.left + veIframe.contentWindow.scrollX) + 'px';
+        overlay.style.top = (rect.top - iframeRect.top + veIframe.contentWindow.scrollY) + 'px';
+        overlay.style.width = rect.width + 'px';
+        overlay.style.height = rect.height + 'px';
+    }
+
+    showVEProperties(veSelectedSelector);
+    highlightVETreeItem(veSelectedSelector);
+}
+
+function getVEUniqueSelector(el) {
+    if (el.id) return '#' + el.id;
+    const parts = [];
+    let current = el;
+    while (current && current !== veIframeDoc.body) {
+        let selector = current.tagName.toLowerCase();
+        if (current.id) { selector = '#' + current.id; parts.unshift(selector); break; }
+        if (current.className && typeof current.className === 'string') {
+            const cls = current.className.trim().split(/\s+/).slice(0, 2).map(c => '.' + c).join('');
+            selector += cls;
+        }
+        const parent = current.parentElement;
+        if (parent) {
+            const siblings = Array.from(parent.children).filter(c => c.tagName === current.tagName);
+            if (siblings.length > 1) {
+                const idx = siblings.indexOf(current) + 1;
+                selector += ':nth-of-type(' + idx + ')';
+            }
+        }
+        parts.unshift(selector);
+        current = current.parentElement;
+    }
+    return parts.join(' > ');
+}
+
+function clearVESelection() {
+    veSelectedElement = null;
+    veSelectedSelector = '';
+    clearVEOverlay();
+    const propsBody = document.getElementById('vePropsBody');
+    if (propsBody) {
+        propsBody.innerHTML = '<div class="ve-empty-state"><i class="fas fa-mouse-pointer"></i><p>Click any element on the canvas to edit its properties</p></div>';
+    }
+    document.querySelectorAll('.ve-tree-item').forEach(i => i.classList.remove('selected'));
+}
+
+function clearVEOverlay() {
+    const overlay = document.getElementById('veOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function showVEProperties(selector) {
+    const propsBody = document.getElementById('vePropsBody');
+    if (!propsBody || !veSelectedElement) return;
+
+    const el = veSelectedElement;
+    const computed = veIframeDoc.defaultView.getComputedStyle(el);
+    const tag = el.tagName.toLowerCase();
+    const id = el.id || '';
+    const cls = (typeof el.className === 'string' ? el.className : '').trim();
+    const text = el.textContent?.trim().substring(0, 80) || '';
+
+    const bp = veCurrentBreakpoint;
+    const key = selector;
+    if (!veOverrides[key]) veOverrides[key] = {};
+    const ov = veOverrides[key][bp] || {};
+
+    const getVal = (prop, fallback) => ov[prop] !== undefined ? ov[prop] : fallback;
+
+    propsBody.innerHTML = `
+        <div class="ve-props-section">
+            <div class="ve-props-label">Element Info</div>
+            <div class="ve-props-info">
+                <span class="ve-tag">${tag}</span>
+                ${id ? '<span class="ve-id">#' + id + '</span>' : ''}
+                <div class="ve-classes">${cls || 'no classes'}</div>
+                ${text ? '<div class="ve-text-preview">"' + text + '..."</div>' : ''}
+            </div>
+        </div>
+        <div class="ve-props-section">
+            <div class="ve-props-label">Content</div>
+            <div class="ve-prop-row"><label>Text</label><input type="text" id="vePropText" value="${escapeVEAttr(el.textContent?.trim() || '')}" onchange="veSetProp('text', this.value)"></div>
+        </div>
+        <div class="ve-props-section">
+            <div class="ve-props-label">Typography</div>
+            <div class="ve-prop-row"><label>Font Size</label><input type="text" id="vePropFontSize" value="${getVal('fontSize', computed.fontSize)}" onchange="veSetProp('fontSize', this.value)"></div>
+            <div class="ve-prop-row"><label>Font Weight</label><select id="vePropFontWeight" onchange="veSetProp('fontWeight', this.value)">
+                ${[100,200,300,400,500,600,700,800,900].map(w => `<option value="${w}" ${computed.fontWeight == w ? 'selected' : ''}>${w}</option>`).join('')}
+            </select></div>
+            <div class="ve-prop-row"><label>Color</label><div class="ve-color-wrap"><input type="color" id="vePropColor" value="${veRgbToHex(computed.color)}" onchange="veSetProp('color', this.value)"><input type="text" value="${veRgbToHex(computed.color)}" onchange="document.getElementById('vePropColor').value=this.value;veSetProp('color',this.value)"></div></div>
+            <div class="ve-prop-row"><label>Text Align</label><select id="vePropTextAlign" onchange="veSetProp('textAlign', this.value)">
+                ${['left','center','right','justify'].map(v => `<option value="${v}" ${computed.textAlign===v?'selected':''}>${v}</option>`).join('')}
+            </select></div>
+            <div class="ve-prop-row"><label>Line Height</label><input type="text" value="${getVal('lineHeight', computed.lineHeight)}" onchange="veSetProp('lineHeight', this.value)"></div>
+            <div class="ve-prop-row"><label>Letter Spacing</label><input type="text" value="${getVal('letterSpacing', computed.letterSpacing)}" onchange="veSetProp('letterSpacing', this.value)"></div>
+        </div>
+        <div class="ve-props-section">
+            <div class="ve-props-label">Spacing</div>
+            <div class="ve-prop-row"><label>Margin</label><input type="text" value="${getVal('margin', computed.margin)}" onchange="veSetProp('margin', this.value)"></div>
+            <div class="ve-prop-row"><label>Padding</label><input type="text" value="${getVal('padding', computed.padding)}" onchange="veSetProp('padding', this.value)"></div>
+        </div>
+        <div class="ve-props-section">
+            <div class="ve-props-label">Size</div>
+            <div class="ve-prop-row"><label>Width</label><input type="text" value="${getVal('width', computed.width)}" onchange="veSetProp('width', this.value)"></div>
+            <div class="ve-prop-row"><label>Height</label><input type="text" value="${getVal('height', computed.height)}" onchange="veSetProp('height', this.value)"></div>
+            <div class="ve-prop-row"><label>Min Width</label><input type="text" value="${getVal('minWidth', computed.minWidth)}" onchange="veSetProp('minWidth', this.value)"></div>
+            <div class="ve-prop-row"><label>Max Width</label><input type="text" value="${getVal('maxWidth', computed.maxWidth)}" onchange="veSetProp('maxWidth', this.value)"></div>
+        </div>
+        <div class="ve-props-section">
+            <div class="ve-props-label">Background</div>
+            <div class="ve-prop-row"><label>BG Color</label><div class="ve-color-wrap"><input type="color" id="vePropBgColor" value="${veRgbToHex(computed.backgroundColor)}" onchange="veSetProp('backgroundColor', this.value)"><input type="text" value="${veRgbToHex(computed.backgroundColor)}" onchange="document.getElementById('vePropBgColor').value=this.value;veSetProp('backgroundColor',this.value)"></div></div>
+            <div class="ve-prop-row"><label>Border Radius</label><input type="text" value="${getVal('borderRadius', computed.borderRadius)}" onchange="veSetProp('borderRadius', this.value)"></div>
+            <div class="ve-prop-row"><label>Opacity</label><input type="range" min="0" max="1" step="0.05" value="${getVal('opacity', computed.opacity)}" onchange="veSetProp('opacity', this.value)"></div>
+            <div class="ve-prop-row"><label>Border</label><input type="text" value="${getVal('border', computed.border)}" onchange="veSetProp('border', this.value)"></div>
+        </div>
+        <div class="ve-props-section">
+            <div class="ve-props-label">Visibility</div>
+            <div class="ve-prop-row"><label>Display</label><select onchange="veSetProp('display', this.value)">
+                ${['block','inline','inline-block','flex','grid','none'].map(v => `<option value="${v}" ${computed.display===v?'selected':''}>${v}</option>`).join('')}
+            </select></div>
+            <div class="ve-prop-row"><label>Visibility</label><select onchange="veSetProp('visibility', this.value)">
+                ${['visible','hidden'].map(v => `<option value="${v}" ${computed.visibility===v?'selected':''}>${v}</option>`).join('')}
+            </select></div>
+        </div>
+        <div class="ve-props-section">
+            <div class="ve-props-label">Animation</div>
+            <div class="ve-prop-row"><label>Transition</label><input type="text" value="${getVal('transition', computed.transition)}" onchange="veSetProp('transition', this.value)"></div>
+            <div class="ve-prop-row"><label>Transform</label><input type="text" value="${getVal('transform', computed.transform)}" onchange="veSetProp('transform', this.value)"></div>
+        </div>
+    `;
+}
+
+function veSetProp(prop, value) {
+    if (!veSelectedElement) return;
+    pushVEUndo();
+
+    if (prop === 'text') {
+        veSelectedElement.textContent = value;
+    } else {
+        veSelectedElement.style[prop] = value;
+        const bp = veCurrentBreakpoint;
+        if (!veOverrides[veSelectedSelector]) veOverrides[veSelectedSelector] = {};
+        if (!veOverrides[veSelectedSelector][bp]) veOverrides[veSelectedSelector][bp] = {};
+        veOverrides[veSelectedSelector][bp][prop] = value;
+    }
+}
+
+function pushVEUndo() {
+    if (!veIframeDoc) return;
+    veUndoStack.push(veIframeDoc.documentElement.outerHTML);
+    if (veUndoStack.length > veMaxHistory) veUndoStack.shift();
+    veRedoStack = [];
+    updateVEUndoRedoBtns();
+}
+
+function veUndo() {
+    if (veUndoStack.length === 0) return;
+    veRedoStack.push(veIframeDoc.documentElement.outerHTML);
+    const prev = veUndoStack.pop();
+    veIframeDoc.documentElement.innerHTML = new DOMParser().parseFromString(prev, 'text/html').documentElement.innerHTML;
+    updateVEUndoRedoBtns();
+    clearVESelection();
+}
+
+function veRedo() {
+    if (veRedoStack.length === 0) return;
+    veUndoStack.push(veIframeDoc.documentElement.outerHTML);
+    const next = veRedoStack.pop();
+    veIframeDoc.documentElement.innerHTML = new DOMParser().parseFromString(next, 'text/html').documentElement.innerHTML;
+    updateVEUndoRedoBtns();
+    clearVESelection();
+}
+
+function updateVEUndoRedoBtns() {
+    const undoBtn = document.getElementById('veUndoBtn');
+    const redoBtn = document.getElementById('veRedoBtn');
+    if (undoBtn) undoBtn.disabled = veUndoStack.length === 0;
+    if (redoBtn) redoBtn.disabled = veRedoStack.length === 0;
+}
+
+function scanIframeElements() {
+    if (!veIframeDoc) return;
+    const tree = document.getElementById('veElementTree');
+    const sections = document.getElementById('veSectionsList');
+    if (!tree || !sections) return;
+
+    const sectionsData = [];
+    veIframeDoc.querySelectorAll('section, [data-section], .home-section, main > div').forEach((el, i) => {
+        const label = el.getAttribute('data-section') || el.className?.split(' ')[0] || el.tagName + ' ' + (i + 1);
+        sectionsData.push({ el, label });
+    });
+
+    sections.innerHTML = sectionsData.map((s, i) => `
+        <div class="ve-section-item" data-ve-idx="${i}" onclick="veSelectSection(${i})">
+            <i class="fas fa-layer-group"></i> ${s.label}
+        </div>
+    `).join('');
+
+    const treeItems = [];
+    veIframeDoc.querySelectorAll('h1, h2, h3, h4, h5, h6, p, a, button, img, nav, header, footer, section, main, .card, .btn, .nav-item, [class*="section"]').forEach(el => {
+        if (!el.closest('#mapMiniPlayer, #eqOverlay, .splash-screen, .toast-container')) {
+            treeItems.push(el);
+        }
+    });
+
+    tree.innerHTML = treeItems.slice(0, 100).map((el, i) => {
+        const tag = el.tagName.toLowerCase();
+        const id = el.id ? '#' + el.id : '';
+        const cls = (typeof el.className === 'string' ? el.className.split(' ')[0] : '') || '';
+        const text = (el.textContent || '').trim().substring(0, 30);
+        return `<div class="ve-tree-item" data-ve-idx="${i}" onclick="veSelectTreeItem(${i})" title="${tag}${id}">
+            <span class="ve-tree-tag">&lt;${tag}&gt;</span>
+            <span class="ve-tree-id">${id}</span>
+            <span class="ve-tree-cls">${cls ? '.' + cls : ''}</span>
+            <span class="ve-tree-text">${text ? '"' + text + '"' : ''}</span>
+        </div>`;
+    }).join('');
+
+    window._veTreeItems = treeItems;
+}
+
+function veSelectTreeItem(idx) {
+    const items = window._veTreeItems;
+    if (!items || !items[idx]) return;
+    selectVEElement(items[idx]);
+}
+
+function veSelectSection(idx) {
+    const sections = veIframeDoc.querySelectorAll('section, [data-section], .home-section, main > div');
+    if (sections[idx]) selectVEElement(sections[idx]);
+}
+
+function highlightVETreeItem(selector) {
+    document.querySelectorAll('.ve-tree-item').forEach(i => i.classList.remove('selected'));
+}
+
+function saveVEDraft() {
+    try {
+        const draft = {
+            overrides: veOverrides,
+            html: veIframeDoc?.documentElement?.outerHTML || '',
+            savedAt: new Date().toISOString()
+        };
+        localStorage.setItem('veDraft', JSON.stringify(draft));
+        showToast('Visual editor draft saved!', 'success');
+    } catch (e) {
+        showToast('Failed to save draft', 'error');
+    }
+}
+
+function loadVEDraft() {
+    try {
+        const raw = localStorage.getItem('veDraft');
+        if (raw) {
+            const draft = JSON.parse(raw);
+            if (draft.overrides) veOverrides = draft.overrides;
+        }
+    } catch (e) { /* ignore */ }
+}
+
+function publishVEChanges() {
+    saveVEDraft();
+    syncToLiveWebsite();
+    showToast('Visual editor changes published!', 'success');
+}
+
+function escapeVEAttr(str) {
+    return str.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function veRgbToHex(rgb) {
+    if (!rgb || rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return '#000000';
+    const match = rgb.match(/\d+/g);
+    if (!match || match.length < 3) return '#000000';
+    return '#' + match.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+}
+
+// ============================================
+// Mini Player Settings
+// ============================================
+const MINI_PLAYER_DEFAULTS = {
+    width: 320, height: 500, borderRadius: 16, bgColor: '#1a1a2e', bgOpacity: 95,
+    blur: 20, glass: true, shadow: 'medium', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+    showArt: true, artSize: 80, artRadius: 50, vinylSpin: true,
+    titleSize: 14, titleWeight: '600', titleColor: '#ffffff', artistSize: 12, artistColor: '#b3b3b3', textAlign: 'center',
+    showPlay: true, showPrev: true, showNext: true, showShuffle: false, showRepeat: false,
+    showProgress: true, showVolume: false, showFav: false, showQueue: false, showShare: false, showAI: false,
+    btnSize: 32, btnColor: '#ffffff', btnHover: '#1db954', playBtnSize: 48,
+    progressH: 4, progressColor: '#1db954', progressBg: 'rgba(255,255,255,0.2)', showThumb: true, thumbSize: 10,
+    position: 'bottom-center', draggable: true, autoMinimize: false, showOnPlay: true, zIndex: 1000, animation: 'slide-up',
+    miniWidth: 200, miniHeight: 56, miniRadius: 28, miniBg: '#1a1a2e', miniShowArt: true, miniShowPlay: true, miniShowExpand: true
+};
+
+function loadMiniPlayerSettings() {
+    const s = DataStore.getMiniPlayerSettings();
+    const d = { ...MINI_PLAYER_DEFAULTS, ...s };
+
+    const fields = {
+        mpWidth: d.width, mpHeight: d.height, mpBorderRadius: d.borderRadius,
+        mpBgColor: d.bgColor, mpBgOpacity: d.bgOpacity, mpBlur: d.blur,
+        mpGlass: String(d.glass), mpShadow: d.shadow, mpBorderColor: d.borderColor, mpBorderWidth: d.borderWidth,
+        mpShowArt: String(d.showArt), mpArtSize: d.artSize, mpArtRadius: d.artRadius, mpVinylSpin: String(d.vinylSpin),
+        mpTitleSize: d.titleSize, mpTitleWeight: d.titleWeight, mpTitleColor: d.titleColor,
+        mpArtistSize: d.artistSize, mpArtistColor: d.artistColor, mpTextAlign: d.textAlign,
+        mpShowPlay: String(d.showPlay), mpShowPrev: String(d.showPrev), mpShowNext: String(d.showNext),
+        mpShowShuffle: String(d.showShuffle), mpShowRepeat: String(d.showRepeat), mpShowProgress: String(d.showProgress),
+        mpShowVolume: String(d.showVolume), mpShowFav: String(d.showFav), mpShowQueue: String(d.showQueue),
+        mpShowShare: String(d.showShare), mpShowAI: String(d.showAI), mpBtnSize: d.btnSize,
+        mpBtnColor: d.btnColor, mpBtnHover: d.btnHover, mpPlayBtnSize: d.playBtnSize,
+        mpProgressH: d.progressH, mpProgressColor: d.progressColor, mpProgressBg: d.progressBg,
+        mpShowThumb: String(d.showThumb), mpThumbSize: d.thumbSize,
+        mpPosition: d.position, mpDraggable: String(d.draggable), mpAutoMinimize: String(d.autoMinimize),
+        mpShowOnPlay: String(d.showOnPlay), mpZIndex: d.zIndex, mpAnimation: d.animation,
+        mpMiniWidth: d.miniWidth, mpMiniHeight: d.miniHeight, mpMiniRadius: d.miniRadius,
+        mpMiniBg: d.miniBg, mpMiniShowArt: String(d.miniShowArt), mpMiniShowPlay: String(d.miniShowPlay),
+        mpMiniShowExpand: String(d.miniShowExpand)
+    };
+
+    Object.entries(fields).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val ?? '';
+    });
+}
+
+function saveMiniPlayerSettings(e) {
+    e.preventDefault();
+    const get = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value : '';
+    };
+    const getNum = (id) => parseFloat(get(id)) || 0;
+    const getBool = (id) => get(id) === 'true';
+
+    const settings = {
+        width: getNum('mpWidth'), height: getNum('mpHeight'), borderRadius: getNum('mpBorderRadius'),
+        bgColor: get('mpBgColor'), bgOpacity: getNum('mpBgOpacity'), blur: getNum('mpBlur'),
+        glass: getBool('mpGlass'), shadow: get('mpShadow'), borderColor: get('mpBorderColor'), borderWidth: getNum('mpBorderWidth'),
+        showArt: getBool('mpShowArt'), artSize: getNum('mpArtSize'), artRadius: getNum('mpArtRadius'), vinylSpin: getBool('mpVinylSpin'),
+        titleSize: getNum('mpTitleSize'), titleWeight: get('mpTitleWeight'), titleColor: get('mpTitleColor'),
+        artistSize: getNum('mpArtistSize'), artistColor: get('mpArtistColor'), textAlign: get('mpTextAlign'),
+        showPlay: getBool('mpShowPlay'), showPrev: getBool('mpShowPrev'), showNext: getBool('mpShowNext'),
+        showShuffle: getBool('mpShowShuffle'), showRepeat: getBool('mpShowRepeat'), showProgress: getBool('mpShowProgress'),
+        showVolume: getBool('mpShowVolume'), showFav: getBool('mpShowFav'), showQueue: getBool('mpShowQueue'),
+        showShare: getBool('mpShowShare'), showAI: getBool('mpShowAI'), btnSize: getNum('mpBtnSize'),
+        btnColor: get('mpBtnColor'), btnHover: get('mpBtnHover'), playBtnSize: getNum('mpPlayBtnSize'),
+        progressH: getNum('mpProgressH'), progressColor: get('mpProgressColor'), progressBg: get('mpProgressBg'),
+        showThumb: getBool('mpShowThumb'), thumbSize: getNum('mpThumbSize'),
+        position: get('mpPosition'), draggable: getBool('mpDraggable'), autoMinimize: getBool('mpAutoMinimize'),
+        showOnPlay: getBool('mpShowOnPlay'), zIndex: getNum('mpZIndex'), animation: get('mpAnimation'),
+        miniWidth: getNum('mpMiniWidth'), miniHeight: getNum('mpMiniHeight'), miniRadius: getNum('mpMiniRadius'),
+        miniBg: get('mpMiniBg'), miniShowArt: getBool('mpMiniShowArt'), miniShowPlay: getBool('mpMiniShowPlay'),
+        miniShowExpand: getBool('mpMiniShowExpand')
+    };
+
+    DataStore.setMiniPlayerSettings(settings);
+    showToast('Mini Player settings saved!', 'success');
+    syncToLiveWebsite();
+    return false;
+}
+
+function resetMiniPlayerSettings() {
+    if (!confirm('Reset all Mini Player settings to defaults?')) return;
+    DataStore.setMiniPlayerSettings(MINI_PLAYER_DEFAULTS);
+    loadMiniPlayerSettings();
+    showToast('Mini Player settings reset to defaults', 'success');
+}
+
 // Export functions for global access
 if (typeof window !== 'undefined') {
     window.signInWithEmail = signInWithEmail;
@@ -3924,5 +4408,12 @@ if (typeof window !== 'undefined') {
     window.saveArtistSongs = saveArtistSongs;
     window.removeSongFromArtistCollection = removeSongFromArtistCollection;
     window.editArtistSongInCollection = editArtistSongInCollection;
+    window.initVisualEditor = initVisualEditor;
+    window.veSelectTreeItem = veSelectTreeItem;
+    window.veSelectSection = veSelectSection;
+    window.veSetProp = veSetProp;
+    window.loadMiniPlayerSettings = loadMiniPlayerSettings;
+    window.saveMiniPlayerSettings = saveMiniPlayerSettings;
+    window.resetMiniPlayerSettings = resetMiniPlayerSettings;
 }
 

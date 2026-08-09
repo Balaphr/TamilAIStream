@@ -130,6 +130,12 @@
                         <button class="builder-nav-item" data-page="sections">
                             <i class="fas fa-sort-amount-up"></i> Sections
                         </button>
+                        <button class="builder-nav-item" data-page="visualeditor">
+                            <i class="fas fa-wand-magic-sparkles"></i> Visual Editor
+                        </button>
+                        <button class="builder-nav-item" data-page="miniplayersettings">
+                            <i class="fas fa-play-circle"></i> Mini Player
+                        </button>
                         <button class="builder-nav-item" data-page="preview">
                             <i class="fas fa-eye"></i> Preview
                         </button>
@@ -196,6 +202,12 @@
                             </button>
                             <button class="builder-sidebar-item" data-page="sections">
                                 <i class="fas fa-sort-amount-up"></i> Home Sections
+                            </button>
+                            <button class="builder-sidebar-item" data-page="visualeditor">
+                                <i class="fas fa-wand-magic-sparkles"></i> Visual Editor
+                            </button>
+                            <button class="builder-sidebar-item" data-page="miniplayersettings">
+                                <i class="fas fa-play-circle"></i> Mini Player Settings
                             </button>
                             <button class="builder-sidebar-item" data-page="preview">
                                 <i class="fas fa-eye"></i> Live Preview
@@ -1078,6 +1090,185 @@
                                 <div id="sectionsList" class="sections-drag-list"></div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Visual Editor Page -->
+                    <div class="builder-page" id="visualeditorPage" style="display:none;">
+                        <div class="ve-layout">
+                            <!-- Left Panel: Element Tree -->
+                            <div class="ve-left-panel">
+                                <div class="ve-panel-header">
+                                    <h3><i class="fas fa-sitemap"></i> Site Structure</h3>
+                                </div>
+                                <div class="ve-tree" id="veElementTree"></div>
+                                <div class="ve-panel-header" style="margin-top:12px;">
+                                    <h3><i class="fas fa-layer-group"></i> Sections</h3>
+                                </div>
+                                <div class="ve-sections-list" id="veSectionsList"></div>
+                            </div>
+
+                            <!-- Center: Iframe Canvas -->
+                            <div class="ve-center">
+                                <div class="ve-canvas-toolbar">
+                                    <div class="ve-device-btns">
+                                        <button class="ve-device-btn active" data-ve-device="desktop" title="Desktop (1440px)"><i class="fas fa-desktop"></i></button>
+                                        <button class="ve-device-btn" data-ve-device="tablet" title="Tablet (768px)"><i class="fas fa-tablet-alt"></i></button>
+                                        <button class="ve-device-btn" data-ve-device="mobile" title="Mobile (375px)"><i class="fas fa-mobile-alt"></i></button>
+                                    </div>
+                                    <div class="ve-canvas-actions">
+                                        <button class="ve-action-btn" id="veToggleGrid" title="Toggle Grid"><i class="fas fa-border-all"></i></button>
+                                        <button class="ve-action-btn" id="veZoomOut" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+                                        <span class="ve-zoom-label" id="veZoomLabel">100%</span>
+                                        <button class="ve-action-btn" id="veZoomIn" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+                                        <div class="ve-divider"></div>
+                                        <button class="ve-action-btn" id="veUndoBtn" title="Undo (Ctrl+Z)"><i class="fas fa-rotate-left"></i></button>
+                                        <button class="ve-action-btn" id="veRedoBtn" title="Redo (Ctrl+Y)"><i class="fas fa-rotate-right"></i></button>
+                                        <div class="ve-divider"></div>
+                                        <button class="ve-action-btn ve-save" id="veSaveDraft" title="Save Draft"><i class="fas fa-save"></i> Draft</button>
+                                        <button class="ve-action-btn ve-publish" id="vePublishBtn" title="Publish to Live"><i class="fas fa-rocket"></i> Publish</button>
+                                    </div>
+                                </div>
+                                <div class="ve-canvas-wrapper" id="veCanvasWrapper">
+                                    <iframe id="veFrame" class="ve-frame" src="index.html"></iframe>
+                                    <div class="ve-element-overlay" id="veOverlay" style="display:none;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Right Panel: Properties -->
+                            <div class="ve-right-panel">
+                                <div class="ve-panel-header">
+                                    <h3><i class="fas fa-sliders"></i> Properties</h3>
+                                    <button class="ve-panel-close" id="veCloseProps" title="Close"><i class="fas fa-times"></i></button>
+                                </div>
+                                <div class="ve-props-body" id="vePropsBody">
+                                    <div class="ve-empty-state">
+                                        <i class="fas fa-mouse-pointer"></i>
+                                        <p>Click any element on the canvas to edit its properties</p>
+                                    </div>
+                                </div>
+                                <!-- Responsive Overrides -->
+                                <div class="ve-panel-header" style="border-top:1px solid var(--border-glass);">
+                                    <h3><i class="fas fa-mobile-screen-button"></i> Responsive</h3>
+                                </div>
+                                <div class="ve-responsive-overrides" id="veResponsiveOverrides">
+                                    <div class="ve-resp-hint">Edit properties for the selected breakpoint. Desktop changes apply to all unless overridden.</div>
+                                    <div class="ve-resp-tabs">
+                                        <button class="ve-resp-tab active" data-ve-resp="desktop">Desktop</button>
+                                        <button class="ve-resp-tab" data-ve-resp="tablet">Tablet</button>
+                                        <button class="ve-resp-tab" data-ve-resp="mobile">Mobile</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Player Settings Page -->
+                    <div class="builder-page" id="miniplayersettingsPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Mini Player Settings</h1>
+                            <p class="builder-page-subtitle">Configure the Mini AI Player appearance, behavior, and controls</p>
+                        </div>
+                        <form id="miniPlayerSettingsForm" onsubmit="return saveMiniPlayerSettings(event)">
+                            <!-- Appearance -->
+                            <div class="content-card">
+                                <div class="content-card-header"><h2 class="content-card-title"><i class="fas fa-palette"></i> Appearance</h2></div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label class="form-label">Player Width (px)</label><input type="number" class="form-input" id="mpWidth" min="280" max="600"></div>
+                                    <div class="form-group"><label class="form-label">Player Height (px)</label><input type="number" class="form-input" id="mpHeight" min="200" max="800"></div>
+                                    <div class="form-group"><label class="form-label">Border Radius (px)</label><input type="number" class="form-input" id="mpBorderRadius" min="0" max="40"></div>
+                                    <div class="form-group"><label class="form-label">Background Color</label><input type="color" class="form-input" id="mpBgColor" style="height:45px;"></div>
+                                    <div class="form-group"><label class="form-label">Background Opacity</label><input type="range" class="form-input" id="mpBgOpacity" min="0" max="100" style="padding:8px;"></div>
+                                    <div class="form-group"><label class="form-label">Glass Blur (px)</label><input type="number" class="form-input" id="mpBlur" min="0" max="40"></div>
+                                    <div class="form-group"><label class="form-label">Glass Effect</label><select class="form-input" id="mpGlass"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+                                    <div class="form-group"><label class="form-label">Box Shadow</label><select class="form-input" id="mpShadow"><option value="none">None</option><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option><option value="glow">Glow</option></select></div>
+                                    <div class="form-group"><label class="form-label">Border Color</label><input type="color" class="form-input" id="mpBorderColor" style="height:45px;"></div>
+                                    <div class="form-group"><label class="form-label">Border Width (px)</label><input type="number" class="form-input" id="mpBorderWidth" min="0" max="4"></div>
+                                </div>
+                            </div>
+                            <!-- Artwork -->
+                            <div class="content-card">
+                                <div class="content-card-header"><h2 class="content-card-title"><i class="fas fa-image"></i> Artwork</h2></div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label class="form-label">Show Artwork</label><select class="form-input" id="mpShowArt"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Artwork Size (px)</label><input type="number" class="form-input" id="mpArtSize" min="32" max="120"></div>
+                                    <div class="form-group"><label class="form-label">Artwork Border Radius (px)</label><input type="number" class="form-input" id="mpArtRadius" min="0" max="50"></div>
+                                    <div class="form-group"><label class="form-label">Show Vinyl Spin</label><select class="form-input" id="mpVinylSpin"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                </div>
+                            </div>
+                            <!-- Typography -->
+                            <div class="content-card">
+                                <div class="content-card-header"><h2 class="content-card-title"><i class="fas fa-font"></i> Typography</h2></div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label class="form-label">Title Font Size (px)</label><input type="number" class="form-input" id="mpTitleSize" min="10" max="24"></div>
+                                    <div class="form-group"><label class="form-label">Title Font Weight</label><select class="form-input" id="mpTitleWeight"><option value="400">Normal</option><option value="500">Medium</option><option value="600">Semi Bold</option><option value="700">Bold</option><option value="800">Extra Bold</option></select></div>
+                                    <div class="form-group"><label class="form-label">Title Color</label><input type="color" class="form-input" id="mpTitleColor" style="height:45px;"></div>
+                                    <div class="form-group"><label class="form-label">Artist Font Size (px)</label><input type="number" class="form-input" id="mpArtistSize" min="10" max="20"></div>
+                                    <div class="form-group"><label class="form-label">Artist Color</label><input type="color" class="form-input" id="mpArtistColor" style="height:45px;"></div>
+                                    <div class="form-group"><label class="form-label">Text Alignment</label><select class="form-input" id="mpTextAlign"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></div>
+                                </div>
+                            </div>
+                            <!-- Controls -->
+                            <div class="content-card">
+                                <div class="content-card-header"><h2 class="content-card-title"><i class="fas fa-gamepad"></i> Controls</h2></div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label class="form-label">Show Play/Pause</label><select class="form-input" id="mpShowPlay"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show Previous</label><select class="form-input" id="mpShowPrev"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show Next</label><select class="form-input" id="mpShowNext"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show Shuffle</label><select class="form-input" id="mpShowShuffle"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show Repeat</label><select class="form-input" id="mpShowRepeat"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show Progress Bar</label><select class="form-input" id="mpShowProgress"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show Volume</label><select class="form-input" id="mpShowVolume"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show Favorite</label><select class="form-input" id="mpShowFav"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show Queue</label><select class="form-input" id="mpShowQueue"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show Share</label><select class="form-input" id="mpShowShare"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show AI Toggle</label><select class="form-input" id="mpShowAI"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Button Size (px)</label><input type="number" class="form-input" id="mpBtnSize" min="20" max="60"></div>
+                                    <div class="form-group"><label class="form-label">Button Color</label><input type="color" class="form-input" id="mpBtnColor" style="height:45px;"></div>
+                                    <div class="form-group"><label class="form-label">Button Hover Color</label><input type="color" class="form-input" id="mpBtnHover" style="height:45px;"></div>
+                                    <div class="form-group"><label class="form-label">Play Button Size (px)</label><input type="number" class="form-input" id="mpPlayBtnSize" min="28" max="80"></div>
+                                </div>
+                            </div>
+                            <!-- Progress Bar -->
+                            <div class="content-card">
+                                <div class="content-card-header"><h2 class="content-card-title"><i class="fas fa-wave-square"></i> Progress Bar</h2></div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label class="form-label">Progress Height (px)</label><input type="number" class="form-input" id="mpProgressH" min="2" max="12"></div>
+                                    <div class="form-group"><label class="form-label">Progress Color</label><input type="color" class="form-input" id="mpProgressColor" style="height:45px;"></div>
+                                    <div class="form-group"><label class="form-label">Progress Background</label><input type="color" class="form-input" id="mpProgressBg" style="height:45px;"></div>
+                                    <div class="form-group"><label class="form-label">Show Thumb</label><select class="form-input" id="mpShowThumb"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Thumb Size (px)</label><input type="number" class="form-input" id="mpThumbSize" min="6" max="20"></div>
+                                </div>
+                            </div>
+                            <!-- Behavior -->
+                            <div class="content-card">
+                                <div class="content-card-header"><h2 class="content-card-title"><i class="fas fa-cog"></i> Behavior</h2></div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label class="form-label">Default Position</label><select class="form-input" id="mpPosition"><option value="bottom-center">Bottom Center</option><option value="bottom-right">Bottom Right</option><option value="bottom-left">Bottom Left</option><option value="top-right">Top Right</option><option value="top-left">Top Left</option></select></div>
+                                    <div class="form-group"><label class="form-label">Draggable</label><select class="form-input" id="mpDraggable"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Auto-Minimize on Scroll</label><select class="form-input" id="mpAutoMinimize"><option value="false">No</option><option value="true">Yes</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show on Song Play</label><select class="form-input" id="mpShowOnPlay"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Z-Index</label><input type="number" class="form-input" id="mpZIndex" min="100" max="9999"></div>
+                                    <div class="form-group"><label class="form-label">Animation</label><select class="form-input" id="mpAnimation"><option value="slide-up">Slide Up</option><option value="fade-in">Fade In</option><option value="scale-in">Scale In</option><option value="bounce-in">Bounce In</option><option value="none">None</option></select></div>
+                                </div>
+                            </div>
+                            <!-- Mini Mode -->
+                            <div class="content-card">
+                                <div class="content-card-header"><h2 class="content-card-title"><i class="fas fa-compress"></i> Mini/Collapsed Mode</h2></div>
+                                <div class="form-grid">
+                                    <div class="form-group"><label class="form-label">Mini Width (px)</label><input type="number" class="form-input" id="mpMiniWidth" min="150" max="400"></div>
+                                    <div class="form-group"><label class="form-label">Mini Height (px)</label><input type="number" class="form-input" id="mpMiniHeight" min="40" max="120"></div>
+                                    <div class="form-group"><label class="form-label">Mini Border Radius (px)</label><input type="number" class="form-input" id="mpMiniRadius" min="0" max="40"></div>
+                                    <div class="form-group"><label class="form-label">Mini Background</label><input type="color" class="form-input" id="mpMiniBg" style="height:45px;"></div>
+                                    <div class="form-group"><label class="form-label">Show Artwork in Mini</label><select class="form-input" id="mpMiniShowArt"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show Play in Mini</label><select class="form-input" id="mpMiniShowPlay"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                    <div class="form-group"><label class="form-label">Show Expand Button</label><select class="form-input" id="mpMiniShowExpand"><option value="true">Yes</option><option value="false">No</option></select></div>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="builder-btn primary"><i class="fas fa-save"></i> Save Mini Player Settings</button>
+                                <button type="button" class="builder-btn" onclick="resetMiniPlayerSettings()"><i class="fas fa-undo"></i> Reset to Default</button>
+                            </div>
+                        </form>
                     </div>
 
                     <!-- Preview Page -->

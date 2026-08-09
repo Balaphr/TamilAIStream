@@ -96,6 +96,24 @@ const DataStore = {
     getArtistHits() { return this.get(this.KEYS.ARTIST_HITS) || []; },
     setArtistHits(hits) { this.set(this.KEYS.ARTIST_HITS, hits); },
 
+    getSplash() { return this.get('tamilAIStream_splash') || {}; },
+    setSplash(data) { this.set('tamilAIStream_splash', data); },
+
+    getPlayerPrefs() { return this.get('tamilAIStream_playerPrefs') || {}; },
+    setPlayerPrefs(data) { this.set('tamilAIStream_playerPrefs', data); },
+
+    getNavigation() { return this.get('tamilAIStream_navigation') || {}; },
+    setNavigation(data) { this.set('tamilAIStream_navigation', data); },
+
+    getSectionsOrder() { return this.get('tamilAIStream_sectionsOrder') || []; },
+    setSectionsOrder(data) { this.set('tamilAIStream_sectionsOrder', data); },
+
+    getLayout() { return this.get('websiteLayout') || []; },
+    setLayout(data) { this.set('websiteLayout', data); },
+
+    getMiniPlayerSettings() { return this.get('tamilAIStream_miniPlayerSettings') || {}; },
+    setMiniPlayerSettings(data) { this.set('tamilAIStream_miniPlayerSettings', data); },
+
     // Initialize with defaults
     init() {
         // Songs
