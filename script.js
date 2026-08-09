@@ -707,6 +707,10 @@ async function playSong(song, playlist = []) {
         isStreamPlaying = true;
         updatePlayPauseButton(true);
         updateNowPlayingBar(song.title, `${song.artist} â€¢ ${song.movie}`);
+// Record listening history even in demo mode (songs without an audioUrl)
+        if (typeof ListeningHistory !== 'undefined') {
+            ListeningHistory.trackPlayback(currentPlaybackTrack, 'song');
+        }
     }
 }
 
