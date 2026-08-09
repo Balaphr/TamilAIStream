@@ -20,12 +20,21 @@ function copyVanillaScripts() {
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
         'builder-v2.js', 'builder-v2-auth.js'
       ]
-      const outDir = 'dist'
+      const outDir = resolve('dist')
+      if (!existsSync(outDir)) {
+        mkdirSync(outDir, { recursive: true })
+      }
       vanillaFiles.forEach(file => {
-        const src = resolve(file)
-        const dest = resolve(outDir, file)
-        if (existsSync(src)) {
-          copyFileSync(src, dest)
+        try {
+          const src = resolve(file)
+          const dest = resolve(outDir, file)
+          if (existsSync(src)) {
+            copyFileSync(src, dest)
+          } else {
+            console.warn(`[copy-vanilla-scripts] skipped missing file: ${file}`)
+          }
+        } catch (err) {
+          console.warn(`[copy-vanilla-scripts] failed to copy ${file}: ${err.message}`)
         }
       })
     }
