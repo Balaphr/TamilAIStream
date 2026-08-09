@@ -747,12 +747,15 @@ function resumePlayback() {
 }
 
 function seekPlaybackToPercent(percent) {
-    if (!audioPlayer || Number.isNaN(audioPlayer.duration)) return;
+    if (!audioPlayer) return;
     const derived = Math.max(0, Math.min(1, percent));
-    audioPlayer.currentTime = derived * audioPlayer.duration;
+    const dur = audioPlayer.duration;
+    if (!dur || !isFinite(dur) || dur <= 0) return;
+    audioPlayer.currentTime = derived * dur;
     persistPlaybackState();
     if (typeof YTMusic !== 'undefined') {
         YTMusic.progress = audioPlayer.currentTime;
+        YTMusic.duration = dur;
         YTMusic.updateProgressUI();
     }
     if (typeof MiniAudioPlayer !== 'undefined') {

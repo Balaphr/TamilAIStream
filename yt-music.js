@@ -178,15 +178,17 @@ const YTMusic = {
             let miniDragging = false;
             const miniSeek = (e) => {
                 const rect = miniProgress.getBoundingClientRect();
-                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                if (!rect || rect.width <= 0) return;
+                const clientX = (e.clientX !== undefined) ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
                 this.seekToPercent(pct);
             };
-            miniProgress.addEventListener('click', (e) => miniSeek(e));
+            miniProgress.addEventListener('click', (e) => { e.stopPropagation(); miniSeek(e); });
             miniProgress.addEventListener('mousedown', (e) => { miniDragging = true; miniSeek(e); e.preventDefault(); });
             document.addEventListener('mousemove', (e) => { if (miniDragging) miniSeek(e); });
             document.addEventListener('mouseup', () => { miniDragging = false; });
             miniProgress.addEventListener('touchstart', (e) => { miniDragging = true; miniSeek(e.touches[0]); }, { passive: true });
-            miniProgress.addEventListener('touchmove', (e) => { if (miniDragging) miniSeek(e.touches[0]); }, { passive: true });
+            miniProgress.addEventListener('touchmove', (e) => { if (miniDragging) { e.preventDefault(); miniSeek(e.touches[0]); } }, { passive: false });
             document.addEventListener('touchend', () => { miniDragging = false; });
         }
 
@@ -643,11 +645,14 @@ const YTMusic = {
     },
 
     seekToPercent(percent) {
-        this.progress = percent * this.duration;
+        percent = Math.max(0, Math.min(1, percent));
+        const actualDuration = (typeof audioPlayer !== 'undefined' && audioPlayer && audioPlayer.duration && isFinite(audioPlayer.duration))
+            ? audioPlayer.duration : this.duration;
+        if (!actualDuration || !isFinite(actualDuration) || actualDuration <= 0) return;
+        this.progress = percent * actualDuration;
+        this.duration = actualDuration;
         if (typeof window.seekPlaybackToPercent === 'function') {
             window.seekPlaybackToPercent(percent);
-        } else {
-            window.dispatchEvent(new CustomEvent('ytm:seek', { detail: { time: this.progress } }));
         }
         this.updateProgressUI();
     },
