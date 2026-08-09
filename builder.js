@@ -5069,10 +5069,36 @@ function loadVEDraft() {
 
 function publishVEChanges() {
     if (!confirm('Publish visual editor changes to the live site?')) return;
+    saveVEOverridesForLive();
     saveVEDraft();
     syncToLiveWebsite();
     addVEHistoryEntry('Published to live');
     showToast('Visual editor changes published!', 'success');
+}
+
+function saveVEOverridesForLive() {
+    if (!veIframeDoc) return;
+    const sectionEls = veIframeDoc.querySelectorAll(
+        'section, [data-section], header, nav, footer, main, [class*="section"], .home-section, .site-footer, .top-header'
+    );
+    const meaningful = Array.from(sectionEls).filter(el => el.id || el.getAttribute('data-section') || el.children.length > 0);
+    const sectionStates = meaningful.map(el => {
+        const id = el.getAttribute('data-section') || el.id || '';
+        const hidden = el.style.display === 'none' || el.hidden;
+        const computed = window.getComputedStyle(el);
+        return {
+            id,
+            hidden,
+            display: hidden ? 'none' : '',
+            order: Array.from(el.parentElement.children).indexOf(el)
+        };
+    });
+    const payload = {
+        sectionStates,
+        overrides: veOverrides,
+        timestamp: Date.now()
+    };
+    localStorage.setItem('tamilAIStream_veOverrides', JSON.stringify(payload));
 }
 
 // --- Helpers ---

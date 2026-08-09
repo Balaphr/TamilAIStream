@@ -1578,6 +1578,74 @@ function setupLayoutSync() {
 }
 
 // ============================================
+// Visual Editor Overrides (from Builder Publish)
+// ============================================
+function applyVEOverrides() {
+    try {
+        const raw = localStorage.getItem('tamilAIStream_veOverrides');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (!data || !data.timestamp) return;
+
+        // Apply section visibility and order
+        if (data.sectionStates && data.sectionStates.length) {
+            const mainContent = document.querySelector('main') || document.querySelector('#mainContent') || document.body;
+            const allSections = mainContent.querySelectorAll('[data-section], header, nav, footer, section');
+
+            // First: apply visibility
+            data.sectionStates.forEach(state => {
+                if (!state.id) return;
+                const el = mainContent.querySelector(`[data-section="${state.id}"]`) ||
+                           mainContent.querySelector(`#${state.id}`);
+                if (el) {
+                    el.style.display = state.hidden ? 'none' : '';
+                }
+            });
+
+            // Second: apply order (re-append sections in saved order)
+            const sectionOrder = data.sectionStates.map(s => s.id).filter(Boolean);
+            sectionOrder.forEach(id => {
+                const el = mainContent.querySelector(`[data-section="${id}"]`) ||
+                           mainContent.querySelector(`#${id}`);
+                if (el && el.parentElement) el.parentElement.appendChild(el);
+            });
+        }
+
+        // Apply element style overrides (position, size, etc.)
+        if (data.overrides && typeof data.overrides === 'object') {
+            Object.keys(data.overrides).forEach(selector => {
+                const bpData = data.overrides[selector];
+                if (!bpData || typeof bpData !== 'object') return;
+                Object.keys(bpData).forEach(bp => {
+                    const styles = bpData[bp];
+                    if (!styles || typeof styles !== 'object') return;
+                    let el;
+                    try { el = document.querySelector(selector); } catch(e) {}
+                    if (!el) return;
+                    // Apply only for matching breakpoint
+                    const w = window.innerWidth;
+                    const matchesBp = (bp === 'desktop' && w >= 992) ||
+                                      (bp === 'tablet' && w >= 576 && w < 992) ||
+                                      (bp === 'mobile' && w < 576) ||
+                                      (bp === 'all');
+                    if (!matchesBp) return;
+                    Object.keys(styles).forEach(prop => {
+                        if (prop === 'visibility') el.style.visibility = styles[prop];
+                        else if (prop === 'display') el.style.display = styles[prop];
+                        else if (prop === 'opacity') el.style.opacity = styles[prop];
+                        else el.style[prop] = styles[prop];
+                    });
+                });
+            });
+        }
+
+        console.log('[VE] Applied visual editor overrides from Builder');
+    } catch (err) {
+        console.warn('[VE] Failed to apply overrides:', err);
+    }
+}
+
+// ============================================
 // User Profile Update
 // ============================================
 function updateUserProfile(userData) {
@@ -2365,12 +2433,17 @@ function setupRealtimeSync() {
             console.log('[Sync] Songs updated in another tab');
             handleSongsUpdate();
         }
+        if (e.key === 'tamilAIStream_veOverrides') {
+            console.log('[Sync] VE overrides updated from Builder');
+            applyVEOverrides();
+        }
     });
 
     // Method 2: Listen for custom storage-sync event from Builder
     window.addEventListener('storage-sync', () => {
         console.log('[Sync] Received storage-sync event from Builder');
         handleSongsUpdate();
+        applyVEOverrides();
         // Re-render premium sections on Builder sync
         if (typeof AMPremium !== 'undefined') {
             setTimeout(() => {
@@ -2383,6 +2456,7 @@ function setupRealtimeSync() {
     // Method 2b: Listen for premium-sections-sync event from Builder
     window.addEventListener('premium-sections-sync', () => {
         console.log('[Sync] Received premium-sections-sync event');
+        applyVEOverrides();
         if (typeof AMPremium !== 'undefined') {
             setTimeout(() => {
                 AMPremium.renderAllSections();
@@ -2398,6 +2472,7 @@ function setupRealtimeSync() {
             if (event.data && (event.data.type === 'songs-updated' || event.data.type === 'content-updated')) {
                 console.log('[Sync] Received BroadcastChannel message:', event.data.type);
                 handleSongsUpdate();
+                applyVEOverrides();
                 // Re-render premium sections on any content update
                 if (typeof AMPremium !== 'undefined') {
                     setTimeout(() => {
@@ -2446,6 +2521,7 @@ function startSyncPolling() {
     // Initial count
     const initialSongs = DataStore.getSongs() || [];
     lastKnownSongCount = initialSongs.length;
+    let lastVEOverrideTS = 0;
 
     // Poll every 3 seconds
     syncCheckInterval = setInterval(() => {
@@ -2459,6 +2535,19 @@ function startSyncPolling() {
                 handleSongsUpdate();
                 lastKnownSongCount = currentCount;
             }
+
+            // Check if VE overrides changed
+            try {
+                const raw = localStorage.getItem('tamilAIStream_veOverrides');
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    if (data && data.timestamp && data.timestamp !== lastVEOverrideTS) {
+                        console.log('[Sync] Detected VE override changes via polling');
+                        applyVEOverrides();
+                        lastVEOverrideTS = data.timestamp;
+                    }
+                }
+            } catch (e) { /* ignore */ }
         } catch (e) {
             console.error('[Sync] Polling error:', e);
         }
@@ -2526,6 +2615,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Setup layout sync from builder
     setupLayoutSync();
+    
+    // Apply visual editor overrides from builder
+    applyVEOverrides();
     
     // Setup ticker sync
     setupTickerSync();
