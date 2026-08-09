@@ -1304,16 +1304,6 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 .content-tab {
     padding: 10px 20px; background: var(--bg-glass); border: 1px solid var(--border-glass);
     border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer;
-/* Visual Editor Layout */
-.ve-layout {
-    display: flex;
-    height: 100vh;
-    padding-top: 0;
-}
-.ve-top-toolbar + .ve-layout {
-    padding-top: 56px;
-}
-.ve-left-panel {
     font-size: 0.9rem; font-weight: 500; transition: all var(--transition-base);
 }
 .content-tab:hover { background: var(--bg-glass-hover); color: var(--text-primary); }
