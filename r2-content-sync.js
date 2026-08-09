@@ -106,12 +106,24 @@
             const localValue = localData[key];
 
             if (sharedKeys.includes(key)) {
-                // Shared content: prefer remote (R2), BUT fall back to local when
-                // R2 value is empty (empty array/object) — the built-in defaults
-                // in DataStore are richer than an empty manifest.
-                const remoteIsEmpty = (Array.isArray(remoteValue) && remoteValue.length === 0) ||
-                    (remoteValue && typeof remoteValue === 'object' && !Array.isArray(remoteValue) && Object.keys(remoteValue).length === 0);
-                if (remoteValue !== undefined && remoteValue !== null && !remoteIsEmpty) {
+                // For array keys that contain items with IDs (songs, stations, etc.),
+                // merge by ID so local Builder additions are never lost
+                if (Array.isArray(remoteValue) && Array.isArray(localValue)) {
+                    const mergedMap = new Map();
+                    // Add remote items first
+                    remoteValue.forEach(item => {
+                        if (item && item.id) mergedMap.set(item.id, item);
+                    });
+                    // Add local items - local wins for same ID (Builder is source of truth)
+                    localValue.forEach(item => {
+                        if (item && item.id) mergedMap.set(item.id, item);
+                    });
+                    mergedData[key] = Array.from(mergedMap.values());
+                } else if (Array.isArray(remoteValue) && remoteValue.length > 0) {
+                    mergedData[key] = remoteValue;
+                } else if (Array.isArray(localValue) && localValue.length > 0) {
+                    mergedData[key] = localValue;
+                } else if (remoteValue !== undefined && remoteValue !== null) {
                     mergedData[key] = remoteValue;
                 } else if (localValue !== undefined && localValue !== null) {
                     mergedData[key] = localValue;

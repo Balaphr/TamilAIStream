@@ -1,0 +1,86 @@
+﻿╔════════════════════════════════════════════════════════════════╗
+║           BUILDER → LIVE WEBSITE SYNC - ROOT CAUSE            ║
+╚════════════════════════════════════════════════════════════════╝
+
+ROOT CAUSE IDENTIFIED:
+The synchronization fails because there's no proper cross-tab communication
+mechanism when the R2 sync (/api/manifest) is unavailable.
+
+═══════════════════════════════════════════════════════════════════
+DATA FLOW ANALYSIS
+═══════════════════════════════════════════════════════════════════
+
+BUILDER (builder.js):
+✅ User adds song → songData created with all fields
+✅ songData.id = 'song_' + Date.now() (line 518)
+✅ songData.status = 'published' (line 462)
+✅ DataStore.setSongs(songs) → localStorage['tamilAIStream_songs']
+✅ syncToLiveWebsite() called (line 530)
+
+SYNC ATTEMPT (r2-content-sync.js):
+⚠️  Tries to POST to /api/manifest
+⚠️  /api/manifest endpoint DOES NOT EXIST locally
+⚠️  Upload fails silently (catch block only logs warning)
+⚠️  No fallback to direct localStorage sharing
+
+LIVE WEBSITE (index.html):
+✅ Loads from localStorage via DataStore.getSongs()
+✅ Filters by status === 'published'
+✅ Renders in Recently Added section
+❌ PROBLEM: Never gets notified of new songs from Builder
+
+═══════════════════════════════════════════════════════════════════
+WHY IT FAILS
+═══════════════════════════════════════════════════════════════════
+
+1. CROSS-TAB STORAGE EVENTS:
+   - Builder dispatches: window.dispatchEvent(new Event('storage-sync'))
+   - Live website DOES NOT listen for 'storage-sync' event
+   - Native 'storage' event only fires for OTHER tabs, not same tab
+   - Result: Live website never knows data changed
+
+2. R2 SYNC FAILURE:
+   - uploadManifest() tries POST to /api/manifest
+   - Endpoint doesn't exist (no backend server)
+   - Fails with: "Manifest upload failed with status 404"
+   - Only logged as warning, not shown to user
+   - Result: No R2 manifest created
+
+3. MISSING POLLING MECHANISM:
+   - Live website loads once on page load
+   - Never checks for updates again
+   - No setInterval to poll localStorage
+   - Result: Stale data even if Builder saved correctly
+
+═══════════════════════════════════════════════════════════════════
+SOLUTION
+═══════════════════════════════════════════════════════════════════
+
+Fix the synchronization by implementing a robust cross-tab sync:
+
+1. ADD STORAGE EVENT LISTENER in script.js
+   - Listen for native 'storage' events
+   - Reload songs when tamilAIStream_songs changes
+   - Re-render Recently Added section
+
+2. ADD BROADCAST CHANNEL API (modern browsers)
+   - More reliable than storage events
+   - Works across all tabs/windows
+   - Instant notification of changes
+
+3. ADD POLLING FALLBACK
+   - Check localStorage every 5 seconds
+   - Compare timestamps
+   - Reload if newer data available
+
+4. FIX BUILDER SYNC FEEDBACK
+   - Show clear message when sync succeeds/fails
+   - Don't claim "published" if R2 upload failed
+   - Provide manual refresh option
+
+5. ENSURE SONG ID GENERATION
+   - Already working: songData.id = 'song_' + Date.now()
+   - All required fields present
+   - Status set to 'published'
+
+═══════════════════════════════════════════════════════════════════

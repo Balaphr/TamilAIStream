@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 // Website Builder - localStorage-based
 
@@ -465,15 +465,15 @@ async function saveSong(e) {
     };
 
     try {
-        AIUploadOverlay.update(2, 'Preparing', 'Starting upload…');
+        AIUploadOverlay.update(2, 'Preparing', 'Starting uploadâ€¦');
         showToast('Saving song...', 'info');
 
         const albumFile = document.getElementById('albumImage').files[0];
         if (albumFile) {
-            AIUploadOverlay.update(3, 'Album cover', 'Uploading album cover…');
+            AIUploadOverlay.update(3, 'Album cover', 'Uploading album coverâ€¦');
             try {
                 const albumResult = await R2Uploader.uploadImage(albumFile, 'tamil-ai-stream/albums', (pct) => {
-                    AIUploadOverlay.update(3 + pct * 0.3, 'Album cover', 'Uploading album cover… ' + pct + '%');
+                    AIUploadOverlay.update(3 + pct * 0.3, 'Album cover', 'Uploading album coverâ€¦ ' + pct + '%');
                 });
                 songData.albumCover = albumResult.url;
                 songData.albumPublicId = albumResult.publicId;
@@ -486,10 +486,10 @@ async function saveSong(e) {
 
         const audioFile = document.getElementById('audioFile').files[0];
         if (audioFile) {
-            AIUploadOverlay.update(35, 'Audio', 'Checking audio file…');
+            AIUploadOverlay.update(35, 'Audio', 'Checking audio fileâ€¦');
             try {
                 const audioResult = await R2Uploader.uploadAudio(audioFile, 'tamil-ai-stream/audio', (pct) => {
-                    AIUploadOverlay.update(35 + pct * 0.6, 'Audio', 'Uploading audio… ' + pct + '%');
+                    AIUploadOverlay.update(35 + pct * 0.6, 'Audio', 'Uploading audioâ€¦ ' + pct + '%');
                 });
                 songData.audioUrl = audioResult.url;
                 songData.audioPublicId = audioResult.publicId;
@@ -504,7 +504,7 @@ async function saveSong(e) {
             }
         }
 
-        AIUploadOverlay.update(97, 'Publishing', 'Saving to live website…');
+        AIUploadOverlay.update(97, 'Publishing', 'Saving to live websiteâ€¦');
         showToast('Saving to database...', 'info');
 
         const songs = DataStore.getSongs();
@@ -611,7 +611,7 @@ async function previewSong(songId) {
         const playBtn = document.getElementById('previewPlayPause');
         
         document.getElementById('previewTitle').textContent = song.title || 'Untitled';
-        document.getElementById('previewArtist').textContent = (song.artist || '') + ' • ' + (song.movie || '');
+        document.getElementById('previewArtist').textContent = (song.artist || '') + ' â€¢ ' + (song.movie || '');
         document.getElementById('previewThumb').style.backgroundImage = song.albumCover ? 'url(' + song.albumCover + ')' : '';
         
         playerEl.style.display = 'flex';
@@ -1088,12 +1088,33 @@ async function syncToLiveWebsite() {
             await window.ContentSync.syncCurrentState();
         }
 
+        // Method 1: Dispatch custom event
         window.dispatchEvent(new Event('storage-sync'));
+        
+        // Method 2: Dispatch storage event for cross-tab
+        window.dispatchEvent(new StorageEvent('storage', {
+            key: 'tamilAIStream_songs',
+            newValue: JSON.stringify(DataStore.getSongs()),
+            url: window.location.href
+        }));
+        
+        // Method 3: BroadcastChannel (modern browsers)
+        try {
+            const channel = new BroadcastChannel('tamilAIStream_sync');
+            channel.postMessage({
+                type: 'songs-updated',
+                timestamp: Date.now(),
+                songCount: DataStore.getSongs().length
+            });
+        } catch (e) {
+            console.warn('[Builder] BroadcastChannel not supported');
+        }
+        
+        console.log('[Builder] Sync signals sent successfully');
     } catch (e) {
         console.error('Error syncing to live website:', e);
     }
 }
-
 function saveDraft() {
     showToast('Saving draft...', 'info');
     try {
@@ -1735,7 +1756,7 @@ function initBuilder() {
     // Load dashboard by default
     navigateTo('dashboard');
 
-    console.log('%c🎙️ Tamil AI Stream Admin Panel', 'font-size:20px;font-weight:bold;color:#34d399;');
+    console.log('%cðŸŽ™ï¸ Tamil AI Stream Admin Panel', 'font-size:20px;font-weight:bold;color:#34d399;');
     console.log('%cAdmin Ready - Logged in as: ' + (currentUser?.displayName || currentUser?.email || 'Admin'), 'font-size:12px;color:#6ee7b7;');
 }
 
@@ -2982,7 +3003,7 @@ function renderEditArtistSongsTable(hitId) {
     tableBody.innerHTML = hit.songs.map((song, idx) => `
         <tr>
             <td style="text-align:center;font-weight:bold;">
-                <span class="drag-handle" style="cursor:move;color:#888;margin-right:5px;">≡</span>
+                <span class="drag-handle" style="cursor:move;color:#888;margin-right:5px;">â‰¡</span>
                 ${idx + 1}
             </td>
             <td>${song.title || 'Untitled'}</td>
@@ -3438,7 +3459,7 @@ function openAddMoodModal() {
     modal.className = 'builder-modal-overlay';
     modal.innerHTML = `<div class="builder-modal"><div class="builder-modal-header"><h3>Add Mood</h3><button class="builder-modal-close" onclick="this.closest('.builder-modal-overlay').remove()">&times;</button></div>
         <form onsubmit="return saveMood(event)"><div class="builder-modal-body">
-            <div class="form-group"><label class="form-label">Emoji</label><input type="text" class="form-input" id="moodEmoji" placeholder="🎵" required></div>
+            <div class="form-group"><label class="form-label">Emoji</label><input type="text" class="form-input" id="moodEmoji" placeholder="ðŸŽµ" required></div>
             <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="moodName" required></div>
             <div class="form-group"><label class="form-label">Gradient</label><input type="text" class="form-input" id="moodGradient" placeholder="linear-gradient(135deg,#6366f1,#8b5cf6)"></div>
         </div><div class="builder-modal-footer"><button type="button" class="builder-btn" onclick="this.closest('.builder-modal-overlay').remove()">Cancel</button><button type="submit" class="builder-btn primary">Save</button></div></form></div>`;

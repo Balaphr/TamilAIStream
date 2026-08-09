@@ -975,9 +975,10 @@ body {
    AI Glass Sections - Mobile Responsive
    ============================================ */
 @media (max-width: 640px) {
-    .greeting-card { padding: 20px; }
+    .greeting-card { padding: 20px; flex-direction: column; align-items: flex-start; }
     .greeting-title { font-size: 1.3rem; }
     .greeting-subtitle { font-size: 0.8rem; }
+    .greeting-logo { width: 44px; height: 44px; font-size: 20px; align-self: flex-end; }
     
     .station-glass-card { flex: 0 0 120px; padding: 10px; }
     .station-glass-logo { width: 48px; height: 48px; font-size: 18px; }

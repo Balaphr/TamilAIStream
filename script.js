@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 // ============================================
 // App State
@@ -644,7 +644,7 @@ async function playSong(song, playlist = []) {
             streamConnecting = false;
             persistPlaybackState();
             updatePlayPauseButton(true);
-            updateNowPlayingBar(song.title, `${song.artist} • ${song.movie}`);
+            updateNowPlayingBar(song.title, `${song.artist} â€¢ ${song.movie}`);
             if (typeof YTMusic !== 'undefined') {
                 YTMusic.currentTrack = currentPlaybackTrack;
                 YTMusic.queue = currentPlaybackQueue;
@@ -668,7 +668,7 @@ async function playSong(song, playlist = []) {
         currentStation = song.title;
         isStreamPlaying = true;
         updatePlayPauseButton(true);
-        updateNowPlayingBar(song.title, `${song.artist} • ${song.movie}`);
+        updateNowPlayingBar(song.title, `${song.artist} â€¢ ${song.movie}`);
     }
 }
 
@@ -806,7 +806,7 @@ function togglePlayPause() {
 
 function getStationInfo(stationName) {
     const station = DataStore.getStations().find(s => s.name === stationName);
-    if (station) return { name: station.name, freq: `${station.freq} • ${station.genre || 'Music'}` };
+    if (station) return { name: station.name, freq: `${station.freq} â€¢ ${station.genre || 'Music'}` };
     return { name: stationName, freq: 'FM' };
 }
 
@@ -1144,7 +1144,7 @@ document.querySelectorAll('.nav-icon-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         const icon = this.querySelector('i');
         if (icon.classList.contains('fa-bell')) {
-            showToast('🔔 You have 3 new notifications', 'info');
+            showToast('ðŸ”” You have 3 new notifications', 'info');
         } else if (icon.classList.contains('fa-heart')) {
             this.classList.toggle('active');
             icon.style.color = this.classList.contains('active') ? '#ef4444' : '';
@@ -1247,7 +1247,7 @@ document.querySelectorAll('.station-grid-card').forEach(card => {
         const freq = this.dataset.freq || '';
         const genre = this.querySelector('.sg-genre')?.textContent || '';
         document.querySelector('.now-playing-title').textContent = name;
-        document.querySelector('.now-playing-station').textContent = `${freq} • ${genre}`;
+        document.querySelector('.now-playing-station').textContent = `${freq} â€¢ ${genre}`;
         const thumb = document.querySelector('.now-playing-thumb');
         const logoBg = this.querySelector('.sg-logo')?.style.background || 'linear-gradient(135deg,#0f3b2e,#064e3b)';
         thumb.style.background = logoBg;
@@ -1664,7 +1664,7 @@ function renderFeaturedSliderDynamic() {
                 <div class="slide-info">
                     <span class="slide-badge"><i class="fas fa-signal"></i> Live</span>
                     <h3>${item.title || station.name || 'Station'}</h3>
-                    <p>${item.subtitle || station.freq + ' • ' + station.city || ''}</p>
+                    <p>${item.subtitle || station.freq + ' â€¢ ' + station.city || ''}</p>
                     <span class="slide-listeners"><i class="fas fa-headphones"></i> ${(item.listeners || station.listeners || 0).toLocaleString()} listening</span>
                     <button class="slide-play-btn" onclick="playStation('${station.name || item.title}')"><i class="fas fa-play"></i> Listen Now</button>
                 </div>
@@ -1701,7 +1701,7 @@ function renderTrendingDynamic() {
                 </div>
                 <div class="station-info">
                     <h3>${station.name || 'Station'}</h3>
-                    <p>${station.genre || ''} • ${station.freq || ''}</p>
+                    <p>${station.genre || ''} â€¢ ${station.freq || ''}</p>
                     <span class="station-listeners"><i class="fas fa-headphones"></i> ${((station.listeners || 0) / 1000).toFixed(1)}K</span>
                 </div>
             </div>
@@ -1809,7 +1809,7 @@ function renderArtistHitsDynamic() {
 }
 
 // ============================================
-// Tamil Hits Carousel — Touch/Swipe Support
+// Tamil Hits Carousel â€” Touch/Swipe Support
 // ============================================
 function initTamilHitsCarousel() {
     const grid = document.getElementById('tamilHitsGrid');
@@ -1872,7 +1872,7 @@ function initTamilHitsCarousel() {
         grid.scrollLeft = scrollLeft - walk;
     });
 
-    // Touch handling (mobile) — native scroll is primary, we just prevent page scroll conflict
+    // Touch handling (mobile) â€” native scroll is primary, we just prevent page scroll conflict
     let touchStartX = 0;
     let touchStartY = 0;
     let isHorizontalSwipe = null;
@@ -1933,7 +1933,7 @@ function renderAllStationsDynamic() {
                 </div>
                 <div class="sg-card-body">
                     <h3 class="sg-name">${station.name}</h3>
-                    <p class="sg-genre">${station.genre} • ${station.city || 'Chennai'}</p>
+                    <p class="sg-genre">${station.genre} â€¢ ${station.city || 'Chennai'}</p>
                     <div class="sg-meta">
                         <span class="sg-listeners"><i class="fas fa-headphones"></i> ${((station.listeners || 0) / 1000).toFixed(1)}K</span>
                         <span class="sg-rating"><i class="fas fa-star"></i> 4.${Math.floor(Math.random() * 9) + 1}</span>
@@ -1994,7 +1994,7 @@ function renderAIRecommendedDynamic() {
             </div>
             <div class="station-info">
                 <h3>${station.name}</h3>
-                <p>${station.genre} • ${station.freq}</p>
+                <p>${station.genre} â€¢ ${station.freq}</p>
                 <span class="station-listeners"><i class="fas fa-headphones"></i> ${((station.listeners || 0) / 1000).toFixed(1)}K</span>
             </div>
         </div>
@@ -2044,7 +2044,7 @@ function renderGreetingSection() {
     let greeting, emoji;
     if (hour < 12) { greeting = 'Good Morning'; emoji = '☀️'; }
     else if (hour < 17) { greeting = 'Good Afternoon'; emoji = '🌤️'; }
-    else if (hour < 21) { greeting = 'Good Evening'; emoji = '🌅'; }
+    else if (hour < 21) { greeting = 'Good Evening'; emoji = '🌙'; }
     else { greeting = 'Good Night'; emoji = '🌙'; }
     
     const quotes = DataStore.getQuotes().filter(q => q.status === 'active');
@@ -2057,6 +2057,9 @@ function renderGreetingSection() {
                 <h1 class="greeting-title">Welcome to Tamil AI Stream <span class="greeting-wave">${emoji}</span></h1>
                 <p class="greeting-subtitle">Discover the best of Tamil music, powered by AI</p>
                 ${quote ? `<div class="greeting-quote">"${quote}"</div>` : ''}
+            </div>
+            <div class="greeting-logo">
+                <i class="fas fa-headphones-alt"></i>
             </div>
         </div>
     `;
@@ -2169,14 +2172,22 @@ function renderAllDynamicContent() {
     loadSongs(true).then(songs => {
         displaySongs(songs);
         renderTickerItems(songs);
+        renderRecentlyAdded(songs);
+        
+        // Update songs count
+        const countEl = document.getElementById('songsCount');
+        if (countEl) countEl.textContent = songs.length + ' songs';
     });
 }
 
 // ============================================
-// Real-time Sync - Listen for DataStore Changes
+// Enhanced Cross-Tab Sync - Builder ↔ Live Website
 // ============================================
+let lastKnownSongCount = 0;
+let syncCheckInterval = null;
+
 function setupRealtimeSync() {
-    // Listen for any data change from builder
+    // Listen for DataStore changes (same window)
     DataStore.on('change', (event) => {
         console.log('[Realtime] Data changed:', event.keyName);
         
@@ -2208,10 +2219,7 @@ function setupRealtimeSync() {
                 applySiteSettings();
                 break;
             case 'SONGS':
-                loadSongs(true).then(songs => {
-                    displaySongs(songs);
-                    renderTickerItems(songs);
-                });
+                handleSongsUpdate();
                 break;
             case 'LAYOUT':
                 setupLayoutSync();
@@ -2220,26 +2228,88 @@ function setupRealtimeSync() {
                 renderAllStationsDynamic();
                 renderFeaturedSliderDynamic();
                 renderTrendingDynamic();
-                renderArtistHitsDynamic();
-                initTamilHitsCarousel();
-                break;
-            case 'PLAYLISTS':
-                // Reload playlist-related content
-                break;
-            case 'LIKED_SONGS':
-                // Reload liked songs
-                break;
-            case 'SETTINGS':
-                // Reload YT Music settings
-                break;
-            case 'NAVIGATION':
-                // Navigation visibility changes require page reload
-                break;
-            case 'SECTIONS_ORDER':
-                // Section order changes require page reload
+                renderAIRecommendedDynamic();
                 break;
         }
     });
+
+    // Method 1: Listen for native storage events (cross-tab)
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'tamilAIStream_songs') {
+            console.log('[Sync] Songs updated in another tab');
+            handleSongsUpdate();
+        }
+    });
+
+    // Method 2: Listen for custom storage-sync event from Builder
+    window.addEventListener('storage-sync', () => {
+        console.log('[Sync] Received storage-sync event from Builder');
+        handleSongsUpdate();
+    });
+
+    // Method 3: BroadcastChannel (modern browsers)
+    try {
+        const channel = new BroadcastChannel('tamilAIStream_sync');
+        channel.onmessage = (event) => {
+            if (event.data && event.data.type === 'songs-updated') {
+                console.log('[Sync] Received BroadcastChannel message');
+                handleSongsUpdate();
+            }
+        };
+        window._syncChannel = channel;
+    } catch (e) {
+        console.warn('[Sync] BroadcastChannel not supported, using fallback');
+    }
+
+    // Method 4: Polling fallback (checks every 3 seconds)
+    startSyncPolling();
+}
+
+function handleSongsUpdate() {
+    loadSongs(true).then(songs => {
+        displaySongs(songs);
+        renderTickerItems(songs);
+        
+        // Update songs count
+        const countEl = document.getElementById('songsCount');
+        if (countEl) countEl.textContent = songs.length + ' songs';
+        
+        // Update Recently Added section
+        const publishedSongs = songs.filter(s => s.status === 'published');
+        if (publishedSongs.length > 0) {
+            renderRecentlyAdded(songs);
+        }
+    });
+}
+
+function startSyncPolling() {
+    // Initial count
+    const initialSongs = DataStore.getSongs() || [];
+    lastKnownSongCount = initialSongs.length;
+
+    // Poll every 3 seconds
+    syncCheckInterval = setInterval(() => {
+        try {
+            const currentSongs = DataStore.getSongs() || [];
+            const currentCount = currentSongs.length;
+            
+            // Check if songs count changed
+            if (currentCount !== lastKnownSongCount) {
+                console.log('[Sync] Detected song changes via polling');
+                handleSongsUpdate();
+                lastKnownSongCount = currentCount;
+            }
+        } catch (e) {
+            console.error('[Sync] Polling error:', e);
+        }
+    }, 3000);
+}
+
+function stopSyncPolling() {
+    if (syncCheckInterval) {
+        clearInterval(syncCheckInterval);
+        syncCheckInterval = null;
+    }
 }
 
 // ============================================
@@ -2314,7 +2384,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         filterStations();
     }, 200);
     
-    console.log('%c🎙️ Tamil AI Stream', 'font-size:24px;font-weight:bold;color:#34d399;');
+    console.log('%cðŸŽ™ï¸ Tamil AI Stream', 'font-size:24px;font-weight:bold;color:#34d399;');
     console.log('%cHome Page Loaded with Real-time Sync', 'font-size:14px;color:#6ee7b7;');
     console.log('%cVersion 3.0.0 - YouTube Music Features', 'font-size:12px;color:#a7f3d0;');
     
@@ -2330,7 +2400,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 YTMusic.currentTrack = {
                     id: station.id,
                     title: station.name,
-                    artist: station.freq + ' • ' + station.genre,
+                    artist: station.freq + ' â€¢ ' + station.genre,
                     thumbnail: station.thumbnail || '',
                     streamUrl: station.streamUrl
                 };
@@ -2536,15 +2606,17 @@ function renderRecentlyAdded(songs) {
 }
 
 function initRecentlyAdded() {
-    if (recentlyAddedInitialized) return;
-    recentlyAddedInitialized = true;
-
+    // Always load and render songs (allows updates when new songs added via Builder)
     loadSongs(true).then(songs => {
         renderRecentlyAdded(songs);
     });
 
     const viewport = document.getElementById('recentlyAddedViewport');
     if (!viewport) return;
+
+    // Only add event listeners once (prevents duplicates)
+    if (recentlyAddedInitialized) return;
+    recentlyAddedInitialized = true;
 
     // Desktop: hover pauses marquee (handled via CSS :hover)
     // But also support JS for reliability
@@ -2588,6 +2660,12 @@ function setupRecentlyAddedSync() {
         if (event.keyName === 'SONGS') {
             loadSongs(true).then(songs => {
                 renderRecentlyAdded(songs);
+                displaySongs(songs);
+                renderTickerItems(songs);
+                
+                // Update songs count
+                const countEl = document.getElementById('songsCount');
+                if (countEl) countEl.textContent = songs.length + ' songs';
             });
         }
     });
@@ -2605,6 +2683,7 @@ if (typeof window !== 'undefined') {
     window.playStation = playStation;
     window.playTickerSong = playTickerSong;
 }
+
 
 
 
