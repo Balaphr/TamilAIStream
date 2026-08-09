@@ -460,6 +460,7 @@ function initAudioPlayer() {
             persistPlaybackState();
             updatePlayPauseButton(true);
             showLiveStatus(true);
+            updateStationCardStates(true);
             hideLoadingSpinner();
             if (typeof YTMusic !== 'undefined') {
                 YTMusic.isPlaying = true;
@@ -467,17 +468,24 @@ function initAudioPlayer() {
                 YTMusic.updateFullscreenPlayerUI();
                 YTMusic.updateMiniPlayerUI();
             }
+            if (typeof MiniAudioPlayer !== 'undefined') {
+                MiniAudioPlayer.syncPlayingUI();
+            }
         });
         audioPlayer.addEventListener('pause', () => {
             isStreamPlaying = false;
             persistPlaybackState();
             updatePlayPauseButton(false);
             showLiveStatus(false);
+            updateStationCardStates(false);
             if (typeof YTMusic !== 'undefined') {
                 YTMusic.isPlaying = false;
                 YTMusic.updatePlayerUI();
                 YTMusic.updateFullscreenPlayerUI();
                 YTMusic.updateMiniPlayerUI();
+            }
+            if (typeof MiniAudioPlayer !== 'undefined') {
+                MiniAudioPlayer.syncPausedUI();
             }
         });
         audioPlayer.addEventListener('timeupdate', () => {
@@ -559,6 +567,17 @@ function playStation(stationName) {
     currentPlaybackTrack = null;
     currentPlaylist = [];
     currentSongIndex = -1;
+    
+    // Clear all station card active states before starting new station
+    document.querySelectorAll('.station-card, .station-grid-card, .slide-card').forEach(card => {
+        card.classList.remove('active-station', 'playing-station');
+        const playIcon = card.querySelector('.slide-play-btn, .sg-play-btn, .station-play-overlay i');
+        if (playIcon) playIcon.className = 'fas fa-play';
+    });
+    document.querySelectorAll('.slide-play-btn').forEach(btn => {
+        btn.classList.remove('wave-active', 'pulse-active');
+    });
+    
     let streamUrl = getStationStreamUrl(stationName);
     if (!streamUrl || streamUrl.trim() === '') {
         hideLoadingSpinner();
@@ -594,6 +613,7 @@ function playStation(stationName) {
                 };
                 const stationInfo = getStationInfo(stationName);
                 updateNowPlayingBar(stationInfo.name, stationInfo.freq);
+                updateStationCardStates(true);
                 if (typeof YTMusic !== 'undefined') {
                     YTMusic.currentTrack = currentPlaybackTrack;
                     YTMusic.isPlaying = true;
@@ -800,6 +820,14 @@ function pauseStation() {
         isStreamPlaying = false;
         updatePlayPauseButton(false);
         showLiveStatus(false);
+        updateStationCardStates(false);
+        if (typeof YTMusic !== 'undefined') {
+            YTMusic.isPlaying = false;
+            YTMusic.updatePlayerUI();
+        }
+        if (typeof MiniAudioPlayer !== 'undefined') {
+            MiniAudioPlayer.syncPausedUI();
+        }
         showToast('Playback paused', 'info');
     }
 }
@@ -883,9 +911,12 @@ function updateNowPlayingBar(title, station) {
 }
 
 function showLiveStatus(isLive) {
-    const liveBadges = document.querySelectorAll('.sg-live-badge, .slide-badge');
-    liveBadges.forEach(badge => {
-        if (isLive) {
+    // Only affect the LIVE badge on the currently active station card
+    document.querySelectorAll('.sg-live-badge, .slide-badge').forEach(badge => {
+        const card = badge.closest('.station-card, .station-grid-card, .slide-card');
+        if (!card) return;
+        const cardName = card.querySelector('h3, h4')?.textContent || '';
+        if (cardName === currentStation && isLive) {
             badge.style.background = 'rgba(16, 185, 129, 0.2)';
             badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
             badge.style.color = '#34d399';
@@ -893,6 +924,20 @@ function showLiveStatus(isLive) {
             badge.style.background = 'rgba(239, 68, 68, 0.15)';
             badge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
             badge.style.color = '#f87171';
+        }
+    });
+}
+
+function updateStationCardStates(playing) {
+    // Update play/pause icon on station cards to reflect actual state
+    document.querySelectorAll('.station-card, .station-grid-card, .slide-card').forEach(card => {
+        const cardName = card.querySelector('h3, h4')?.textContent || '';
+        const playBtn = card.querySelector('.slide-play-btn, .sg-play-btn, .station-play-overlay i');
+        if (!playBtn) return;
+        if (cardName === currentStation && playing) {
+            playBtn.className = 'fas fa-pause';
+        } else {
+            playBtn.className = 'fas fa-play';
         }
     });
 }
@@ -2084,9 +2129,6 @@ function renderGreetingSection() {
                 <h1 class="greeting-title">Welcome to Tamil AI Stream <span class="greeting-wave">${emoji}</span></h1>
                 <p class="greeting-subtitle">Discover the best of Tamil music, powered by AI</p>
                 ${quote ? `<div class="greeting-quote">"${quote}"</div>` : ''}
-            </div>
-            <div class="greeting-logo">
-                <i class="fas fa-headphones-alt"></i>
             </div>
         </div>
     `;

@@ -697,34 +697,39 @@ const MiniAudioPlayer = (() => {
        Play / Pause / Next / Prev helpers
        ============================================ */
     function togglePlayPause() {
-        const wasPlaying = typeof isStreamPlaying !== 'undefined' ? isStreamPlaying : (typeof PlayerEngine !== 'undefined' && PlayerEngine.isPlaying);
-        const hasGlobalToggle = typeof window.togglePlayPause === 'function' && window.togglePlayPause !== togglePlayPause;
-        if (hasGlobalToggle) {
-            window.togglePlayPause();
-        } else if (typeof window.togglePlay === 'function') {
-            window.togglePlay();
-        } else if (typeof isStreamPlaying !== 'undefined' && typeof pausePlayback === 'function') {
-            if (isStreamPlaying) {
-                pausePlayback();
-            } else if (typeof resumePlayback === 'function') {
-                resumePlayback();
-            }
-        } else if (typeof PlayerEngine !== 'undefined' && typeof PlayerEngine.togglePlay === 'function') {
-            PlayerEngine.togglePlay();
-        }
+        // Check actual audio state first
+        const audioPlaying = typeof audioPlayer !== 'undefined' && audioPlayer && !audioPlayer.paused;
+        const enginePlaying = typeof PlayerEngine !== 'undefined' && PlayerEngine.isPlaying;
+        const wasPlaying = audioPlaying || enginePlaying;
+
         if (wasPlaying) {
+            // Pause: use the appropriate pause function
+            if (typeof window.pausePlayback === 'function') {
+                window.pausePlayback();
+            } else if (typeof window.pauseStation === 'function') {
+                window.pauseStation();
+            } else if (typeof PlayerEngine !== 'undefined' && typeof PlayerEngine.pause === 'function') {
+                PlayerEngine.pause();
+            }
             syncPausedUI();
         } else {
+            // Resume: use the appropriate resume function
+            if (typeof window.resumePlayback === 'function') {
+                window.resumePlayback();
+            } else if (typeof window.togglePlayPause === 'function' && window.togglePlayPause !== togglePlayPause) {
+                window.togglePlayPause();
+            } else if (typeof PlayerEngine !== 'undefined' && typeof PlayerEngine.play === 'function') {
+                PlayerEngine.play();
+            }
             syncPlayingUI();
         }
+
+        // Re-sync after a short delay to catch async state changes
         setTimeout(() => {
-            if (typeof audioPlayer !== 'undefined' && audioPlayer && audioPlayer.src) {
-                if (!audioPlayer.paused) syncPlayingUI(); else syncPausedUI();
-            } else {
-                const playing = typeof isStreamPlaying !== 'undefined' ? isStreamPlaying : (typeof PlayerEngine !== 'undefined' && PlayerEngine.isPlaying);
-                if (playing) syncPlayingUI(); else syncPausedUI();
-            }
-        }, 800);
+            const nowPlaying = (typeof audioPlayer !== 'undefined' && audioPlayer && !audioPlayer.paused) ||
+                               (typeof PlayerEngine !== 'undefined' && PlayerEngine.isPlaying);
+            if (nowPlaying) syncPlayingUI(); else syncPausedUI();
+        }, 500);
     }
 
     function playNextTrack() {
