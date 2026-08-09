@@ -1093,6 +1093,34 @@
                     </div>
 
                     <!-- Visual Editor Page -->
+                    <!-- Builder V2 Enhanced Top Toolbar -->
+                    <div class="ve-top-toolbar">
+                        <div class="ve-toolbar-left">
+                            <button class="ve-toolbar-btn" id="veUndoBtn2" title="Undo (Ctrl+Z)"><i class="fas fa-rotate-left"></i></button>
+                            <button class="ve-toolbar-btn" id="veRedoBtn2" title="Redo (Ctrl+Y)"><i class="fas fa-rotate-right"></i></button>
+                            <div class="ve-toolbar-divider"></div>
+                            <button class="ve-toolbar-btn" id="veSaveDraft2" title="Save Draft (Ctrl+S)"><i class="fas fa-save"></i> Save Draft</button>
+                            <button class="ve-toolbar-btn primary" id="vePreviewBtn" title="Preview Changes"><i class="fas fa-eye"></i> Preview</button>
+                            <button class="ve-toolbar-btn success" id="vePublishBtn2" title="Publish to Live Site"><i class="fas fa-rocket"></i> Publish</button>
+                        </div>
+                        <div class="ve-toolbar-center">
+                            <div class="ve-device-selector">
+                                <button class="ve-device-btn active" data-ve-device="desktop" title="Desktop"><i class="fas fa-desktop"></i></button>
+                                <button class="ve-device-btn" data-ve-device="tablet" title="Tablet"><i class="fas fa-tablet-alt"></i></button>
+                                <button class="ve-device-btn" data-ve-device="mobile" title="Mobile"><i class="fas fa-mobile-alt"></i></button>
+                            </div>
+                        </div>
+                        <div class="ve-toolbar-right">
+                            <div class="ve-publish-status" id="vePublishStatus">
+                                <span class="ve-status-badge draft">DRAFT</span>
+                                <span class="ve-status-text">Last saved: Never</span>
+                            </div>
+                            <button class="ve-toolbar-btn" id="veResetBtn" title="Reset to Default"><i class="fas fa-undo"></i> Reset</button>
+                            <button class="ve-toolbar-btn" id="veLogoutBtn" title="Logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                        </div>
+                    </div>
+
+
                     <div class="builder-page" id="visualeditorPage" style="display:none;">
                         <div class="ve-layout">
                             <!-- Left Panel: Layers + Components -->
@@ -1394,7 +1422,29 @@
         </main>
     </div>
 
-    <!-- Add Song Modal -->
+    <!-- Preview Modal -->
+    <div class="ve-preview-modal" id="vePreviewModal" style="display: none;">
+        <div class="ve-preview-modal-header">
+            <h2>Live Preview</h2>
+            <button class="ve-preview-close" id="veClosePreview">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ve-preview-modal-content">
+            <iframe id="vePreviewModalIframe" src="index.html"></iframe>
+        </div>
+        <div class="ve-preview-modal-footer">
+            <button class="ve-btn-secondary" id="veClosePreviewBtn">Close</button>
+            <button class="ve-btn-primary" id="vePublishFromPreview">
+                <i class="fas fa-rocket"></i> Publish Changes
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="ve-toast-container" id="veToastContainer"></div>
+
+        <!-- Add Song Modal -->
     <div class="modal" id="addSongModal" style="display:none;">
         <div class="modal-overlay" onclick="closeAddSongModal()"></div>
         <div class="modal-content">
@@ -1567,3 +1617,5 @@
     <script src="builder.js"></script>
 </body>
 </html>
+
+

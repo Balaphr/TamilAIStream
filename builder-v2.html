@@ -10,6 +10,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="builder-v2.css">
 </head>
+    <!-- Auth Check -->
+    <script src="builder-v2-auth.js"></script>
+    <script>
+        if (!BuilderV2Auth.checkAuth()) {
+            window.location.href = 'builder-v2-login.html';
+        }
+    </script>
+
 <body>
     <!-- Top Toolbar -->
     <div class="builder-toolbar">
@@ -51,6 +59,9 @@
             </div>
             <button class="toolbar-btn" id="resetBtn" title="Reset to Default">
                 <i class="fas fa-undo"></i> Reset
+            </button>
+            <button class="toolbar-btn" id="logoutBtn" title="Logout">
+                <i class="fas fa-sign-out-alt"></i> Logout
             </button>
         </div>
     </div>
@@ -112,7 +123,7 @@
             <div class="preview-canvas" id="previewCanvas">
                 <div class="preview-frame" id="previewFrame">
                     <!-- Live website iframe will be injected here -->
-                    <iframe id="previewIframe" src="../index.html"></iframe>
+                    <iframe id="previewIframe" src="index.html"></iframe>
                     
                     <!-- Element Overlay for Selection -->
                     <div class="element-overlay" id="elementOverlay"></div>

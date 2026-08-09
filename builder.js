@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 // Website Builder - localStorage-based
 
@@ -469,15 +469,15 @@ async function saveSong(e) {
     };
 
     try {
-        AIUploadOverlay.update(2, 'Preparing', 'Starting uploadâ€¦');
+        AIUploadOverlay.update(2, 'Preparing', 'Starting upload…');
         showToast('Saving song...', 'info');
 
         const albumFile = document.getElementById('albumImage').files[0];
         if (albumFile) {
-            AIUploadOverlay.update(3, 'Album cover', 'Uploading album coverâ€¦');
+            AIUploadOverlay.update(3, 'Album cover', 'Uploading album cover…');
             try {
                 const albumResult = await R2Uploader.uploadImage(albumFile, 'tamil-ai-stream/albums', (pct) => {
-                    AIUploadOverlay.update(3 + pct * 0.3, 'Album cover', 'Uploading album coverâ€¦ ' + pct + '%');
+                    AIUploadOverlay.update(3 + pct * 0.3, 'Album cover', 'Uploading album cover… ' + pct + '%');
                 });
                 songData.albumCover = albumResult.url;
                 songData.albumPublicId = albumResult.publicId;
@@ -490,10 +490,10 @@ async function saveSong(e) {
 
         const audioFile = document.getElementById('audioFile').files[0];
         if (audioFile) {
-            AIUploadOverlay.update(35, 'Audio', 'Checking audio fileâ€¦');
+            AIUploadOverlay.update(35, 'Audio', 'Checking audio file…');
             try {
                 const audioResult = await R2Uploader.uploadAudio(audioFile, 'tamil-ai-stream/audio', (pct) => {
-                    AIUploadOverlay.update(35 + pct * 0.6, 'Audio', 'Uploading audioâ€¦ ' + pct + '%');
+                    AIUploadOverlay.update(35 + pct * 0.6, 'Audio', 'Uploading audio… ' + pct + '%');
                 });
                 songData.audioUrl = audioResult.url;
                 songData.audioPublicId = audioResult.publicId;
@@ -508,7 +508,7 @@ async function saveSong(e) {
             }
         }
 
-        AIUploadOverlay.update(97, 'Publishing', 'Saving to live websiteâ€¦');
+        AIUploadOverlay.update(97, 'Publishing', 'Saving to live website…');
         showToast('Saving to database...', 'info');
 
         const songs = DataStore.getSongs();
@@ -615,7 +615,7 @@ async function previewSong(songId) {
         const playBtn = document.getElementById('previewPlayPause');
         
         document.getElementById('previewTitle').textContent = song.title || 'Untitled';
-        document.getElementById('previewArtist').textContent = (song.artist || '') + ' â€¢ ' + (song.movie || '');
+        document.getElementById('previewArtist').textContent = (song.artist || '') + ' • ' + (song.movie || '');
         document.getElementById('previewThumb').style.backgroundImage = song.albumCover ? 'url(' + song.albumCover + ')' : '';
         
         playerEl.style.display = 'flex';
@@ -1094,14 +1094,14 @@ async function syncToLiveWebsite() {
 
         // Method 1: Dispatch custom event
         window.dispatchEvent(new Event('storage-sync'));
-        
+
         // Method 2: Dispatch storage event for cross-tab
         window.dispatchEvent(new StorageEvent('storage', {
             key: 'tamilAIStream_songs',
             newValue: JSON.stringify(DataStore.getSongs()),
             url: window.location.href
         }));
-        
+
         // Method 3: BroadcastChannel (modern browsers)
         try {
             const channel = new BroadcastChannel('tamilAIStream_sync');
@@ -1115,13 +1115,33 @@ async function syncToLiveWebsite() {
         } catch (e) {
             console.warn('[Builder] BroadcastChannel not supported');
         }
-        
+
         // Method 4: Dispatch premium section re-render event
         window.dispatchEvent(new CustomEvent('premium-sections-sync', {
             detail: { timestamp: Date.now() }
         }));
-        
+
         console.log('[Builder] Sync signals sent successfully');
+
+        // Refresh preview iframe to show latest content
+        const previewIframe = document.getElementById('previewFrame');
+        if (previewIframe && previewIframe.src) {
+            const currentSrc = previewIframe.src;
+            previewIframe.src = 'about:blank';
+            setTimeout(() => {
+                previewIframe.src = currentSrc;
+            }, 200);
+        }
+
+        // Also refresh visual editor iframe if active
+        const veIframe = document.getElementById('veFrame');
+        if (veIframe && veIframe.src) {
+            const currentSrc = veIframe.src;
+            veIframe.src = 'about:blank';
+            setTimeout(() => {
+                veIframe.src = currentSrc;
+            }, 200);
+        }
     } catch (e) {
         console.error('Error syncing to live website:', e);
     }
@@ -1690,10 +1710,10 @@ function initBuilder() {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            
+
             const device = this.dataset.device;
             const frame = document.getElementById('previewFrame');
-            
+
             switch(device) {
                 case 'desktop':
                     frame.style.width = '100%';
@@ -1710,6 +1730,16 @@ function initBuilder() {
                     frame.style.height = '812px';
                     frame.style.margin = '0 auto';
                     break;
+            }
+
+            // Reload iframe to ensure fresh content rendered for the selected device viewport
+            const iframe = document.getElementById('previewFrame');
+            if (iframe && iframe.src) {
+                const currentSrc = iframe.src;
+                iframe.src = 'about:blank';
+                setTimeout(() => {
+                    iframe.src = currentSrc;
+                }, 100);
             }
         });
     });
@@ -1770,7 +1800,7 @@ function initBuilder() {
     // Load dashboard by default
     navigateTo('dashboard');
 
-    console.log('%cðŸŽ™ï¸ Tamil AI Stream Admin Panel', 'font-size:20px;font-weight:bold;color:#34d399;');
+    console.log('%c🎙️ Tamil AI Stream Admin Panel', 'font-size:20px;font-weight:bold;color:#34d399;');
     console.log('%cAdmin Ready - Logged in as: ' + (currentUser?.displayName || currentUser?.email || 'Admin'), 'font-size:12px;color:#6ee7b7;');
 }
 
@@ -3017,7 +3047,7 @@ function renderEditArtistSongsTable(hitId) {
     tableBody.innerHTML = hit.songs.map((song, idx) => `
         <tr>
             <td style="text-align:center;font-weight:bold;">
-                <span class="drag-handle" style="cursor:move;color:#888;margin-right:5px;">â‰¡</span>
+                <span class="drag-handle" style="cursor:move;color:#888;margin-right:5px;">≡</span>
                 ${idx + 1}
             </td>
             <td>${song.title || 'Untitled'}</td>
@@ -3473,7 +3503,7 @@ function openAddMoodModal() {
     modal.className = 'builder-modal-overlay';
     modal.innerHTML = `<div class="builder-modal"><div class="builder-modal-header"><h3>Add Mood</h3><button class="builder-modal-close" onclick="this.closest('.builder-modal-overlay').remove()">&times;</button></div>
         <form onsubmit="return saveMood(event)"><div class="builder-modal-body">
-            <div class="form-group"><label class="form-label">Emoji</label><input type="text" class="form-input" id="moodEmoji" placeholder="ðŸŽµ" required></div>
+            <div class="form-group"><label class="form-label">Emoji</label><input type="text" class="form-input" id="moodEmoji" placeholder="🎵" required></div>
             <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="moodName" required></div>
             <div class="form-group"><label class="form-label">Gradient</label><input type="text" class="form-input" id="moodGradient" placeholder="linear-gradient(135deg,#6366f1,#8b5cf6)"></div>
         </div><div class="builder-modal-footer"><button type="button" class="builder-btn" onclick="this.closest('.builder-modal-overlay').remove()">Cancel</button><button type="submit" class="builder-btn primary">Save</button></div></form></div>`;
@@ -3926,7 +3956,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ============================================
-// Visual Editor — Comprehensive Implementation
+// Visual Editor � Comprehensive Implementation
 // ============================================
 let veInitialized = false;
 let veIframe = null;
@@ -3959,6 +3989,28 @@ let veGuidesEnabled = true;
 let veSnapThreshold = 5;
 let veElementCount = 0;
 
+function initVisualEditor() {
+    if (veInitialized) {
+        if (veIframe && veIframeDoc) scanIframeElements();
+        return;
+    }
+    veInitialized = true;
+
+    veIframe = document.getElementById('veFrame');
+    if (!veIframe) return;
+
+    veIframe.addEventListener('load', onVEIframeLoad);
+
+    if (veIframe.contentDocument && veIframe.contentDocument.body) {
+        onVEIframeLoad();
+    } else {
+        setTimeout(onVEIframeLoad, 1000);
+    }
+
+    bindVisualEditorEvents();
+    loadVEDraft();
+    initV2Enhancements();
+}
 function initVisualEditor() {
     if (veInitialized) {
         // Re-scan if revisited
@@ -4096,6 +4148,14 @@ function setVEDevice(device) {
     veIframe.style.maxWidth = '100%';
     wrapper.style.justifyContent = device === 'desktop' ? 'stretch' : 'center';
     if (label) label.textContent = labels[device] || device;
+
+    // Reload iframe to ensure fresh content rendered for the selected device viewport
+    const currentSrc = veIframe.src;
+    veIframe.src = 'about:blank';
+    setTimeout(() => {
+        veIframe.src = currentSrc;
+    }, 100);
+
     updateVEStatusBar();
 }
 
@@ -4739,6 +4799,31 @@ function showVEProperties(selector) {
             <div class="ve-props-label">Spacing</div>
             <div class="ve-prop-row"><label>Margin</label><input type="text" value="${getVal('margin', computed.margin)}" onchange="veSetProp('margin', this.value)"></div>
             <div class="ve-prop-row"><label>Padding</label><input type="text" value="${getVal('padding', computed.padding)}" onchange="veSetProp('padding', this.value)"></div>
+            <div class="ve-prop-row"><label>Margin Top</label><input type="text" value="${getVal('marginTop', computed.marginTop)}" onchange="veSetProp('marginTop', this.value)"></div>
+            <div class="ve-prop-row"><label>Margin Right</label><input type="text" value="${getVal('marginRight', computed.marginRight)}" onchange="veSetProp('marginRight', this.value)"></div>
+            <div class="ve-prop-row"><label>Margin Bottom</label><input type="text" value="${getVal('marginBottom', computed.marginBottom)}" onchange="veSetProp('marginBottom', this.value)"></div>
+            <div class="ve-prop-row"><label>Margin Left</label><input type="text" value="${getVal('marginLeft', computed.marginLeft)}" onchange="veSetProp('marginLeft', this.value)"></div>
+            <div class="ve-prop-row"><label>Padding Top</label><input type="text" value="${getVal('paddingTop', computed.paddingTop)}" onchange="veSetProp('paddingTop', this.value)"></div>
+            <div class="ve-prop-row"><label>Padding Right</label><input type="text" value="${getVal('paddingRight', computed.paddingRight)}" onchange="veSetProp('paddingRight', this.value)"></div>
+            <div class="ve-prop-row"><label>Padding Bottom</label><input type="text" value="${getVal('paddingBottom', computed.paddingBottom)}" onchange="veSetProp('paddingBottom', this.value)"></div>
+            <div class="ve-prop-row"><label>Padding Left</label><input type="text" value="${getVal('paddingLeft', computed.paddingLeft)}" onchange="veSetProp('paddingLeft', this.value)"></div>
+        </div>
+        <div class="ve-props-section">
+            <div class="ve-props-label">Size</div>
+            <div class="ve-prop-row"><label>Box Sizing</label><select onchange="veSetProp('boxSizing', this.value)">
+                ${['content-box','border-box'].map(v => '<option value="'+v+'" '+(computed.boxSizing===v?'selected':'')+'>'+v+'</option>').join('')}
+            </select></div>
+            <div class="ve-prop-row"><label>Width</label><input type="text" value="${getVal('width', computed.width)}" onchange="veSetProp('width', this.value)"></div>
+            <div class="ve-prop-row"><label>Height</label><input type="text" value="${getVal('height', computed.height)}" onchange="veSetProp('height', this.value)"></div>
+            <div class="ve-prop-row"><label>Min W</label><input type="text" value="${getVal('minWidth', computed.minWidth)}" onchange="veSetProp('minWidth', this.value)"></div>
+            <div class="ve-prop-row"><label>Max W</label><input type="text" value="${getVal('maxWidth', computed.maxWidth)}" onchange="veSetProp('maxWidth', this.value)"></div>
+            <div class="ve-prop-row"><label>Min H</label><input type="text" value="${getVal('minHeight', computed.minHeight)}" onchange="veSetProp('minHeight', this.value)"></div>
+            <div class="ve-prop-row"><label>Max H</label><input type="text" value="${getVal('maxHeight', computed.maxHeight)}" onchange="veSetProp('maxHeight', this.value)"></div>
+        </div>
+        <div class="ve-props-section">
+            <div class="ve-props-label">Spacing</div>
+            <div class="ve-prop-row"><label>Margin</label><input type="text" value="${getVal('margin', computed.margin)}" onchange="veSetProp('margin', this.value)"></div>
+            <div class="ve-prop-row"><label>Padding</label><input type="text" value="${getVal('padding', computed.padding)}" onchange="veSetProp('padding', this.value)"></div>
         </div>
 
         <div class="ve-props-section">
@@ -4813,6 +4898,69 @@ function veSetProp(prop, value) {
         veOverrides[veSelectedSelector][bp][prop] = value;
     }
     updateVEOverlay();
+    updateVEOverlay();
+}
+
+// Builder V2 Enhanced Properties
+function enhanceVEProperties() {
+    const propsBody = document.getElementById('vePropsBody');
+    if (!propsBody || !veSelectedElement) return;
+
+    const el = veSelectedElement;
+    const computed = veIframeDoc.defaultView.getComputedStyle(el);
+    const tag = el.tagName.toLowerCase();
+    const id = el.id || '';
+    const cls = (typeof el.className === 'string' ? el.className : '').trim();
+    const text = el.textContent?.trim().substring(0, 100) || '';
+
+    const bp = veCurrentBreakpoint;
+    const key = veSelectedSelector;
+    if (!veOverrides[key]) veOverrides[key] = {};
+    const ov = veOverrides[key][bp] || {};
+    const getVal = (prop, fallback) => ov[prop] !== undefined ? ov[prop] : fallback;
+
+    propsBody.innerHTML = `
+        <div class="ve-props-section">
+            <div class="ve-props-label">Element Info</div>
+            <div class="ve-props-info">
+                <span class="ve-tag">${tag}</span> ${id ? '<span class="ve-id">#' + id + '</span>' : ''}
+                <div class="ve-classes">${cls || 'no classes'}</div>
+                ${text ? '<div class="ve-text-preview">"' + text.substring(0, 50) + '..."</div>' : ''}
+            </div>
+        </div>
+
+        <div class="ve-props-section">
+            <div class="ve-props-label">Content</div>
+            <div class="ve-prop-row"><label>Text</label><input type="text" value="${escapeVEAttr(el.textContent?.trim() || '')}" onchange="veSetProp('text', this.value)"></div>
+            ${tag === 'img' ? `<div class="ve-prop-row"><label>Src</label><input type="text" value="${escapeVEAttr(el.src || '')}" onchange="veSetProp('src', this.value)"></div>
+            <div class="ve-prop-row"><label>Alt</label><input type="text" value="${escapeVEAttr(el.alt || '')}" onchange="veSetProp('alt', this.value)"></div>` : ''}
+            ${tag === 'a' ? `<div class="ve-prop-row"><label>Href</label><input type="text" value="${escapeVEAttr(el.href || '')}" onchange="veSetProp('href', this.value)"></div>` : ''}
+        </div>
+
+        <div class="ve-props-section">
+            <div class="ve-props-label">Dimensions</div>
+            <div class="ve-prop-row"><label>Width</label><input type="text" value="${getVal('width', computed.width)}" onchange="veSetProp('width', this.value)"></div>
+            <div class="ve-prop-row"><label>Height</label><input type="text" value="${getVal('height', computed.height)}" onchange="veSetProp('height', this.value)"></div>
+            <div class="ve-prop-row"><label>Min W</label><input type="text" value="${getVal('minWidth', computed.minWidth)}" onchange="veSetProp('minWidth', this.value)"></div>
+            <div class="ve-prop-row"><label>Max W</label><input type="text" value="${getVal('maxWidth', computed.maxWidth)}" onchange="veSetProp('maxWidth', this.value)"></div>
+        </div>
+
+        <div class="ve-props-section">
+            <div class="ve-props-label">Typography</div>
+            <div class="ve-prop-row"><label>Font Size</label><input type="text" value="${getVal('fontSize', computed.fontSize)}" onchange="veSetProp('fontSize', this.value)"></div>
+            <div class="ve-prop-row"><label>Font Weight</label><select onchange="veSetProp('fontWeight', this.value)">
+                ${[100,200,300,400,500,600,700,800,900].map(w => '<option value="'+w+'" '+(computed.fontWeight==w?'selected':'')+'>'+w+'</option>').join('')}
+            </select></div>
+            <div class="ve-prop-row"><label>Font Family</label><select onchange="veSetProp('fontFamily', this.value)">
+                ${['','system-ui, sans-serif','serif','monospace','cursive'].map(f => '<option value="'+f+'" '+(computed.fontFamily===f?'selected':'')+'>'+(f||'Default')+'</option>').join('')}
+            </select></div>
+            <div class="ve-prop-row"><label>Color</label><div class="ve-color-wrap"><input type="color" value="${veRgbToHex(computed.color)}" onchange="veSetProp('color', this.value)"><input type="text" value="${veRgbToHex(computed.color)}" onchange="this.previousElementSibling.value=this.value;veSetProp('color',this.value)"></div></div>
+            <div class="ve-prop-row"><label>Text Align</label><select onchange="veSetProp('textAlign', this.value)">
+                ${['left','center','right','justify'].map(v => '<option value="'+v+'" '+(computed.textAlign===v?'selected':'')+'>'+v+'</option>').join('')}
+            </select></div>
+        </div>
+    `;
+}
 }
 
 // --- Element actions ---
@@ -5167,6 +5315,18 @@ function saveMiniPlayerSettings(e) {
         return el ? el.value : '';
     };
     const getNum = (id) => parseFloat(get(id)) || 0;
+    window.resetMiniPlayerSettings = resetMiniPlayerSettings;
+    window.resetMiniPlayerSettings = resetMiniPlayerSettings;
+}
+
+// Builder V2 Enhanced Functions
+
+function veRgbToHex(rgb) {
+    if (!rgb || rgb === 'transparent') return '#000000';
+    const result = rgb.match(/\d+/g);
+    if (!result || result.length < 3) return '#000000';
+    return '#' + result.slice(0,3).map(x => parseInt(x).toString(16).padStart(2,'0')).join('');
+}
     const getBool = (id) => get(id) === 'true';
 
     const settings = {
@@ -5230,5 +5390,38 @@ if (typeof window !== 'undefined') {
     window.loadMiniPlayerSettings = loadMiniPlayerSettings;
     window.saveMiniPlayerSettings = saveMiniPlayerSettings;
     window.resetMiniPlayerSettings = resetMiniPlayerSettings;
+    window.initV2Enhancements = initV2Enhancements;
+    window.showVEToast = showVEToast;
+    window.openVEPreview = openVEPreview;
+    window.closeVEPreview = closeVEPreview;
 }
-
+// Export functions for global access
+if (typeof window !== 'undefined') {
+    window.signInWithEmail = signInWithEmail;
+    window.signUpWithEmail = signUpWithEmail;
+    window.signInWithGoogle = signInWithGoogle;
+    window.signInAsGuest = signInAsGuest;
+    window.signOut = signOut;
+    window.openEditArtistSongsModal = openEditArtistSongsModal;
+    window.switchArtistSongTab = switchArtistSongTab;
+    window.addSongToArtistCollection = addSongToArtistCollection;
+    window.saveArtistSongs = saveArtistSongs;
+    window.removeSongFromArtistCollection = removeSongFromArtistCollection;
+    window.saveMiniPlayerSettings = saveMiniPlayerSettings;
+    window.resetMiniPlayerSettings = resetMiniPlayerSettings;
+    window.editArtistSongInCollection = editArtistSongInCollection;
+    window.initVisualEditor = initVisualEditor;
+    window.veSelectTreeItem = veSelectTreeItem;
+    window.veSelectSection = veSelectSection;
+    window.veSetProp = veSetProp;
+    window.veApplyHTMLEdit = veApplyHTMLEdit;
+    window.veToggleSectionVisibility = veToggleSectionVisibility;
+    window.veDuplicateSection = veDuplicateSection;
+    window.veMoveSection = veMoveSection;
+    window.veEditSectionHTML = veEditSectionHTML;
+    window.veDeleteSection = veDeleteSection;
+    window.handleSectionAction = handleSectionAction;
+    window.loadMiniPlayerSettings = loadMiniPlayerSettings;
+    window.saveMiniPlayerSettings = saveMiniPlayerSettings;
+    window.resetMiniPlayerSettings = resetMiniPlayerSettings;
+    window.resetMiniPlayerSettings = resetMiniPlayerSettings;

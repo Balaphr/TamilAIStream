@@ -1,0 +1,162 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Builder V2 Login - Tamil AI Stream</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="builder-v2.css">
+</head>
+<body>
+    <div class="builder-v2-login-screen">
+        <div class="builder-v2-login-card">
+            <div class="builder-v2-login-logo">
+                <div class="logo-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+                <h1>Builder V2</h1>
+                <span>Visual Website Builder</span>
+            </div>
+            <div class="builder-v2-login-tabs">
+                <button class="builder-v2-login-tab active" data-tab="signin">Sign In</button>
+                <button class="builder-v2-login-tab" data-tab="signup">Sign Up</button>
+            </div>
+            <form class="builder-v2-login-form" id="signinForm">
+                <div class="error-message" id="signinError">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Invalid email or password</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="signinEmail" placeholder="builder@tamilaistream.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="signinPassword" placeholder="Enter password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-full-width" id="signinBtn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Sign In</span>
+                </button>
+                <div class="demo-credentials">
+                    <h4><i class="fas fa-info-circle"></i> Demo Credentials</h4>
+                    <p><strong>Email:</strong> builder@tamilaistream.com</p>
+                    <p><strong>Password:</strong> Builder@123</p>
+                </div>
+            </form>
+            <form class="builder-v2-login-form" id="signupForm" style="display: none;">
+                <div class="success-message" id="signupSuccess">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Account created successfully!</span>
+                </div>
+                <div class="error-message" id="signupError">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Error creating account</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Display Name</label>
+                    <input type="text" class="form-input" id="signupName" placeholder="Your name" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="signupEmail" placeholder="your@email.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="signupPassword" placeholder="Min 6 characters" required minlength="6" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" class="form-input" id="signupConfirm" placeholder="Confirm password" required autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn-full-width" id="signupBtn">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Create Account</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    <script src="builder-v2-auth.js"></script>
+    <script>
+        document.querySelectorAll(".builder-v2-login-tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                document.querySelectorAll(".builder-v2-login-tab").forEach(t => t.classList.remove("active"));
+                tab.classList.add("active");
+                const tabName = tab.dataset.tab;
+                if (tabName === "signin") {
+                    document.getElementById("signinForm").style.display = "flex";
+                    document.getElementById("signupForm").style.display = "none";
+                } else {
+                    document.getElementById("signinForm").style.display = "none";
+                    document.getElementById("signupForm").style.display = "flex";
+                }
+            });
+        });
+        document.getElementById("signinForm")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("signinEmail").value.trim();
+            const password = document.getElementById("signinPassword").value;
+            const errorEl = document.getElementById("signinError");
+            const btn = document.getElementById("signinBtn");
+            btn.disabled = true;
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Signing in...";
+            errorEl.classList.remove("show");
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const session = BuilderV2Auth.login(email, password);
+            if (session) {
+                showToast("Login successful! Redirecting...", "success");
+                setTimeout(() => { window.location.href = "builder-v2.html"; }, 1000);
+            } else {
+                errorEl.classList.add("show");
+                btn.disabled = false;
+                btn.innerHTML = "<i class='fas fa-sign-in-alt'></i> <span>Sign In</span>";
+            }
+        });
+        document.getElementById("signupForm")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const displayName = document.getElementById("signupName").value.trim();
+            const email = document.getElementById("signupEmail").value.trim();
+            const password = document.getElementById("signupPassword").value;
+            const confirmPassword = document.getElementById("signupConfirm").value;
+            const errorEl = document.getElementById("signupError");
+            const successEl = document.getElementById("signupSuccess");
+            const btn = document.getElementById("signupBtn");
+            if (password !== confirmPassword) {
+                errorEl.querySelector("span").textContent = "Passwords do not match";
+                errorEl.classList.add("show"); return;
+            }
+            if (password.length < 6) {
+                errorEl.querySelector("span").textContent = "Password must be at least 6 characters";
+                errorEl.classList.add("show"); return;
+            }
+            btn.disabled = true;
+            btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Creating account...";
+            errorEl.classList.remove("show"); successEl.classList.remove("show");
+            await new Promise(resolve => setTimeout(resolve, 800));
+            const result = BuilderV2Auth.signup(displayName, email, password);
+            if (result.success) {
+                successEl.classList.add("show");
+                showToast("Account created! Redirecting...", "success");
+                setTimeout(() => { window.location.href = "builder-v2.html"; }, 1500);
+            } else {
+                errorEl.querySelector("span").textContent = result.message || "Error creating account";
+                errorEl.classList.add("show");
+                btn.disabled = false;
+                btn.innerHTML = "<i class='fas fa-user-plus'></i> <span>Create Account</span>";
+            }
+        });
+        function showToast(message, type) {
+            const toast = document.createElement("div");
+            const bg = type === "success" ? "rgba(16,185,129,0.95)" : "rgba(99,102,241,0.95)";
+            toast.style.cssText = "position:fixed;top:20px;right:20px;padding:16px 24px;background:"+bg+";color:white;border-radius:8px;font-family:Inter,sans-serif;font-size:.9rem;font-weight:500;z-index:99999;animation:slideInRight .3s ease-out;box-shadow:0 8px 24px rgba(0,0,0,0.3);";
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = "slideInRight .3s ease-out reverse";
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

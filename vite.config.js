@@ -17,7 +17,8 @@ function copyVanillaScripts() {
         'ai-autofill.js',
         'yt-music.js', 'script.js', 'mini-audio-player.js',
         'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
-        'login.js', 'profile.js', 'dashboard.js'
+        'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
+        'builder-v2.js', 'builder-v2-auth.js'
       ]
       const outDir = 'dist'
       vanillaFiles.forEach(file => {
@@ -42,6 +43,8 @@ export default defineConfig({
         main: 'index.html',
         login: 'login.html',
         builder: 'builder.html',
+        'builder-v2': 'builder-v2.html',
+        'builder-v2-login': 'builder-v2-login.html',
         playlist: 'playlist.html',
         profile: 'profile.html',
         admin: 'admin.html',

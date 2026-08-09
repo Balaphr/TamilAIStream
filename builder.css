@@ -906,6 +906,327 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 
 @keyframes slideUp { from { transform: translate(-50%,20px); opacity: 0; } to { transform: translate(-50%,0); opacity: 1; } }
 
+/* Preview Modal */
+.ve-preview-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+}
+.ve-preview-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-glass);
+}
+.ve-preview-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+.ve-preview-close:hover {
+    background: var(--bg-glass-hover);
+    color: var(--text-primary);
+}
+.ve-preview-modal-content {
+    flex: 1;
+    padding: 24px;
+    overflow: hidden;
+}
+.ve-preview-modal-content iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: var(--radius-lg);
+    background: white;
+}
+.ve-preview-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-glass);
+}
+.ve-btn-secondary, .ve-btn-primary {
+    padding: 10px 24px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all var(--transition-fast);
+    border: none;
+}
+.ve-btn-secondary {
+    background: var(--bg-glass-hover);
+    color: var(--text-primary);
+    border: 1px solid var(--border-glass);
+}
+.ve-btn-primary {
+/* Property Panel Enhancements */
+.ve-props-section {
+    border-bottom: 1px solid var(--border-glass);
+    padding: 12px 16px;
+}
+.ve-props-section:last-child {
+    border-bottom: none;
+}
+.ve-props-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+.ve-prop-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.ve-prop-row label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+.ve-prop-row input[type="text"],
+.ve-prop-row input[type="number"],
+.ve-prop-row select {
+    width: 120px;
+    padding: 4px 8px;
+    background: var(--bg-glass);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 12px;
+}
+.ve-prop-row input[type="color"] {
+    width: 32px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+.ve-color-wrap {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.ve-color-wrap input[type="text"] {
+    width: 80px;
+}
+.ve-tag {
+    display: inline-block;
+    background: var(--emerald-600);
+    color: white;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 8px;
+}
+.ve-id {
+    color: var(--emerald-400);
+    font-weight: 500;
+}
+.ve-classes {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+.ve-text-preview {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-style: italic;
+}
+.ve-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+.ve-empty-state i {
+    font-size: 32px;
+    margin-bottom: 12px;
+    display: block;
+}
+.ve-empty-state p {
+    font-size: 13px;
+}
+
+/* Scrollbar */
+.ve-right-panel::-webkit-scrollbar {
+    width: 6px;
+}
+.ve-right-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+.ve-right-panel::-webkit-scrollbar-thumb {
+    background: var(--border-glass);
+    border-radius: 3px;
+}
+.ve-right-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.15);
+}
+    background: var(--emerald-600);
+    color: white;
+}
+
+/* Toast Notifications */
+.ve-toast-container {
+    position: fixed;
+    top: 72px;
+    right: 24px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ve-toast {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    min-width: 300px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideInRight 0.3s ease-out;
+}
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+.ve-toast.success { border-left: 3px solid var(--emerald-400); }
+.ve-toast.error { border-left: 3px solid #ef4444; }
+.ve-toast.warning { border-left: 3px solid #f59e0b; }
+.ve-toast.info { border-left: 3px solid var(--emerald-400); }
+.toast-icon { font-size: 18px; }
+.toast-content { flex: 1; }
+.toast-title { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+.toast-message { font-size: 12px; color: var(--text-muted); }
+/* ============================================
+   Builder V2 Enhanced Styles
+   ============================================ */
+
+/* Top Toolbar */
+.ve-top-toolbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-glass);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 10000;
+}
+.ve-toolbar-left, .ve-toolbar-center, .ve-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ve-toolbar-btn {
+    background: transparent;
+    border: 1px solid var(--border-glass);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all var(--transition-fast);
+}
+.ve-toolbar-btn:hover {
+    background: var(--bg-glass-hover);
+    border-color: var(--emerald-400);
+}
+.ve-toolbar-btn.primary {
+    background: var(--gradient-brand);
+    border-color: transparent;
+}
+.ve-toolbar-btn.success {
+    background: var(--emerald-600);
+    border-color: transparent;
+}
+.ve-toolbar-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-glass);
+    margin: 0 8px;
+}
+.ve-device-selector {
+    display: flex;
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    padding: 4px;
+    gap: 4px;
+}
+.ve-device-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 14px;
+}
+.ve-device-btn.active {
+    background: var(--emerald-600);
+    color: white;
+}
+.ve-publish-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ve-status-badge {
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.ve-status-badge.draft {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+.ve-status-badge.published {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--emerald-400);
+}
+.ve-status-text {
+    font-size: 12px;
+    color: var(--text-muted);
+}
 /* ============================================
    Song Preview Player
    ============================================ */
@@ -983,6 +1304,16 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 .content-tab {
     padding: 10px 20px; background: var(--bg-glass); border: 1px solid var(--border-glass);
     border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer;
+/* Visual Editor Layout */
+.ve-layout {
+    display: flex;
+    height: 100vh;
+    padding-top: 0;
+}
+.ve-top-toolbar + .ve-layout {
+    padding-top: 56px;
+}
+.ve-left-panel {
     font-size: 0.9rem; font-weight: 500; transition: all var(--transition-base);
 }
 .content-tab:hover { background: var(--bg-glass-hover); color: var(--text-primary); }

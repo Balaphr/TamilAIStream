@@ -20,8 +20,35 @@ class VisualBuilder {
         this.init();
     }
 
+    initIframe() {
+        this.iframe = document.getElementById('previewIframe');
+        if (!this.iframe) return;
+
+        this.iframe.addEventListener('load', () => {
+            try {
+                this.iframeDoc = this.iframe.contentDocument || this.iframe.contentWindow?.document;
+                if (this.iframeDoc && this.iframeDoc.body) {
+                    this.applySectionVisibility();
+                    console.log('Preview iframe loaded and ready');
+                }
+            } catch (err) {
+                console.warn('[Builder] iframe access error, retrying:', err);
+                setTimeout(() => this.initIframe(), 1000);
+            }
+        });
+
+        // Handle already-loaded iframe (cached)
+        if (this.iframe.contentDocument && this.iframe.contentDocument.body) {
+            this.iframeDoc = this.iframe.contentDocument || this.iframe.contentWindow?.document;
+            this.applySectionVisibility();
+        } else {
+            setTimeout(() => this.initIframe(), 1000);
+        }
+    }
+
     init() {
-        console.log('🎨 Visual Builder initializing...');
+        console.log('Visual Builder initializing...');
+        this.initIframe();
         this.bindEvents();
         this.loadDraft();
         this.renderElementTree();
@@ -38,6 +65,7 @@ class VisualBuilder {
         document.getElementById('previewBtn')?.addEventListener('click', () => this.openPreview());
         document.getElementById('publishBtn')?.addEventListener('click', () => this.publish());
         document.getElementById('resetBtn')?.addEventListener('click', () => this.resetToDefault());
+        document.getElementById('logoutBtn')?.addEventListener('click', () => this.logout());
 
         // Device selector
         document.querySelectorAll('.device-btn').forEach(btn => {
@@ -428,14 +456,24 @@ class VisualBuilder {
         this.config.builder.published = new Date().toISOString();
         this.isModified = false;
         this.updatePublishStatus();
-        
+
         this.showToast('success', 'Published!', 'Changes are now live on the website');
-        
+
         // Trigger storage event for live site to update
         window.dispatchEvent(new StorageEvent('storage', {
             key: 'siteConfig',
             newValue: JSON.stringify(this.config)
         }));
+
+        // Reload preview iframe to show latest published content
+        const iframe = document.getElementById('previewIframe');
+        if (iframe && iframe.src) {
+            const currentSrc = iframe.src;
+            iframe.src = 'about:blank';
+            setTimeout(() => {
+                iframe.src = currentSrc;
+            }, 100);
+        }
     }
 
     resetToDefault() {
@@ -443,9 +481,19 @@ class VisualBuilder {
 
         localStorage.removeItem('builderDraft');
         localStorage.removeItem('siteConfig');
-        
+
         this.showToast('warning', 'Reset Complete', 'All changes have been reset to default');
         location.reload();
+    }
+
+    logout() {
+        if (!confirm('Are you sure you want to logout?')) return;
+
+        BuilderV2Auth.logout();
+        this.showToast('info', 'Logged Out', 'You have been logged out successfully');
+        setTimeout(() => {
+            window.location.href = 'builder-v2-login.html';
+        }, 800);
     }
 
     updatePublishStatus() {
@@ -474,13 +522,23 @@ class VisualBuilder {
     // ============================================
     setDevice(device) {
         this.currentDevice = device;
-        
+
         document.querySelectorAll('.device-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.device === device);
         });
 
         const frame = document.getElementById('previewFrame');
         frame.className = 'preview-frame ' + device;
+
+        // Reload iframe to ensure fresh content for the selected device viewport
+        const iframe = document.getElementById('previewIframe');
+        if (iframe && iframe.src) {
+            const currentSrc = iframe.src;
+            iframe.src = 'about:blank';
+            setTimeout(() => {
+                iframe.src = currentSrc;
+            }, 50);
+        }
 
         this.showToast('info', 'Device Changed', `Previewing as ${device}`);
     }
