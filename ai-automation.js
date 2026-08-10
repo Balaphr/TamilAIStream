@@ -474,9 +474,9 @@ const AIAutomation = (() => {
     function runPublishChecks(dataStore) {
         const issues = [];
 
-        const songs = dataStore.getSONGS ? dataStore.getSONGS() : (dataStore.songs || []);
-        const stations = dataStore.getSTATIONS ? dataStore.getSTATIONS() : (dataStore.stations || []);
-        const images = dataStore.getIMAGES ? dataStore.getIMAGES() : (dataStore.images || []);
+        const songs = dataStore.getSongs ? dataStore.getSongs() : (dataStore.songs || []);
+        const stations = dataStore.getStations ? dataStore.getStations() : (dataStore.stations || []);
+        const images = dataStore.getImages ? dataStore.getImages() : (dataStore.images || []);
 
         for (const song of songs) {
             if (!song.id) issues.push({ type: 'error', category: 'Songs', message: `Song missing ID: ${song.title || 'Unknown'}` });
@@ -524,7 +524,7 @@ const AIAutomation = (() => {
             }
         }
 
-        const siteSettings = dataStore.getSITESettings ? dataStore.getSITESettings() : (dataStore.siteSettings || {});
+        const siteSettings = dataStore.getSiteSettings ? dataStore.getSiteSettings() : (dataStore.siteSettings || {});
         if (!siteSettings.title) issues.push({ type: 'warning', category: 'Settings', message: 'Site title not configured' });
         if (!siteSettings.description) issues.push({ type: 'info', category: 'Settings', message: 'Site description not set' });
 
@@ -559,7 +559,7 @@ const AIAutomation = (() => {
 
         if (lower.includes('add') && lower.includes('recently')) {
             const songName = extractSongName(command);
-            const songs = dataStore.getSONGS ? dataStore.getSONGS() : [];
+            const songs = dataStore.getSongs ? dataStore.getSongs() : [];
             const song = songs.find(s => s.title && s.title.toLowerCase().includes(songName.toLowerCase()));
             if (song) {
                 result.actions.push({ type: 'add-to-section', song, section: 'recently-added' });
@@ -569,7 +569,7 @@ const AIAutomation = (() => {
             }
         } else if (lower.includes('create') && lower.includes('playlist')) {
             const playlistName = extractPlaylistName(command);
-            const songs = dataStore.getSONGS ? dataStore.getSONGS() : [];
+            const songs = dataStore.getSongs ? dataStore.getSongs() : [];
             const matched = generatePlaylistFromDescription(command, songs);
             if (matched.length > 0) {
                 result.actions.push({ type: 'create-playlist', name: playlistName, songs: matched });
@@ -598,7 +598,7 @@ const AIAutomation = (() => {
             }
         } else if (lower.includes('duplicate') || lower.includes('duplicate')) {
             const songName = extractSongName(command);
-            const songs = dataStore.getSONGS ? dataStore.getSONGS() : [];
+            const songs = dataStore.getSongs ? dataStore.getSongs() : [];
             const dupes = [];
             for (const song of songs) {
                 for (const other of songs) {
@@ -618,7 +618,7 @@ const AIAutomation = (() => {
             result.response = 'Audio seek fix applied. The mini player and full player now use the correct audio element for seeking.';
         } else if (lower.includes('create') && lower.includes('playlist')) {
             const name = extractPlaylistName(command);
-            const songs = dataStore.getSONGS ? dataStore.getSONGS() : [];
+            const songs = dataStore.getSongs ? dataStore.getSongs() : [];
             const matched = generatePlaylistFromDescription(command, songs);
             result.actions.push({ type: 'create-playlist', name, songs: matched });
             result.response = `Created playlist "${name}" with ${matched.length} songs.`;
