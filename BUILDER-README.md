@@ -27,7 +27,7 @@ This is a comprehensive visual website control system that allows complete contr
    - Listens for configuration changes
    - Updates DOM in real-time
 
-4. **builder-v2.html/css/js** - Visual builder interface
+4. **builder.html/css/js** - Visual builder interface
    - Visual element selector
    - Property controls for all CSS properties
    - Live preview with device simulation
@@ -222,7 +222,7 @@ Each section can be independently controlled:
 ```
 ┌─────────────┐
 │ Builder UI  │
-│ (builder-v2)│
+│ (builder)   │
 └──────┬──────┘
        │
        │ Save/Publish
@@ -254,7 +254,7 @@ Each section can be independently controlled:
 
 ### Starting the Builder
 
-1. Open `builder-v2.html` in a browser
+1. Open `builder.html` in a browser
 2. The builder loads with the current configuration
 3. Click any element in the preview to select it
 4. Modify properties in the right panel
@@ -486,12 +486,12 @@ The builder uses a real-time sync system:
 ```
 Tamil-AI-FM-main/
 ├── index.html              # Live website
-├── builder-v2.html         # Visual builder interface
+├── builder.html            # Visual builder interface
 ├── site-config.js          # Complete configuration schema
 ├── data-store.js           # Data management
 ├── site-integration.js     # Live site integration
-├── builder-v2.css          # Builder styling
-├── builder-v2.js           # Builder logic
+├── builder.css             # Builder styling
+├── builder.js              # Builder logic
 ├── style.css               # Website styles
 ├── script.js               # Website logic
 ├── ... (other files)
@@ -523,7 +523,7 @@ For issues or questions:
 
 ## 🎉 Getting Started
 
-1. Open `builder-v2.html` in your browser
+1. Open `builder.html` in your browser
 2. Browse the element tree on the left
 3. Click an element in the preview
 4. Edit properties on the right

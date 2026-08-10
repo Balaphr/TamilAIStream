@@ -30,7 +30,7 @@ A **complete visual website control system** that provides full control over eve
   - Real-time updates via storage events
 - **Non-Intrusive**: Doesn't modify existing functionality
 
-### 4. **Visual Builder** (`builder-v2.html/css/js`)
+### 4. **Visual Builder** (`builder.html/css/js`)
 - **Purpose**: Visual interface for controlling the website
 - **Features**:
   - **Visual Element Selector**: Click any element to select it
@@ -207,7 +207,7 @@ A **complete visual website control system** that provides full control over eve
 ```
 ┌─────────────────┐
 │   Builder UI    │
-│  (builder-v2)   │
+│  (builder)    │
 └────────┬────────┘
          │
          │ 1. User edits element
@@ -338,9 +338,9 @@ A **complete visual website control system** that provides full control over eve
 
 **New Files:**
 1. `site-config.js` (11.5 KB) - Configuration schema
-2. `builder-v2.html` (29.6 KB) - Builder interface
-3. `builder-v2.css` (20.4 KB) - Builder styling
-4. `builder-v2.js` (28.1 KB) - Builder logic
+2. `builder.html` - Builder interface
+3. `builder.css` - Builder styling
+4. `builder.js` - Builder logic
 5. `site-integration.js` (5.5 KB) - Live site integration
 6. `app-init.js` (3.2 KB) - Master initialization
 7. `BUILDER-README.md` (12.3 KB) - Documentation
@@ -372,7 +372,7 @@ A **complete visual website control system** that provides full control over eve
 
 1. **Open Builder**
    ```
-   Navigate to: builder-v2.html
+   Navigate to: builder.html
    ```
 
 2. **Select Element**
@@ -410,13 +410,13 @@ A **complete visual website control system** that provides full control over eve
 
 2. **Add Custom Properties**
    ```javascript
-   // In builder-v2.js
+// In builder.js
    bindInput('customProperty', 'customCSSProperty');
    ```
 
 3. **Extend Builder UI**
    ```html
-   <!-- In builder-v2.html -->
+   <!-- In builder.html -->
    <div class="property-control">
      <label>Custom Property</label>
      <input type="text" class="property-input" id="customProperty">
@@ -550,7 +550,7 @@ The Visual Website Builder transforms the Tamil AI Stream website into a **fully
 
 ## 📞 Next Steps
 
-1. **Open builder-v2.html** to start using
+1. **Open builder.html** to start using
 2. **Read BUILDER-QUICKSTART.md** for fast onboarding
 3. **Refer to BUILDER-README.md** for detailed docs
 4. **Experiment** with the visual editor

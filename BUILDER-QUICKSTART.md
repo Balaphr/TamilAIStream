@@ -4,7 +4,7 @@
 
 ### 1. Open the Builder
 ```
-Open builder-v2.html in your web browser
+Open builder.html in your web browser
 ```
 
 ### 2. Understand the Interface
@@ -125,4 +125,4 @@ Click [Publish] button
 
 ---
 
-**Ready to build?** Open `builder-v2.html` and start creating!
+**Ready to build?** Open `builder.html` and start creating!

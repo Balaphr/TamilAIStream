@@ -4,6 +4,7 @@
     const DEFAULT_MANIFEST_VERSION = 1;
     const SYNC_LOCK_KEY = 'tamilAIStream_syncLock';
     const SYNC_LOCK_TIMEOUT = 10000; // 10 seconds
+    const SYNC_EVENT = 'tamilAIStream-content-synced';
 
     function readLocalStorage(key, fallback = null) {
         try {
@@ -22,6 +23,30 @@
         }
     }
 
+    // Safely invoke an optional DataStore getter. Never throws.
+    function safeGet(getter, fallback) {
+        try {
+            if (typeof getter === 'function') {
+                const value = getter();
+                return value === undefined || value === null ? fallback : value;
+            }
+        } catch (error) {
+            // fall through to fallback
+        }
+        return fallback;
+    }
+
+    // Determine whether the current page is a WRITER (Builder/Admin) or a
+    // READER (live site). Writers push changes to R2; readers only consume.
+    function isWriterPage() {
+        try {
+            const path = global.location?.pathname || global.location?.href || '';
+            return /(builder|admin)(-|\.|\/|$)/i.test(path) && /\.html/i.test(path);
+        } catch (e) {
+            return false;
+        }
+    }
+
     function buildContentPayload() {
         const payload = {
             version: DEFAULT_MANIFEST_VERSION,
@@ -30,31 +55,31 @@
         };
 
         const hasDataStore = typeof global.DataStore !== 'undefined' && global.DataStore;
-        if (hasDataStore && typeof global.DataStore.getSongs === 'function') {
+        if (hasDataStore) {
             payload.data = {
-                songs: global.DataStore.getSongs() || [],
-                stations: global.DataStore.getStations() || [],
-                categories: global.DataStore.getCategories() || [],
-                featured: global.DataStore.getFeatured() || [],
-                trending: global.DataStore.getTrending() || [],
-                artistHits: global.DataStore.getArtistHits() || [],
-                quotes: global.DataStore.getQuotes() || [],
-                siteSettings: global.DataStore.getSiteSettings() || {},
-                layout: global.DataStore.getLayout() || [],
-                images: global.DataStore.getImages() || [],
-                moods: global.DataStore.getMoods() || [],
-                aiRadio: global.DataStore.getAIRadio() || [],
-                notifications: global.DataStore.getNotifications() || [],
-                splash: global.DataStore.getSplash() || {},
-                playerPrefs: global.DataStore.getPlayerPrefs() || {},
-                navigation: global.DataStore.getNavigation() || {},
-                sectionsOrder: global.DataStore.getSectionsOrder() || [],
-                miniPlayerSettings: global.DataStore.getMiniPlayerSettings() || {},
-                playlists: global.DataStore.getPlaylists() || [],
-                likedSongs: global.DataStore.getLikedSongs() || [],
-                history: global.DataStore.getHistory() || [],
-                queue: global.DataStore.getQueue() || [],
-                settings: global.DataStore.getYTSettings() || {}
+                songs: safeGet(global.DataStore.getSongs?.bind(global.DataStore), []),
+                stations: safeGet(global.DataStore.getStations?.bind(global.DataStore), []),
+                categories: safeGet(global.DataStore.getCategories?.bind(global.DataStore), []),
+                featured: safeGet(global.DataStore.getFeatured?.bind(global.DataStore), []),
+                trending: safeGet(global.DataStore.getTrending?.bind(global.DataStore), []),
+                artistHits: safeGet(global.DataStore.getArtistHits?.bind(global.DataStore), []),
+                quotes: safeGet(global.DataStore.getQuotes?.bind(global.DataStore), []),
+                siteSettings: safeGet(global.DataStore.getSiteSettings?.bind(global.DataStore), {}),
+                layout: safeGet(global.DataStore.getLayout?.bind(global.DataStore), []),
+                images: safeGet(global.DataStore.getImages?.bind(global.DataStore), []),
+                moods: safeGet(global.DataStore.getMoods?.bind(global.DataStore), []),
+                aiRadio: safeGet(global.DataStore.getAIRadio?.bind(global.DataStore), []),
+                notifications: safeGet(global.DataStore.getNotifications?.bind(global.DataStore), []),
+                splash: safeGet(global.DataStore.getSplash?.bind(global.DataStore), {}),
+                playerPrefs: safeGet(global.DataStore.getPlayerPrefs?.bind(global.DataStore), {}),
+                navigation: safeGet(global.DataStore.getNavigation?.bind(global.DataStore), {}),
+                sectionsOrder: safeGet(global.DataStore.getSectionsOrder?.bind(global.DataStore), []),
+                miniPlayerSettings: safeGet(global.DataStore.getMiniPlayerSettings?.bind(global.DataStore), {}),
+                playlists: safeGet(global.DataStore.getPlaylists?.bind(global.DataStore), []),
+                likedSongs: safeGet(global.DataStore.getLikedSongs?.bind(global.DataStore), []),
+                history: safeGet(global.DataStore.getHistory?.bind(global.DataStore), []),
+                queue: safeGet(global.DataStore.getQueue?.bind(global.DataStore), []),
+                settings: safeGet(global.DataStore.getYTSettings?.bind(global.DataStore), {})
             };
             return payload;
         }
@@ -88,7 +113,13 @@
         return payload;
     }
 
-    function mergePayloads(localPayload, remotePayload) {
+    // Merge remote (R2) content into local state.
+    // - Remote (R2) is ALWAYS the single source of truth for shared content.
+    // - On WRITER pages we also keep local-only items (songs/changes that were
+    //   authored on this device but not yet pushed) so nothing is lost.
+    // - User-specific content (liked/playlists/history/queue/settings) is
+    //   local-first so personal preferences are preserved.
+    function mergePayloads(localPayload, remotePayload, isWriter = isWriterPage()) {
         const mergedData = {};
         const localData = localPayload?.data || {};
         const remoteData = remotePayload?.data || {};
@@ -97,10 +128,7 @@
         const localTime = localPayload?.updatedAt ? new Date(localPayload.updatedAt).getTime() : 0;
         const remoteTime = remotePayload?.updatedAt ? new Date(remotePayload.updatedAt).getTime() : 0;
 
-        // FIX: Remote (R2) is ALWAYS the source of truth for shared content.
-        // Only user-specific data (likedSongs, playlists, history, queue, settings)
-        // uses local-first merge to preserve personal preferences.
-        const sharedKeys = ['songs', 'stations', 'categories', 'featured', 'trending', 'artistHits', 'quotes', 'siteSettings', 'layout', 'images'];
+        const sharedKeys = ['songs', 'stations', 'categories', 'featured', 'trending', 'artistHits', 'quotes', 'siteSettings', 'layout', 'images', 'moods', 'aiRadio', 'notifications', 'splash', 'playerPrefs', 'navigation', 'sectionsOrder', 'miniPlayerSettings'];
         const userKeys = ['likedSongs', 'playlists', 'history', 'queue', 'settings'];
 
         keys.forEach((key) => {
@@ -108,22 +136,22 @@
             const localValue = localData[key];
 
             if (sharedKeys.includes(key)) {
-                // For array keys that contain items with IDs (songs, stations, etc.),
-                // merge by ID so local Builder additions are never lost
-                if (Array.isArray(remoteValue) && Array.isArray(localValue)) {
+                if (Array.isArray(remoteValue)) {
+                    // Remote arrays carry authoritative items by ID.
                     const mergedMap = new Map();
-                    // Add remote items first
                     remoteValue.forEach(item => {
-                        if (item && item.id) mergedMap.set(item.id, item);
+                        if (item && item.id !== undefined && item.id !== null) mergedMap.set(item.id, item);
                     });
-                    // Add local items - local wins for same ID (Builder is source of truth)
-                    localValue.forEach(item => {
-                        if (item && item.id) mergedMap.set(item.id, item);
-                    });
+                    // Writers may hold local-only items (new additions not yet pushed).
+                    if (isWriter && Array.isArray(localValue)) {
+                        localValue.forEach(item => {
+                            if (item && item.id !== undefined && item.id !== null && !mergedMap.has(item.id)) {
+                                mergedMap.set(item.id, item);
+                            }
+                        });
+                    }
                     mergedData[key] = Array.from(mergedMap.values());
-                } else if (Array.isArray(remoteValue) && remoteValue.length > 0) {
-                    mergedData[key] = remoteValue;
-                } else if (Array.isArray(localValue) && localValue.length > 0) {
+                } else if (Array.isArray(localValue) && localValue.length > 0 && isWriter) {
                     mergedData[key] = localValue;
                 } else if (remoteValue !== undefined && remoteValue !== null) {
                     mergedData[key] = remoteValue;
@@ -162,8 +190,8 @@
         });
 
         return {
-            version: localPayload?.version || remotePayload?.version || DEFAULT_MANIFEST_VERSION,
-            updatedAt: new Date().toISOString(), // Always use current time for merged result
+            version: remotePayload?.version || localPayload?.version || DEFAULT_MANIFEST_VERSION,
+            updatedAt: remotePayload?.updatedAt || new Date().toISOString(),
             data: mergedData
         };
     }
@@ -172,29 +200,36 @@
         const data = payload?.data || {};
 
         if (typeof global.DataStore !== 'undefined' && global.DataStore) {
-            if (typeof global.DataStore.setSongs === 'function') global.DataStore.setSongs(data.songs || []);
-            if (typeof global.DataStore.setStations === 'function') global.DataStore.setStations(data.stations || []);
-            if (typeof global.DataStore.setCategories === 'function') global.DataStore.setCategories(data.categories || []);
-            if (typeof global.DataStore.setFeatured === 'function') global.DataStore.setFeatured(data.featured || []);
-            if (typeof global.DataStore.setTrending === 'function') global.DataStore.setTrending(data.trending || []);
-            if (typeof global.DataStore.setArtistHits === 'function') global.DataStore.setArtistHits(data.artistHits || []);
-            if (typeof global.DataStore.setQuotes === 'function') global.DataStore.setQuotes(data.quotes || []);
-            if (typeof global.DataStore.setSiteSettings === 'function') global.DataStore.setSiteSettings(data.siteSettings || {});
-            if (typeof global.DataStore.setLayout === 'function') global.DataStore.setLayout(data.layout || []);
-            if (typeof global.DataStore.setImages === 'function') global.DataStore.setImages(data.images || []);
-            if (typeof global.DataStore.setMoods === 'function') global.DataStore.setMoods(data.moods || []);
-            if (typeof global.DataStore.setAIRadio === 'function') global.DataStore.setAIRadio(data.aiRadio || []);
-            if (typeof global.DataStore.setNotifications === 'function') global.DataStore.setNotifications(data.notifications || []);
-            if (typeof global.DataStore.setSplash === 'function') global.DataStore.setSplash(data.splash || {});
-            if (typeof global.DataStore.setPlayerPrefs === 'function') global.DataStore.setPlayerPrefs(data.playerPrefs || {});
-            if (typeof global.DataStore.setNavigation === 'function') global.DataStore.setNavigation(data.navigation || {});
-            if (typeof global.DataStore.setSectionsOrder === 'function') global.DataStore.setSectionsOrder(data.sectionsOrder || []);
-            if (typeof global.DataStore.setMiniPlayerSettings === 'function') global.DataStore.setMiniPlayerSettings(data.miniPlayerSettings || {});
-            if (typeof global.DataStore.setPlaylists === 'function') global.DataStore.setPlaylists(data.playlists || []);
-            if (typeof global.DataStore.setLikedSongs === 'function') global.DataStore.setLikedSongs(data.likedSongs || []);
-            if (typeof global.DataStore.setHistory === 'function') global.DataStore.setHistory(data.history || []);
-            if (typeof global.DataStore.setQueue === 'function') global.DataStore.setQueue(data.queue || []);
-            if (typeof global.DataStore.setYTSettings === 'function') global.DataStore.setYTSettings(data.settings || {});
+            const setters = {
+                setSongs: data.songs || [],
+                setStations: data.stations || [],
+                setCategories: data.categories || [],
+                setFeatured: data.featured || [],
+                setTrending: data.trending || [],
+                setArtistHits: data.artistHits || [],
+                setQuotes: data.quotes || [],
+                setSiteSettings: data.siteSettings || {},
+                setLayout: data.layout || [],
+                setImages: data.images || [],
+                setMoods: data.moods || [],
+                setAIRadio: data.aiRadio || [],
+                setNotifications: data.notifications || [],
+                setSplash: data.splash || {},
+                setPlayerPrefs: data.playerPrefs || {},
+                setNavigation: data.navigation || {},
+                setSectionsOrder: data.sectionsOrder || [],
+                setMiniPlayerSettings: data.miniPlayerSettings || {},
+                setPlaylists: data.playlists || [],
+                setLikedSongs: data.likedSongs || [],
+                setHistory: data.history || [],
+                setQueue: data.queue || [],
+                setYTSettings: data.settings || {}
+            };
+            Object.entries(setters).forEach(([method, value]) => {
+                if (typeof global.DataStore[method] === 'function') {
+                    try { global.DataStore[method](value); } catch (e) { /* ignore */ }
+                }
+            });
         }
 
         writeLocalStorage('tamilAIStream_songs', data.songs || []);
@@ -266,35 +301,82 @@
         writeLocalStorage(SYNC_LOCK_KEY, 0);
     }
 
-    async function bootstrapSharedContent() {
-        const localPayload = buildContentPayload();
+    // Notify every open page (same browser tab + other windows of this origin)
+    // that shared content has changed.
+    function notifyContentChanged() {
         try {
-            // Step 1: Fetch remote (R2) content - this is the source of truth
-            const remotePayload = await loadRemoteContent();
+            global.dispatchEvent(new CustomEvent(SYNC_EVENT, { detail: { timestamp: Date.now() } }));
+            global.dispatchEvent(new CustomEvent('storage-sync', { detail: { timestamp: Date.now() } }));
+            global.dispatchEvent(new CustomEvent('premium-sections-sync', { detail: { timestamp: Date.now() } }));
+        } catch (e) { /* ignore */ }
 
-            if (!remotePayload || !remotePayload.data || Object.keys(remotePayload.data).length === 0) {
-                // Remote is empty - upload local as initial seed
-                persistLocalContent(localPayload);
-                await uploadManifest(localPayload);
-                return localPayload;
-            }
+        try {
+            writeLocalStorage('tamilAIStream_lastSyncedAt', new Date().toISOString());
+            global.dispatchEvent(new StorageEvent('storage', {
+                key: 'tamilAIStream_songs',
+                newValue: JSON.stringify(readLocalStorage('tamilAIStream_songs', [])),
+                url: global.location?.href || ''
+            }));
+        } catch (e) { /* ignore */ }
 
-            // Step 2: Merge - remote shared content ALWAYS wins
-            const mergedPayload = mergePayloads(localPayload, remotePayload);
+        try {
+            const channel = new BroadcastChannel('tamilAIStream_sync');
+            channel.postMessage({ type: 'content-updated', timestamp: Date.now() });
+        } catch (e) { /* BroadcastChannel unsupported */ }
+    }
 
-            // Step 3: Persist merged result locally
-            persistLocalContent(mergedPayload);
-
-            // Step 4: Upload merged result back to R2
-            const synced = buildContentPayload();
-            await uploadManifest(synced);
-            return synced;
+    // ------------------------------------------------------------------
+    // Pull the manifest from R2 and apply it as the shared source of truth.
+    // On reader pages remote shared content completely replaces local shared
+    // content. On writer (Builder/Admin) pages local-only items are preserved
+    // and the merged result is pushed back so all devices stay in sync.
+    // ------------------------------------------------------------------
+    async function pullAndApply(forcePushBack = false) {
+        const localPayload = buildContentPayload();
+        let remotePayload = null;
+        try {
+            remotePayload = await loadRemoteContent();
         } catch (error) {
-            console.warn('R2 sync failed, using local data:', error);
-            // On failure, still use local data so the site works
-            persistLocalContent(localPayload);
-            return localPayload;
+            console.warn('R2 manifest unavailable, keeping local data:', error);
+            return { payload: localPayload, source: 'local', changed: false };
         }
+
+        const hasRemoteData = remotePayload && remotePayload.data &&
+            Object.keys(remotePayload.data).length > 0 &&
+            (Array.isArray(remotePayload.data.songs) ? remotePayload.data.songs.length > 0 : false);
+
+        if (!hasRemoteData) {
+            // Remote has never been seeded. Only writers seed it.
+            if (isWriterPage() || forcePushBack) {
+                await uploadManifest(localPayload);
+                persistLocalContent(localPayload);
+                return { payload: localPayload, source: 'seeded', changed: true };
+            }
+            // Readers start with an empty list until a writer seeds R2.
+            const empty = { ...localPayload, data: { ...localPayload.data, songs: [] } };
+            persistLocalContent(empty);
+            return { payload: empty, source: 'empty', changed: true };
+        }
+
+        const isWriter = isWriterPage() || forcePushBack;
+        const mergedPayload = mergePayloads(localPayload, remotePayload, isWriter);
+        persistLocalContent(mergedPayload);
+
+        // Writers always push their merged state back so any local-only item
+        // becomes visible to every device.
+        if (isWriter) {
+            await uploadManifest(mergedPayload);
+        }
+
+        return { payload: mergedPayload, source: 'remote', changed: true, remoteChanged: remotePayload.updatedAt !== localPayload.updatedAt };
+    }
+
+    async function bootstrapSharedContent() {
+        const result = await pullAndApply(false);
+        if (result.changed) {
+            notifyContentChanged();
+        }
+        return result.payload;
     }
 
     async function syncCurrentState() {
@@ -306,9 +388,71 @@
             const payload = buildContentPayload();
             const remoteUrl = await uploadManifest(payload);
             persistLocalContent(payload);
+            notifyContentChanged();
+            // BroadcastChannel not needed here; notifyContentChanged handles it.
+            try {
+                const channel = new BroadcastChannel('tamilAIStream_sync');
+                channel.postMessage({ type: 'content-updated', timestamp: Date.now() });
+            } catch (e) { /* ignore */ }
             return { payload, remoteUrl };
         } finally {
             releaseSyncLock();
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Real-time cross-device synchronization
+    // Polls the R2 manifest and re-applies it when it changes. Used by the
+    // live site so an upload from the Builder on ANY device shows up here.
+    // ------------------------------------------------------------------
+    let _syncTimer = null;
+    let _onSyncCallbacks = [];
+
+    function onSync(callback) {
+        if (typeof callback === 'function') {
+            _onSyncCallbacks.push(callback);
+        }
+    }
+
+    function _emitCallbacks(result) {
+        _onSyncCallbacks.forEach(cb => {
+            try { cb(result); } catch (e) { /* ignore */ }
+        });
+    }
+
+    async function pollForChanges() {
+        try {
+            const localPayload = buildContentPayload();
+            const remotePayload = await loadRemoteContent();
+            if (!remotePayload || !remotePayload.updatedAt) return null;
+            const localUpdatedAt = readLocalStorage('tamilAIStream_lastSyncedAt', '');
+            if (remotePayload.updatedAt && remotePayload.updatedAt === localUpdatedAt) {
+                return null; // nothing new
+            }
+            const isWriter = isWriterPage();
+            const mergedPayload = mergePayloads(localPayload, remotePayload, isWriter);
+            persistLocalContent(mergedPayload);
+            writeLocalStorage('tamilAIStream_lastSyncedAt', remotePayload.updatedAt);
+            notifyContentChanged();
+            _emitCallbacks({ payload: mergedPayload, source: 'remote', changed: true });
+            return mergedPayload;
+        } catch (e) {
+            console.warn('[ContentSync] poll failed:', e);
+            return null;
+        }
+    }
+
+    function startSyncing(intervalMs = 15000) {
+        if (_syncTimer) return;
+        _syncTimer = setInterval(() => {
+            pollForChanges();
+        }, intervalMs);
+    }
+
+    function stopSyncing() {
+        if (_syncTimer) {
+            clearInterval(_syncTimer);
+            _syncTimer = null;
         }
     }
 
@@ -320,12 +464,23 @@
         uploadManifest,
         bootstrapSharedContent,
         syncCurrentState,
+        pullAndApply,
+        pollForChanges,
+        startSyncing,
+        stopSyncing,
+        onSync,
+        isWriterPage,
         getRuntimeConfig: () => ({})
     };
 
     global.ContentSync = ContentSync;
+
     global.addEventListener?.('DOMContentLoaded', () => {
-        global.ContentSync?.bootstrapSharedContent?.().catch(() => {});
+        // Pull the authoritative R2 manifest once on load.
+        global.ContentSync?.bootstrapSharedContent?.().then(() => {
+            // Keep open sessions in sync in near real-time.
+            global.ContentSync?.startSyncing?.(15000);
+        }).catch(() => {});
     });
 
     if (typeof module !== 'undefined' && module.exports) {
