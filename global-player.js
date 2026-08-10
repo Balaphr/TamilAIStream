@@ -346,18 +346,21 @@ const GlobalPlayer = (() => {
             state.isPlaying = false;
             updatePlayUI(false);
         });
-        ap.addEventListener('timeupdate', () => {
-            if (isDragging) return;
-            state.currentTime = ap.currentTime || 0;
-            state.duration = ap.duration || 0;
-            updateProgressUI();
-        });
         ap.addEventListener('loadedmetadata', () => {
             state.duration = ap.duration || 0;
             state.isLive = !isFinite(ap.duration) || ap.duration === 0;
             updateProgressUI();
             updateLiveUI();
         });
+        // Register with ProgressSync for smooth 60fps updates
+        if (typeof ProgressSync !== 'undefined') {
+            ProgressSync.register((_cur, _dur, _pct) => {
+                if (isDragging) return;
+                state.currentTime = _cur;
+                state.duration = _dur;
+                updateProgressUI();
+            });
+        }
         ap.addEventListener('volumechange', () => {
             state.volume = ap.volume;
         });

@@ -894,22 +894,36 @@ const PlayerUI = (() => {
             updateFullProgress(current, duration);
         });
 
-        // Also update progress from the script.js audioPlayer (used by playSong/playStation)
-        function _audioPlayerTimeUpdate() {
-            if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer) {
-                const cur = window.audioPlayer.currentTime || 0;
-                const dur = window.audioPlayer.duration || 0;
-                updateProgress(cur, dur);
-                updateFullProgress(cur, dur);
-            }
+        // Register with ProgressSync for smooth 60fps updates from audioPlayer
+        function _progressSyncCallback(cur, dur, pct) {
+            if (isDragging) return;
+            const bar = document.getElementById('miniProgressBar');
+            const thumb = document.getElementById('miniProgressThumb');
+            if (bar) bar.style.width = pct + '%';
+            if (thumb) thumb.style.left = pct + '%';
+            const curEl = document.getElementById('miniCurrentTime');
+            const durEl = document.getElementById('miniDuration');
+            if (curEl) curEl.textContent = formatTime(cur);
+            if (durEl) durEl.textContent = formatTime(dur);
+            const fpBar = document.getElementById('fpProgressBar');
+            const fpThumb = document.getElementById('fpProgressThumb');
+            if (fpBar) fpBar.style.width = pct + '%';
+            if (fpThumb) fpThumb.style.left = pct + '%';
+            const fpCur = document.getElementById('fpCurrentTime');
+            const fpDur = document.getElementById('fpDuration');
+            if (fpCur) fpCur.textContent = formatTime(cur);
+            if (fpDur) fpDur.textContent = formatTime(dur);
         }
+        if (typeof ProgressSync !== 'undefined') {
+            ProgressSync.register(_progressSyncCallback);
+        }
+
         function _syncPlayStateFromAudioPlayer(playing) {
             updatePlayButton(playing);
             updateFullPlayButton(playing);
             updateEqBars(playing);
         }
         function _hookAudioPlayer(ap) {
-            ap.addEventListener('timeupdate', _audioPlayerTimeUpdate);
             ap.addEventListener('timeupdate', syncLyricsHighlight);
             ap.addEventListener('play', () => _syncPlayStateFromAudioPlayer(true));
             ap.addEventListener('pause', () => _syncPlayStateFromAudioPlayer(false));

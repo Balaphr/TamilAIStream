@@ -109,7 +109,6 @@
     background: var(--gp-theme);
     border-radius: 0 3px 3px 0;
     width: 0%;
-    transition: width 0.15s linear;
     position: relative;
 }
 .gp-mini-progress-buffered {
@@ -497,7 +496,6 @@
     background: var(--gp-theme);
     border-radius: 3px;
     width: 0%;
-    transition: width 0.15s linear;
 }
 .gp-exp-bar-thumb {
     position: absolute;

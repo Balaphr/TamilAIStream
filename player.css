@@ -211,7 +211,6 @@
     background: linear-gradient(90deg, #34d399, #3b82f6);
     border-radius: 0 2px 2px 0;
     width: 0%;
-    transition: width 0.1s linear;
 }
 .mini-progress-buffered {
     position: absolute;
@@ -508,7 +507,6 @@
     background: linear-gradient(90deg, #34d399, #3b82f6);
     border-radius: 2px;
     width: 0%;
-    transition: width 0.1s linear;
 }
 .fp-progress-thumb {
     position: absolute;

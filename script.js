@@ -436,6 +436,75 @@ function getStationStreamUrl(stationName) {
     return station?.streamUrl || '';
 }
 
+// ============================================
+// ProgressSync — Smooth 60fps progress tracking
+// ============================================
+const ProgressSync = (() => {
+    let _rafId = null;
+    let _callbacks = [];
+    let _lastPercent = -1;
+    let _isRunning = false;
+
+    function _tick() {
+        if (!_isRunning) return;
+        const ap = window.audioPlayer;
+        if (ap && !ap.paused) {
+            const cur = ap.currentTime || 0;
+            const dur = ap.duration || 0;
+            if (dur > 0 && isFinite(dur)) {
+                const pct = (cur / dur) * 100;
+                // Only notify if progress actually changed (avoid wasted frames)
+                if (Math.abs(pct - _lastPercent) > 0.001) {
+                    _lastPercent = pct;
+                    for (let i = 0; i < _callbacks.length; i++) {
+                        try { _callbacks[i](cur, dur, pct); } catch (e) {}
+                    }
+                }
+            }
+        }
+        _rafId = requestAnimationFrame(_tick);
+    }
+
+    function start() {
+        if (_isRunning) return;
+        _isRunning = true;
+        _lastPercent = -1;
+        _rafId = requestAnimationFrame(_tick);
+    }
+
+    function stop() {
+        _isRunning = false;
+        if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+    }
+
+    function register(fn) {
+        if (typeof fn === 'function' && _callbacks.indexOf(fn) === -1) {
+            _callbacks.push(fn);
+        }
+    }
+
+    function unregister(fn) {
+        _callbacks = _callbacks.filter(cb => cb !== fn);
+    }
+
+    function syncAll() {
+        const ap = window.audioPlayer;
+        if (ap) {
+            const cur = ap.currentTime || 0;
+            const dur = ap.duration || 0;
+            if (dur > 0 && isFinite(dur)) {
+                const pct = (cur / dur) * 100;
+                _lastPercent = pct;
+                for (let i = 0; i < _callbacks.length; i++) {
+                    try { _callbacks[i](cur, dur, pct); } catch (e) {}
+                }
+            }
+        }
+    }
+
+    return { start, stop, register, unregister, syncAll };
+})();
+
 function initAudioPlayer() {
     if (window.__BUILDER_PREVIEW__) return;
     if (!audioPlayer) {
@@ -464,6 +533,7 @@ function initAudioPlayer() {
             updateStationCardStates(true);
             hideLoadingSpinner();
             document.body.classList.add('gp-active');
+            ProgressSync.start();
             if (typeof GlobalPlayer !== 'undefined') {
                 GlobalPlayer.updatePlayUI(true);
                 GlobalPlayer.updateLiveUI();
@@ -480,6 +550,8 @@ function initAudioPlayer() {
         });
         audioPlayer.addEventListener('pause', () => {
             isStreamPlaying = false;
+            ProgressSync.stop();
+            ProgressSync.syncAll();
             persistPlaybackState();
             updatePlayPauseButton(false);
             showLiveStatus(false);
@@ -536,6 +608,7 @@ function initAudioPlayer() {
             showToast('Connection stalled. Retrying...', 'info');
         });
         audioPlayer.addEventListener('ended', () => {
+            ProgressSync.stop();
             if (playbackRepeat === 'one') {
                 audioPlayer.currentTime = 0;
                 audioPlayer.play().catch(() => {});
@@ -908,6 +981,7 @@ function seekPlaybackToPercent(percent) {
         // Duration is known: seek immediately.
         if (_pendingSeekTimer) { clearTimeout(_pendingSeekTimer); _pendingSeekTimer = null; }
         applyPlaybackSeek(audioPlayer, derived * dur);
+        ProgressSync.syncAll();
     } else {
         // Duration not ready yet (typical at 0:00 before metadata loads).
         // Defer the actual seek until the duration becomes available, but
@@ -918,6 +992,7 @@ function seekPlaybackToPercent(percent) {
             const d2 = getPlaybackDuration();
             if (d2 && isFinite(d2) && d2 > 0 && _pendingSeekPct !== null) {
                 applyPlaybackSeek(audioPlayer, _pendingSeekPct * d2);
+                ProgressSync.syncAll();
             }
             _pendingSeekPct = null;
         };
@@ -927,6 +1002,7 @@ function seekPlaybackToPercent(percent) {
             const d2 = getPlaybackDuration();
             if (d2 && isFinite(d2) && d2 > 0 && _pendingSeekPct !== null) {
                 applyPlaybackSeek(audioPlayer, _pendingSeekPct * d2);
+                ProgressSync.syncAll();
             }
             _pendingSeekPct = null;
         }, 800);
