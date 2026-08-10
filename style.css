@@ -35,16 +35,19 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     pointer-events: none; z-index: var(--z-overlay); opacity: 0.03;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
     background-repeat: repeat; background-size: 256px 256px;
+    contain: strict;
 }
 
 /* Background */
 .bg-container {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     z-index: var(--z-bg); overflow: hidden; background: var(--gradient-bg);
+    contain: strict;
 }
-.gradient-orbs { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+.gradient-orbs { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; contain: strict; }
 .orb {
     position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.5; will-change: transform;
+    contain: layout style paint;
 }
 .orb-1 { width: 700px; height: 700px; top: -15%; left: -10%; background: radial-gradient(circle,rgba(0,210,255,0.25),transparent 70%); animation: orbFloat 20s ease-in-out infinite; }
 .orb-2 { width: 600px; height: 600px; top: 40%; right: -15%; background: radial-gradient(circle,rgba(120,80,255,0.2),transparent 70%); animation: orbFloat 25s ease-in-out infinite reverse; }
@@ -1563,6 +1566,74 @@ body.builder-preview #eqOverlay,
 body.builder-preview .toast-container,
 body.builder-preview .ytm-ai-chat {
     pointer-events: none !important;
+}
+
+/* ============================================
+   AI Orb Visual Element – Google AI Mode-inspired
+   Colorful animated ring, premium glow, fluid motion
+   ============================================ */
+.ai-orb-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    vertical-align: middle;
+    margin-right: 2px;
+}
+.ai-orb {
+    position: relative;
+    width: 28px;
+    height: 28px;
+}
+.ai-orb-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+}
+.ai-orb-ring-1 {
+    border-top-color: #34d399;
+    border-right-color: rgba(52,211,153,0.3);
+    animation: aiRingSpin1 2.4s cubic-bezier(0.45,0.05,0.55,0.95) infinite;
+}
+.ai-orb-ring-2 {
+    inset: 3px;
+    border-bottom-color: #3b82f6;
+    border-left-color: rgba(59,130,246,0.3);
+    animation: aiRingSpin2 3s cubic-bezier(0.45,0.05,0.55,0.95) infinite;
+}
+.ai-orb-ring-3 {
+    inset: 6px;
+    border-top-color: #a855f7;
+    border-right-color: rgba(168,85,247,0.3);
+    animation: aiRingSpin1 2s cubic-bezier(0.45,0.05,0.55,0.95) infinite reverse;
+}
+.ai-orb-core {
+    position: absolute;
+    inset: 9px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(52,211,153,0.9), rgba(59,130,246,0.7), rgba(168,85,247,0.5));
+    box-shadow: 0 0 8px rgba(52,211,153,0.5), 0 0 16px rgba(59,130,246,0.3);
+    animation: aiCorePulse 2s ease-in-out infinite;
+}
+@keyframes aiRingSpin1 {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+@keyframes aiRingSpin2 {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(-360deg); }
+}
+@keyframes aiCorePulse {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.15); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ai-orb-ring-1, .ai-orb-ring-2, .ai-orb-ring-3, .ai-orb-core {
+        animation: none;
+    }
 }
 
 

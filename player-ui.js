@@ -64,9 +64,23 @@ const PlayerUI = (() => {
     }
 
     function bindMiniPlayerEvents() {
-        document.getElementById('miniPlayBtn')?.addEventListener('click', () => PlayerEngine.togglePlay());
-        document.getElementById('miniPrev')?.addEventListener('click', () => PlayerEngine.playPrevious());
-        document.getElementById('miniNext')?.addEventListener('click', () => PlayerEngine.playNext());
+        document.getElementById('miniPlayBtn')?.addEventListener('click', () => {
+            if (typeof window.pausePlayback === 'function' && typeof window.isStreamPlaying !== 'undefined' && window.isStreamPlaying) {
+                window.pausePlayback();
+            } else if (typeof window.resumePlayback === 'function') {
+                window.resumePlayback();
+            } else {
+                PlayerEngine.togglePlay();
+            }
+        });
+        document.getElementById('miniPrev')?.addEventListener('click', () => {
+            if (typeof window.playPreviousTrack === 'function') { window.playPreviousTrack(); }
+            else { PlayerEngine.playPrevious(); }
+        });
+        document.getElementById('miniNext')?.addEventListener('click', () => {
+            if (typeof window.playNextTrack === 'function') { window.playNextTrack(); }
+            else { PlayerEngine.playNext(); }
+        });
         document.getElementById('miniFavBtn')?.addEventListener('click', () => {
             const track = PlayerEngine.currentTrack;
             if (track) {
@@ -383,9 +397,23 @@ const PlayerUI = (() => {
 
     function bindFullPlayerEvents() {
         document.getElementById('fpCollapse')?.addEventListener('click', () => toggleFullPlayer());
-        document.getElementById('fpPlayBtn')?.addEventListener('click', () => PlayerEngine.togglePlay());
-        document.getElementById('fpPrev')?.addEventListener('click', () => PlayerEngine.playPrevious());
-        document.getElementById('fpNext')?.addEventListener('click', () => PlayerEngine.playNext());
+        document.getElementById('fpPlayBtn')?.addEventListener('click', () => {
+            if (typeof window.pausePlayback === 'function' && typeof window.isStreamPlaying !== 'undefined' && window.isStreamPlaying) {
+                window.pausePlayback();
+            } else if (typeof window.resumePlayback === 'function') {
+                window.resumePlayback();
+            } else {
+                PlayerEngine.togglePlay();
+            }
+        });
+        document.getElementById('fpPrev')?.addEventListener('click', () => {
+            if (typeof window.playPreviousTrack === 'function') { window.playPreviousTrack(); }
+            else { PlayerEngine.playPrevious(); }
+        });
+        document.getElementById('fpNext')?.addEventListener('click', () => {
+            if (typeof window.playNextTrack === 'function') { window.playNextTrack(); }
+            else { PlayerEngine.playNext(); }
+        });
         document.getElementById('fpShuffle')?.addEventListener('click', () => PlayerEngine.toggleShuffle());
         document.getElementById('fpRepeat')?.addEventListener('click', () => PlayerEngine.cycleRepeat());
 
@@ -749,12 +777,24 @@ const PlayerUI = (() => {
                 updateFullProgress(cur, dur);
             }
         }
+        function _syncPlayStateFromAudioPlayer(playing) {
+            updatePlayButton(playing);
+            updateFullPlayButton(playing);
+            updateEqBars(playing);
+        }
+        function _hookAudioPlayer(ap) {
+            ap.addEventListener('timeupdate', _audioPlayerTimeUpdate);
+            ap.addEventListener('play', () => _syncPlayStateFromAudioPlayer(true));
+            ap.addEventListener('pause', () => _syncPlayStateFromAudioPlayer(false));
+            ap.addEventListener('playing', () => _syncPlayStateFromAudioPlayer(true));
+            ap.addEventListener('ended', () => _syncPlayStateFromAudioPlayer(false));
+        }
         if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer) {
-            window.audioPlayer.addEventListener('timeupdate', _audioPlayerTimeUpdate);
+            _hookAudioPlayer(window.audioPlayer);
         } else {
             var _apWatcher = setInterval(function() {
                 if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer) {
-                    window.audioPlayer.addEventListener('timeupdate', _audioPlayerTimeUpdate);
+                    _hookAudioPlayer(window.audioPlayer);
                     clearInterval(_apWatcher);
                 }
             }, 500);

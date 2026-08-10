@@ -16,15 +16,50 @@ const PremiumEffects = (() => {
     const COLORS = ['rgba(16,185,129,0.3)', 'rgba(59,130,246,0.2)', 'rgba(168,85,247,0.2)', 'rgba(236,72,153,0.15)'];
 
     /* ---- Particles ---- */
+    let _resizeTimer = null;
+    let _zoomPaused = false;
     function initParticles(container) {
         particlesCanvas = document.createElement('canvas');
-        particlesCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.6;';
+        particlesCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.6;contain:strict;';
         (container || document.body).appendChild(particlesCanvas);
         particlesCtx = particlesCanvas.getContext('2d');
         resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('resize', () => {
+            clearTimeout(_resizeTimer);
+            _resizeTimer = setTimeout(resizeCanvas, 200);
+        });
         for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(createParticle());
         animateParticles();
+
+        // Pause particles during pinch-to-zoom to prevent freeze
+        let _lastTouchCount = 0;
+        let _resumeTimer = null;
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length >= 2 && !_zoomPaused) {
+                pauseParticles();
+                _lastTouchCount = e.touches.length;
+            }
+        }, { passive: true });
+        document.addEventListener('touchend', () => {
+            if (_zoomPaused) {
+                clearTimeout(_resumeTimer);
+                _resumeTimer = setTimeout(resumeParticles, 300);
+            }
+        }, { passive: true });
+
+        // Also pause during browser zoom (Ctrl+scroll / Cmd+scroll)
+        let _zoomCheckTimer = null;
+        let _lastZoom = window.devicePixelRatio;
+        document.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                if (!_zoomPaused) pauseParticles();
+                clearTimeout(_zoomCheckTimer);
+                _zoomCheckTimer = setTimeout(() => {
+                    _lastZoom = window.devicePixelRatio;
+                    resumeParticles();
+                }, 400);
+            }
+        }, { passive: true });
     }
 
     function resizeCanvas() {
@@ -65,6 +100,9 @@ const PremiumEffects = (() => {
         });
         animationFrame = requestAnimationFrame(animateParticles);
     }
+
+    function pauseParticles() { _zoomPaused = true; isActive = false; if (animationFrame) cancelAnimationFrame(animationFrame); }
+    function resumeParticles() { _zoomPaused = false; isActive = true; animateParticles(); }
 
     function stopParticles() {
         isActive = false;
