@@ -370,12 +370,12 @@ const PlayerUI = (() => {
             </div>
 
             <div class="fp-lyrics-panel" id="fpLyricsPanel" style="display:none;">
+                <div class="fp-lyrics-header">
+                    <span class="fp-lyrics-title">Lyrics</span>
+                    <button class="fp-lyrics-close" id="fpLyricsClose"><i class="fas fa-times"></i></button>
+                </div>
                 <div class="fp-lyrics-content" id="fpLyricsContent">
-                    <div class="fp-lyrics-loading">
-                        <div class="skeleton-line"></div>
-                        <div class="skeleton-line short"></div>
-                        <div class="skeleton-line"></div>
-                    </div>
+                    <div class="fp-lyrics-unavailable">No lyrics available for this track</div>
                 </div>
             </div>
 
@@ -428,6 +428,7 @@ const PlayerUI = (() => {
 
         document.getElementById('fpQueue')?.addEventListener('click', () => toggleQueuePanel());
         document.getElementById('fpLyrics')?.addEventListener('click', () => toggleLyricsPanel());
+        document.getElementById('fpLyricsClose')?.addEventListener('click', () => toggleLyricsPanel());
         document.getElementById('fpShare')?.addEventListener('click', () => shareTrack());
         document.getElementById('fpDownload')?.addEventListener('click', () => downloadTrack());
         document.getElementById('fpSleep')?.addEventListener('click', () => showSleepTimer());
@@ -687,9 +688,134 @@ const PlayerUI = (() => {
 
     function toggleLyricsPanel() {
         const panel = document.getElementById('fpLyricsPanel');
-        if (panel) {
-            panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+        if (!panel) return;
+        const isOpen = panel.style.display !== 'none';
+        panel.style.display = isOpen ? 'none' : 'flex';
+        if (!isOpen) {
+            loadLyricsForCurrentTrack();
         }
+    }
+
+    /* ---- Lyrics Time-Sync System ---- */
+    let _currentLyrics = [];
+    let _lyricsScrollTimer = null;
+
+    function loadLyricsForCurrentTrack() {
+        const content = document.getElementById('fpLyricsContent');
+        if (!content) return;
+
+        const track = PlayerEngine.currentTrack || window._currentSongData;
+        if (!track) {
+            content.innerHTML = '<div class="fp-lyrics-unavailable">No track playing</div>';
+            return;
+        }
+
+        // Check if lyrics exist on the track object
+        let lyricsText = track.lyrics || track.lyricText || '';
+
+        // Also check DataStore for lyrics by song ID
+        if (!lyricsText && track.id) {
+            const songs = DataStore.getSongs ? DataStore.getSongs() : [];
+            const song = songs.find(s => s.id === track.id);
+            if (song && song.lyrics) lyricsText = song.lyrics;
+        }
+
+        if (!lyricsText) {
+            content.innerHTML = '<div class="fp-lyrics-unavailable">No lyrics available for this track</div>';
+            _currentLyrics = [];
+            return;
+        }
+
+        _currentLyrics = AIAutomation.parseLyrics(lyricsText);
+        if (_currentLyrics.length === 0) {
+            content.innerHTML = '<div class="fp-lyrics-unavailable">Could not parse lyrics</div>';
+            return;
+        }
+
+        // Render lyrics lines
+        let html = '';
+        for (let i = 0; i < _currentLyrics.length; i++) {
+            const line = _currentLyrics[i];
+            const timeStr = formatTime(line.time);
+            html += '<div class="fp-lyrics-line" data-idx="' + i + '" data-time="' + line.time + '">';
+            html += '<span class="fp-lyrics-time">' + timeStr + '</span>';
+            html += '<span class="fp-lyrics-text">' + escapeHtml(line.text) + '</span>';
+            html += '</div>';
+        }
+        content.innerHTML = html;
+
+        // Bind click-to-seek
+        content.querySelectorAll('.fp-lyrics-line').forEach(el => {
+            el.addEventListener('click', () => {
+                const time = parseFloat(el.dataset.time);
+                seekToLyricTime(time);
+            });
+        });
+
+        // Start sync
+        startLyricsSync();
+    }
+
+    function seekToLyricTime(time) {
+        // Seek the global audioPlayer (script.js)
+        if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer) {
+            window.audioPlayer.currentTime = time;
+        }
+        // Also seek PlayerEngine
+        if (typeof PlayerEngine !== 'undefined' && PlayerEngine.seekTo) {
+            PlayerEngine.seekTo(time);
+        }
+    }
+
+    function startLyricsSync() {
+        if (_lyricsScrollTimer) clearInterval(_lyricsScrollTimer);
+        _lyricsScrollTimer = setInterval(syncLyricsHighlight, 250);
+    }
+
+    function syncLyricsHighlight() {
+        if (_currentLyrics.length === 0) return;
+        const panel = document.getElementById('fpLyricsPanel');
+        if (!panel || panel.style.display === 'none') {
+            clearInterval(_lyricsScrollTimer);
+            return;
+        }
+
+        let currentTime = 0;
+        if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer) {
+            currentTime = window.audioPlayer.currentTime || 0;
+        }
+
+        const idx = AIAutomation.findCurrentLyricLine(_currentLyrics, currentTime);
+        if (idx < 0) return;
+
+        const content = document.getElementById('fpLyricsContent');
+        if (!content) return;
+
+        const lines = content.querySelectorAll('.fp-lyrics-line');
+        let changed = false;
+        lines.forEach((el, i) => {
+            const isActive = i === idx;
+            if (isActive && !el.classList.contains('active')) {
+                el.classList.add('active');
+                changed = true;
+            } else if (!isActive && el.classList.contains('active')) {
+                el.classList.remove('active');
+            }
+        });
+
+        // Auto-scroll to active line
+        if (changed && lines[idx]) {
+            const containerRect = content.getBoundingClientRect();
+            const lineRect = lines[idx].getBoundingClientRect();
+            const offset = lineRect.top - containerRect.top - containerRect.height / 3;
+            content.scrollBy({ top: offset, behavior: 'smooth' });
+        }
+    }
+
+    function escapeHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str || '';
+        return d.innerHTML;
     }
 
     function showSleepTimer() {
@@ -784,6 +910,7 @@ const PlayerUI = (() => {
         }
         function _hookAudioPlayer(ap) {
             ap.addEventListener('timeupdate', _audioPlayerTimeUpdate);
+            ap.addEventListener('timeupdate', syncLyricsHighlight);
             ap.addEventListener('play', () => _syncPlayStateFromAudioPlayer(true));
             ap.addEventListener('pause', () => _syncPlayStateFromAudioPlayer(false));
             ap.addEventListener('playing', () => _syncPlayStateFromAudioPlayer(true));
@@ -810,5 +937,5 @@ const PlayerUI = (() => {
         });
     }
 
-    return { init, toggleFullPlayer, toggleQueuePanel, toggleLyricsPanel };
+    return { init, toggleFullPlayer, toggleQueuePanel, toggleLyricsPanel, loadLyricsForCurrentTrack };
 })();

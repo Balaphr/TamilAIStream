@@ -781,25 +781,95 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 40px 24px;
-    overflow-y: auto;
+    padding: 24px;
+    overflow: hidden;
 }
+.fp-lyrics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+}
+.fp-lyrics-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+}
+.fp-lyrics-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.fp-lyrics-close:hover { background: rgba(255,255,255,0.2); }
 .fp-lyrics-content {
     text-align: center;
     max-width: 500px;
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    padding: 20px 0;
+    mask-image: linear-gradient(transparent 0%, black 10%, black 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(transparent 0%, black 10%, black 90%, transparent 100%);
 }
-.fp-lyrics-content .skeleton-line {
-    height: 16px;
-    margin: 12px auto;
+.fp-lyrics-content::-webkit-scrollbar { width: 4px; }
+.fp-lyrics-content::-webkit-scrollbar-track { background: transparent; }
+.fp-lyrics-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+.fp-lyrics-unavailable {
+    color: rgba(255,255,255,0.4);
+    font-size: 14px;
+    padding: 40px 0;
+}
+.fp-lyrics-line {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 12px;
     border-radius: 8px;
-    background: rgba(255,255,255,0.05);
-    animation: skeletonPulse 1.5s ease-in-out infinite;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.35;
+    text-align: left;
 }
-.fp-lyrics-content .skeleton-line.short { width: 60%; }
-@keyframes skeletonPulse {
-    0%,100% { opacity: 0.3; }
-    50% { opacity: 0.6; }
+.fp-lyrics-line:hover {
+    background: rgba(255,255,255,0.05);
+    opacity: 0.6;
+}
+.fp-lyrics-line.active {
+    opacity: 1;
+    background: rgba(139,92,246,0.15);
+    transform: scale(1.02);
+}
+.fp-lyrics-time {
+    font-size: 11px;
+    font-family: monospace;
+    color: rgba(139,92,246,0.6);
+    min-width: 38px;
+    flex-shrink: 0;
+}
+.fp-lyrics-line.active .fp-lyrics-time {
+    color: #8b5cf6;
+}
+.fp-lyrics-text {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #e0e0e0;
+    font-weight: 500;
+}
+.fp-lyrics-line.active .fp-lyrics-text {
+    color: #fff;
+    font-weight: 600;
 }
 
 /* ---- Responsive ---- */

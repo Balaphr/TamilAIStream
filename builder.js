@@ -513,6 +513,41 @@ async function saveSong(e) {
 
         const songs = DataStore.getSongs();
 
+        // AI Duplicate Detection before saving
+        if (!currentSongId && typeof AIAutomation !== 'undefined') {
+            const probe = {
+                title: songData.title,
+                artist: songData.artist,
+                movie: songData.movie,
+                hash: window._pendingSongHash || '',
+                duration: parseFloat(songData.duration) || 0
+            };
+            const dupes = AIAutomation.detectDuplicates(probe, songs);
+            if (dupes.length > 0) {
+                const top = dupes[0];
+                if (top.score >= 90) {
+                    const proceed = confirm(
+                        'High confidence duplicate detected!\n\n' +
+                        'New: "' + songData.title + '" by ' + songData.artist + '\n' +
+                        'Existing: "' + top.song.title + '" by ' + top.song.artist + ' (' + top.score + '% match)\n\n' +
+                        'Save anyway?'
+                    );
+                    if (!proceed) {
+                        AIUploadOverlay.hide();
+                        showToast('Save cancelled — duplicate detected', 'info');
+                        return;
+                    }
+                } else if (top.score >= 70) {
+                    showToast('Note: Possible duplicate with "' + top.song.title + '" (' + top.score + '% match)', 'info');
+                }
+            }
+        }
+
+        // Store AI-generated metadata
+        songData.hash = window._pendingSongHash || songData.hash || '';
+        window._pendingSongHash = null;
+        window._pendingSongMeta = null;
+
         if (currentSongId) {
             const idx = songs.findIndex(s => s.id === currentSongId);
             if (idx !== -1) {
@@ -1185,6 +1220,22 @@ function saveDraft() {
 }
 
 async function publishChanges() {
+    // Pre-publish AI check
+    if (typeof AIAutomation !== 'undefined') {
+        const check = AIAutomation.runPublishChecks(DataStore);
+        if (!check.passed) {
+            const proceed = confirm(
+                'Publish check found issues:\n\n' +
+                check.summary + '\n\n' +
+                'Publish anyway?'
+            );
+            if (!proceed) {
+                AIPublishCheck.runAndShow();
+                return;
+            }
+        }
+    }
+
     showToast('Publishing changes...', 'info');
     try {
         await syncToLiveWebsite();
@@ -1638,8 +1689,6 @@ function handleAlbumPreview(file) {
 
 function handleAudioPreview(file) {
     const AUDIO_RE = /\.(mp3|wav|ogg|oga|aac|m4a|flac|opus|webm)$/i;
-    // Some browsers report an empty MIME type for .mp3/.wav files, so accept
-    // the file by extension as well as by type.
     if (!file.type.startsWith('audio/') && !AUDIO_RE.test(file.name)) {
         showToast('Please upload an audio file (MP3, WAV, OGG, M4A)', 'error');
         return;
@@ -1648,6 +1697,79 @@ function handleAudioPreview(file) {
     document.getElementById('audioFileName').textContent = file.name;
     document.getElementById('audioFileSize').textContent = formatFileSize(file.size);
     document.getElementById('audioPreview').style.display = 'flex';
+
+    // AI Auto-fill from filename intelligence
+    if (typeof AIAutomation !== 'undefined') {
+        const intel = AIAutomation.parseFilenameIntelligence(file.name);
+
+        if (intel.title) {
+            const titleEl = document.getElementById('songTitle');
+            if (titleEl && !titleEl.value.trim()) titleEl.value = intel.title;
+        }
+        if (intel.artist) {
+            const artistEl = document.getElementById('songArtist');
+            if (artistEl && !artistEl.value.trim()) artistEl.value = intel.artist;
+        }
+        if (intel.movie) {
+            const movieEl = document.getElementById('songMovie');
+            if (movieEl && !movieEl.value.trim()) movieEl.value = intel.movie;
+        }
+        if (intel.language) {
+            const langEl = document.getElementById('songLanguage');
+            if (langEl && !langEl.value) {
+                for (const opt of langEl.options) {
+                    if (opt.value.toLowerCase() === intel.language.toLowerCase() || opt.text.toLowerCase() === intel.language.toLowerCase()) {
+                        langEl.value = opt.value;
+                        break;
+                    }
+                }
+            }
+        }
+        if (intel.genre) {
+            const genreEl = document.getElementById('songGenre');
+            if (genreEl && !genreEl.value) {
+                for (const opt of genreEl.options) {
+                    if (opt.value.toLowerCase() === intel.genre.toLowerCase() || opt.text.toLowerCase() === intel.genre.toLowerCase()) {
+                        genreEl.value = opt.value;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Extract metadata (duration, hash) in background
+        AIAutomation.extractAudioMetadata(file).then(meta => {
+            if (meta.duration > 0) {
+                const durEl = document.getElementById('songDuration');
+                if (durEl && !durEl.value.trim()) {
+                    const mins = Math.floor(meta.duration / 60);
+                    const secs = meta.duration % 60;
+                    durEl.value = mins + ':' + String(secs).padStart(2, '0');
+                }
+            }
+
+            // Store hash for duplicate detection
+            if (meta.hash) {
+                window._pendingSongHash = meta.hash;
+                window._pendingSongMeta = meta;
+            }
+
+            // Check for duplicates
+            if (meta.hash || intel.title) {
+                const songs = DataStore.getSongs();
+                const probe = { title: intel.title, artist: intel.artist, movie: intel.movie, hash: meta.hash, duration: meta.duration };
+                const dupes = AIAutomation.detectDuplicates(probe, songs);
+                if (dupes.length > 0) {
+                    const top = dupes[0];
+                    showToast('Possible duplicate: "' + top.song.title + '" by ' + top.song.artist + ' (' + top.score + '% match)', 'warning');
+                }
+            }
+        }).catch(() => {});
+
+        if (intel.tags && intel.tags.length > 0) {
+            showToast('AI detected: ' + intel.genre + ' / ' + intel.mood + ' / ' + intel.language, 'info');
+        }
+    }
 }
 
 
@@ -5360,3 +5482,56 @@ if (typeof window !== 'undefined') {
     window.openVEPreview = openVEPreview;
     window.closeVEPreview = closeVEPreview;
 }
+
+// ============================================
+// AI Bot Initialization
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof AICommandBot !== 'undefined') {
+        AICommandBot.createBotUI();
+    }
+});
+
+// ============================================
+// Duplicate Scan Helper
+// ============================================
+const AIDuplicateScan = {
+    run() {
+        const songs = DataStore.getSongs();
+        if (songs.length === 0) {
+            showToast('No songs to scan', 'info');
+            return;
+        }
+
+        showToast('Scanning for duplicates...', 'info');
+
+        const dupes = [];
+        for (let i = 0; i < songs.length; i++) {
+            for (let j = i + 1; j < songs.length; j++) {
+                const result = AIAutomation.detectDuplicates(songs[i], [songs[j]]);
+                if (result.length > 0) {
+                    dupes.push({
+                        a: songs[i],
+                        b: songs[j],
+                        score: result[0].score
+                    });
+                }
+            }
+        }
+
+        if (dupes.length === 0) {
+            showToast('No duplicates found! Library is clean.', 'success');
+            return;
+        }
+
+        let msg = 'Found ' + dupes.length + ' duplicate pairs:\n\n';
+        for (const d of dupes.slice(0, 8)) {
+            msg += '- "' + d.a.title + '" by ' + d.a.artist + '  ↔  "' + d.b.title + '" by ' + d.b.artist + ' (' + d.score + '% match)\n';
+        }
+        if (dupes.length > 8) msg += '\n... and ' + (dupes.length - 8) + ' more';
+
+        alert(msg);
+        showToast('Found ' + dupes.length + ' duplicate pairs', 'warning');
+    }
+};
+if (typeof window !== 'undefined') window.AIDuplicateScan = AIDuplicateScan;

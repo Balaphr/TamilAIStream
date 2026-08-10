@@ -145,6 +145,9 @@
                     <div class="publish-status">
                         <span class="publish-state-badge draft" id="publishStatusBadge">DRAFT</span>
                     </div>
+                    <button class="builder-btn ai-assistant-toggle" onclick="AICommandBot.toggleBot()" title="AI Assistant" style="background:linear-gradient(135deg,#8b5cf6,#3b82f6);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-robot"></i> <span class="ai-toggle-text">AI</span>
+                    </button>
                     <div class="builder-user-info">
                         <div class="builder-user-avatar" id="builderUserAvatar">U</div>
                         <span class="builder-user-name" id="builderUserName">User</span>
@@ -231,6 +234,20 @@
                             </button>
                             <button class="builder-sidebar-item" id="quickHistoryBtn" onclick="showPublishHistory()">
                                 <i class="fas fa-history"></i> Publish History
+                            </button>
+                        </div>
+                    </div>
+                    <div class="builder-sidebar-section">
+                        <div class="builder-sidebar-title">AI Tools</div>
+                        <div class="builder-sidebar-menu">
+                            <button class="builder-sidebar-item" onclick="AICommandBot.toggleBot()">
+                                <i class="fas fa-robot"></i> AI Assistant
+                            </button>
+                            <button class="builder-sidebar-item" onclick="AIPublishCheck.runAndShow()">
+                                <i class="fas fa-shield-alt"></i> Publish Check
+                            </button>
+                            <button class="builder-sidebar-item" onclick="AIDuplicateScan.run()">
+                                <i class="fas fa-copy"></i> Find Duplicates
                             </button>
                         </div>
                     </div>
@@ -1614,6 +1631,9 @@
     <script src="r2-upload.js"></script>
     <script src="r2-content-sync.js"></script>
     <script src="ai-autofill.js"></script>
+    <script src="ai-automation.js"></script>
+    <script src="ai-command-bot.js"></script>
+    <script src="ai-publish-check.js"></script>
     <script src="builder.js"></script>
 </body>
 </html>
