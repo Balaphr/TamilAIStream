@@ -399,12 +399,19 @@ const PlayerEngine = (() => {
 
     function seekTo(time) {
         if (window.__BUILDER_PREVIEW__) return;
-        if (audio) audio.currentTime = Math.max(0, Math.min(time, audio.duration || 0));
+        var target = Math.max(0, Math.min(time, (audio && audio.duration) || 0));
+        if (audio && audio.duration) {
+            try { audio.currentTime = target; } catch (e) {}
+        }
+        if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer && window.audioPlayer.duration) {
+            try { window.audioPlayer.currentTime = target; } catch (e) {}
+        }
     }
 
     function seekToPercent(pct) {
         if (window.__BUILDER_PREVIEW__) return;
-        if (audio && audio.duration) seekTo(pct * audio.duration);
+        var dur = (audio && audio.duration) || (typeof window.audioPlayer !== 'undefined' && window.audioPlayer && window.audioPlayer.duration) || 0;
+        if (dur > 0) seekTo(pct * dur);
     }
 
     function setVolume(v) {

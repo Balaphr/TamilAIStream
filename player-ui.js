@@ -102,14 +102,22 @@ const PlayerUI = (() => {
         if (progressWrap) {
             const seek = (e) => {
                 const rect = progressWrap.getBoundingClientRect();
-                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                PlayerEngine.seekToPercent(pct);
+                if (!rect || rect.width <= 0) return;
+                const clientX = (e.clientX !== undefined) ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+                if (typeof seekPlaybackToPercent === 'function') {
+                    seekPlaybackToPercent(pct);
+                } else if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer && window.audioPlayer.duration) {
+                    window.audioPlayer.currentTime = pct * window.audioPlayer.duration;
+                } else {
+                    PlayerEngine.seekToPercent(pct);
+                }
             };
-            progressWrap.addEventListener('mousedown', (e) => { isDragging = true; seek(e); });
+            progressWrap.addEventListener('mousedown', (e) => { isDragging = true; seek(e); e.preventDefault(); e.stopPropagation(); });
             document.addEventListener('mousemove', (e) => { if (isDragging) seek(e); });
             document.addEventListener('mouseup', () => { isDragging = false; });
-            progressWrap.addEventListener('touchstart', (e) => { isDragging = true; seek(e.touches[0]); }, { passive: true });
-            progressWrap.addEventListener('touchmove', (e) => { if (isDragging) seek(e.touches[0]); }, { passive: true });
+            progressWrap.addEventListener('touchstart', (e) => { isDragging = true; seek(e.touches[0]); e.preventDefault(); e.stopPropagation(); }, { passive: false });
+            progressWrap.addEventListener('touchmove', (e) => { if (isDragging) { e.preventDefault(); seek(e.touches[0]); } }, { passive: false });
             document.addEventListener('touchend', () => { isDragging = false; });
         }
     }
@@ -417,12 +425,23 @@ const PlayerUI = (() => {
         if (progressWrap) {
             const seek = (e) => {
                 const rect = progressWrap.getBoundingClientRect();
-                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                PlayerEngine.seekToPercent(pct);
+                if (!rect || rect.width <= 0) return;
+                const clientX = (e.clientX !== undefined) ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+                const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+                if (typeof seekPlaybackToPercent === 'function') {
+                    seekPlaybackToPercent(pct);
+                } else if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer && window.audioPlayer.duration) {
+                    window.audioPlayer.currentTime = pct * window.audioPlayer.duration;
+                } else {
+                    PlayerEngine.seekToPercent(pct);
+                }
             };
-            progressWrap.addEventListener('mousedown', (e) => { isDragging = true; seek(e); });
+            progressWrap.addEventListener('mousedown', (e) => { isDragging = true; seek(e); e.preventDefault(); e.stopPropagation(); });
             document.addEventListener('mousemove', (e) => { if (isDragging) seek(e); });
             document.addEventListener('mouseup', () => { isDragging = false; });
+            progressWrap.addEventListener('touchstart', (e) => { isDragging = true; seek(e.touches[0]); e.preventDefault(); e.stopPropagation(); }, { passive: false });
+            progressWrap.addEventListener('touchmove', (e) => { if (isDragging) { e.preventDefault(); seek(e.touches[0]); } }, { passive: false });
+            document.addEventListener('touchend', () => { isDragging = false; });
         }
 
         document.getElementById('fpQueueClear')?.addEventListener('click', () => PlayerEngine.clearQueue());
@@ -720,6 +739,27 @@ const PlayerUI = (() => {
             updateProgress(current, duration);
             updateFullProgress(current, duration);
         });
+
+        // Also update progress from the script.js audioPlayer (used by playSong/playStation)
+        function _audioPlayerTimeUpdate() {
+            if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer) {
+                const cur = window.audioPlayer.currentTime || 0;
+                const dur = window.audioPlayer.duration || 0;
+                updateProgress(cur, dur);
+                updateFullProgress(cur, dur);
+            }
+        }
+        if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer) {
+            window.audioPlayer.addEventListener('timeupdate', _audioPlayerTimeUpdate);
+        } else {
+            var _apWatcher = setInterval(function() {
+                if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer) {
+                    window.audioPlayer.addEventListener('timeupdate', _audioPlayerTimeUpdate);
+                    clearInterval(_apWatcher);
+                }
+            }, 500);
+            setTimeout(function() { clearInterval(_apWatcher); }, 30000);
+        }
 
         PlayerEngine.on('shuffle', (shuffle) => updateShuffleButton(shuffle));
         PlayerEngine.on('repeat', (repeat) => updateRepeatButton(repeat));

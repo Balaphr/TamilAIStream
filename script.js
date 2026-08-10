@@ -537,6 +537,43 @@ function initAudioPlayer() {
                 playNextTrack();
             }
         });
+
+        // ---- MediaSession API (Android notification / lock-screen controls) ----
+        if ('mediaSession' in navigator) {
+            audioPlayer.addEventListener('play', () => {
+                navigator.mediaSession.playbackState = 'playing';
+            });
+            audioPlayer.addEventListener('pause', () => {
+                navigator.mediaSession.playbackState = 'paused';
+            });
+            audioPlayer.addEventListener('timeupdate', () => {
+                try {
+                    navigator.mediaSession.setPositionState({
+                        duration: isFinite(audioPlayer.duration) ? audioPlayer.duration : 0,
+                        playbackRate: audioPlayer.playbackRate,
+                        position: isFinite(audioPlayer.currentTime) ? audioPlayer.currentTime : 0
+                    });
+                } catch (e) {}
+            });
+
+            navigator.mediaSession.setActionHandler('play', () => { resumePlayback(); });
+            navigator.mediaSession.setActionHandler('pause', () => { pausePlayback(); });
+            navigator.mediaSession.setActionHandler('previoustrack', () => { playPreviousTrack(); });
+            navigator.mediaSession.setActionHandler('nexttrack', () => { playNextTrack(); });
+            navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+                const offset = details.seekOffset || 10;
+                if (audioPlayer) audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - offset);
+            });
+            navigator.mediaSession.setActionHandler('seekforward', (details) => {
+                const offset = details.seekOffset || 10;
+                if (audioPlayer) audioPlayer.currentTime = Math.min(audioPlayer.duration || 0, audioPlayer.currentTime + offset);
+            });
+            navigator.mediaSession.setActionHandler('seekto', (details) => {
+                if (audioPlayer && details.seekTime != null) {
+                    audioPlayer.currentTime = details.seekTime;
+                }
+            });
+        }
     }
 }
 
@@ -624,6 +661,7 @@ function playStation(stationName) {
                 };
                 const stationInfo = getStationInfo(stationName);
                 updateNowPlayingBar(stationInfo.name, stationInfo.freq);
+                updateMediaSessionMetadata(stationInfo.name, stationInfo.freq, currentPlaybackTrack.thumbnail);
                 updateStationCardStates(true);
                 if (typeof ListeningHistory !== 'undefined') {
                     ListeningHistory.trackPlayback(currentPlaybackTrack, 'station');
@@ -680,6 +718,7 @@ async function playSong(song, playlist = []) {
             persistPlaybackState();
             updatePlayPauseButton(true);
             updateNowPlayingBar(song.title, `${song.artist} â€¢ ${song.movie}`);
+            updateMediaSessionMetadata(song.title, song.artist, song.albumCover || song.cover || '');
             if (typeof ListeningHistory !== 'undefined') {
                 ListeningHistory.trackPlayback(currentPlaybackTrack, 'song');
             }
@@ -707,6 +746,7 @@ async function playSong(song, playlist = []) {
         isStreamPlaying = true;
         updatePlayPauseButton(true);
         updateNowPlayingBar(song.title, `${song.artist} â€¢ ${song.movie}`);
+        updateMediaSessionMetadata(song.title, song.artist, song.albumCover || song.cover || '');
 // Record listening history even in demo mode (songs without an audioUrl)
         if (typeof ListeningHistory !== 'undefined') {
             ListeningHistory.trackPlayback(currentPlaybackTrack, 'song');
@@ -1025,6 +1065,21 @@ function updateNowPlayingBar(title, station) {
     const stationEl = document.querySelector('.now-playing-station');
     if (titleEl) titleEl.textContent = title;
     if (stationEl) stationEl.textContent = station;
+}
+
+function updateMediaSessionMetadata(title, artist, artwork) {
+    if (!('mediaSession' in navigator)) return;
+    try {
+        var meta = {
+            title: title || 'Tamil AI Stream',
+            artist: artist || 'Tamil AI Stream',
+            album: 'Tamil AI Stream'
+        };
+        if (artwork) {
+            meta.artwork = [{ src: artwork, sizes: '512x512', type: 'image/png' }];
+        }
+        navigator.mediaSession.metadata = new MediaMetadata(meta);
+    } catch (e) {}
 }
 
 function showLiveStatus(isLive) {
