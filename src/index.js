@@ -32,7 +32,7 @@ function getCacheHeaders(pathname) {
 function addCacheBuster(body, contentType, pathname) {
   if (contentType && contentType.includes('text/html') && typeof body === 'string') {
     const versionTag = `<!-- bv:${DEPLOY_TIME} -->`;
-    const metaTag = `<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">`;
+    const metaTag = `<meta name="app-build-version" content="${DEPLOY_TIME}"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">`;
     let result = body.replace('</head>', `${versionTag}\n${metaTag}\n</head>`);
     result = result.replace(/(src|href)="([^"]*?\.(?:js|css|jpg|jpeg|png|webp|gif|svg|ico|woff|woff2|ttf|eot))"/g, (match, attr, path) => {
       if (path.startsWith('http') || path.startsWith('data:')) return match;
@@ -54,6 +54,12 @@ export default {
     try {
       const url = new URL(request.url);
 
+      if (url.pathname === '/api/version' && request.method === 'GET') {
+        return handleVersionGet(env);
+      }
+      if (url.pathname === '/sw.js') {
+        return handleSW(env);
+      }
       if (url.pathname === '/api/upload' && request.method === 'POST') {
         return handleUpload(request, env, url);
       }
@@ -103,6 +109,9 @@ function wrapResponse(resp, pathname) {
   headers.set('X-Frame-Options', 'SAMEORIGIN');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Vary', 'Accept-Encoding');
+  if (pathname.endsWith('.webmanifest')) {
+    headers.set('Content-Type', 'application/manifest+json');
+  }
   const contentType = headers.get('Content-Type') || '';
   if (pathname.endsWith('.html') || pathname === '/') {
     return resp.text().then(body => {
@@ -222,6 +231,53 @@ async function handleMediaGet(url, env) {
     return new Response(obj.body, { status: 200, headers });
   } catch (e) {
     return new Response('Error: ' + e.message, { status: 500 });
+  }
+}
+
+async function handleVersionGet(env) {
+  let contentVersion = null;
+  try {
+    if (env.MEDIA_BUCKET) {
+      const obj = await env.MEDIA_BUCKET.get('content-manifest.json');
+      if (obj) {
+        const manifest = JSON.parse(await obj.text());
+        contentVersion = manifest.updatedAt || null;
+      }
+    }
+  } catch (_) { /* ignore */ }
+
+  return new Response(JSON.stringify({
+    appVersion: DEPLOY_TIME,
+    contentVersion,
+  }), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'CDN-Cache-Control': 'no-store',
+      'Surrogate-Control': 'no-cache',
+      ...corsHeaders(),
+    },
+  });
+}
+
+async function handleSW(env) {
+  try {
+    const swReq = new Request(new URL('/sw.js', 'https://placeholder').toString());
+    const resp = await env.ASSETS.fetch(swReq);
+    if (!resp.ok) return resp;
+    let body = await resp.text();
+    body = body.replace('__BUILD_VERSION__', DEPLOY_TIME);
+    return new Response(body, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/javascript; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Service-Worker-Allowed': '/',
+      },
+    });
+  } catch (e) {
+    return new Response('SW load error', { status: 500 });
   }
 }
 

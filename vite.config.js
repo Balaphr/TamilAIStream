@@ -17,7 +17,8 @@ function copyVanillaScripts() {
         'ai-autofill.js',
         'yt-music.js', 'script.js', 'mini-audio-player.js',
         'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
-        'login.js', 'profile.js', 'dashboard.js', 'site-config.js'
+        'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
+        'pwa.js'
       ]
       const outDir = resolve('dist')
       if (!existsSync(outDir)) {
