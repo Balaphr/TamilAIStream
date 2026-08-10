@@ -463,6 +463,11 @@ function initAudioPlayer() {
             showLiveStatus(true);
             updateStationCardStates(true);
             hideLoadingSpinner();
+            document.body.classList.add('gp-active');
+            if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.updatePlayUI(true);
+                GlobalPlayer.updateLiveUI();
+            }
             if (typeof YTMusic !== 'undefined') {
                 YTMusic.isPlaying = true;
                 YTMusic.updatePlayerUI();
@@ -479,6 +484,9 @@ function initAudioPlayer() {
             updatePlayPauseButton(false);
             showLiveStatus(false);
             updateStationCardStates(false);
+            if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.updatePlayUI(false);
+            }
             if (typeof YTMusic !== 'undefined') {
                 YTMusic.isPlaying = false;
                 YTMusic.updatePlayerUI();
@@ -663,6 +671,11 @@ function playStation(stationName) {
                 updateNowPlayingBar(stationInfo.name, stationInfo.freq);
                 updateMediaSessionMetadata(stationInfo.name, stationInfo.freq, currentPlaybackTrack.thumbnail);
                 updateStationCardStates(true);
+                document.body.classList.add('gp-active');
+                if (typeof GlobalPlayer !== 'undefined') {
+                    GlobalPlayer.updateTrackUI();
+                    GlobalPlayer.updateLiveUI();
+                }
                 if (typeof ListeningHistory !== 'undefined') {
                     ListeningHistory.trackPlayback(currentPlaybackTrack, 'station');
                 }
@@ -719,6 +732,11 @@ async function playSong(song, playlist = []) {
             updatePlayPauseButton(true);
             updateNowPlayingBar(song.title, `${song.artist} â€¢ ${song.movie}`);
             updateMediaSessionMetadata(song.title, song.artist, song.albumCover || song.cover || '');
+            document.body.classList.add('gp-active');
+            if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.updateTrackUI();
+                GlobalPlayer.updateLiveUI();
+            }
             if (typeof ListeningHistory !== 'undefined') {
                 ListeningHistory.trackPlayback(currentPlaybackTrack, 'song');
             }
@@ -798,6 +816,7 @@ function resumePlayback() {
         audioPlayer.play().catch(() => {});
         isStreamPlaying = true;
         updatePlayPauseButton(true);
+        if (typeof GlobalPlayer !== 'undefined') GlobalPlayer.updatePlayUI(true);
         if (typeof YTMusic !== 'undefined') {
             YTMusic.isPlaying = true;
             YTMusic.updatePlayerUI();
@@ -2704,6 +2723,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (!checkAuth()) return;
+    
+    // Add global player body class
+    document.body.classList.add('gp-active');
     
     // Check admin and show builder link
     checkAdminAndShowBuilder();
