@@ -239,9 +239,14 @@ const GlobalPlayer = (() => {
                         <span>Playing from</span>
                         <strong id="gpExpSource">Tamil AI Stream</strong>
                     </div>
-                    <button class="gp-btn gp-exp-theme" id="gpExpTheme" title="Color Theme">
-                        <i class="fas fa-palette"></i>
-                    </button>
+                    <div class="gp-exp-header-right">
+                        <button class="gp-btn gp-exp-theme" id="gpExpTheme" title="Color Theme">
+                            <i class="fas fa-palette"></i>
+                        </button>
+                        <button class="gp-btn gp-exp-close" id="gpExpClose" title="Close Player">
+                            <i class="fas fa-xmark"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="gp-exp-artwork-wrap">
                     <div class="gp-exp-artwork" id="gpExpArtwork">
@@ -292,6 +297,33 @@ const GlobalPlayer = (() => {
                     <span></span><span></span><span></span><span></span><span></span>
                     <span></span><span></span><span></span><span></span><span></span>
                 </div>
+                <div class="gp-exp-ai-bot" id="gpExpAiBot">
+                    <div class="gp-ai-bot-header">
+                        <div class="gp-ai-bot-icon"><i class="fas fa-robot"></i></div>
+                        <span class="gp-ai-bot-title">AI Music Assistant</span>
+                        <button class="gp-btn gp-ai-bot-toggle" id="gpAiBotToggle" title="Toggle AI Bot">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                    <div class="gp-ai-bot-body" id="gpAiBotBody" style="display:none;">
+                        <div class="gp-ai-bot-messages" id="gpAiBotMessages">
+                            <div class="gp-ai-bot-msg gp-ai-bot-msg-ai">
+                                <i class="fas fa-robot"></i>
+                                <span>Hi! I can help with song info, lyrics, recommendations, queue management, and player commands. Try asking me something!</span>
+                            </div>
+                        </div>
+                        <div class="gp-ai-bot-suggestions" id="gpAiBotSuggestions">
+                            <button class="gp-ai-bot-chip" data-cmd="what is playing">What's playing?</button>
+                            <button class="gp-ai-bot-chip" data-cmd="show lyrics">Show lyrics</button>
+                            <button class="gp-ai-bot-chip" data-cmd="recommend songs">Recommend</button>
+                            <button class="gp-ai-bot-chip" data-cmd="show queue">Queue</button>
+                        </div>
+                        <div class="gp-ai-bot-input-row">
+                            <input type="text" class="gp-ai-bot-input" id="gpAiBotInput" placeholder="Ask AI about music...">
+                            <button class="gp-ai-bot-send" id="gpAiBotSend"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="gp-exp-lyrics-panel" id="gpExpLyricsPanel" style="display:none;">
                 <div class="gp-lyrics-header">
@@ -325,6 +357,7 @@ const GlobalPlayer = (() => {
         document.getElementById('gpMiniNext')?.addEventListener('click', playNext);
         document.getElementById('gpMiniFav')?.addEventListener('click', toggleFavorite);
         document.getElementById('gpExpCollapse')?.addEventListener('click', collapse);
+        document.getElementById('gpExpClose')?.addEventListener('click', closePlayer);
         document.getElementById('gpExpPlay')?.addEventListener('click', togglePlay);
         document.getElementById('gpExpPrev')?.addEventListener('click', playPrev);
         document.getElementById('gpExpNext')?.addEventListener('click', playNext);
@@ -344,6 +377,16 @@ const GlobalPlayer = (() => {
         });
         document.getElementById('gpQueueClear')?.addEventListener('click', clearQueue);
         document.getElementById('gpLyricsClose')?.addEventListener('click', toggleLyrics);
+        // AI Bot events
+        document.getElementById('gpAiBotToggle')?.addEventListener('click', toggleAiBot);
+        document.getElementById('gpAiBotSend')?.addEventListener('click', sendAiBotMessage);
+        document.getElementById('gpAiBotInput')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendAiBotMessage(); });
+        document.querySelectorAll('.gp-ai-bot-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const cmd = chip.dataset.cmd;
+                if (cmd) { document.getElementById('gpAiBotInput').value = cmd; sendAiBotMessage(); }
+            });
+        });
         bindSeek('gpMiniProgress', (pct) => seekToPercent(pct));
         bindSeek('gpExpBarWrap', (pct) => seekToPercent(pct));
         let swipeStartY = 0;
@@ -891,6 +934,48 @@ const GlobalPlayer = (() => {
     }
 
     function toggleFullPlayer() { isExpanded ? collapse() : expand(); }
+
+    function closePlayer() {
+        collapse();
+        if (typeof PlayerEngine !== 'undefined') PlayerEngine.pause();
+        const miniEl = document.getElementById('gp-mini');
+        if (miniEl) miniEl.classList.remove('visible');
+        document.body.classList.remove('gp-active');
+    }
+
+    function toggleAiBot() {
+        const body = document.getElementById('gpAiBotBody');
+        const toggle = document.getElementById('gpAiBotToggle');
+        if (!body) return;
+        const isOpen = body.style.display !== 'none';
+        body.style.display = isOpen ? 'none' : 'flex';
+        if (toggle) toggle.querySelector('i').className = isOpen ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+    }
+
+    function sendAiBotMessage() {
+        const input = document.getElementById('gpAiBotInput');
+        const messagesEl = document.getElementById('gpAiBotMessages');
+        if (!input || !messagesEl) return;
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        // Add user message
+        messagesEl.innerHTML += '<div class="gp-ai-bot-msg gp-ai-bot-msg-user"><span>' + escHtml(text) + '</span></div>';
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        // Process with AI Music Assistant
+        let response = 'I can help with music controls. Try: "play", "pause", "next", "previous", "what is playing", "show lyrics", "recommend songs", or "show queue".';
+        try {
+            if (typeof AIMusicAssistant !== 'undefined' && AIMusicAssistant.generateResponse) {
+                const result = AIMusicAssistant.generateResponse(text);
+                if (result && result.text) response = result.text;
+            }
+        } catch (e) { /* fallback to default response */ }
+        // Add AI response
+        setTimeout(() => {
+            messagesEl.innerHTML += '<div class="gp-ai-bot-msg gp-ai-bot-msg-ai"><i class="fas fa-robot"></i><span>' + escHtml(response) + '</span></div>';
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }, 300);
+    }
 
     return {
         init, expand, collapse, toggleFullPlayer, toggleQueue, toggleLyrics,

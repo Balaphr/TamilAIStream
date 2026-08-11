@@ -201,6 +201,12 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 .builder-nav-item i { font-size: 16px; }
 
 .builder-nav-right { display: flex; align-items: center; gap: 12px; }
+.visit-website-btn:hover {
+    background: linear-gradient(135deg,rgba(52,211,153,0.25),rgba(16,185,129,0.15)) !important;
+    border-color: rgba(52,211,153,0.4) !important;
+    box-shadow: 0 4px 16px rgba(52,211,153,0.2);
+    transform: translateY(-1px);
+}
 .builder-user-info {
     display: flex; align-items: center; gap: 10px;
     padding: 6px 12px; background: var(--bg-glass); border: 1px solid var(--border-glass);
@@ -2341,4 +2347,11 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     .access-gate-logo-icon { width: 64px; height: 64px; font-size: 28px; border-radius: 18px; }
     .access-gate-pulse { width: 64px; height: 64px; border-radius: 18px; }
     .access-gate-title { font-size: 1.25rem; }
+    .visit-website-btn span { display: none; }
+    .visit-website-btn { padding: 6px 10px !important; }
+}
+
+@media (max-width: 768px) {
+    .visit-website-btn span { display: none; }
+    .visit-website-btn { padding: 6px 10px !important; }
 }

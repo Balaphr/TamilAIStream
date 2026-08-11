@@ -2070,7 +2070,7 @@ function initTopHeader() {
     // Intervals
     _topHeaderDateInterval = setInterval(updateDate, 60000);
     _topHeaderTimeInterval = setInterval(updateTime, 1000);
-    _topHeaderQuoteInterval = setInterval(updateQuote, 15000);
+    _topHeaderQuoteInterval = setInterval(updateQuote, 30000);
 }
 
 // Update quotes dynamically without reinitializing intervals
