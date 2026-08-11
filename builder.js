@@ -104,6 +104,8 @@ function showBuilderDashboard(user) {
     currentUser = user;
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('builderDashboard').style.display = 'block';
+    // Analytics: track login
+    if (typeof AnalyticsTracker !== 'undefined') { AnalyticsTracker.setUserId(user.uid || user.email); AnalyticsTracker.track('user_login'); }
     
     // Update user info in nav
     const displayName = user.displayName || user.email?.split('@')[0] || 'User';
@@ -213,6 +215,8 @@ async function signOut() {
     try {
         Auth.clearAll();
         currentUser = null;
+        // Analytics: track logout
+        if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('user_logout');
         showLoginScreen();
         showToast('Signed out successfully', 'success');
     } catch (error) {
@@ -326,7 +330,8 @@ function navigateTo(page) {
         'sections': 'sectionsPage',
         'visualeditor': 'visualeditorPage',
         'miniplayersettings': 'miniplayersettingsPage',
-        'preview': 'previewPage'
+        'preview': 'previewPage',
+        'analytics': 'analyticsPage'
     };
 
     const pageId = pageMap[page];
@@ -363,6 +368,7 @@ function navigateTo(page) {
     if (page === 'visualeditor') initVisualEditor();
     if (page === 'miniplayersettings') loadMiniPlayerSettings();
     if (page === 'preview') updatePreview();
+    if (page === 'analytics') { loadAnalyticsData(); initAnalyticsTabs(); }
 }
 
 // ============================================

@@ -530,6 +530,10 @@ function initAudioPlayer() {
             // Clear the seek flag — post-seek buffering is done
             window._isSeeking = false;
             window._seekingUntil = 0;
+            // Analytics: track song play
+            if (typeof AnalyticsTracker !== 'undefined' && currentPlaybackTrack) {
+                AnalyticsTracker.trackSongPlay(currentPlaybackTrack);
+            }
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
             persistPlaybackState();
             updatePlayPauseButton(true);
@@ -559,6 +563,10 @@ function initAudioPlayer() {
             persistPlaybackState();
             updatePlayPauseButton(false);
             showLiveStatus(false);
+            // Analytics: track song pause
+            if (typeof AnalyticsTracker !== 'undefined' && currentPlaybackTrack) {
+                AnalyticsTracker.trackSongEvent('song_pause', currentPlaybackTrack, { position: audioPlayer.currentTime });
+            }
             updateStationCardStates(false);
             if (typeof GlobalPlayer !== 'undefined') {
                 GlobalPlayer.updatePlayUI(false);
@@ -626,6 +634,10 @@ function initAudioPlayer() {
         });
         audioPlayer.addEventListener('ended', () => {
             ProgressSync.stop();
+            // Analytics: track song complete
+            if (typeof AnalyticsTracker !== 'undefined' && currentPlaybackTrack) {
+                AnalyticsTracker.trackSongEvent('song_complete', currentPlaybackTrack);
+            }
             if (playbackRepeat === 'one') {
                 audioPlayer.currentTime = 0;
                 audioPlayer.play().catch(() => {});
@@ -723,6 +735,8 @@ function playStation(stationName) {
     currentPlaybackTrack = null;
     currentPlaylist = [];
     currentSongIndex = -1;
+    // Analytics: track FM play
+    if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.trackFMPlay({ id: stationName, name: stationName });
     
     // Clear all station card active states before starting new station
     document.querySelectorAll('.station-card, .station-grid-card, .slide-card').forEach(card => {
@@ -984,6 +998,8 @@ function seekPlaybackToPercent(percent) {
     if (!audioPlayer) return;
     const derived = Math.max(0, Math.min(1, percent));
     const dur = getPlaybackDuration();
+    // Analytics: track seek
+    if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('song_seek', { position: derived, duration: dur });
     // Set seeking flag — the waiting handler will suppress the buffering toast
     // while this flag is active.
     window._isSeeking = true;
@@ -1041,12 +1057,16 @@ function setPlaybackVolume(volume) {
     if (audioPlayer) {
         audioPlayer.volume = playbackVolume;
     }
+    // Analytics: track volume change
+    if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('volume_change', { volume: playbackVolume });
     persistPlaybackState();
 }
 
 function playNextTrack() {
     if (window.__BUILDER_PREVIEW__) return;
     if (currentPlaybackQueue.length === 0) return;
+    // Analytics: track next song
+    if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('next_song');
     if (playbackShuffle) {
         currentPlaybackQueueIndex = Math.floor(Math.random() * currentPlaybackQueue.length);
     } else {
@@ -1066,6 +1086,8 @@ function playNextTrack() {
 function playPreviousTrack() {
     if (window.__BUILDER_PREVIEW__) return;
     if (currentPlaybackQueue.length === 0) return;
+    // Analytics: track previous song
+    if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('previous_song');
     if (currentPlaybackQueueIndex < 0) currentPlaybackQueueIndex = 0;
     if (playbackShuffle) {
         currentPlaybackQueueIndex = Math.floor(Math.random() * currentPlaybackQueue.length);
@@ -2928,6 +2950,8 @@ function filterStations() {
 // Initialize
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize analytics tracker
+    if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.init();
     // Builder preview mode: skip auth, splash, particles — keep rendering only
     if (window.__BUILDER_PREVIEW__) {
         const splash = document.getElementById('splashOverlay');
@@ -2949,6 +2973,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Render all dynamic content from DataStore
     renderAllDynamicContent();
+    
+    // Analytics: track page view
+    if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.trackPageView(window.location.pathname);
     
     // Setup real-time sync from builder
     setupRealtimeSync();

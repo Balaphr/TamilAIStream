@@ -981,6 +981,8 @@ const MiniAudioPlayer = (() => {
 
         isOpen = true;
         popupEl.classList.add('open');
+        // Analytics: track mini player open
+        if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('mini_player_open');
 
         syncWithPlayback(track || meta);
 
@@ -1017,6 +1019,8 @@ const MiniAudioPlayer = (() => {
         if (!popupEl) return;
         isOpen = false;
         popupEl.classList.remove('open');
+        // Analytics: track mini player close
+        if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('mini_player_close');
 
         clearInterval(autoTimer);
         clearInterval(stationInterval);

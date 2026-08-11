@@ -680,6 +680,8 @@ const GlobalPlayer = (() => {
         if (panel) {
             const isOpen = panel.style.display !== 'none';
             panel.style.display = isOpen ? 'none' : 'block';
+            // Analytics: track queue open
+            if (!isOpen && typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('queue_open');
             if (!isOpen) updateQueueUI();
         }
     }
@@ -689,6 +691,8 @@ const GlobalPlayer = (() => {
         if (!panel) return;
         const isOpen = panel.style.display !== 'none';
         panel.style.display = isOpen ? 'none' : 'flex';
+        // Analytics: track lyrics open
+        if (!isOpen && typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('lyrics_open');
         if (!isOpen) loadLyrics();
     }
 

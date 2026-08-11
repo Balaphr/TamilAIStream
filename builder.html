@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="builder.css">
+    <link rel="stylesheet" href="analytics.css">
 </head>
 <body>
     <div class="noise-overlay"></div>
@@ -139,6 +140,9 @@
                         <button class="builder-nav-item" data-page="preview">
                             <i class="fas fa-eye"></i> Preview
                         </button>
+                        <button class="builder-nav-item" data-page="analytics">
+                            <i class="fas fa-chart-line"></i> Analytics
+                        </button>
                     </nav>
                 </div>
                 <div class="builder-nav-right">
@@ -213,7 +217,10 @@
                                 <i class="fas fa-play-circle"></i> Mini Player Settings
                             </button>
                             <button class="builder-sidebar-item" data-page="preview">
-                                <i class="fas fa-eye"></i> Live Preview
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
+                            <button class="builder-sidebar-item" data-page="analytics">
+                                <i class="fas fa-chart-line"></i> Analytics
                             </button>
                         </div>
                     </div>
@@ -1675,6 +1682,154 @@
         </div>
     </div>
 
+    <!-- Analytics Page -->
+    <div class="builder-page" id="analyticsPage" style="display:none;">
+        <div class="builder-page-header">
+            <h1 class="builder-page-title"><i class="fas fa-chart-line"></i> Website Analytics & Activity Center</h1>
+            <p class="builder-page-subtitle">Complete analysis of user behavior and content performance</p>
+        </div>
+
+        <!-- Analytics Sub-Tabs -->
+        <div class="analytics-tabs" id="analyticsTabs">
+            <button class="analytics-tab active" data-atab="overview">Overview</button>
+            <button class="analytics-tab" data-atab="users">Users</button>
+            <button class="analytics-tab" data-atab="music">Music</button>
+            <button class="analytics-tab" data-atab="fm">FM</button>
+            <button class="analytics-tab" data-atab="content">Content</button>
+            <button class="analytics-tab" data-atab="player">Player</button>
+            <button class="analytics-tab" data-atab="search">Search</button>
+            <button class="analytics-tab" data-atab="sections">Sections</button>
+            <button class="analytics-tab" data-atab="flow">Flow</button>
+            <button class="analytics-tab" data-atab="realtime">Real-Time</button>
+        </div>
+
+        <!-- Date Filter Bar -->
+        <div class="analytics-filter-bar">
+            <div class="analytics-filter-group">
+                <label class="analytics-filter-label">Period:</label>
+                <select id="analyticsPeriod" class="analytics-select" onchange="loadAnalyticsData()">
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="7" selected>Last 7 Days</option>
+                    <option value="30">Last 30 Days</option>
+                    <option value="all">All Time</option>
+                </select>
+            </div>
+            <div class="analytics-filter-group">
+                <label class="analytics-filter-label">Device:</label>
+                <select id="analyticsDevice" class="analytics-select" onchange="loadAnalyticsData()">
+                    <option value="all">All Devices</option>
+                    <option value="desktop">Desktop</option>
+                    <option value="mobile">Mobile</option>
+                    <option value="tablet">Tablet</option>
+                </select>
+            </div>
+            <div class="analytics-filter-group">
+                <button class="analytics-btn" onclick="loadAnalyticsData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                <button class="analytics-btn" onclick="exportAnalytics()"><i class="fas fa-download"></i> Export</button>
+                <button class="analytics-btn danger" onclick="resetAnalytics()"><i class="fas fa-trash"></i> Reset</button>
+            </div>
+        </div>
+
+        <!-- Overview Tab -->
+        <div class="analytics-panel active" id="analyticsOverview">
+            <div class="analytics-kpi-grid" id="analyticsKPI"></div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card"><h3>Events Over Time</h3><canvas id="analyticsEventsChart"></canvas></div>
+                <div class="analytics-chart-card"><h3>Top Events</h3><canvas id="analyticsTopEventsChart"></canvas></div>
+            </div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card"><h3>Device Distribution</h3><canvas id="analyticsDeviceChart"></canvas></div>
+                <div class="analytics-chart-card"><h3>Page Views</h3><canvas id="analyticsPageChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div class="analytics-panel" id="analyticsUsers">
+            <div class="analytics-kpi-grid" id="analyticsUserKPI"></div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card"><h3>User Activity</h3><canvas id="analyticsUserActivityChart"></canvas></div>
+                <div class="analytics-chart-card"><h3>Login/Logout</h3><canvas id="analyticsLoginChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Music Tab -->
+        <div class="analytics-panel" id="analyticsMusic">
+            <div class="analytics-kpi-grid" id="analyticsMusicKPI"></div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card" style="flex:2;"><h3>Most Played Songs</h3><div id="analyticsTopSongs"></div></div>
+                <div class="analytics-chart-card"><h3>Song Completion</h3><canvas id="analyticsCompletionChart"></canvas></div>
+            </div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card"><h3>Most Skipped</h3><div id="analyticsMostSkipped"></div></div>
+                <div class="analytics-chart-card"><h3>Most Replayed</h3><div id="analyticsMostReplayed"></div></div>
+            </div>
+        </div>
+
+        <!-- FM Tab -->
+        <div class="analytics-panel" id="analyticsFM">
+            <div class="analytics-kpi-grid" id="analyticsFMKPI"></div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card" style="flex:2;"><h3>Most Played FM Stations</h3><div id="analyticsTopFM"></div></div>
+                <div class="analytics-chart-card"><h3>FM Popularity</h3><canvas id="analyticsFMPieChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Content Tab -->
+        <div class="analytics-panel" id="analyticsContent">
+            <div class="analytics-kpi-grid" id="analyticsContentKPI"></div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card"><h3>Content Views</h3><canvas id="analyticsContentViewChart"></canvas></div>
+                <div class="analytics-chart-card"><h3>Most Viewed</h3><div id="analyticsTopContent"></div></div>
+            </div>
+        </div>
+
+        <!-- Player Tab -->
+        <div class="analytics-panel" id="analyticsPlayer">
+            <div class="analytics-kpi-grid" id="analyticsPlayerKPI"></div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card"><h3>Player Interactions</h3><canvas id="analyticsPlayerChart"></canvas></div>
+                <div class="analytics-chart-card"><h3>Mini Player</h3><canvas id="analyticsMiniPlayerChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Search Tab -->
+        <div class="analytics-panel" id="analyticsSearch">
+            <div class="analytics-kpi-grid" id="analyticsSearchKPI"></div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card"><h3>Most Searched</h3><div id="analyticsTopSearches"></div></div>
+                <div class="analytics-chart-card"><h3>Search Performance</h3><canvas id="analyticsSearchChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Sections Tab -->
+        <div class="analytics-panel" id="analyticsSections">
+            <div class="analytics-kpi-grid" id="analyticsSectionKPI"></div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card"><h3>Section Views</h3><canvas id="analyticsSectionChart"></canvas></div>
+                <div class="analytics-chart-card"><h3>Time per Section</h3><canvas id="analyticsSectionTimeChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Flow Tab -->
+        <div class="analytics-panel" id="analyticsFlow">
+            <div class="analytics-kpi-grid" id="analyticsFlowKPI"></div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card" style="flex:2;"><h3>User Journey Flow</h3><div id="analyticsFlowDiagram"></div></div>
+                <div class="analytics-chart-card"><h3>Top Transitions</h3><div id="analyticsTopFlows"></div></div>
+            </div>
+        </div>
+
+        <!-- Real-Time Tab -->
+        <div class="analytics-panel" id="analyticsRealtime">
+            <div class="analytics-kpi-grid" id="analyticsRealtimeKPI"></div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card"><h3>Currently Active Users</h3><div id="analyticsActiveUsers"></div></div>
+                <div class="analytics-chart-card"><h3>Currently Playing</h3><div id="analyticsNowPlaying"></div></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Song Preview Player -->
     <div class="preview-player" id="previewPlayer" style="display:none;">
         <div class="preview-player-info">
@@ -1712,6 +1867,8 @@
     <script src="ai-automation.js"></script>
     <script src="ai-command-bot.js"></script>
     <script src="ai-publish-check.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="analytics.js"></script>
     <script src="builder.js"></script>
 </body>
 </html>

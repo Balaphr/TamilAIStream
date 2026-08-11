@@ -1,3 +1,8 @@
+import {
+  handleAnalyticsEventPost, handleAnalyticsAggregateGet,
+  handleAnalyticsRealtimeGet, handleAnalyticsRawGet, handleAnalyticsResetPost
+} from './analytics-handler.js';
+
 const REDIRECTS = {
   '/': '/index.html',
   '/login': '/login.html',
@@ -71,6 +76,23 @@ export default {
       }
       if (url.pathname.startsWith('/api/media/')) {
         return handleMediaGet(url, env);
+      }
+
+      // Analytics API endpoints
+      if (url.pathname === '/api/analytics/event' && request.method === 'POST') {
+        return handleAnalyticsEventPost(request, env);
+      }
+      if (url.pathname === '/api/analytics/aggregate' && request.method === 'GET') {
+        return handleAnalyticsAggregateGet(env);
+      }
+      if (url.pathname === '/api/analytics/realtime' && request.method === 'GET') {
+        return handleAnalyticsRealtimeGet(env);
+      }
+      if (url.pathname === '/api/analytics/raw' && request.method === 'GET') {
+        return handleAnalyticsRawGet(env, request.url);
+      }
+      if (url.pathname === '/api/analytics/reset' && request.method === 'POST') {
+        return handleAnalyticsResetPost(env);
       }
 
       if (request.method === 'OPTIONS') {

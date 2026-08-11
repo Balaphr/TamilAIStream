@@ -19,7 +19,7 @@ function copyVanillaScripts() {
         'global-player.js', 'listening-history.js',
         'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
-        'app-init.js', 'site-integration.js', 'pwa.js'
+        'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js'
       ]
 
       const vanillaCSS = [
@@ -27,7 +27,7 @@ function copyVanillaScripts() {
         'global-player.css', 'mini-audio-player.css',
         'listening-history.css', 'search-ui.css',
         'responsive.css', 'ai-glass.css', 'splash.css',
-        'builder.css', 'admin.css', 'admin-login.css',
+        'builder.css', 'admin.css', 'admin-login.css', 'analytics.css',
         'profile.css', 'playlist.css', 'dashboard.css'
       ]
 

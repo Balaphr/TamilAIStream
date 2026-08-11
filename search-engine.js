@@ -140,6 +140,11 @@ const SearchEngine = (() => {
 
         if (filters.limit) results = results.slice(0, filters.limit);
 
+        // Analytics: track search
+        if (typeof AnalyticsTracker !== 'undefined') {
+            AnalyticsTracker.trackSearch(query, results.length);
+        }
+
         return results;
     }
 
