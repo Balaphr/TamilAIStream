@@ -16,7 +16,7 @@ function copyVanillaScripts() {
         'ai-music-assistant.js', 'ai-autofill.js', 'ai-automation.js',
         'ai-command-bot.js', 'ai-publish-check.js',
         'yt-music.js', 'script.js', 'mini-audio-player.js',
-        'global-player.js', 'listening-history.js', 'news.js',
+        'global-player.js', 'listening-history.js',
         'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
         'app-init.js', 'site-integration.js', 'pwa.js'
@@ -24,7 +24,7 @@ function copyVanillaScripts() {
 
       const vanillaCSS = [
         'style.css', 'yt-music.css', 'player.css',
-        'global-player.css', 'mini-audio-player.css', 'news.css',
+        'global-player.css', 'mini-audio-player.css',
         'listening-history.css', 'search-ui.css',
         'responsive.css', 'ai-glass.css', 'splash.css',
         'builder.css', 'admin.css', 'admin-login.css',
@@ -84,7 +84,6 @@ export default defineConfig({
         'admin-login': 'admin-login.html',
         'admin-upload': 'admin-upload.html',
         dashboard: 'dashboard.html',
-        news: 'news.html',
         particles: 'particles.html'
       }
     }

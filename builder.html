@@ -651,7 +651,6 @@
                             <button class="content-tab" data-tab="yearlyCollections">Yearly</button>
                             <button class="content-tab" data-tab="latestCollections">Latest</button>
                             <button class="content-tab" data-tab="quotes">Quotes</button>
-                            <button class="content-tab" data-tab="tamilNews"><i class="fas fa-newspaper"></i> Tamil News</button>
                         </div>
 
                         <!-- Featured Tab -->
@@ -889,82 +888,6 @@
                                             </tr>
                                         </thead>
                                         <tbody id="quotesTable"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tamil News Tab -->
-                        <div class="content-tab-panel" id="tamilNewsTab" style="display:none;">
-                            <div class="content-card" style="margin-bottom:20px;">
-                                <div class="content-card-header">
-                                    <h2 class="content-card-title"><i class="fas fa-rss"></i> RSS Feed Management</h2>
-                                    <div style="display:flex;gap:8px;">
-                                        <button class="builder-btn" onclick="TamilNews.openAddFeedModal()"><i class="fas fa-plus"></i> Add Feed</button>
-                                        <button class="builder-btn primary" onclick="refreshTamilNewsFeeds()"><i class="fas fa-sync-alt"></i> Refresh Now</button>
-                                    </div>
-                                </div>
-                                <div class="data-table">
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>Name</th>
-                                                <th>URL</th>
-                                                <th>Category</th>
-                                                <th>Status</th>
-                                                <th>Last Fetched</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="newsFeedsTable"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="content-card" style="margin-bottom:20px;">
-                                <div class="content-card-header">
-                                    <h2 class="content-card-title"><i class="fas fa-cog"></i> News Settings</h2>
-                                </div>
-                                <div style="display:flex;gap:16px;flex-wrap:wrap;padding:16px;">
-                                    <div class="form-group" style="min-width:150px;">
-                                        <label class="form-label">Max News Items</label>
-                                        <input type="number" class="form-input" id="newsMaxItems" value="100" min="10" max="500" style="width:100px;">
-                                    </div>
-                                    <div class="form-group" style="min-width:150px;">
-                                        <label class="form-label">Refresh Interval (min)</label>
-                                        <input type="number" class="form-input" id="newsRefreshInterval" value="5" min="1" max="60" style="width:100px;">
-                                    </div>
-                                    <div class="form-group" style="min-width:150px;">
-                                        <label class="form-label">Auto Publish</label>
-                                        <select class="form-input" id="newsAutoPublish" style="width:120px;">
-                                            <option value="true">Yes</option>
-                                            <option value="false">No</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group" style="display:flex;align-items:flex-end;">
-                                        <button class="builder-btn primary" onclick="saveTamilNewsSettings()"><i class="fas fa-save"></i> Save Settings</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="content-card">
-                                <div class="content-card-header">
-                                    <h2 class="content-card-title"><i class="fas fa-newspaper"></i> News Articles</h2>
-                                    <button class="builder-btn" onclick="cleanupOldNews()"><i class="fas fa-broom"></i> Cleanup Old</button>
-                                </div>
-                                <div class="data-table">
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>Title</th>
-                                                <th>Category</th>
-                                                <th>Source</th>
-                                                <th>Date</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="newsArticlesTable"></tbody>
                                     </table>
                                 </div>
                             </div>
@@ -1789,7 +1712,6 @@
     <script src="ai-automation.js"></script>
     <script src="ai-command-bot.js"></script>
     <script src="ai-publish-check.js"></script>
-    <script src="news.js"></script>
     <script src="builder.js"></script>
 </body>
 </html>

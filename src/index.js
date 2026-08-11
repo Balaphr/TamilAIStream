@@ -1,8 +1,3 @@
-import {
-  handleNewsGet, handleNewsConfigGet, handleNewsConfigPost,
-  handleNewsRefreshPost, handleNewsPublishPost, handleNewsDeletePost, handleNewsCleanupPost
-} from './news-handler.js';
-
 const REDIRECTS = {
   '/': '/index.html',
   '/login': '/login.html',
@@ -14,7 +9,6 @@ const REDIRECTS = {
   '/admin-upload': '/admin-upload.html',
   '/dashboard': '/dashboard.html',
   '/particles': '/particles.html',
-  '/news': '/news.html',
 };
 
 let DEPLOY_TIME;
@@ -77,29 +71,6 @@ export default {
       }
       if (url.pathname.startsWith('/api/media/')) {
         return handleMediaGet(url, env);
-      }
-
-      // News API endpoints
-      if (url.pathname === '/api/news' && request.method === 'GET') {
-        return handleNewsGet(env);
-      }
-      if (url.pathname === '/api/news/config' && request.method === 'GET') {
-        return handleNewsConfigGet(env);
-      }
-      if (url.pathname === '/api/news/config' && request.method === 'POST') {
-        return handleNewsConfigPost(request, env);
-      }
-      if (url.pathname === '/api/news/refresh' && request.method === 'POST') {
-        return handleNewsRefreshPost(env);
-      }
-      if (url.pathname === '/api/news/publish' && request.method === 'POST') {
-        return handleNewsPublishPost(request, env);
-      }
-      if (url.pathname === '/api/news/delete' && request.method === 'POST') {
-        return handleNewsDeletePost(request, env);
-      }
-      if (url.pathname === '/api/news/cleanup' && request.method === 'POST') {
-        return handleNewsCleanupPost(env);
       }
 
       if (request.method === 'OPTIONS') {
