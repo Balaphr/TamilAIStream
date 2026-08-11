@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="login.css">
+    <link rel="stylesheet" href="global-player.css">
 </head>
 <body>
     <!-- Ambient Background -->
@@ -574,5 +575,13 @@
 
 <script src="auth.js"></script>
     <script src="login.js"></script>
+    <script src="player-engine.js"></script>
+    <script src="global-player.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof PlayerEngine !== 'undefined') PlayerEngine.init();
+            GlobalPlayer.init();
+        });
+    </script>
 </body>
 </html>

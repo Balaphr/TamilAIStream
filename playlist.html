@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="playlist.css">
+    <link rel="stylesheet" href="global-player.css">
 </head>
 <body>
     <div class="noise-overlay"></div>
@@ -100,26 +101,6 @@
             </div>
         </div>
     </main>
-
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <button class="bottom-nav-item" data-tab="home">
-            <i class="fas fa-house"></i>
-            <span>Home</span>
-        </button>
-        <button class="bottom-nav-item" data-tab="search">
-            <i class="fas fa-search"></i>
-            <span>Search</span>
-        </button>
-        <button class="bottom-nav-item" data-tab="favorites">
-            <i class="fas fa-heart"></i>
-            <span>Favorites</span>
-        </button>
-        <button class="bottom-nav-item" data-tab="profile">
-            <i class="fas fa-user"></i>
-            <span>Profile</span>
-        </button>
-    </nav>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -243,5 +224,13 @@
     </script>
 <script src="auth.js"></script>
     <script src="script.js"></script>
+    <script src="player-engine.js"></script>
+    <script src="global-player.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof PlayerEngine !== 'undefined') PlayerEngine.init();
+            GlobalPlayer.init();
+        });
+    </script>
 </body>
 </html>
