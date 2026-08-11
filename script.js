@@ -509,6 +509,7 @@ function initAudioPlayer() {
     if (window.__BUILDER_PREVIEW__) return;
     if (!audioPlayer) {
         audioPlayer = new Audio();
+        window.audioPlayer = audioPlayer;
         audioPlayer.preload = 'auto';
         audioPlayer.volume = playbackVolume;
 
@@ -575,12 +576,18 @@ function initAudioPlayer() {
                 YTMusic.duration = audioPlayer.duration || 0;
                 YTMusic.updateProgressUI();
             }
+            if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.updateProgressUI();
+            }
             persistPlaybackState();
         });
         audioPlayer.addEventListener('durationchange', () => {
             if (typeof YTMusic !== 'undefined') {
                 YTMusic.duration = audioPlayer.duration || 0;
                 YTMusic.updateProgressUI();
+            }
+            if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.updateProgressUI();
             }
         });
         audioPlayer.addEventListener('error', (e) => {
