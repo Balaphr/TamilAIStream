@@ -2135,3 +2135,210 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     .ve-left-panel, .ve-right-panel { width: 100%; max-height: 300px; border: none; border-bottom: 1px solid var(--border-glass); }
     .ve-center { min-height: 500px; }
 }
+
+/* ============================================
+   Login Particles Background
+   ============================================ */
+.builder-login-particles {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+}
+
+/* ============================================
+   Premium Access Gate Screen
+   Shown after login, before entering builder
+   ============================================ */
+.builder-access-gate {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1001; padding: 20px;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    animation: accessGateFadeIn 0.4s ease-out;
+}
+
+@keyframes accessGateFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.access-gate-card {
+    width: 100%; max-width: 440px;
+    background: rgba(17,24,39,0.97);
+    backdrop-filter: blur(30px);
+    border: 1px solid rgba(52,211,153,0.15);
+    border-radius: 28px;
+    padding: 48px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: accessGateCardIn 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;
+    box-shadow:
+        0 24px 80px rgba(0,0,0,0.6),
+        0 0 0 1px rgba(255,255,255,0.03) inset;
+}
+
+@keyframes accessGateCardIn {
+    from { opacity: 0; transform: translateY(40px) scale(0.92); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.access-gate-glow {
+    position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle at 50% 80%, rgba(52,211,153,0.08), transparent 50%);
+    pointer-events: none;
+}
+
+.access-gate-logo {
+    position: relative;
+    width: 80px; height: 80px;
+    margin: 0 auto 24px;
+}
+
+.access-gate-logo-icon {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, #34d399, #10b981);
+    border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; color: white;
+    box-shadow: 0 8px 32px rgba(52,211,153,0.4);
+    position: relative; z-index: 1;
+    animation: accessGateLogoFloat 3s ease-in-out infinite;
+}
+
+@keyframes accessGateLogoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+.access-gate-pulse {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px; height: 80px;
+    border-radius: 24px;
+    border: 2px solid rgba(52,211,153,0.3);
+    animation: accessGatePulse 2s ease-out infinite;
+}
+
+@keyframes accessGatePulse {
+    0% { width: 80px; height: 80px; opacity: 1; }
+    100% { width: 120px; height: 120px; opacity: 0; }
+}
+
+.access-gate-title {
+    font-size: 1.5rem; font-weight: 800;
+    background: linear-gradient(135deg, #fff, rgba(255,255,255,0.8));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+}
+
+.access-gate-subtitle {
+    font-size: 0.85rem; color: rgba(255,255,255,0.45);
+    line-height: 1.6; margin-bottom: 28px;
+    max-width: 340px; margin-left: auto; margin-right: auto;
+}
+
+.access-gate-info {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 32px;
+    padding: 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+}
+
+.access-gate-info-item {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 0.8rem; color: rgba(255,255,255,0.5);
+    padding: 4px 0;
+}
+
+.access-gate-info-item i {
+    width: 16px; text-align: center;
+    color: rgba(52,211,153,0.6); font-size: 12px;
+}
+
+/* Enter Builder Button */
+.access-gate-enter-btn {
+    position: relative;
+    width: 100%; padding: 0; border: none;
+    background: none; cursor: pointer;
+    margin-bottom: 16px;
+}
+
+.access-gate-enter-btn-inner {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 16px 32px;
+    background: linear-gradient(135deg, #34d399, #10b981);
+    border-radius: 14px;
+    color: white; font-size: 1rem; font-weight: 700;
+    font-family: var(--font-family);
+    position: relative; z-index: 1;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 4px 20px rgba(52,211,153,0.3);
+}
+
+.access-gate-enter-btn:hover .access-gate-enter-btn-inner {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(52,211,153,0.4);
+}
+
+.access-gate-enter-btn:active .access-gate-enter-btn-inner {
+    transform: translateY(0) scale(0.98);
+}
+
+.access-gate-enter-btn-glow {
+    position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+    background: linear-gradient(135deg, rgba(52,211,153,0.4), rgba(16,185,129,0.2));
+    border-radius: 16px; z-index: 0; opacity: 0;
+    transition: opacity 0.3s ease;
+    filter: blur(8px);
+}
+
+.access-gate-enter-btn:hover .access-gate-enter-btn-glow {
+    opacity: 1;
+}
+
+/* Back Button */
+.access-gate-back-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.85rem; font-weight: 500;
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 24px;
+}
+
+.access-gate-back-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.8);
+    border-color: rgba(255,255,255,0.12);
+}
+
+/* User confirmation */
+.access-gate-user {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 0.75rem; color: rgba(255,255,255,0.35);
+}
+
+.access-gate-user i {
+    color: #34d399; font-size: 12px;
+}
+
+.access-gate-user strong {
+    color: rgba(255,255,255,0.6); font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .access-gate-card { padding: 36px 24px; border-radius: 20px; }
+    .access-gate-logo-icon { width: 64px; height: 64px; font-size: 28px; border-radius: 18px; }
+    .access-gate-pulse { width: 64px; height: 64px; border-radius: 18px; }
+    .access-gate-title { font-size: 1.25rem; }
+}

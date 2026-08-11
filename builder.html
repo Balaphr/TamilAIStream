@@ -25,6 +25,7 @@
 
     <!-- Login Screen -->
     <div class="builder-login-screen" id="loginScreen">
+        <div class="builder-login-particles" id="loginParticles"></div>
         <div class="login-card">
             <div class="login-logo">
                 <div class="logo-icon"><i class="fas fa-microphone-alt"></i></div>
@@ -84,6 +85,54 @@
                     <p>Already have an account? <a href="#" id="signinTab">Sign In</a></p>
                 </div>
             </form>
+        </div>
+
+        <!-- Builder Access Gate (shown after login, before dashboard) -->
+        <div class="builder-access-gate" id="builderAccessGate" style="display:none;">
+            <div class="access-gate-card">
+                <div class="access-gate-glow"></div>
+                <div class="access-gate-logo">
+                    <div class="access-gate-logo-icon">
+                        <i class="fas fa-microphone-alt"></i>
+                    </div>
+                    <div class="access-gate-pulse"></div>
+                </div>
+                <h2 class="access-gate-title">Admin Access</h2>
+                <p class="access-gate-subtitle">You are about to enter the Website Builder. This area allows you to manage all content, settings, and features.</p>
+                
+                <div class="access-gate-info">
+                    <div class="access-gate-info-item">
+                        <i class="fas fa-shield-halved"></i>
+                        <span>Admin privileges required</span>
+                    </div>
+                    <div class="access-gate-info-item">
+                        <i class="fas fa-database"></i>
+                        <span>Modifies live website data</span>
+                    </div>
+                    <div class="access-gate-info-item">
+                        <i class="fas fa-globe"></i>
+                        <span>Changes are published in real-time</span>
+                    </div>
+                </div>
+
+                <button class="access-gate-enter-btn" id="accessGateEnterBtn">
+                    <div class="access-gate-enter-btn-inner">
+                        <i class="fas fa-arrow-right-to-bracket"></i>
+                        <span>Enter Builder</span>
+                    </div>
+                    <div class="access-gate-enter-btn-glow"></div>
+                </button>
+
+                <button class="access-gate-back-btn" id="accessGateBackBtn">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Login</span>
+                </button>
+
+                <div class="access-gate-user" id="accessGateUser">
+                    <i class="fas fa-circle-check"></i>
+                    <span>Signed in as <strong id="accessGateUserName">Admin</strong></span>
+                </div>
+            </div>
         </div>
     </div>
 

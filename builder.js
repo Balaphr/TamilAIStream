@@ -45,6 +45,8 @@ function checkAuth() {
             try {
                 const data = JSON.parse(session);
                 if (data.expiry > Date.now()) {
+                    // Show access gate for returning admin sessions
+                    showAccessGate(data);
                     resolve(data);
                 } else {
                     localStorage.removeItem('adminSession');
@@ -82,6 +84,8 @@ function checkWebsiteAuth(resolve) {
                     expiry: Date.now() + (24 * 60 * 60 * 1000)
                 };
                 localStorage.setItem('adminSession', JSON.stringify(sessionData));
+                // Show access gate instead of directly entering builder
+                showAccessGate(sessionData);
                 resolve(sessionData);
             } else {
                 resolve(null);
@@ -98,12 +102,30 @@ function checkWebsiteAuth(resolve) {
 function showLoginScreen() {
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('builderDashboard').style.display = 'none';
+    const accessGate = document.getElementById('builderAccessGate');
+    if (accessGate) accessGate.style.display = 'none';
+    const loginCard = document.querySelector('.login-card');
+    if (loginCard) loginCard.style.display = 'block';
+}
+
+function showAccessGate(user) {
+    currentUser = user;
+    const loginCard = document.querySelector('.login-card');
+    const accessGate = document.getElementById('builderAccessGate');
+    if (loginCard) loginCard.style.display = 'none';
+    if (accessGate) {
+        accessGate.style.display = 'flex';
+        const userNameEl = document.getElementById('accessGateUserName');
+        if (userNameEl) userNameEl.textContent = user.displayName || user.email?.split('@')[0] || 'Admin';
+    }
 }
 
 function showBuilderDashboard(user) {
     currentUser = user;
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('builderDashboard').style.display = 'block';
+    const accessGate = document.getElementById('builderAccessGate');
+    if (accessGate) accessGate.style.display = 'none';
     // Analytics: track login
     if (typeof AnalyticsTracker !== 'undefined') { AnalyticsTracker.setUserId(user.uid || user.email); AnalyticsTracker.track('user_login'); }
     
@@ -116,6 +138,26 @@ function showBuilderDashboard(user) {
     // Initialize builder
     initBuilder();
 }
+
+// Access Gate Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    const enterBtn = document.getElementById('accessGateEnterBtn');
+    const backBtn = document.getElementById('accessGateBackBtn');
+    if (enterBtn) {
+        enterBtn.addEventListener('click', () => {
+            if (currentUser) showBuilderDashboard(currentUser);
+        });
+    }
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            const accessGate = document.getElementById('builderAccessGate');
+            const loginCard = document.querySelector('.login-card');
+            if (accessGate) accessGate.style.display = 'none';
+            if (loginCard) loginCard.style.display = 'block';
+            currentUser = null;
+        });
+    }
+});
 
 // Sign In
 async function signInWithEmail(email, password) {
@@ -142,7 +184,7 @@ async function signInWithEmail(email, password) {
                     expiry: Date.now() + (24 * 60 * 60 * 1000)
                 }));
                 showToast('Welcome Admin!', 'success');
-                showBuilderDashboard(demoUser);
+                showAccessGate(demoUser);
                 return;
             }
             showToast('Invalid email or password', 'error');
@@ -158,7 +200,7 @@ async function signInWithEmail(email, password) {
             expiry: Date.now() + (24 * 60 * 60 * 1000)
         }));
         showToast(`Welcome ${user.displayName}!`, 'success');
-        showBuilderDashboard(user);
+        showAccessGate(user);
     } catch (error) {
         console.error('Sign in error:', error);
         showToast('Authentication failed. Please try again', 'error');

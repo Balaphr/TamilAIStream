@@ -2103,16 +2103,16 @@ function updateQuotesFromDataStore() {
 // ============================================
 function checkAdminAndShowBuilder() {
     const builderNavLink = document.getElementById('builderNavLink');
-    if (!builderNavLink) return;
+    const premiumSidebarBuilder = document.getElementById('premiumSidebarBuilder');
+    let isAdmin = false;
     
-    // Default: hide builder
-    builderNavLink.style.display = 'none';
+    // Default: hide builder everywhere
+    if (builderNavLink) builderNavLink.style.display = 'none';
+    if (premiumSidebarBuilder) premiumSidebarBuilder.style.display = 'none';
     
     // Check if user is guest - NEVER show builder for guests
     const isGuest = localStorage.getItem('tamilAIStream_guest');
-    if (isGuest === 'true') {
-        return;
-    }
+    if (isGuest === 'true') return;
     
     // Check for admin session (logged in via builder page)
     const adminSession = localStorage.getItem('adminSession');
@@ -2120,26 +2120,28 @@ function checkAdminAndShowBuilder() {
         try {
             const sessionData = JSON.parse(adminSession);
             if (sessionData.username === 'admin@tamilaistream.com' && sessionData.expiry > Date.now()) {
-                builderNavLink.style.display = 'flex';
-                return;
+                isAdmin = true;
             }
-        } catch (e) {
-            // Invalid session, continue checking
-        }
+        } catch (e) { /* Invalid session, continue checking */ }
     }
     
     // Check for admin logged in via main login page
-    const storedUser = localStorage.getItem('tamilAIStream_user');
-    if (storedUser) {
-        try {
-            const userData = JSON.parse(storedUser);
-            if (userData.email === 'admin@tamilaistream.com') {
-                builderNavLink.style.display = 'flex';
-                return;
-            }
-        } catch (e) {
-            // Invalid user data
+    if (!isAdmin) {
+        const storedUser = localStorage.getItem('tamilAIStream_user');
+        if (storedUser) {
+            try {
+                const userData = JSON.parse(storedUser);
+                if (userData.email === 'admin@tamilaistream.com') {
+                    isAdmin = true;
+                }
+            } catch (e) { /* Invalid user data */ }
         }
+    }
+    
+    // Show/hide builder elements based on admin status
+    if (isAdmin) {
+        if (builderNavLink) builderNavLink.style.display = 'flex';
+        if (premiumSidebarBuilder) premiumSidebarBuilder.style.display = 'flex';
     }
 }
 
