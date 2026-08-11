@@ -527,6 +527,9 @@ function initAudioPlayer() {
             isStreamPlaying = true;
             streamConnecting = false;
             playbackHasLoaded = true;
+            // Clear the seek flag — post-seek buffering is done
+            window._isSeeking = false;
+            window._seekingUntil = 0;
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
             persistPlaybackState();
             updatePlayPauseButton(true);
@@ -603,15 +606,22 @@ function initAudioPlayer() {
             showToast(`Unable to connect to ${stationName}. Stream currently unavailable. (Error ${errCode})`, 'error');
         });
         audioPlayer.addEventListener('waiting', () => {
+            // Suppress the buffering toast during/after a user-initiated seek.
+            // The seeking flag is set by seekPlaybackToPercent and cleared after
+            // a short grace period so brief post-seek buffers are invisible.
+            if (window._isSeeking || Date.now() < window._seekingUntil) return;
             showToast('Buffering... Please wait.', 'info');
         });
         audioPlayer.addEventListener('canplay', () => {
             hideLoadingSpinner();
+            // Also clear seek flag on canplay in case playing event is delayed
+            if (Date.now() >= window._seekingUntil) window._isSeeking = false;
         });
         audioPlayer.addEventListener('loadstart', () => {
             streamConnecting = true;
         });
         audioPlayer.addEventListener('stalled', () => {
+            if (window._isSeeking || Date.now() < window._seekingUntil) return;
             showToast('Connection stalled. Retrying...', 'info');
         });
         audioPlayer.addEventListener('ended', () => {
@@ -650,14 +660,24 @@ function initAudioPlayer() {
             navigator.mediaSession.setActionHandler('nexttrack', () => { playNextTrack(); });
             navigator.mediaSession.setActionHandler('seekbackward', (details) => {
                 const offset = details.seekOffset || 10;
-                if (audioPlayer) audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - offset);
+                if (audioPlayer) {
+                    window._isSeeking = true;
+                    window._seekingUntil = Date.now() + 1200;
+                    audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - offset);
+                }
             });
             navigator.mediaSession.setActionHandler('seekforward', (details) => {
                 const offset = details.seekOffset || 10;
-                if (audioPlayer) audioPlayer.currentTime = Math.min(audioPlayer.duration || 0, audioPlayer.currentTime + offset);
+                if (audioPlayer) {
+                    window._isSeeking = true;
+                    window._seekingUntil = Date.now() + 1200;
+                    audioPlayer.currentTime = Math.min(audioPlayer.duration || 0, audioPlayer.currentTime + offset);
+                }
             });
             navigator.mediaSession.setActionHandler('seekto', (details) => {
                 if (audioPlayer && details.seekTime != null) {
+                    window._isSeeking = true;
+                    window._seekingUntil = Date.now() + 1200;
                     audioPlayer.currentTime = details.seekTime;
                 }
             });
@@ -914,6 +934,9 @@ function resumePlayback() {
 //   3. the seekable end of the media element (for non-seekable streams)
 let _pendingSeekPct = null;
 let _pendingSeekTimer = null;
+// Use window globals so all player scripts can check/set these
+window._isSeeking = false;
+window._seekingUntil = 0;
 function getPlaybackDuration() {
     if (audioPlayer && typeof audioPlayer.duration === 'number' && isFinite(audioPlayer.duration) && audioPlayer.duration > 0) {
         return audioPlayer.duration;
@@ -943,23 +966,13 @@ function parseTrackDuration(track) {
 }
 function applyPlaybackSeek(el, seconds) {
     if (!el) return;
-    let target = seconds;
+    const dur = el.duration || getPlaybackDuration();
+    let target = Math.max(0, Math.min(seconds, (dur && isFinite(dur) && dur > 0) ? dur : seconds));
+    // Skip no-op seeks (within 50ms tolerance to avoid jitter)
+    if (Math.abs((el.currentTime || 0) - target) < 0.05) return;
     try {
-        if (el.seekable && el.seekable.length > 0) {
-            const max = el.seekable.end(el.seekable.length - 1);
-            if (isFinite(max) && max > 0) target = Math.min(seconds, max);
-        }
-    } catch (e) {}
-    target = Math.max(0, target);
-    try {
-        if (typeof el.fastSeek === 'function') {
-            try { el.fastSeek(target); } catch (e2) { el.currentTime = target; }
-        } else {
-            el.currentTime = target;
-        }
-    } catch (e3) {
-        try { el.currentTime = target; } catch (e4) {}
-    }
+        el.currentTime = target;
+    } catch (e3) {}
     persistPlaybackState();
     // Keep playing if it was playing before the seek
     if (window.isStreamPlaying && el.paused) {
@@ -970,7 +983,11 @@ function seekPlaybackToPercent(percent) {
     if (window.__BUILDER_PREVIEW__) return;
     if (!audioPlayer) return;
     const derived = Math.max(0, Math.min(1, percent));
-        const dur = getPlaybackDuration();
+    const dur = getPlaybackDuration();
+    // Set seeking flag — the waiting handler will suppress the buffering toast
+    // while this flag is active.
+    window._isSeeking = true;
+    window._seekingUntil = Date.now() + 1200;
     // Immediately preview the requested position on all UIs so the bar/thumb
     // never snap back to 0:00 while the engine seeks.
     _pendingSeekPct = derived;
@@ -983,6 +1000,9 @@ function seekPlaybackToPercent(percent) {
     }
     if (typeof MiniAudioPlayer !== 'undefined' && typeof MiniAudioPlayer.setSeekPreview === 'function') {
         MiniAudioPlayer.setSeekPreview(derived, dur);
+    }
+    if (typeof GlobalPlayer !== 'undefined' && typeof GlobalPlayer.updateProgressUI === 'function') {
+        GlobalPlayer.updateProgressUI();
     }
     if (dur && isFinite(dur) && dur > 0) {
         // Duration is known: seek immediately.

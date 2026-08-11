@@ -542,8 +542,13 @@ const GlobalPlayer = (() => {
     }
 
     function seekToTime(time) {
-        if (window.audioPlayer && window.audioPlayer.duration)
-            window.audioPlayer.currentTime = Math.max(0, Math.min(time, window.audioPlayer.duration));
+        if (window.audioPlayer && window.audioPlayer.duration) {
+            const target = Math.max(0, Math.min(time, window.audioPlayer.duration));
+            // Set the seeking flag so the waiting handler suppresses the toast
+            window._isSeeking = true;
+            window._seekingUntil = Date.now() + 1200;
+            window.audioPlayer.currentTime = target;
+        }
         if (typeof PlayerEngine !== 'undefined') PlayerEngine.seekTo(time);
     }
 

@@ -400,6 +400,9 @@ const PlayerEngine = (() => {
     function seekTo(time) {
         if (window.__BUILDER_PREVIEW__) return;
         var target = Math.max(0, Math.min(time, (audio && audio.duration) || 0));
+        // Set the seeking flag so the waiting handler suppresses the toast
+        window._isSeeking = true;
+        window._seekingUntil = Date.now() + 1200;
         if (audio && audio.duration) {
             try { audio.currentTime = target; } catch (e) {}
         }

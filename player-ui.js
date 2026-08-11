@@ -757,6 +757,9 @@ const PlayerUI = (() => {
     }
 
     function seekToLyricTime(time) {
+        // Set the seeking flag so the waiting handler suppresses the toast
+        window._isSeeking = true;
+        window._seekingUntil = Date.now() + 1200;
         // Seek the global audioPlayer (script.js)
         if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer) {
             window.audioPlayer.currentTime = time;
