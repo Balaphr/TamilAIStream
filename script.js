@@ -982,8 +982,8 @@ function applyPlaybackSeek(el, seconds) {
     if (!el) return;
     const dur = el.duration || getPlaybackDuration();
     let target = Math.max(0, Math.min(seconds, (dur && isFinite(dur) && dur > 0) ? dur : seconds));
-    // Skip no-op seeks (within 50ms tolerance to avoid jitter)
-    if (Math.abs((el.currentTime || 0) - target) < 0.05) return;
+    // Skip no-op seeks (within 10ms tolerance to avoid jitter)
+    if (Math.abs((el.currentTime || 0) - target) < 0.01) return;
     try {
         el.currentTime = target;
     } catch (e3) {}
@@ -2633,10 +2633,37 @@ function renderGreetingSection() {
                 <div class="greeting-label">${greeting}</div>
                 <h1 class="greeting-title">Welcome to Tamil AI Stream <span class="greeting-wave">${emoji}</span></h1>
                 <p class="greeting-subtitle">Discover the best of Tamil music, powered by AI</p>
-                ${quote ? `<div class="greeting-quote">"${quote}"</div>` : ''}
+                ${quote ? `<div class="greeting-quote" id="greetingQuote">"${quote}"</div>` : ''}
             </div>
         </div>
     `;
+}
+
+function updateGreetingQuoteOnly() {
+    const container = document.querySelector('.greeting-section');
+    if (!container) return;
+    const quotes = DataStore.getQuotes().filter(q => q.status === 'active');
+    const quote = quotes.length > 0 ? quotes[Math.floor(Math.random() * quotes.length)].text : '';
+    if (!quote) return;
+    const quoteEl = container.querySelector('.greeting-quote') || container.querySelector('#greetingQuote');
+    if (quoteEl) {
+        quoteEl.style.opacity = '0';
+        quoteEl.style.transform = 'translateY(10px)';
+        setTimeout(() => {
+            quoteEl.textContent = `"${quote}"`;
+            quoteEl.style.opacity = '1';
+            quoteEl.style.transform = 'translateY(0)';
+        }, 300);
+    } else if (quote) {
+        const card = container.querySelector('.greeting-text');
+        if (card) {
+            const div = document.createElement('div');
+            div.className = 'greeting-quote';
+            div.id = 'greetingQuote';
+            div.textContent = `"${quote}"`;
+            card.appendChild(div);
+        }
+    }
 }
 
 // Generic carousel swipe handler
@@ -2800,7 +2827,7 @@ function setupRealtimeSync() {
                 break;
             case 'QUOTES':
                 updateQuotesFromDataStore();
-                renderGreetingSection();
+                updateGreetingQuoteOnly();
                 break;
             case 'SITE_SETTINGS':
                 applySiteSettings();

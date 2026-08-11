@@ -406,19 +406,45 @@ const GlobalPlayer = (() => {
     function bindSeek(elemId, onSeek) {
         const wrap = document.getElementById(elemId);
         if (!wrap) return;
-        const doSeek = (e) => {
+        let dragPct = null;
+        const previewSeek = (e) => {
             const rect = wrap.getBoundingClientRect();
             if (!rect || rect.width <= 0) return;
             const x = (e.clientX !== undefined) ? e.clientX : (e.touches?.[0]?.clientX ?? 0);
-            const pct = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
-            onSeek(pct);
+            dragPct = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
+            // Preview: update bar visual only (no audio seek yet)
+            if (elemId === 'gpExpBarWrap') {
+                setWidth('gpExpBar', (dragPct * 100) + '%');
+                setLeft('gpExpBarThumb', (dragPct * 100) + '%');
+                setText('gpExpCur', fmtTime(dragPct * (state.duration || 0)));
+            } else {
+                setWidth('gpMiniBar', (dragPct * 100) + '%');
+                setLeft('gpMiniThumb', (dragPct * 100) + '%');
+                setText('gpMiniCur', fmtTime(dragPct * (state.duration || 0)));
+            }
         };
-        wrap.addEventListener('mousedown', (e) => { isDragging = true; doSeek(e); e.preventDefault(); e.stopPropagation(); });
-        document.addEventListener('mousemove', (e) => { if (isDragging) doSeek(e); });
-        document.addEventListener('mouseup', () => { isDragging = false; });
-        wrap.addEventListener('touchstart', (e) => { isDragging = true; doSeek(e); e.preventDefault(); e.stopPropagation(); }, { passive: false });
-        wrap.addEventListener('touchmove', (e) => { if (isDragging) { e.preventDefault(); doSeek(e); } }, { passive: false });
-        document.addEventListener('touchend', () => { isDragging = false; });
+        const commitSeek = () => {
+            if (dragPct === null) return;
+            const target = dragPct;
+            dragPct = null;
+            // Perform actual audio seek
+            onSeek(target);
+            // Force UI sync from actual audio position after seek
+            setTimeout(() => {
+                const ap = window.audioPlayer;
+                if (ap) {
+                    state.currentTime = ap.currentTime || 0;
+                    state.duration = ap.duration || 0;
+                }
+                updateProgressUI();
+            }, 50);
+        };
+        wrap.addEventListener('mousedown', (e) => { isDragging = true; previewSeek(e); e.preventDefault(); e.stopPropagation(); });
+        document.addEventListener('mousemove', (e) => { if (isDragging) previewSeek(e); });
+        document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; commitSeek(); } });
+        wrap.addEventListener('touchstart', (e) => { isDragging = true; previewSeek(e); e.preventDefault(); e.stopPropagation(); }, { passive: false });
+        wrap.addEventListener('touchmove', (e) => { if (isDragging) { e.preventDefault(); previewSeek(e); } }, { passive: false });
+        document.addEventListener('touchend', () => { if (isDragging) { isDragging = false; commitSeek(); } });
     }
 
     function hookAudioSources() {
@@ -455,6 +481,8 @@ const GlobalPlayer = (() => {
         });
         ap.addEventListener('timeupdate', () => {
             if (isDragging) return;
+            // Don't overwrite UI while a seek is being applied
+            if (window._isSeeking && Date.now() < (window._seekingUntil || 0)) return;
             state.currentTime = ap.currentTime || 0;
             state.duration = ap.duration || 0;
             updateProgressUI();
@@ -462,6 +490,8 @@ const GlobalPlayer = (() => {
         if (typeof ProgressSync !== 'undefined') {
             ProgressSync.register((_cur, _dur, _pct) => {
                 if (isDragging) return;
+                // Don't overwrite UI while a seek is being applied
+                if (window._isSeeking && Date.now() < (window._seekingUntil || 0)) return;
                 state.currentTime = _cur;
                 state.duration = _dur;
                 updateProgressUI();
@@ -487,6 +517,7 @@ const GlobalPlayer = (() => {
         PlayerEngine.on('pause', () => { state.isPlaying = false; updatePlayUI(false); broadcastState('pause'); });
         PlayerEngine.on('timeupdate', ({ current, duration }) => {
             if (isDragging) return;
+            if (window._isSeeking && Date.now() < (window._seekingUntil || 0)) return;
             state.currentTime = current;
             state.duration = duration;
             updateProgressUI();
@@ -571,10 +602,16 @@ const GlobalPlayer = (() => {
 
     function seekToPercent(pct) {
         const derived = Math.max(0, Math.min(1, pct));
+        const targetTime = derived * (state.duration || 0);
+        // Update state immediately so UI shows correct position
+        state.currentTime = targetTime;
+        updateProgressUI();
         if (typeof seekPlaybackToPercent === 'function') { seekPlaybackToPercent(derived); return; }
         if (window.audioPlayer) {
             const dur = window.audioPlayer.duration;
             if (dur && isFinite(dur) && dur > 0) {
+                window._isSeeking = true;
+                window._seekingUntil = Date.now() + 1200;
                 window.audioPlayer.currentTime = derived * dur;
                 state.currentTime = window.audioPlayer.currentTime;
                 updateProgressUI();
