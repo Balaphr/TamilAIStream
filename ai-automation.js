@@ -689,3 +689,5 @@ const AIAutomation = (() => {
         processCommand
     };
 })();
+
+if (typeof window !== 'undefined') window.AIAutomation = AIAutomation;

@@ -1948,12 +1948,23 @@ document.getElementById('logoutBtn')?.addEventListener('click', logout);
 // ============================================
 // Top Header - Live Time, Date & Quotes
 // ============================================
+let _topHeaderDateInterval = null;
+let _topHeaderTimeInterval = null;
+let _topHeaderQuoteInterval = null;
+let _tamilQuotes = [];
+let _quoteIndex = 0;
+
 function initTopHeader() {
     const dateEl = document.getElementById('liveDate');
     const timeEl = document.getElementById('liveTime');
     const quoteEl = document.getElementById('tamilQuote');
     
     if (!dateEl && !timeEl && !quoteEl) return; // No top header elements
+    
+    // Clear existing intervals to prevent duplicates
+    if (_topHeaderDateInterval) clearInterval(_topHeaderDateInterval);
+    if (_topHeaderTimeInterval) clearInterval(_topHeaderTimeInterval);
+    if (_topHeaderQuoteInterval) clearInterval(_topHeaderQuoteInterval);
     
     // Update date
     function updateDate() {
@@ -1977,31 +1988,27 @@ function initTopHeader() {
         }
     }
     
-    // Tamil quotes rotation from DataStore
-    let tamilQuotes = [];
+    // Load quotes from DataStore
+    _tamilQuotes = [];
     try {
         const quotes = DataStore.getQuotes();
         if (Array.isArray(quotes)) {
-            tamilQuotes = quotes.filter(q => q && q.status === 'active').map(q => q.text).filter(Boolean);
+            _tamilQuotes = quotes.filter(q => q && q.status === 'active').map(q => q.text).filter(Boolean);
         }
     } catch (error) {
         console.warn('Quote data unavailable:', error);
     }
-    if (!tamilQuotes.length) {
-        tamilQuotes = [];
-    }
-    
-    let quoteIndex = 0;
+    _quoteIndex = 0;
     
     function updateQuote() {
-        if (quoteEl) {
+        if (quoteEl && _tamilQuotes.length > 0) {
             quoteEl.style.opacity = '0';
             quoteEl.style.transform = 'translateY(10px)';
             setTimeout(() => {
-                quoteEl.textContent = tamilQuotes[quoteIndex];
+                quoteEl.textContent = _tamilQuotes[_quoteIndex];
                 quoteEl.style.opacity = '1';
                 quoteEl.style.transform = 'translateY(0)';
-                quoteIndex = (quoteIndex + 1) % tamilQuotes.length;
+                _quoteIndex = (_quoteIndex + 1) % _tamilQuotes.length;
             }, 300);
         }
     }
@@ -2012,9 +2019,34 @@ function initTopHeader() {
     updateQuote();
     
     // Intervals
-    setInterval(updateDate, 60000); // Update date every minute
-    setInterval(updateTime, 1000); // Update time every second
-    setInterval(updateQuote, 15000); // Rotate quotes every 15 seconds
+    _topHeaderDateInterval = setInterval(updateDate, 60000);
+    _topHeaderTimeInterval = setInterval(updateTime, 1000);
+    _topHeaderQuoteInterval = setInterval(updateQuote, 15000);
+}
+
+// Update quotes dynamically without reinitializing intervals
+function updateQuotesFromDataStore() {
+    try {
+        const quotes = DataStore.getQuotes();
+        if (Array.isArray(quotes)) {
+            _tamilQuotes = quotes.filter(q => q && q.status === 'active').map(q => q.text).filter(Boolean);
+            _quoteIndex = 0;
+            // Trigger immediate quote display if element exists
+            const quoteEl = document.getElementById('tamilQuote');
+            if (quoteEl && _tamilQuotes.length > 0) {
+                quoteEl.style.opacity = '0';
+                quoteEl.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    quoteEl.textContent = _tamilQuotes[0];
+                    quoteEl.style.opacity = '1';
+                    quoteEl.style.transform = 'translateY(0)';
+                    _quoteIndex = 1;
+                }, 300);
+            }
+        }
+    } catch (error) {
+        console.warn('Quote update failed:', error);
+    }
 }
 
 // ============================================
@@ -2234,6 +2266,72 @@ function renderArtistHitsDynamic() {
             createRipple(e, this);
         });
     });
+}
+
+// ============================================
+// Movie / Yearly / Latest Collections Rendering
+// ============================================
+function renderRoundCollectionCard(item) {
+    const thumbSrc = item.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='20' fill='%23374151'/%3E%3Ctext x='60' y='68' text-anchor='middle' fill='%239ca3af' font-size='32'%3E🎵%3C/text%3E%3C/svg%3E";
+    return `
+    <div class="round-collection-card" data-id="${item.id}" onclick="playCollectionSongs('${item.id}', '${item.type || ''}')">
+        <div class="round-collection-thumb">
+            <img src="${thumbSrc}" alt="${item.name}">
+            <div class="round-collection-play"><i class="fas fa-play"></i></div>
+        </div>
+        <div class="round-collection-info">
+            <span class="round-collection-name">${item.name}</span>
+            <span class="round-collection-count">${item.songCount || 0} songs</span>
+        </div>
+    </div>`;
+}
+
+function renderCollectionsTrack(trackId, items) {
+    const track = document.getElementById(trackId);
+    if (!track) return;
+    if (!items.length) {
+        track.innerHTML = '<div style="padding:20px;color:#888;text-align:center;width:100%;">No collections yet. Add from Builder.</div>';
+        return;
+    }
+    track.innerHTML = items.filter(i => i.status !== 'inactive').map(item => renderRoundCollectionCard(item)).join('');
+}
+
+function renderMoviesCollectionsDynamic() {
+    renderCollectionsTrack('moviesCollectionTrack', DataStore.getMoviesCollections());
+}
+
+function renderYearlyCollectionsDynamic() {
+    renderCollectionsTrack('yearlyCollectionTrack', DataStore.getYearlyCollections());
+}
+
+function renderLatestCollectionsDynamic() {
+    renderCollectionsTrack('latestCollectionTrack', DataStore.getLatestCollections());
+}
+
+function playCollectionSongs(collectionId, collectionType) {
+    let collections = [];
+    if (collectionType === 'movies') collections = DataStore.getMoviesCollections();
+    else if (collectionType === 'yearly') collections = DataStore.getYearlyCollections();
+    else if (collectionType === 'latest') collections = DataStore.getLatestCollections();
+    
+    const collection = collections.find(c => c.id === collectionId);
+    if (!collection || !collection.songs || !collection.songs.length) {
+        showToast('No songs in this collection', 'info');
+        return;
+    }
+    
+    const allSongs = DataStore.getSongs();
+    const playableSongs = collection.songs.map(cs => {
+        return allSongs.find(s => s.id === cs.songId || s.id === cs.id) || cs;
+    }).filter(s => s && (s.audioUrl || s.streamUrl));
+    
+    if (playableSongs.length) {
+        window.audioPlayer.loadPlaylist(playableSongs);
+        window.audioPlayer.play();
+        showToast(`Playing ${collection.name}`, 'success');
+    } else {
+        showToast('No playable songs in this collection', 'warning');
+    }
 }
 
 // ============================================
@@ -2589,6 +2687,9 @@ function renderAllDynamicContent() {
     renderCategoriesDynamic();
     renderArtistHitsDynamic();
     initTamilHitsCarousel();
+    renderMoviesCollectionsDynamic();
+    renderYearlyCollectionsDynamic();
+    renderLatestCollectionsDynamic();
     renderAIRecommendedDynamic();
     renderAllStationsDynamic();
     applySiteSettings();
@@ -2637,8 +2738,17 @@ function setupRealtimeSync() {
                 renderArtistHitsDynamic();
                 initTamilHitsCarousel();
                 break;
+            case 'MOVIES_COLLECTIONS':
+                renderMoviesCollectionsDynamic();
+                break;
+            case 'YEARLY_COLLECTIONS':
+                renderYearlyCollectionsDynamic();
+                break;
+            case 'LATEST_COLLECTIONS':
+                renderLatestCollectionsDynamic();
+                break;
             case 'QUOTES':
-                initTopHeader();
+                updateQuotesFromDataStore();
                 renderGreetingSection();
                 break;
             case 'SITE_SETTINGS':
@@ -2806,11 +2916,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check admin and show builder link
     checkAdminAndShowBuilder();
     
-    // Initialize UI components (skip particles in builder preview)
-    if (!window.__BUILDER_PREVIEW__) {
-        new ParticleSystem('particles-canvas');
-    }
-    
+    // Particles removed per user request
     // Initialize top header
     initTopHeader();
     

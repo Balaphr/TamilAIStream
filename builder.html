@@ -647,6 +647,9 @@
                             <button class="content-tab" data-tab="trending">Trending</button>
                             <button class="content-tab" data-tab="categories">Categories</button>
                             <button class="content-tab" data-tab="artistHits">Artist Hits</button>
+                            <button class="content-tab" data-tab="moviesCollections">Movies</button>
+                            <button class="content-tab" data-tab="yearlyCollections">Yearly</button>
+                            <button class="content-tab" data-tab="latestCollections">Latest</button>
                             <button class="content-tab" data-tab="quotes">Quotes</button>
                         </div>
 
@@ -787,6 +790,81 @@
                                             </table>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Movies Collections Tab -->
+                        <div class="content-tab-panel" id="moviesCollectionsTab" style="display:none;">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h2 class="content-card-title">Movie Collections</h2>
+                                    <button class="builder-btn primary" onclick="openAddCollectionModal('movies')">
+                                        <i class="fas fa-plus"></i> Add Movie Collection
+                                    </button>
+                                </div>
+                                <div class="data-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Songs</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="moviesCollectionsTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Yearly Collections Tab -->
+                        <div class="content-tab-panel" id="yearlyCollectionsTab" style="display:none;">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h2 class="content-card-title">Yearly Collections</h2>
+                                    <button class="builder-btn primary" onclick="openAddCollectionModal('yearly')">
+                                        <i class="fas fa-plus"></i> Add Yearly Collection
+                                    </button>
+                                </div>
+                                <div class="data-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Songs</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="yearlyCollectionsTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Latest Collections Tab -->
+                        <div class="content-tab-panel" id="latestCollectionsTab" style="display:none;">
+                            <div class="content-card">
+                                <div class="content-card-header">
+                                    <h2 class="content-card-title">Latest Releases</h2>
+                                    <button class="builder-btn primary" onclick="openAddCollectionModal('latest')">
+                                        <i class="fas fa-plus"></i> Add Latest Collection
+                                    </button>
+                                </div>
+                                <div class="data-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Songs</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="latestCollectionsTable"></tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>

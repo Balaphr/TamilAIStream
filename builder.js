@@ -346,6 +346,9 @@ function navigateTo(page) {
         loadTrending();
         loadCategories();
         loadArtistHits();
+        loadCollectionsTable('movies');
+        loadCollectionsTable('yearly');
+        loadCollectionsTable('latest');
         loadQuotes();
     }
     if (page === 'images') loadAllImages();
@@ -948,6 +951,42 @@ async function uploadImage(file, category, title) {
         console.error('Error uploading image:', error);
         showToast('Error: ' + error.message, 'error');
     }
+}
+
+async function uploadFeaturedImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+        showToast('Uploading image...', 'info');
+        const result = await R2Uploader.upload(file, 'tamil-ai-stream/featured');
+        const urlInput = document.getElementById('featuredThumbnail');
+        if (urlInput) urlInput.value = result.url;
+        const preview = document.getElementById('featuredThumbnailPreview');
+        const img = document.getElementById('featuredThumbnailImg');
+        if (preview && img) { img.src = result.url; preview.style.display = 'block'; }
+        showToast('Image uploaded!', 'success');
+    } catch (err) {
+        showToast('Upload failed: ' + err.message, 'error');
+    }
+    input.value = '';
+}
+
+async function uploadTrendingImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+        showToast('Uploading image...', 'info');
+        const result = await R2Uploader.upload(file, 'tamil-ai-stream/trending');
+        const urlInput = document.getElementById('trendingThumbnail');
+        if (urlInput) urlInput.value = result.url;
+        const preview = document.getElementById('trendingThumbnailPreview');
+        const img = document.getElementById('trendingThumbnailImg');
+        if (preview && img) { img.src = result.url; preview.style.display = 'block'; }
+        showToast('Image uploaded!', 'success');
+    } catch (err) {
+        showToast('Upload failed: ' + err.message, 'error');
+    }
+    input.value = '';
 }
 
 async function deleteImage(imageId) {
@@ -2144,6 +2183,12 @@ function openAddFeaturedModal() {
                         <div class="station-thumbnail-preview" id="featuredThumbnailPreview" style="display:none;">
                             <img id="featuredThumbnailImg" src="" alt="Thumbnail preview">
                         </div>
+                        <div style="margin-top:6px;">
+                            <label class="builder-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;padding:6px 12px;">
+                                <i class="fas fa-cloud-upload-alt"></i> Upload Image
+                                <input type="file" accept="image/*" style="display:none;" onchange="uploadFeaturedImage(this)">
+                            </label>
+                        </div>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="builder-btn primary"><i class="fas fa-plus"></i> Add</button>
@@ -2315,6 +2360,12 @@ function openAddTrendingModal() {
                         <input type="url" class="form-input" id="trendingThumbnail" placeholder="https://example.com/image.jpg">
                         <div class="station-thumbnail-preview" id="trendingThumbnailPreview" style="display:none;">
                             <img id="trendingThumbnailImg" src="" alt="Thumbnail preview">
+                        </div>
+                        <div style="margin-top:6px;">
+                            <label class="builder-btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;padding:6px 12px;">
+                                <i class="fas fa-cloud-upload-alt"></i> Upload Image
+                                <input type="file" accept="image/*" style="display:none;" onchange="uploadTrendingImage(this)">
+                            </label>
                         </div>
                     </div>
                     <div class="form-actions">
@@ -2764,24 +2815,44 @@ function openEditArtistSongsModal(hitId) {
         <div class="modal-overlay" onclick="document.getElementById('editArtistSongsModal').remove()"></div>
         <div class="modal-content" style="max-width:900px;max-height:90vh;">
             <div class="modal-header">
-                <h2>Edit Artist: ${hit.name} (${hit.artist})</h2>
+                <h2>Edit Artist: ${hit.name}</h2>
                 <button class="modal-close" onclick="document.getElementById('editArtistSongsModal').remove()">&times;</button>
             </div>
             <div class="modal-body">
+                <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end;">
+                    <div class="form-group" style="flex:1;min-width:200px;margin:0;">
+                        <label class="form-label">Artist ID</label>
+                        <input type="text" class="form-input" id="editAhArtist" value="${hit.artist}" placeholder="e.g. dhanush">
+                    </div>
+                    <div class="form-group" style="flex:1;min-width:200px;margin:0;">
+                        <label class="form-label">Display Name</label>
+                        <input type="text" class="form-input" id="editAhName" value="${hit.name}" placeholder="e.g. Dhanush Hits">
+                    </div>
+                    <button type="button" class="builder-btn primary" onclick="updateArtistName('${hitId}')" style="height:38px;white-space:nowrap;">
+                        <i class="fas fa-save"></i> Update Name
+                    </button>
+                </div>
+
                 <div class="tabs" style="margin-bottom:16px;">
-                    <button class="tab-btn active" data-tab="manage" onclick="switchArtistSongTab('manage')"><i class="fas fa-list"></i> Manage Songs</button>
-                    <button class="tab-btn" data-tab="add" onclick="switchArtistSongTab('add')"><i class="fas fa-plus"></i> Add Song</button>
+                    <button class="tab-btn active" data-tab="manage" onclick="switchArtistSongTab('manage')"><i class="fas fa-list"></i> Manage Songs (${hit.songs.length})</button>
+                    <button class="tab-btn" data-tab="add" onclick="switchArtistSongTab('add')"><i class="fas fa-plus"></i> Add Songs</button>
                 </div>
                 
                 <div id="manageSongsTab">
-                    <div class="form-group">
-                        <label class="form-label">Duration Filter</label>
-                        <input type="text" class="form-input" id="asDuration" placeholder="e.g. 3:45">
+                    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
+                        <input type="text" class="form-input" id="asDuration" placeholder="Filter by duration e.g. 3:45" style="max-width:200px;">
+                        <label style="color:#aaa;font-size:12px;display:flex;align-items:center;gap:4px;">
+                            <input type="checkbox" id="selectAllSongs"> Select All
+                        </label>
+                        <button type="button" class="builder-btn delete" onclick="bulkRemoveSongsFromArtist('${hitId}')" id="bulkRemoveBtn" style="display:none;font-size:12px;padding:4px 10px;">
+                            <i class="fas fa-trash"></i> Remove Selected
+                        </button>
                     </div>
                     <div class="data-table">
                         <table>
                             <thead>
                                 <tr>
+                                    <th style="width:30px;"></th>
                                     <th>#</th>
                                     <th>Title</th>
                                     <th>Artist</th>
@@ -2797,41 +2868,31 @@ function openEditArtistSongsModal(hitId) {
                 
                 <div id="addSongTab" style="display:none;">
                     <form id="addArtistSongForm">
-                        <div class="form-group">
-                            <label class="form-label">Select Song from Library</label>
-                            <select class="form-input" id="asSong">
-                                <option value="">-- Select Song --</option>
-                                ${songs.map(s => `<option value="${s.id}">${s.title} - ${s.artist} (${s.movie})</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="form-divider" style="margin:20px 0;border-top:1px solid #333;text-align:center;color:#888;font-size:12px;">OR</div>
-                        <div class="form-group">
-                            <label class="form-label">Upload MP3 File</label>
-                            <div class="file-upload-area" id="fileUploadArea" style="border:2px dashed #444;border-radius:8px;padding:30px;text-align:center;cursor:pointer;transition:border 0.3s;">
-                                <i class="fas fa-cloud-upload-alt" style="font-size:24px;color:#888;margin-bottom:10px;"></i>
-                                <p style="margin:5px 0;color:#888;">Drop MP3 file here or click to browse</p>
-                                <p style="margin:5px 0;font-size:11px;color:#666;">MP3 format, max 10MB</p>
-                                <input type="file" id="mp3FileInput" accept=".mp3,audio/*" style="display:none;">
+                        <div style="max-height:300px;overflow-y:auto;">
+                            <div class="form-group">
+                                <label class="form-label">Select Songs from Library (hold Ctrl/Cmd to select multiple)</label>
+                                <select class="form-input" id="asSong" multiple style="height:160px;">
+                                    ${songs.map(s => `<option value="${s.id}">${s.title} - ${s.artist} (${s.movie || 'N/A'})</option>`).join('')}
+                                </select>
                             </div>
-                        </div>
-                        <div class="form-group" id="mp3InfoGroup" style="display:none;">
-                            <label class="form-label">Song Title</label>
-                            <input type="text" class="form-input" id="asTitle" placeholder="Enter song title">
-                        </div>
-                        <div class="form-group" id="mp3ArtistGroup" style="display:none;">
-                            <label class="form-label">Artist</label>
-                            <input type="text" class="form-input" id="asArtist" placeholder="Enter artist name">
-                        </div>
-                        <div class="form-group" id="mp3MovieGroup" style="display:none;">
-                            <label class="form-label">Movie</label>
-                            <input type="text" class="form-input" id="asMovie" placeholder="Enter movie name (optional)">
+                            <div class="form-divider" style="margin:12px 0;border-top:1px solid #333;text-align:center;color:#888;font-size:12px;">OR</div>
+                            <div class="form-group">
+                                <label class="form-label">Upload MP3 File(s)</label>
+                                <div class="file-upload-area" id="fileUploadArea" style="border:2px dashed #444;border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:border 0.3s;">
+                                    <i class="fas fa-cloud-upload-alt" style="font-size:24px;color:#888;margin-bottom:10px;"></i>
+                                    <p style="margin:5px 0;color:#888;">Drop MP3 file(s) here or click to browse</p>
+                                    <p style="margin:5px 0;font-size:11px;color:#666;">MP3 format, max 10MB each</p>
+                                    <input type="file" id="mp3FileInput" accept=".mp3,audio/*" multiple style="display:none;">
+                                </div>
+                            </div>
+                            <div id="mp3FilesContainer"></div>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Duration</label>
+                            <label class="form-label">Duration (for uploads)</label>
                             <input type="text" class="form-input" id="addSongDuration" placeholder="e.g. 3:45">
                         </div>
-                        <button type="button" class="builder-btn primary" onclick="addSongToArtistCollection('${hitId}')" style="margin-top:16px;">
-                            <i class="fas fa-plus"></i> Add Song
+                        <button type="button" class="builder-btn primary" onclick="addSongToArtistCollection('${hitId}')" style="margin-top:12px;">
+                            <i class="fas fa-plus"></i> Add Selected Songs
                         </button>
                     </form>
                 </div>
@@ -2845,7 +2906,8 @@ function openEditArtistSongsModal(hitId) {
     `;
     document.body.appendChild(modal);
 
-    let uploadedFileData = null;
+    let uploadedFilesData = [];
+    let currentUploadIndex = 0;
 
     const fileInput = document.getElementById('mp3FileInput');
     const uploadArea = document.getElementById('fileUploadArea');
@@ -2871,36 +2933,49 @@ function openEditArtistSongsModal(hitId) {
         });
 
         fileInput.addEventListener('change', () => {
-            const file = fileInput.files[0];
-            if (!file) return;
+            const files = Array.from(fileInput.files);
+            if (!files.length) return;
 
-            if (!file.name.toLowerCase().endsWith('.mp3')) {
-                showToast('Only MP3 files are allowed', 'error');
-                return;
-            }
+            uploadedFilesData = [];
+            const container = document.getElementById('mp3FilesContainer');
+            container.innerHTML = '';
 
-            if (file.size > 10 * 1024 * 1024) {
-                showToast('File size exceeds 10MB limit', 'error');
-                return;
-            }
+            files.forEach((file, i) => {
+                if (!file.name.toLowerCase().endsWith('.mp3')) {
+                    showToast(`Skipping ${file.name}: Only MP3 files allowed`, 'warning');
+                    return;
+                }
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast(`Skipping ${file.name}: Exceeds 10MB limit`, 'warning');
+                    return;
+                }
 
-            uploadArea.innerHTML = `<i class="fas fa-file-audio" style="font-size:24px;color:#00aaff;"></i><p style="margin:5px 0;color:#00aaff;">${file.name}</p><p style="font-size:11px;color:#888;">${(file.size / 1024 / 1024).toFixed(2)} MB</p>`;
-
-             const reader = new FileReader();
-            reader.onload = (e) => {
-                uploadedFileData = e.target.result;
-                window._currentUploadedFileData = e.target.result;
-                document.getElementById('mp3InfoGroup').style.display = 'block';
-                document.getElementById('mp3ArtistGroup').style.display = 'block';
-                document.getElementById('mp3MovieGroup').style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadedFilesData[i] = {
+                        data: e.target.result,
+                        name: file.name.replace(/\.mp3$/i, ''),
+                        size: file.size
+                    };
+                    const info = document.createElement('div');
+                    info.style.cssText = 'padding:6px 10px;background:rgba(0,170,255,0.1);border-radius:6px;margin-top:4px;font-size:12px;color:#00aaff;';
+                    info.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                    container.appendChild(info);
+                };
+                reader.readAsDataURL(file);
+            });
         });
     }
 
-    // Store reference to uploadedFileData for addSongToArtistCollection
-    window._currentUploadedFileData = null;
+    const selectAllCb = document.getElementById('selectAllSongs');
+    if (selectAllCb) {
+        selectAllCb.addEventListener('change', function() {
+            document.querySelectorAll('.song-select-cb').forEach(cb => cb.checked = this.checked);
+            updateBulkRemoveBtn();
+        });
+    }
 
+    window._currentUploadedFilesData = [];
     renderEditArtistSongsTable(hitId);
 }
 
@@ -2909,6 +2984,64 @@ function deleteArtistHit(id) {
     const artistHits = DataStore.getArtistHits().filter(h => h.id !== id);
     DataStore.setArtistHits(artistHits);
     showToast('Artist hit deleted', 'success');
+    loadArtistHits();
+    syncToLiveWebsite();
+}
+
+function updateArtistName(hitId) {
+    const artistHits = DataStore.getArtistHits();
+    const hit = artistHits.find(h => h.id === hitId);
+    if (!hit) { showToast('Artist not found', 'error'); return; }
+    
+    const newArtist = document.getElementById('editAhArtist')?.value.trim();
+    const newName = document.getElementById('editAhName')?.value.trim();
+    
+    if (!newArtist || !newName) {
+        showToast('Artist ID and Display Name are required', 'error');
+        return;
+    }
+    
+    const oldName = hit.artist;
+    hit.artist = newArtist;
+    hit.name = newName;
+    
+    DataStore.setArtistHits(artistHits);
+    showToast(`Artist updated: ${oldName} → ${newArtist}`, 'success');
+    loadArtistHits();
+    syncToLiveWebsite();
+    
+    const header = document.querySelector('#editArtistSongsModal .modal-header h2');
+    if (header) header.textContent = `Edit Artist: ${newName}`;
+}
+
+function updateBulkRemoveBtn() {
+    const checked = document.querySelectorAll('.song-select-cb:checked');
+    const btn = document.getElementById('bulkRemoveBtn');
+    if (btn) {
+        btn.style.display = checked.length > 0 ? '' : 'none';
+        btn.innerHTML = `<i class="fas fa-trash"></i> Remove Selected (${checked.length})`;
+    }
+}
+
+function bulkRemoveSongsFromArtist(hitId) {
+    const checked = document.querySelectorAll('.song-select-cb:checked');
+    if (checked.length === 0) {
+        showToast('No songs selected', 'warning');
+        return;
+    }
+    if (!confirm(`Remove ${checked.length} song(s) from the collection?`)) return;
+    
+    const indices = Array.from(checked).map(cb => parseInt(cb.dataset.index)).sort((a, b) => b - a);
+    const artistHits = DataStore.getArtistHits();
+    const hit = artistHits.find(h => h.id === hitId);
+    if (!hit || !hit.songs) return;
+    
+    indices.forEach(idx => hit.songs.splice(idx, 1));
+    hit.songCount = hit.songs.length;
+    
+    DataStore.setArtistHits(artistHits);
+    showToast(`${indices.length} song(s) removed`, 'success');
+    renderEditArtistSongsTable(hitId);
     loadArtistHits();
     syncToLiveWebsite();
 }
@@ -3162,12 +3295,13 @@ function renderEditArtistSongsTable(hitId) {
     const artistHits = DataStore.getArtistHits();
     const hit = artistHits.find(h => h.id === hitId);
     if (!hit || !hit.songs) {
-        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;">No songs yet</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">No songs yet. Go to Add Songs tab to add some.</td></tr>';
         return;
     }
     
     tableBody.innerHTML = hit.songs.map((song, idx) => `
         <tr>
+            <td style="text-align:center;"><input type="checkbox" class="song-select-cb" data-index="${idx}" onchange="updateBulkRemoveBtn()"></td>
             <td style="text-align:center;font-weight:bold;">
                 <span class="drag-handle" style="cursor:move;color:#888;margin-right:5px;">≡</span>
                 ${idx + 1}
@@ -3185,8 +3319,8 @@ function renderEditArtistSongsTable(hitId) {
         </tr>
     `).join('');
     
-    // Setup drag and drop ordering
     setupSongDragAndDrop(hitId);
+    updateBulkRemoveBtn();
 }
 
 function setupSongDragAndDrop(hitId) {
@@ -3481,6 +3615,197 @@ function setupArtistHitsSubTabs() {
             }
         });
     }
+}
+
+// ============================================
+// Movie / Yearly / Latest Collections Management
+// ============================================
+function getCollectionsByType(type) {
+    if (type === 'movies') return DataStore.getMoviesCollections();
+    if (type === 'yearly') return DataStore.getYearlyCollections();
+    if (type === 'latest') return DataStore.getLatestCollections();
+    return [];
+}
+
+function setCollectionsByType(type, data) {
+    if (type === 'movies') DataStore.setMoviesCollections(data);
+    else if (type === 'yearly') DataStore.setYearlyCollections(data);
+    else if (type === 'latest') DataStore.setLatestCollections(data);
+}
+
+function loadCollectionsTable(type) {
+    const tableId = type + 'CollectionsTable';
+    const tableBody = document.getElementById(tableId);
+    if (!tableBody) return;
+    
+    const collections = getCollectionsByType(type);
+    if (!collections.length) {
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:#888;">No collections yet</td></tr>';
+        return;
+    }
+    
+    tableBody.innerHTML = collections.map(col => `
+        <tr>
+            <td><strong>${col.name}</strong></td>
+            <td>${(col.songs && col.songs.length) || col.songCount || 0}</td>
+            <td><span class="status-badge ${col.status === 'active' ? 'active' : 'inactive'}">${col.status || 'active'}</span></td>
+            <td>
+                <div class="actions">
+                    <button class="action-btn" onclick="openEditCollectionModal('${type}', '${col.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn delete" onclick="deleteCollection('${type}', '${col.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function openAddCollectionModal(type) {
+    const typeLabel = type === 'movies' ? 'Movie' : type === 'yearly' ? 'Yearly' : 'Latest';
+    const songs = DataStore.getSongs();
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'collectionModal';
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="document.getElementById('collectionModal').remove()"></div>
+        <div class="modal-content" style="max-width:700px;max-height:90vh;">
+            <div class="modal-header">
+                <h2>Add ${typeLabel} Collection</h2>
+                <button class="modal-close" onclick="document.getElementById('collectionModal').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Collection Name *</label>
+                    <input type="text" class="form-input" id="colName" required placeholder="e.g. ${type === 'movies' ? 'Ponniyin Selvan Songs' : type === 'yearly' ? '2024 Hits' : 'New Releases'}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Thumbnail URL (optional)</label>
+                    <input type="url" class="form-input" id="colThumbnail" placeholder="https://example.com/thumb.jpg">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Select Songs (hold Ctrl/Cmd for multiple)</label>
+                    <select class="form-input" id="colSongs" multiple style="height:200px;">
+                        ${songs.map(s => `<option value="${s.id}">${s.title} - ${s.artist}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="builder-btn primary" onclick="saveCollection('${type}')">
+                        <i class="fas fa-save"></i> Save Collection
+                    </button>
+                    <button type="button" class="builder-btn" onclick="document.getElementById('collectionModal').remove()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function openEditCollectionModal(type, colId) {
+    const collections = getCollectionsByType(type);
+    const col = collections.find(c => c.id === colId);
+    if (!col) { showToast('Collection not found', 'error'); return; }
+    
+    const songs = DataStore.getSongs();
+    const typeLabel = type === 'movies' ? 'Movie' : type === 'yearly' ? 'Yearly' : 'Latest';
+    const selectedSongIds = (col.songs || []).map(s => s.songId || s.id);
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'collectionModal';
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="document.getElementById('collectionModal').remove()"></div>
+        <div class="modal-content" style="max-width:700px;max-height:90vh;">
+            <div class="modal-header">
+                <h2>Edit ${typeLabel} Collection</h2>
+                <button class="modal-close" onclick="document.getElementById('collectionModal').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Collection Name *</label>
+                    <input type="text" class="form-input" id="colName" required value="${col.name}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Thumbnail URL</label>
+                    <input type="url" class="form-input" id="colThumbnail" value="${col.thumbnail || ''}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select class="form-input" id="colStatus">
+                        <option value="active" ${col.status === 'active' ? 'selected' : ''}>Active</option>
+                        <option value="inactive" ${col.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Select Songs (hold Ctrl/Cmd for multiple)</label>
+                    <select class="form-input" id="colSongs" multiple style="height:200px;">
+                        ${songs.map(s => `<option value="${s.id}" ${selectedSongIds.includes(s.id) ? 'selected' : ''}>${s.title} - ${s.artist}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="builder-btn primary" onclick="saveCollection('${type}', '${colId}')">
+                        <i class="fas fa-save"></i> Update Collection
+                    </button>
+                    <button type="button" class="builder-btn" onclick="document.getElementById('collectionModal').remove()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function saveCollection(type, editId) {
+    const name = document.getElementById('colName')?.value.trim();
+    const thumbnail = document.getElementById('colThumbnail')?.value.trim() || '';
+    const status = document.getElementById('colStatus')?.value || 'active';
+    const songsSelect = document.getElementById('colSongs');
+    const selectedOptions = songsSelect ? Array.from(songsSelect.selectedOptions) : [];
+    
+    if (!name) { showToast('Collection name is required', 'error'); return; }
+    
+    const allSongs = DataStore.getSongs();
+    const songData = selectedOptions.map(opt => {
+        const song = allSongs.find(s => s.id === opt.value);
+        return song ? { songId: song.id, title: song.title, artist: song.artist, movie: song.movie, duration: song.duration } : null;
+    }).filter(Boolean);
+    
+    const collections = getCollectionsByType(type);
+    
+    if (editId) {
+        const col = collections.find(c => c.id === editId);
+        if (col) {
+            col.name = name;
+            col.thumbnail = thumbnail;
+            col.status = status;
+            col.songs = songData;
+            col.songCount = songData.length;
+        }
+    } else {
+        collections.push({
+            id: 'col_' + type + '_' + Date.now(),
+            name: name,
+            type: type,
+            thumbnail: thumbnail,
+            status: status,
+            songs: songData,
+            songCount: songData.length
+        });
+    }
+    
+    setCollectionsByType(type, collections);
+    loadCollectionsTable(type);
+    document.getElementById('collectionModal')?.remove();
+    showToast(editId ? 'Collection updated!' : 'Collection created!', 'success');
+    syncToLiveWebsite();
+}
+
+function deleteCollection(type, colId) {
+    if (!confirm('Delete this collection?')) return;
+    let collections = getCollectionsByType(type);
+    collections = collections.filter(c => c.id !== colId);
+    setCollectionsByType(type, collections);
+    loadCollectionsTable(type);
+    showToast('Collection deleted', 'success');
+    syncToLiveWebsite();
 }
 
 // ============================================
@@ -5457,12 +5782,24 @@ if (typeof window !== 'undefined') {
     window.signInWithGoogle = signInWithGoogle;
     window.signInAsGuest = signInAsGuest;
     window.signOut = signOut;
+    window.showToast = showToast;
+    window.publishChanges = publishChanges;
     window.openEditArtistSongsModal = openEditArtistSongsModal;
     window.switchArtistSongTab = switchArtistSongTab;
     window.addSongToArtistCollection = addSongToArtistCollection;
     window.saveArtistSongs = saveArtistSongs;
     window.removeSongFromArtistCollection = removeSongFromArtistCollection;
     window.editArtistSongInCollection = editArtistSongInCollection;
+    window.updateArtistName = updateArtistName;
+    window.updateBulkRemoveBtn = updateBulkRemoveBtn;
+    window.bulkRemoveSongsFromArtist = bulkRemoveSongsFromArtist;
+    window.openAddCollectionModal = openAddCollectionModal;
+    window.openEditCollectionModal = openEditCollectionModal;
+    window.saveCollection = saveCollection;
+    window.deleteCollection = deleteCollection;
+    window.loadCollectionsTable = loadCollectionsTable;
+    window.uploadFeaturedImage = uploadFeaturedImage;
+    window.uploadTrendingImage = uploadTrendingImage;
     window.initVisualEditor = initVisualEditor;
     window.veSelectTreeItem = veSelectTreeItem;
     window.veSelectSection = veSelectSection;

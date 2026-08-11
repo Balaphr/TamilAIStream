@@ -105,3 +105,5 @@ const AIPublishCheck = (() => {
 
     return { runAndShow, close };
 })();
+
+if (typeof window !== 'undefined') window.AIPublishCheck = AIPublishCheck;

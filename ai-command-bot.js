@@ -679,3 +679,5 @@ const AICommandBot = (() => {
         toggleBot
     };
 })();
+
+if (typeof window !== 'undefined') window.AICommandBot = AICommandBot;

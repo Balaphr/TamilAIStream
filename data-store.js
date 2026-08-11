@@ -30,7 +30,10 @@ const DataStore = {
         HISTORY: 'ytm_history',
         QUEUE: 'ytm_queue',
         SETTINGS: 'ytm_settings',
-        SITE_CONFIG: 'siteConfig' // New key for unified config
+        SITE_CONFIG: 'siteConfig',
+        MOVIES_COLLECTIONS: 'tamilAIStream_moviesCollections',
+        YEARLY_COLLECTIONS: 'tamilAIStream_yearlyCollections',
+        LATEST_COLLECTIONS: 'tamilAIStream_latestCollections'
     },
 
     get(key) {
@@ -120,6 +123,15 @@ const DataStore = {
     getMiniPlayerSettings() { return this.get('tamilAIStream_miniPlayerSettings') || {}; },
     setMiniPlayerSettings(data) { this.set('tamilAIStream_miniPlayerSettings', data); },
 
+    getMoviesCollections() { return this.get(this.KEYS.MOVIES_COLLECTIONS) || []; },
+    setMoviesCollections(data) { this.set(this.KEYS.MOVIES_COLLECTIONS, data); },
+
+    getYearlyCollections() { return this.get(this.KEYS.YEARLY_COLLECTIONS) || []; },
+    setYearlyCollections(data) { this.set(this.KEYS.YEARLY_COLLECTIONS, data); },
+
+    getLatestCollections() { return this.get(this.KEYS.LATEST_COLLECTIONS) || []; },
+    setLatestCollections(data) { this.set(this.KEYS.LATEST_COLLECTIONS, data); },
+
     // Initialize with defaults
 init() {
         // Songs
@@ -201,6 +213,17 @@ init() {
         // Site config
         if (!localStorage.getItem(this.KEYS.SITE_CONFIG)) {
             this.setSiteConfig({});
+        }
+
+        // Movies, Yearly, Latest Collections
+        if (!localStorage.getItem(this.KEYS.MOVIES_COLLECTIONS)) {
+            this.setMoviesCollections([]);
+        }
+        if (!localStorage.getItem(this.KEYS.YEARLY_COLLECTIONS)) {
+            this.setYearlyCollections([]);
+        }
+        if (!localStorage.getItem(this.KEYS.LATEST_COLLECTIONS)) {
+            this.setLatestCollections([]);
         }
     },
 
