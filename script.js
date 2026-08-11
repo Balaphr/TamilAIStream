@@ -2342,6 +2342,20 @@ function playCollectionSongs(collectionId, collectionType) {
 }
 
 // ============================================
+// Tamil News Section Rendering
+// ============================================
+async function renderTamilNewsSection() {
+    if (typeof TamilNews === 'undefined') return;
+    try {
+        await TamilNews.loadNews();
+        TamilNews.renderNewsSection('newsSectionTrack');
+        TamilNews.startAutoRefresh();
+    } catch (e) {
+        console.warn('[News] Failed to load news:', e);
+    }
+}
+
+// ============================================
 // Tamil Hits Carousel â€” Touch/Swipe Support
 // ============================================
 function initTamilHitsCarousel() {
@@ -2699,6 +2713,7 @@ function renderAllDynamicContent() {
     renderLatestCollectionsDynamic();
     renderAIRecommendedDynamic();
     renderAllStationsDynamic();
+    renderTamilNewsSection();
     applySiteSettings();
     
     // Re-render songs

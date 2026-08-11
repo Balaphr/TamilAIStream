@@ -350,6 +350,7 @@ function navigateTo(page) {
         loadCollectionsTable('yearly');
         loadCollectionsTable('latest');
         loadQuotes();
+        initTamilNewsTab();
     }
     if (page === 'images') loadAllImages();
     if (page === 'settings') loadSettings();
@@ -3809,6 +3810,67 @@ function deleteCollection(type, colId) {
 }
 
 // ============================================
+// Tamil News Management
+// ============================================
+async function initTamilNewsTab() {
+    if (typeof TamilNews === 'undefined') return;
+    await TamilNews.loadConfig();
+    await TamilNews.loadNews();
+    TamilNews.renderFeedsTable('newsFeedsTable');
+    TamilNews.renderNewsList('newsArticlesTable');
+    if (TamilNews.config) {
+        const c = TamilNews.config;
+        const maxEl = document.getElementById('newsMaxItems');
+        const intervalEl = document.getElementById('newsRefreshInterval');
+        const autoPubEl = document.getElementById('newsAutoPublish');
+        if (maxEl) maxEl.value = c.maxItems || 100;
+        if (intervalEl) intervalEl.value = c.refreshInterval || 5;
+        if (autoPubEl) autoPubEl.value = (c.autoPublish !== false) ? 'true' : 'false';
+    }
+}
+
+async function refreshTamilNewsFeeds() {
+    if (typeof showToast === 'function') showToast('Refreshing news feeds...', 'info');
+    const result = await TamilNews.refreshFeeds();
+    if (result && result.success) {
+        await TamilNews.loadNews();
+        TamilNews.renderFeedsTable('newsFeedsTable');
+        TamilNews.renderNewsList('newsArticlesTable');
+        if (typeof showToast === 'function') showToast(`Refresh complete! ${result.newCount || 0} new articles.`, 'success');
+    } else {
+        if (typeof showToast === 'function') showToast('Refresh failed', 'error');
+    }
+}
+
+async function saveTamilNewsSettings() {
+    const maxItems = parseInt(document.getElementById('newsMaxItems')?.value) || 100;
+    const refreshInterval = parseInt(document.getElementById('newsRefreshInterval')?.value) || 5;
+    const autoPublish = document.getElementById('newsAutoPublish')?.value === 'true';
+
+    await TamilNews.loadConfig();
+    const config = TamilNews.config || {};
+    config.maxItems = maxItems;
+    config.refreshInterval = refreshInterval;
+    config.autoPublish = autoPublish;
+
+    await fetch('/api/news/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+    });
+
+    if (typeof showToast === 'function') showToast('News settings saved!', 'success');
+}
+
+async function cleanupOldNews() {
+    if (!confirm('Remove old news beyond the max items limit?')) return;
+    await fetch('/api/news/cleanup', { method: 'POST' });
+    await TamilNews.loadNews();
+    TamilNews.renderNewsList('newsArticlesTable');
+    if (typeof showToast === 'function') showToast('Old news cleaned up', 'success');
+}
+
+// ============================================
 // Quotes Management
 // ============================================
 function loadQuotes() {
@@ -5800,6 +5862,10 @@ if (typeof window !== 'undefined') {
     window.loadCollectionsTable = loadCollectionsTable;
     window.uploadFeaturedImage = uploadFeaturedImage;
     window.uploadTrendingImage = uploadTrendingImage;
+    window.refreshTamilNewsFeeds = refreshTamilNewsFeeds;
+    window.saveTamilNewsSettings = saveTamilNewsSettings;
+    window.cleanupOldNews = cleanupOldNews;
+    window.initTamilNewsTab = initTamilNewsTab;
     window.initVisualEditor = initVisualEditor;
     window.veSelectTreeItem = veSelectTreeItem;
     window.veSelectSection = veSelectSection;
