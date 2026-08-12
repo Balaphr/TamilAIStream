@@ -97,7 +97,7 @@ if (!document.querySelector('#toast-style')) {
     toastStyle.id = 'toast-style';
     toastStyle.textContent = `
         .toast-notification {
-            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            position: fixed; top: 20px; right: 20px; z-index: 2147483000;
             display: flex; align-items: center; gap: 12px;
             padding: 14px 18px; min-width: 300px; max-width: 500px;
             background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(20px);

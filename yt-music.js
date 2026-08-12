@@ -28,6 +28,7 @@ const YTMusic = {
         notifications: true
     },
     currentPage: 'home',
+    historyStack: [],
     searchQuery: '',
     searchFilter: 'all',
     modalMode: 'createPlaylist',
@@ -48,6 +49,13 @@ const YTMusic = {
         }
         this.renderQueueList();
         document.body.classList.add('home-active');
+        // Restore deep-linked page from hash on load (state preservation).
+        try {
+            const hash = (location.hash || '').replace('#', '');
+            if (hash && document.getElementById('page-' + hash) && hash !== 'home') {
+                this.navigateTo(hash, { _fromPop: true });
+            }
+        } catch (e) {}
         console.log('YTMusic initialized');
     },
 
@@ -103,6 +111,13 @@ const YTMusic = {
     // Event Listeners
     // ========================================
     setupEventListeners() {
+        // Browser back/forward → restore previous page without touching playback.
+        window.addEventListener('popstate', () => {
+            const hash = (location.hash || '').replace('#', '');
+            const target = hash && document.getElementById('page-' + hash) ? hash : 'home';
+            this.navigateTo(target, { _fromPop: true });
+        });
+
         // Premium sidebar navigation
         document.querySelectorAll('.premium-sidebar-item[data-page]').forEach(item => {
             item.addEventListener('click', () => {
@@ -499,7 +514,11 @@ const YTMusic = {
     // ========================================
     // Navigation
     // ========================================
-    navigateTo(page) {
+    navigateTo(page, opts = {}) {
+        // Push previous page onto back stack (unless arriving via back/popstate).
+        if (!opts._fromPop && !opts._fromBack && this.currentPage && this.currentPage !== page) {
+            this.historyStack.push({ page: this.currentPage, scroll: window.scrollY || 0 });
+        }
         this.currentPage = page;
         document.body.classList.toggle('home-active', page === 'home');
         // Premium sidebar active state
@@ -537,7 +556,18 @@ const YTMusic = {
                 break;
         }
 
-        if (history.pushState) history.pushState(null, null, '#' + page);
+        if (!opts._fromPop && history.pushState) history.replaceState(null, null, '#' + page);
+    },
+
+    // Navigate back to the previous page (in-app back button). Restores scroll.
+    goBack() {
+        const prev = this.historyStack.pop();
+        if (prev && prev.page) {
+            this.navigateTo(prev.page, { _fromBack: true });
+            requestAnimationFrame(() => { window.scrollTo(0, prev.scroll || 0); });
+        } else {
+            this.navigateTo('home', { _fromBack: true });
+        }
     },
 
     // ========================================
@@ -1130,8 +1160,11 @@ const YTMusic = {
         const placeholder = document.getElementById('ytmFsPlaceholder');
         const qualityBadge = document.getElementById('ytmQualityBadge');
         const nowPlayingBadge = document.getElementById('ytmNowPlayingBadge');
-        if (t.thumbnail || t.cover) {
-            this.setSrc('ytmFsArtwork', t.thumbnail || t.cover);
+        // Builder stores artwork under `albumCover`; fall back across all
+        // thumbnail field names so uploaded art always propagates.
+        const fsArt = t.thumbnail || t.cover || t.albumCover || t.image || '';
+        if (fsArt) {
+            this.setSrc('ytmFsArtwork', fsArt);
             if (artwork) artwork.style.display = 'block';
             if (placeholder) placeholder.style.display = 'none';
         } else {
@@ -1149,7 +1182,7 @@ const YTMusic = {
         const t = this.currentTrack;
         this.setText('ytmMiniTitle', t.title || 'Unknown');
         this.setText('ytmMiniArtist', t.artist || '');
-        this.setSrc('ytmMiniThumb', t.thumbnail || t.cover || '');
+        this.setSrc('ytmMiniThumb', t.thumbnail || t.cover || t.albumCover || t.image || '');
     },
 
     setText(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; },
@@ -1207,7 +1240,7 @@ const YTMusic = {
         if (results.songs.length) {
             html += `<div class="ytm-search-section"><div class="ytm-search-section-header"><h3 class="ytm-search-section-title">Songs</h3></div><div class="ytm-search-song-list">${results.songs.slice(0, 10).map(s => `
                 <div class="ytm-search-song-item" onclick="YTMusic.playTrack(${JSON.stringify(s).replace(/"/g, '&quot;')})">
-                    <div class="ytm-search-song-thumb"><img src="${s.cover || ''}" alt=""></div>
+                    <div class="ytm-search-song-thumb"><img src="${s.cover || s.albumCover || s.thumbnail || ''}" alt=""></div>
                     <div class="ytm-search-song-info"><div class="ytm-search-song-title">${s.title}</div><div class="ytm-search-song-artist">${s.artist}</div></div>
                 </div>`).join('')}</div></div>`;
         }

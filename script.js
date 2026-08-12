@@ -2322,6 +2322,21 @@ function renderArtistHitsDynamic() {
 // ============================================
 // Movie / Yearly / Latest Collections Rendering
 // ============================================
+
+// Scroll a carousel track left/right from its prev/next button.
+// The buttons live inside .carousel-container alongside the .carousel-track.
+function scrollCarousel(btn, dir) {
+    try {
+        const container = btn && btn.closest ? btn.closest('.carousel-container') : null;
+        if (!container) return;
+        const track = container.querySelector('.carousel-track');
+        if (!track) return;
+        const amount = Math.max(160, Math.round(track.clientWidth * 0.8));
+        track.scrollBy({ left: (dir < 0 ? -1 : 1) * amount, behavior: 'smooth' });
+    } catch (e) { /* silent */ }
+}
+window.scrollCarousel = scrollCarousel;
+
 function renderRoundCollectionCard(item) {
     const thumbSrc = item.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='20' fill='%23374151'/%3E%3Ctext x='60' y='68' text-anchor='middle' fill='%239ca3af' font-size='32'%3E🎵%3C/text%3E%3C/svg%3E";
     return `
@@ -2364,21 +2379,52 @@ function playCollectionSongs(collectionId, collectionType) {
     if (collectionType === 'movies') collections = DataStore.getMoviesCollections();
     else if (collectionType === 'yearly') collections = DataStore.getYearlyCollections();
     else if (collectionType === 'latest') collections = DataStore.getLatestCollections();
-    
-    const collection = collections.find(c => c.id === collectionId);
+
+    // If the type is missing/mismatched, fall back to searching every library
+    // so a valid tap always resolves regardless of which section rendered it.
+    if (!collections.length) {
+        collections = [].concat(
+            DataStore.getMoviesCollections() || [],
+            DataStore.getYearlyCollections() || [],
+            DataStore.getLatestCollections() || []
+        );
+    }
+
+    const collection = collections.find(c => String(c.id) === String(collectionId));
     if (!collection || !collection.songs || !collection.songs.length) {
         showToast('No songs in this collection', 'info');
         return;
     }
     
     const allSongs = DataStore.getSongs();
+    // Resolve each collection entry to the full song record from the Builder's
+    // song library. Collection entries may store the reference under songId, id,
+    // or embed the full song directly — check all, and prefer the rich record
+    // from allSongs so thumbnails/audio propagate from a single source of truth.
     const playableSongs = collection.songs.map(cs => {
-        return allSongs.find(s => s.id === cs.songId || s.id === cs.id) || cs;
+        if (!cs) return null;
+        const key = cs.songId || cs.id;
+        const full = allSongs.find(s => String(s.id) === String(key) || (cs.songId && String(s.id) === String(cs.songId)));
+        // Merge: full record wins, but keep the embedded entry's fields as
+        // fallback so nothing the Builder set is lost.
+        return full ? Object.assign({}, cs, full) : cs;
     }).filter(s => s && (s.audioUrl || s.streamUrl));
     
     if (playableSongs.length) {
-        window.audioPlayer.loadPlaylist(playableSongs);
-        window.audioPlayer.play();
+        // Reuse the global audio system exclusively (no duplicate players).
+        // playSong() sets src on window.audioPlayer, updates the queue and all
+        // player UIs, and starts playback through initAudioPlayer().
+        const normalized = playableSongs.map(s => ({
+            id: s.id || s.songId,
+            title: s.title || s.name || 'Untitled',
+            artist: s.artist || 'Unknown Artist',
+            movie: s.movie || collection.name || '',
+            albumCover: s.albumCover || s.cover || s.thumbnail || collection.thumbnail || '',
+            cover: s.albumCover || s.cover || s.thumbnail || collection.thumbnail || '',
+            audioUrl: s.audioUrl || s.streamUrl,
+            duration: s.duration
+        }));
+        playSong(normalized[0], normalized);
         showToast(`Playing ${collection.name}`, 'success');
     } else {
         showToast('No playable songs in this collection', 'warning');
