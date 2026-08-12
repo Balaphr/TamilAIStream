@@ -2136,7 +2136,7 @@ function renderFeaturedSliderDynamic() {
 }
 
 // Render Trending Section from DataStore
-function renderTrendingDynamic() {
+function renderTrendingDynamicStationsLegacy() {
     const container = document.querySelector('#trendingScroll .stations-track');
     if (!container) return;
     
@@ -2541,7 +2541,7 @@ function renderAllStationsDynamic() {
 }
 
 // Render AI Recommended from DataStore
-function renderAIRecommendedDynamic() {
+function renderAIRecommendedStationsLegacy() {
     const container = document.querySelector('[data-section="ai-recommended"] .stations-track');
     if (!container) return;
     
@@ -2617,12 +2617,26 @@ function renderGreetingSection() {
     else if (hour < 21) { greeting = 'Good Evening'; emoji = '🌙'; }
     else { greeting = 'Good Night'; emoji = '🌙'; }
     
+    // Pull a quote from the Builder content (falls back to a default)
+    let quote = '';
+    try {
+        if (typeof DataStore !== 'undefined' && DataStore.getQuotes) {
+            const quotes = DataStore.getQuotes() || [];
+            if (quotes.length) {
+                const q = quotes[Math.floor(Math.random() * quotes.length)];
+                quote = (q && (q.text || q.quote)) || '';
+            }
+        }
+    } catch (e) {}
+    if (!quote) quote = 'Music is the language of the soul — feel every beat of Tamil.';
+
     container.innerHTML = `
         <div class="greeting-card">
             <div class="greeting-text">
                 <div class="greeting-label">${greeting}</div>
-                <h1 class="greeting-title">Welcome to Tamil AI Stream <span class="greeting-wave">${emoji}</span></h1>
+                <h1 class="greeting-title"># Welcome to Tamil AI Stream <span class="greeting-wave">${emoji}</span></h1>
                 <p class="greeting-subtitle">Discover the best of Tamil music, powered by AI</p>
+                ${quote ? `<p class="greeting-quote"><i class="fas fa-quote-left"></i> ${quote}</p>` : ''}
             </div>
         </div>
     `;
@@ -3307,3 +3321,74 @@ if (typeof window !== 'undefined') {
 
 
 
+// ============================================================
+// Home is music-focused: Trending + AI sections render SONGS.
+// FM/Radio content stays only in the Radio section/menu.
+// (Earlier station-based versions live on as *StationsLegacy.)
+// ============================================================
+function renderSongTrack(container, songs, limit) {
+    if (!container) return;
+    const items = (songs || []).slice(0, limit || 10);
+    if (!items.length) {
+        container.innerHTML = '<div class="station-card"><div class="station-info"><h3>No songs yet</h3></div></div>';
+        return;
+    }
+    const placeholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='30' fill='%2334d399' opacity='0.3'/%3E%3C/svg%3E";
+    const itemsArr = items;
+    container.innerHTML = items.map((song, index) => `
+        <div class="song-card" data-song-id="${song.id}" style="animation-delay: ${index * 0.05}s">
+            <div class="song-card-header">
+                <div class="song-thumbnail">
+                    <img src="${song.albumCover || song.cover || placeholder}" alt="${song.title || 'Song'}" loading="lazy">
+                    <div class="song-play-overlay"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="song-info">
+                    <div class="song-title" title="${song.title || 'Untitled'}">${song.title || 'Untitled'}</div>
+                    <div class="song-artist" title="${song.artist || 'Unknown Artist'}">${song.artist || 'Unknown Artist'}</div>
+                    <div class="song-movie" title="${song.movie || 'Single'}">${song.movie || 'Single'}</div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    container.querySelectorAll('.song-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.closest('.song-play-overlay')) return; // handled below
+            const songId = this.dataset.songId;
+            const song = itemsArr.find(s => s.id === songId);
+            if (song) {
+                playSong(song, itemsArr);
+                if (typeof showToast === 'function') showToast('Now playing: ' + song.title, 'success');
+            }
+        });
+    });
+    container.querySelectorAll('.song-play-overlay').forEach(ov => {
+        ov.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const card = this.closest('.song-card');
+            const songId = card ? card.dataset.songId : null;
+            const song = itemsArr.find(s => s.id === songId);
+            if (song) {
+                playSong(song, itemsArr);
+                if (typeof showToast === 'function') showToast('Now playing: ' + song.title, 'success');
+            }
+        });
+    });
+}
+
+function renderTrendingDynamic() {
+    const container = document.querySelector('#trendingScroll .stations-track');
+    if (!container) return;
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
+    renderSongTrack(container, songs, 12);
+}
+
+function renderAIRecommendedDynamic() {
+    const container = document.querySelector('[data-section="ai-recommended"] .stations-track');
+    if (!container) return;
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
+    const picks = songs.slice().sort(() => Math.random() - 0.5).slice(0, 8);
+    renderSongTrack(container, picks, 8);
+}

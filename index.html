@@ -407,10 +407,7 @@
                     </div>
                     <div class="premium-hero-grid">
                         <div class="premium-hero-content">
-                            <div class="premium-hero-eyebrow">
-                                <span class="premium-hero-live-dot"></span>
-                                <span id="premiumHeroLiveLabel">AI Radio · Live Now</span>
-                            </div>
+                            
                             <h1 class="premium-hero-title">
                                 <span class="premium-hero-line premium-hero-line-1">Feel the</span>
                                 <span class="premium-hero-line premium-hero-line-2"><em>sound</em> of Tamil.</span>
@@ -441,7 +438,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="premium-hero-scroll"><span class="premium-hero-scroll-mouse"></span><label>Scroll to explore</label></div>
+                    
                 </section>
 
                 <!-- Premium Top Header Bar -->
@@ -464,24 +461,20 @@
                 <!-- AI Greeting Section -->
                 <div class="greeting-section" data-section="greeting"></div>
 
-                <!-- Featured Banner Slider -->
-                <section class="section featured-section" data-section="featured" data-premium-reveal>
+                <!-- Recently Added Songs Marquee -->
+                <section class="section recently-added-section" data-section="recently-added" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title" data-kicker="Featured">Featured Stations</h2>
-                        <div class="slider-controls">
-                            <button class="slider-btn slider-prev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
-                            <button class="slider-btn slider-next" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
-                        </div>
+                        <h2 class="section-title" data-kicker="Fresh"><i class="fas fa-clock-rotate-left" style="color:var(--emerald-400);margin-right:8px;"></i>Recently Added</h2>
                     </div>
-                    <div class="featured-slider" id="featuredSlider">
-                        <div class="slider-track" id="sliderTrack"></div>
+                    <div class="recently-added-viewport" id="recentlyAddedViewport">
+                        <div class="recently-added-track" id="recentlyAddedTrack"></div>
                     </div>
                 </section>
 
-                <!-- Trending Now -->
+                <!-- Trending Songs -->
                 <section class="section trending-section" data-section="trending" id="trendingScroll" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title" data-kicker="Trending">Trending Now</h2>
+                        <h2 class="section-title" data-kicker="Trending">Trending Songs</h2>
                         <div class="slider-controls">
                             <button class="slider-btn scroll-left" aria-label="Scroll left"><i class="fas fa-chevron-left"></i></button>
                             <button class="slider-btn scroll-right" aria-label="Scroll right"><i class="fas fa-chevron-right"></i></button>
@@ -512,18 +505,10 @@
                     <div class="stations-track"></div>
                 </section>
 
-                <!-- Browse Categories -->
-                <section class="section categories-section" data-section="categories" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Categories">Browse Categories</h2>
-                    </div>
-                    <div class="categories-grid" id="categoriesGrid"></div>
-                </section>
-
-                <!-- Tamil Hits Songs (Artist Hits) -->
+                <!-- Artist Hits -->
                 <section class="section tamil-hits-section" data-section="tamil-hits" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title" data-kicker="Collections">Tamil Hits Collections</h2>
+                        <h2 class="section-title" data-kicker="Artists">Artist Hits</h2>
                         <button class="see-all-btn" onclick="document.querySelector('[data-page=\'artists\']').click()">See All</button>
                     </div>
                     <div class="tamil-hits-grid" id="tamilHitsGrid"></div>
@@ -565,42 +550,10 @@
                 <!-- All Published Songs (from Builder) -->
                 <section class="section songs-section" data-section="songs" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title" data-kicker="Songs"><i class="fas fa-compact-disc" style="color:var(--emerald-400);margin-right:8px;"></i>All Songs</h2>
+                        <h2 class="section-title" data-kicker="Songs"><i class="fas fa-compact-disc" style="color:var(--emerald-400);margin-right:8px;"></i>Popular Songs</h2>
                         <span class="songs-count" id="songsCount"></span>
                     </div>
                     <div class="songs-grid" id="songsContainer"></div>
-                </section>
-
-                <!-- All Tamil FM Stations -->
-                <section class="section stations-section" data-section="stations">
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Stations">All Tamil FM Stations</h2>
-                        <span class="stations-count" id="stationsCount">18 stations</span>
-                        <button class="premium-open-radio-btn" onclick="premiumGoRadio()" type="button"><i class="fas fa-radio"></i> Open Radio</button>
-                    </div>
-                    <div class="filter-bar">
-                        <button class="filter-btn active" data-filter="all">All</button>
-                        <button class="filter-btn" data-filter="music">Music</button>
-                        <button class="filter-btn" data-filter="news">News</button>
-                        <button class="filter-btn" data-filter="entertainment">Entertainment</button>
-                        <button class="filter-btn" data-filter="devotional">Devotional</button>
-                        <button class="filter-btn" data-filter="comedy">Comedy</button>
-                        <button class="filter-btn" data-filter="talk">Talk</button>
-                        <button class="filter-btn" data-filter="sports">Sports</button>
-                        <button class="filter-btn" data-filter="education">Education</button>
-                    </div>
-                    <div class="stations-grid" id="stationsGrid"></div>
-                    <div class="stations-pagination" id="stationsPagination"></div>
-                </section>
-
-                <!-- Recently Added Songs Marquee -->
-                <section class="section recently-added-section" data-section="recently-added" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Fresh"><i class="fas fa-clock-rotate-left" style="color:var(--emerald-400);margin-right:8px;"></i>Recently Added</h2>
-                    </div>
-                    <div class="recently-added-viewport" id="recentlyAddedViewport">
-                        <div class="recently-added-track" id="recentlyAddedTrack"></div>
-                    </div>
                 </section>
 
             </div><!-- /page-home -->

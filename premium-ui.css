@@ -1415,3 +1415,156 @@ html.builder-preview .premium-hero {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 16px;
 }
+
+/* ============================================================================
+   APPLE MUSIC PREMIUM LAYER
+   Larger artwork · 3D depth · airy spacing — home-music experience.
+   premium-ui.css loads last, so these naturally win over earlier sheets.
+   ============================================================================ */
+
+/* ---- Section spacing: airy Apple editorial rhythm ---- */
+.ytm-page-home .section {
+    border-radius: 22px;
+    padding: 0 16px;
+}
+.ytm-page-home .section-header {
+    margin-bottom: 18px;
+    padding: 0 4px;
+}
+.ytm-page-home .section-title {
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+
+/* ---- Greeting quote: softer editorial accent ---- */
+.ytm-page-home .greeting-quote {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(52, 211, 153, 0.12);
+    font-style: italic;
+    font-weight: 300;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.72));
+    font-size: 0.82rem;
+    line-height: 1.45;
+    opacity: 0.86;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.ytm-page-home .greeting-quote i {
+    color: var(--emerald-400);
+    font-size: 0.9rem;
+    opacity: 0.75;
+}
+
+/* ---- Desktop uplift: larger artwork + 3D depth (never clobbers mobile) ---- */
+@media (hover: hover) and (min-width: 720px) {
+
+  /* 3D tilt on music cards. We reset transform cleanly on hover so it
+     composes with the existing entrance animation rather than fighting it. */
+  .ytm-page-home .song-card,
+  .ytm-page-home .round-collection-card,
+  .ytm-page-home .tamil-hit-card {
+    transform-style: preserve-3d;
+    transition: transform 0.4s var(--premium-ease),
+                box-shadow 0.35s ease,
+                border-color 0.3s ease;
+  }
+
+  .ytm-page-home .song-card:hover {
+    transform: perspective(950px) rotateX(3deg) rotateY(-7deg) translateY(-8px);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45), 0 0 34px rgba(52, 211, 153, 0.12);
+  }
+  .ytm-page-home .round-collection-card:hover {
+    transform: perspective(1000px) rotateX(5deg) rotateY(-9deg) translateY(-8px);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5), 0 0 38px rgba(52, 211, 153, 0.14);
+  }
+  .ytm-page-home .tamil-hit-card:hover {
+    transform: perspective(1000px) rotateX(5deg) rotateY(-9deg) translateY(-8px);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.5), 0 0 38px rgba(52, 211, 153, 0.14);
+  }
+
+  /* Apple Music: "Popular Songs" grid — big square artwork, more air */
+  .ytm-page-home .songs-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 26px;
+    max-height: none;
+    padding-right: 0;
+  }
+  .ytm-page-home .songs-grid .song-card {
+    padding: 18px;
+    border-radius: 18px;
+  }
+  .ytm-page-home .songs-grid .song-card-header {
+    gap: 18px;
+  }
+    .ytm-page-home .songs-grid .song-thumbnail {
+    width: 120px;
+    height: 120px;
+    aspect-ratio: 1 / 1;
+    border-radius: 16px;
+  }
+
+  /* Trending Songs / AI Recommended — wide horizontal mini-cards */
+  .ytm-page-home .trending-section .stations-track,
+  .ytm-page-home .ai-section .stations-track {
+    gap: 22px;
+    padding: 2px 4px;
+  }
+  .ytm-page-home .trending-section .song-card,
+  .ytm-page-home .ai-section .song-card {
+    flex: 0 0 260px;
+    padding: 16px;
+    border-radius: 16px;
+  }
+  .ytm-page-home .trending-section .song-thumbnail,
+  .ytm-page-home .ai-section .song-thumbnail {
+    width: 120px;
+    height: 120px;
+    aspect-ratio: 1 / 1;
+    border-radius: 14px;
+  }
+
+  /* Artist Hits — larger grid of circular artist cards */
+  .ytm-page-home .tamil-hits-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 26px;
+  }
+  .ytm-page-home .tamil-hit-card {
+    padding: 22px 18px;
+    border-radius: 18px;
+  }
+  .ytm-page-home .tamil-hit-card .hit-artist-image {
+    height: 150px;
+    border-radius: 50%;
+  }
+
+  /* Movies / Yearly / Latest — big circular collection badges */
+  .ytm-page-home .round-collection-card { width: 176px; }
+  .ytm-page-home .round-collection-thumb {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+  }
+  .ytm-page-home .round-collection-name { font-size: 0.8rem; }
+  .ytm-page-home .round-collection-count { font-size: 0.68rem; }
+
+  /* Recently Added marquee — larger stacked artwork */
+  .ytm-page-home .recently-added-card { width: 220px; }
+  .ytm-page-home .recently-added-card-art {
+    aspect-ratio: 1 / 1;
+    border-radius: 16px;
+  }
+}
+
+/* ---- Responsive: tablet down — keep cards a touch smaller, still premium */
+@media (max-width: 719px) {
+  .ytm-page-home .songs-grid { gap: 18px; }
+  .ytm-page-home .tamil-hits-grid { gap: 18px; }
+}
+
+/* ---- Smooth scroll for in-page anchors / section jumps — Apple feel */
+.ytm-page-home {
+  scroll-behavior: smooth;
+  scroll-padding-top: 24px;
+}
