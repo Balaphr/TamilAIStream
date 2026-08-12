@@ -792,28 +792,214 @@ html.builder-preview #premiumKebabMenu {
     background: linear-gradient(135deg, #34d399, #10b981);
 }
 
-/* Keep the greeting a quiet, one-line welcome under the hero */
+/* === Premium Glass Hero Bar (Home greeting + live weather) === */
+/* Single transparent glass bar with 3D depth, soft glow, blur, rounded
+   edges. Loads last (premium-ui.css) so it wins over ai-glass.css. */
 .ytm-page-home .greeting-section {
-    padding-top: 8px;
-    margin-bottom: 20px;
+    padding-top: 6px;
+    margin-bottom: 22px;
+    perspective: 1200px;
 }
 
-.ytm-page-home .greeting-card {
-    background: transparent;
-    border-color: rgba(255, 255, 255, 0.06);
-    box-shadow: none;
-    padding: 10px 8px;
-    justify-content: flex-start;
+.ytm-page-home .greeting-hero {
+    position: relative;
+    isolation: isolate;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03) 55%, rgba(52, 211, 153, 0.05));
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 26px;
+    padding: 26px 30px;
+    overflow: hidden;
+    box-shadow:
+        0 22px 60px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+        0 1px 0 rgba(255, 255, 255, 0.22) inset;
+    transform: translateZ(0);
+    animation: heroBarIn 0.9s var(--premium-ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
 }
 
+/* soft animated glow bloom behind the bar */
+.ytm-page-home .greeting-hero-glow {
+    position: absolute;
+    inset: -40% -10% auto -10%;
+    height: 160%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(60% 70% at 18% 20%, rgba(52, 211, 153, 0.22), transparent 70%),
+        radial-gradient(50% 60% at 85% 30%, rgba(56, 189, 248, 0.16), transparent 70%),
+        radial-gradient(40% 50% at 60% 90%, rgba(167, 139, 250, 0.12), transparent 70%);
+    filter: blur(8px);
+    opacity: 0.9;
+    animation: heroGlowDrift 9s ease-in-out infinite alternate;
+}
+
+@keyframes heroGlowDrift {
+    0%   { transform: translate3d(-2%, -1%, 0) scale(1); opacity: 0.78; }
+    100% { transform: translate3d(3%, 2%, 0) scale(1.06); opacity: 1; }
+}
+
+@keyframes heroBarIn {
+    from { opacity: 0; transform: translateY(18px) scale(0.985); filter: blur(6px); }
+    to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.ytm-page-home .greeting-hero-content {
+    position: relative;
+    z-index: 1;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--hero-rx, 0deg)) rotateY(var(--hero-ry, 0deg));
+    transition: transform 0.25s var(--premium-ease, cubic-bezier(0.22, 1, 0.36, 1));
+    will-change: transform;
+}
+
+/* top row: time-based greeting + live weather chip */
+.ytm-page-home .greeting-hero-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+    transform: translateZ(28px);
+}
+
+.ytm-page-home .greeting-weather {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ytm-page-home .greeting-greeting {
+    font-size: 0.86rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--premium-brand, #34d399);
+    text-shadow: 0 0 18px rgba(52, 211, 153, 0.35);
+    animation: heroFadeUp 0.7s var(--premium-ease) both 0.05s;
+}
+
+.ytm-page-home .greeting-weather-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    font-size: 1.15rem;
+    border-radius: 14px;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.28), rgba(56, 189, 248, 0.20));
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    box-shadow: 0 6px 18px rgba(52, 211, 153, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    animation: heroFadeUp 0.7s var(--premium-ease) both 0.12s, heroWeatherPulse 4.5s ease-in-out infinite 0.9s;
+}
+
+@keyframes heroWeatherPulse {
+    0%, 100% { box-shadow: 0 6px 18px rgba(52, 211, 153, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.05) inset; }
+    50%      { box-shadow: 0 6px 26px rgba(52, 211, 153, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.08) inset; }
+}
+
+/* cinematic 3D gradient headline */
 .ytm-page-home .greeting-title {
-    font-size: 1.35rem;
+    font-size: clamp(1.6rem, 4.5vw, 2.6rem);
     font-weight: 800;
     letter-spacing: -0.02em;
+    line-height: 1.08;
+    margin-bottom: 8px;
+    transform: translateZ(40px);
+    color: #fff;
+    background: linear-gradient(180deg, #ffffff 0%, #d7f7ec 55%, #9ff0d0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+    animation: heroFadeUp 0.8s var(--premium-ease) both 0.18s;
+}
+
+.ytm-page-home .greeting-title .hero-hash {
+    -webkit-text-fill-color: var(--premium-brand, #34d399);
+    color: var(--premium-brand, #34d399);
+    margin-right: 4px;
+    text-shadow: 0 0 24px rgba(52, 211, 153, 0.55);
+    display: inline-block;
+    animation: heroHashFloat 4s ease-in-out infinite;
+}
+
+.ytm-page-home .greeting-title .hero-brand {
+    background: linear-gradient(120deg, #34d399, #38bdf8 60%, #a78bfa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% auto;
+    animation: heroBrandShine 6s linear infinite;
+}
+
+@keyframes heroBrandShine {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+
+@keyframes heroHashFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
 }
 
 .ytm-page-home .greeting-subtitle {
-    font-size: 0.86rem;
+    font-size: clamp(0.9rem, 2.2vw, 1.02rem);
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.74);
+    margin-top: 2px;
+    transform: translateZ(22px);
+    animation: heroFadeUp 0.8s var(--premium-ease) both 0.26s;
+}
+
+@keyframes heroFadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* The original block kept the quote subtle; we keep that here. */
+
+/* ---- Glass Hero Bar: responsive (Tablet / Mobile / PWA) ---- */
+@media (max-width: 720px) {
+    .ytm-page-home .greeting-hero {
+        padding: 22px 20px;
+        border-radius: 22px;
+    }
+    .ytm-page-home .greeting-weather-icon { width: 36px; height: 36px; font-size: 1rem; }
+}
+@media (max-width: 480px) {
+    .ytm-page-home .greeting-section { margin-bottom: 16px; }
+    .ytm-page-home .greeting-hero {
+        padding: 18px 16px;
+        border-radius: 20px;
+    }
+    .ytm-page-home .greeting-hero-top { margin-bottom: 10px; }
+    .ytm-page-home .greeting-greeting { font-size: 0.8rem; }
+}
+@media (max-width: 374px) {
+    .ytm-page-home .greeting-hero { padding: 16px 14px; border-radius: 18px; }
+}
+
+/* Respect reduced-motion: keep the look, drop the motion */
+@media (prefers-reduced-motion: reduce) {
+    .ytm-page-home .greeting-hero,
+    .ytm-page-home .greeting-hero-glow,
+    .ytm-page-home .greeting-greeting,
+    .ytm-page-home .greeting-weather-icon,
+    .ytm-page-home .greeting-title,
+    .ytm-page-home .greeting-subtitle,
+    .ytm-page-home .greeting-quote,
+    .ytm-page-home .greeting-title .hero-hash,
+    .ytm-page-home .greeting-title .hero-brand {
+        animation: none !important;
+    }
+    .ytm-page-home .greeting-hero-content {
+        transform: none !important;
+        transition: none !important;
+    }
 }
 
 /* Ticker gets rounded premium chrome */
@@ -868,23 +1054,39 @@ html.builder-preview #premiumKebabMenu {
 
 /* ---- Greeting quote: softer editorial accent ---- */
 .ytm-page-home .greeting-quote {
-    margin-top: 14px;
-    padding-top: 14px;
-    border-top: 1px solid rgba(52, 211, 153, 0.12);
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
     font-style: italic;
     font-weight: 300;
-    color: var(--text-secondary, rgba(255, 255, 255, 0.72));
-    font-size: 0.82rem;
-    line-height: 1.45;
-    opacity: 0.86;
+    color: rgba(255, 255, 255, 0.84);
+    font-size: clamp(0.84rem, 2vw, 0.95rem);
+    line-height: 1.5;
+    opacity: 0.92;
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: 10px;
+    transform: translateZ(26px);
+    animation: heroFadeUp 0.8s var(--premium-ease) both 0.34s;
 }
 .ytm-page-home .greeting-quote i {
-    color: var(--emerald-400);
+    color: var(--premium-brand, #34d399);
     font-size: 0.9rem;
-    opacity: 0.75;
+    opacity: 0.8;
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+.ytm-page-home .greeting-quote #greetingQuoteText {
+    display: inline-block;
+    transition: opacity 0.4s ease, transform 0.4s var(--premium-ease);
+}
+/* 3D quote swap — only this node changes, no section re-render */
+.ytm-page-home .greeting-quote.is-swapping #greetingQuoteText {
+    animation: heroQuoteSwap 0.5s var(--premium-ease);
+}
+@keyframes heroQuoteSwap {
+    0%   { opacity: 0; transform: translateY(8px) rotateX(-12deg); }
+    100% { opacity: 1; transform: translateY(0) rotateX(0); }
 }
 
 /* ---- Desktop uplift: larger artwork + 3D depth (never clobbers mobile) ---- */

@@ -2605,41 +2605,207 @@ function applySiteSettings() {
 // AI Glass Premium Home Sections
 // ============================================
 
-// Greeting Section - Time-based
+// ---- Premium Glass Hero Bar helpers (greeting + live weather) ----
+const HERO_WEATHER_LABELS = {
+    'fa-sun': 'Clear', 'fa-cloud-sun': 'Partly cloudy', 'fa-cloud': 'Overcast',
+    'fa-smog': 'Fog', 'fa-cloud-rain': 'Rain', 'fa-cloud-showers-heavy': 'Showers',
+    'fa-snowflake': 'Snow', 'fa-bolt': 'Thunderstorm',
+    'fa-moon': 'Clear night', 'fa-cloud-moon': 'Cloudy night'
+};
+
+function _heroTimeGreeting() {
+    const h = new Date().getHours();
+    if (h < 5)  return { text: 'Good Night', emoji: '🌙' };
+    if (h < 12) return { text: 'Good Morning', emoji: '☀️' };
+    if (h < 17) return { text: 'Good Afternoon', emoji: '🌤️' };
+    if (h < 21) return { text: 'Good Evening', emoji: '🌆' };
+    return { text: 'Good Night', emoji: '🌙' };
+}
+
+function _heroTimeWeatherIcon() {
+    const h = new Date().getHours();
+    if (h < 5 || h >= 21) return { icon: 'fa-moon', label: 'Clear night' };
+    if (h < 8)  return { icon: 'fa-cloud-sun', label: 'Dawn' };
+    if (h < 17) return { icon: 'fa-sun', label: 'Clear' };
+    if (h < 19) return { icon: 'fa-cloud-sun', label: 'Evening' };
+    return { icon: 'fa-cloud-moon', label: 'Cloudy night' };
+}
+
+function _heroSetWeather(icon, label) {
+    const el = document.getElementById('greetingWeather');
+    if (!el) return;
+    el.innerHTML = `<i class="fas ${icon}"></i>`;
+    if (label) el.title = label;
+}
+
+function _heroSetGreeting() {
+    const g = _heroTimeGreeting();
+    const el = document.getElementById('greetingText');
+    if (el) el.textContent = `${g.text} ${g.emoji}`;
+}
+
+let _heroLiveWeather = false;
+let _heroWeatherInterval = null;
+let _heroGreetingInterval = null;
+let _heroQuoteInterval = null;
+let _heroUpdatersStarted = false;
+
+function _heroWmoToIcon(code) {
+    if (code === 0) return 'fa-sun';
+    if (code === 1 || code === 2) return 'fa-cloud-sun';
+    if (code === 3) return 'fa-cloud';
+    if (code === 45 || code === 48) return 'fa-smog';
+    if (code >= 51 && code <= 57) return 'fa-cloud-rain';
+    if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return 'fa-cloud-showers-heavy';
+    if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'fa-snowflake';
+    if (code >= 95) return 'fa-bolt';
+    return null;
+}
+
+// Live weather (best-effort, keyless via Open-Meteo). Falls back to the
+// time-based icon shown instantly. Only the weather-chip node is updated.
+function updateHeroWeather() {
+    const t = _heroTimeWeatherIcon();
+    _heroSetWeather(t.icon, t.label); // instant fallback
+    if (!navigator.geolocation || typeof fetch !== 'function') return;
+    const guard = setTimeout(() => {}, 8000);
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            const { latitude, longitude } = pos.coords;
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=weather_code`)
+                .then(r => (r.ok ? r.json() : null))
+                .then(d => {
+                    const code = d && d.current && d.current.weather_code;
+                    if (code == null) return;
+                    const icon = _heroWmoToIcon(code);
+                    if (icon) {
+                        _heroLiveWeather = true;
+                        _heroSetWeather(icon, HERO_WEATHER_LABELS[icon] || 'Live weather');
+                    }
+                })
+                .catch(() => {})
+                .finally(() => clearTimeout(guard));
+        },
+        () => clearTimeout(guard), // denied/offline -> keep time-based
+        { enableHighAccuracy: false, timeout: 7000, maximumAge: 600000 }
+    );
+}
+
+function _heroQuotePool() {
+    let pool = [];
+    try {
+        if (typeof DataStore !== 'undefined' && DataStore.getQuotes) {
+            pool = (DataStore.getQuotes() || [])
+                .map(q => q && (q.text || q.quote))
+                .filter(Boolean);
+        }
+    } catch (e) {}
+    const fallbacks = [
+        'Music is the language of the soul — feel every beat of Tamil.',
+        'Let the rhythm of Tamil melodies carry your day.',
+        'Every song is a story; every beat is a memory.',
+        'Stream the sound of home, wherever you are.',
+        'Discover new Tamil sounds, curated just for you.'
+    ];
+    return pool.length >= 2 ? pool : fallbacks;
+}
+
+// Rotate the quote in place with a subtle 3D swap — no re-render.
+function _heroRotateQuote() {
+    const qEl = document.getElementById('greetingQuoteText');
+    const qWrap = document.getElementById('greetingQuote');
+    if (!qEl || !qWrap) return;
+    const pool = _heroQuotePool();
+    const current = qEl.textContent;
+    let next = current;
+    if (pool.length > 1) {
+        do { next = pool[Math.floor(Math.random() * pool.length)]; }
+        while (next === current);
+    }
+    qWrap.classList.remove('is-swapping');
+    void qWrap.offsetWidth; // force reflow so the animation restarts
+    qEl.textContent = next;
+    qWrap.classList.add('is-swapping');
+}
+
+// Pointer-driven 3D tilt micro-interaction (hover-capable devices only).
+function _heroInitTilt() {
+    const hero = document.getElementById('greetingHero');
+    const content = hero && hero.querySelector('.greeting-hero-content');
+    if (!hero || !content) return;
+    const reduce = window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const hover = window.matchMedia &&
+        window.matchMedia('(hover: hover)').matches;
+    if (reduce || !hover) return;
+    hero.addEventListener('pointermove', (e) => {
+        const r = hero.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        content.style.setProperty('--hero-ry', (px * 8).toFixed(2) + 'deg');
+        content.style.setProperty('--hero-rx', (-py * 8).toFixed(2) + 'deg');
+    });
+    hero.addEventListener('pointerleave', () => {
+        content.style.setProperty('--hero-rx', '0deg');
+        content.style.setProperty('--hero-ry', '0deg');
+    });
+}
+
+function _heroStartUpdaters() {
+    if (_heroUpdatersStarted) return;
+    _heroUpdatersStarted = true;
+    _heroGreetingInterval = setInterval(() => {
+        _heroSetGreeting();
+        if (!_heroLiveWeather) {
+            const t = _heroTimeWeatherIcon();
+            _heroSetWeather(t.icon, t.label);
+        }
+    }, 60000);
+    _heroWeatherInterval = setInterval(updateHeroWeather, 15 * 60 * 1000);
+    _heroQuoteInterval = setInterval(_heroRotateQuote, 30000);
+}
+
+// Greeting Section - Premium Glass Hero Bar
 function renderGreetingSection() {
     const container = document.querySelector('.greeting-section');
     if (!container) return;
-    
-    const hour = new Date().getHours();
-    let greeting, emoji;
-    if (hour < 12) { greeting = 'Good Morning'; emoji = '☀️'; }
-    else if (hour < 17) { greeting = 'Good Afternoon'; emoji = '🌤️'; }
-    else if (hour < 21) { greeting = 'Good Evening'; emoji = '🌙'; }
-    else { greeting = 'Good Night'; emoji = '🌙'; }
-    
-    // Pull a quote from the Builder content (falls back to a default)
-    let quote = '';
-    try {
-        if (typeof DataStore !== 'undefined' && DataStore.getQuotes) {
-            const quotes = DataStore.getQuotes() || [];
-            if (quotes.length) {
-                const q = quotes[Math.floor(Math.random() * quotes.length)];
-                quote = (q && (q.text || q.quote)) || '';
-            }
-        }
-    } catch (e) {}
-    if (!quote) quote = 'Music is the language of the soul — feel every beat of Tamil.';
 
-    container.innerHTML = `
-        <div class="greeting-card">
-            <div class="greeting-text">
-                <div class="greeting-label">${greeting}</div>
-                <h1 class="greeting-title"># Welcome to Tamil AI Stream <span class="greeting-wave">${emoji}</span></h1>
-                <p class="greeting-subtitle">Discover the best of Tamil music, powered by AI</p>
-                ${quote ? `<p class="greeting-quote"><i class="fas fa-quote-left"></i> ${quote}</p>` : ''}
+    // Build the bar structure once. If it already exists (e.g. a later
+    // dynamic refresh), we keep the DOM and only update inner content so
+    // the website is never re-rendered.
+    if (!document.getElementById('greetingHero')) {
+        container.innerHTML = `
+            <div class="greeting-card greeting-hero" id="greetingHero">
+                <div class="greeting-hero-glow" aria-hidden="true"></div>
+                <div class="greeting-hero-content">
+                    <div class="greeting-hero-top">
+                        <div class="greeting-weather">
+                            <span class="greeting-label greeting-greeting" id="greetingText"></span>
+                            <span class="greeting-weather-icon" id="greetingWeather" title=""><i class="fas fa-moon"></i></span>
+                        </div>
+                    </div>
+                    <h1 class="greeting-title" id="greetingTitle"><span class="hero-hash">#</span> Welcome to <span class="hero-brand">Tamil AI Stream</span></h1>
+                    <p class="greeting-subtitle">Discover the best of Tamil music, powered by AI</p>
+                    <p class="greeting-quote" id="greetingQuote"><i class="fas fa-quote-left"></i> <span id="greetingQuoteText"></span></p>
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    }
+
+    // Seed greeting + quote text in place (no flash of placeholders)
+    _heroSetGreeting();
+    const qEl = document.getElementById('greetingQuoteText');
+    if (qEl) {
+        const pool = _heroQuotePool();
+        qEl.textContent = pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    // Live weather (time-based instantly, upgrades to real data if allowed)
+    updateHeroWeather();
+
+    // Micro-interactions + lightweight in-place updaters
+    _heroInitTilt();
+    _heroStartUpdaters();
 }
 
 // Generic carousel swipe handler
