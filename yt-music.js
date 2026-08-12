@@ -544,6 +544,11 @@ const YTMusic = {
             case 'playlists': this.renderPlaylistsContent(); break;
             case 'history': this.renderHistoryContent(); break;
             case 'stations': this.renderStationsContent(); break;
+            case 'radio':
+                if (typeof window.TamilAIPremium !== 'undefined' && TamilAIPremium.syncRadioState) {
+                    TamilAIPremium.syncRadioState();
+                }
+                break;
             case 'artists': this.renderArtistsContent(); break;
             case 'search':
                 const mobileSI = document.getElementById('ytmMobileSearchInput');

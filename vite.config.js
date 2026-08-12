@@ -17,6 +17,7 @@ function copyVanillaScripts() {
         'ai-command-bot.js', 'ai-publish-check.js',
         'yt-music.js', 'script.js', 'mini-audio-player.js',
         'global-player.js', 'listening-history.js',
+        'premium-landing.js',
         'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
         'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js'
@@ -27,6 +28,7 @@ function copyVanillaScripts() {
         'global-player.css', 'mini-audio-player.css',
         'listening-history.css', 'search-ui.css',
         'responsive.css', 'ai-glass.css', 'splash.css',
+        'premium-ui.css',
         'builder.css', 'admin.css', 'admin-login.css', 'analytics.css',
         'profile.css', 'playlist.css', 'dashboard.css'
       ]

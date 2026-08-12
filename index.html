@@ -43,6 +43,7 @@
     <link rel="stylesheet" href="responsive.css">
     <link rel="stylesheet" href="ai-glass.css">
     <link rel="stylesheet" href="splash.css">
+    <link rel="stylesheet" href="premium-ui.css">
 </head>
 <body>
     <!-- Startup Splash Screen -->
@@ -241,6 +242,11 @@
                             <span>Home</span>
                             <div class="premium-sidebar-item-indicator"></div>
                         </button>
+                        <button class="premium-sidebar-item" data-page="radio">
+                            <div class="premium-sidebar-item-icon premium-sidebar-item-icon-live"><i class="fas fa-radio"></i></div>
+                            <span>Radio</span>
+                            <span class="premium-sidebar-badge premium-sidebar-badge-live">LIVE</span>
+                        </button>
                         <button class="premium-sidebar-item" data-page="explore">
                             <div class="premium-sidebar-item-icon"><i class="fas fa-compass"></i></div>
                             <span>Explore</span>
@@ -376,6 +382,9 @@
                         <button class="premium-topnav-action hide-mobile" onclick="YTMusic.toggleSettingsPanel()" title="Settings">
                             <i class="fas fa-gear"></i>
                         </button>
+                        <button class="premium-topnav-action premium-kebab-btn" id="premiumKebabBtn" title="More options" aria-label="More options" aria-haspopup="menu">
+                            <i class="fas fa-ellipsis"></i>
+                        </button>
                         <button class="premium-topnav-logout" id="premiumTopNavLogout" title="Logout">
                             <i class="fas fa-right-from-bracket"></i>
                             <span class="premium-topnav-logout-text hide-mobile">Logout</span>
@@ -386,6 +395,54 @@
 
             <!-- ============ PAGE: HOME ============ -->
             <div class="ytm-page ytm-page-home active" id="page-home">
+
+                <!-- ============ PREMIUM LANDING HERO ============ -->
+                <section class="premium-hero" id="premiumHero" aria-label="TamilAI.Stream — Listen live and feel Tamil">
+                    <div class="premium-hero-bg">
+                        <span class="premium-hero-orb premium-hero-orb-1"></span>
+                        <span class="premium-hero-orb premium-hero-orb-2"></span>
+                        <span class="premium-hero-orb premium-hero-orb-3"></span>
+                        <div class="premium-hero-mesh"></div>
+                        <canvas class="premium-hero-canvas" id="premiumHeroCanvas"></canvas>
+                    </div>
+                    <div class="premium-hero-grid">
+                        <div class="premium-hero-content">
+                            <div class="premium-hero-eyebrow">
+                                <span class="premium-hero-live-dot"></span>
+                                <span id="premiumHeroLiveLabel">AI Radio · Live Now</span>
+                            </div>
+                            <h1 class="premium-hero-title">
+                                <span class="premium-hero-line premium-hero-line-1">Feel the</span>
+                                <span class="premium-hero-line premium-hero-line-2"><em>sound</em> of Tamil.</span>
+                            </h1>
+                            <p class="premium-hero-sub">Stream live Tamil FM stations and AI-curated music — all in one place, powered by TamilAI.Stream.</p>
+                            <div class="premium-hero-cta">
+                                <button class="premium-hero-btn premium-hero-btn-primary" id="premiumHeroPlay" type="button"><i class="fas fa-play"></i> Start Listening</button>
+                                <button class="premium-hero-btn premium-hero-btn-glass" id="premiumHeroRadio" type="button"><i class="fas fa-radio"></i> Open Radio</button>
+                            </div>
+                            <div class="premium-hero-stats" id="premiumHeroStats">
+                                <span class="premium-hero-stat"><b id="premiumHeroStationCount">50+</b><label>Stations</label></span>
+                                <span class="premium-hero-stat"><b id="premiumHeroSongCount">500+</b><label>Songs</label></span>
+                                <span class="premium-hero-stat"><b><i class="fas fa-bolt"></i></b><label>AI Curated</label></span>
+                            </div>
+                        </div>
+                        <div class="premium-hero-visual">
+                            <div class="premium-vinyl" id="premiumHeroVinyl">
+                                <div class="premium-vinyl-disc">
+                                    <div class="premium-vinyl-label"><i class="fas fa-headphones-alt"></i></div>
+                                </div>
+                                <div class="premium-vinyl-glow"></div>
+                                <div class="premium-hero-eq" id="premiumHeroEq">
+                                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                                </div>
+                                <span class="premium-hero-note premium-hero-note-1"><i class="fas fa-music"></i></span>
+                                <span class="premium-hero-note premium-hero-note-2"><i class="fas fa-music"></i></span>
+                                <span class="premium-hero-note premium-hero-note-3"><i class="fas fa-music"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="premium-hero-scroll"><span class="premium-hero-scroll-mouse"></span><label>Scroll to explore</label></div>
+                </section>
 
                 <!-- Premium Top Header Bar -->
                 <div class="top-header-bar">
@@ -408,9 +465,9 @@
                 <div class="greeting-section" data-section="greeting"></div>
 
                 <!-- Featured Banner Slider -->
-                <section class="section featured-section" data-section="featured">
+                <section class="section featured-section" data-section="featured" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title">Featured Stations</h2>
+                        <h2 class="section-title" data-kicker="Featured">Featured Stations</h2>
                         <div class="slider-controls">
                             <button class="slider-btn slider-prev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
                             <button class="slider-btn slider-next" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
@@ -422,9 +479,9 @@
                 </section>
 
                 <!-- Trending Now -->
-                <section class="section trending-section" data-section="trending" id="trendingScroll">
+                <section class="section trending-section" data-section="trending" id="trendingScroll" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title">Trending Now</h2>
+                        <h2 class="section-title" data-kicker="Trending">Trending Now</h2>
                         <div class="slider-controls">
                             <button class="slider-btn scroll-left" aria-label="Scroll left"><i class="fas fa-chevron-left"></i></button>
                             <button class="slider-btn scroll-right" aria-label="Scroll right"><i class="fas fa-chevron-right"></i></button>
@@ -434,9 +491,9 @@
                 </section>
 
                 <!-- AI Recommended -->
-                <section class="section ai-section" data-section="ai-recommended">
+                <section class="section ai-section" data-section="ai-recommended" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title">
+                        <h2 class="section-title" data-kicker="For You">
                             <span class="ai-orb-container">
                                 <span class="ai-orb">
                                     <span class="ai-orb-ring ai-orb-ring-1"></span>
@@ -456,25 +513,25 @@
                 </section>
 
                 <!-- Browse Categories -->
-                <section class="section categories-section" data-section="categories">
+                <section class="section categories-section" data-section="categories" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title">Browse Categories</h2>
+                        <h2 class="section-title" data-kicker="Categories">Browse Categories</h2>
                     </div>
                     <div class="categories-grid" id="categoriesGrid"></div>
                 </section>
 
                 <!-- Tamil Hits Songs (Artist Hits) -->
-                <section class="section tamil-hits-section" data-section="tamil-hits">
+                <section class="section tamil-hits-section" data-section="tamil-hits" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title">Tamil Hits Collections</h2>
+                        <h2 class="section-title" data-kicker="Collections">Tamil Hits Collections</h2>
                         <button class="see-all-btn" onclick="document.querySelector('[data-page=\'artists\']').click()">See All</button>
                     </div>
                     <div class="tamil-hits-grid" id="tamilHitsGrid"></div>
                 </section>
 
-                <section class="section movies-collection-section" data-section="movies-collection">
+                <section class="section movies-collection-section" data-section="movies-collection" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title"><i class="fas fa-film" style="color:#f59e0b;margin-right:8px;"></i>Movie Collections</h2>
+                        <h2 class="section-title" data-kicker="Movies"><i class="fas fa-film" style="color:#f59e0b;margin-right:8px;"></i>Movie Collections</h2>
                     </div>
                     <div class="carousel-container">
                         <button class="carousel-btn carousel-prev" onclick="scrollCarousel(this, -1)"><i class="fas fa-chevron-left"></i></button>
@@ -483,9 +540,9 @@
                     </div>
                 </section>
 
-                <section class="section yearly-collection-section" data-section="yearly-collection">
+                <section class="section yearly-collection-section" data-section="yearly-collection" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title"><i class="fas fa-calendar-days" style="color:#10b981;margin-right:8px;"></i>Yearly Collections</h2>
+                        <h2 class="section-title" data-kicker="Years"><i class="fas fa-calendar-days" style="color:#10b981;margin-right:8px;"></i>Yearly Collections</h2>
                     </div>
                     <div class="carousel-container">
                         <button class="carousel-btn carousel-prev" onclick="scrollCarousel(this, -1)"><i class="fas fa-chevron-left"></i></button>
@@ -494,9 +551,9 @@
                     </div>
                 </section>
 
-                <section class="section latest-collection-section" data-section="latest-collection">
+                <section class="section latest-collection-section" data-section="latest-collection" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title"><i class="fas fa-bolt" style="color:#ec4899;margin-right:8px;"></i>Latest Releases</h2>
+                        <h2 class="section-title" data-kicker="New"><i class="fas fa-bolt" style="color:#ec4899;margin-right:8px;"></i>Latest Releases</h2>
                     </div>
                     <div class="carousel-container">
                         <button class="carousel-btn carousel-prev" onclick="scrollCarousel(this, -1)"><i class="fas fa-chevron-left"></i></button>
@@ -506,9 +563,9 @@
                 </section>
 
                 <!-- All Published Songs (from Builder) -->
-                <section class="section songs-section" data-section="songs">
+                <section class="section songs-section" data-section="songs" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title"><i class="fas fa-compact-disc" style="color:var(--emerald-400);margin-right:8px;"></i>All Songs</h2>
+                        <h2 class="section-title" data-kicker="Songs"><i class="fas fa-compact-disc" style="color:var(--emerald-400);margin-right:8px;"></i>All Songs</h2>
                         <span class="songs-count" id="songsCount"></span>
                     </div>
                     <div class="songs-grid" id="songsContainer"></div>
@@ -517,8 +574,9 @@
                 <!-- All Tamil FM Stations -->
                 <section class="section stations-section" data-section="stations">
                     <div class="section-header">
-                        <h2 class="section-title">All Tamil FM Stations</h2>
+                        <h2 class="section-title" data-kicker="Stations">All Tamil FM Stations</h2>
                         <span class="stations-count" id="stationsCount">18 stations</span>
+                        <button class="premium-open-radio-btn" onclick="premiumGoRadio()" type="button"><i class="fas fa-radio"></i> Open Radio</button>
                     </div>
                     <div class="filter-bar">
                         <button class="filter-btn active" data-filter="all">All</button>
@@ -536,9 +594,9 @@
                 </section>
 
                 <!-- Recently Added Songs Marquee -->
-                <section class="section recently-added-section" data-section="recently-added">
+                <section class="section recently-added-section" data-section="recently-added" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title"><i class="fas fa-clock-rotate-left" style="color:var(--emerald-400);margin-right:8px;"></i>Recently Added</h2>
+                        <h2 class="section-title" data-kicker="Fresh"><i class="fas fa-clock-rotate-left" style="color:var(--emerald-400);margin-right:8px;"></i>Recently Added</h2>
                     </div>
                     <div class="recently-added-viewport" id="recentlyAddedViewport">
                         <div class="recently-added-track" id="recentlyAddedTrack"></div>
@@ -588,6 +646,32 @@
                 <div class="ytm-stations-content" id="ytmStationsContent"></div>
             </div>
 
+            <!-- ============ PAGE: RADIO (premium FM experience) ============ -->
+            <div class="ytm-page ytm-page-radio" id="page-radio">
+                <div class="premium-radio-page" id="premiumRadioPage">
+                    <header class="premium-radio-header">
+                        <div class="premium-radio-header-bg">
+                            <span class="premium-radio-orb premium-radio-orb-1"></span>
+                            <span class="premium-radio-orb premium-radio-orb-2"></span>
+                        </div>
+                        <div class="premium-radio-header-inner">
+                            <span class="premium-radio-eyebrow"><span class="premium-radio-live-dot"></span> Tamil FM · Live Radio</span>
+                            <h1 class="premium-radio-title">Radio</h1>
+                            <p class="premium-radio-sub">All your Tamil FM stations in one premium experience — tune in live, anytime.</p>
+                            <div class="premium-radio-actions">
+                                <button class="premium-radio-btn premium-radio-btn-primary" id="premiumRadioShuffle" type="button"><i class="fas fa-shuffle"></i> Play Random Station</button>
+                            </div>
+                            <div class="premium-radio-filters" id="premiumRadioFilters"></div>
+                        </div>
+                    </header>
+                    <div class="premium-radio-grid" id="premiumRadioGrid"></div>
+                    <div class="premium-radio-empty" id="premiumRadioEmpty" style="display:none;">
+                        <i class="fas fa-radio"></i>
+                        <p>No stations available right now. Add stations from the Website Builder.</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- ============ PAGE: ARTISTS ============ -->
             <div class="ytm-page ytm-page-artists" id="page-artists">
                 <div class="ytm-artists-content" id="ytmArtistsContent"></div>
@@ -595,6 +679,40 @@
 
         </div><!-- /ytm-main-content -->
     </div><!-- /ytm-app -->
+
+    <!-- ============ 3-DOT MENU ============ -->
+    <div class="premium-kebab-menu" id="premiumKebabMenu" role="menu">
+        <div class="premium-kebab-header">More</div>
+        <button class="premium-kebab-item premium-kebab-item-radio" data-goto="radio" role="menuitem">
+            <span class="premium-kebab-icon"><i class="fas fa-radio"></i></span>
+            <span class="premium-kebab-label">Radio</span>
+            <span class="premium-kebab-live">LIVE</span>
+        </button>
+        <button class="premium-kebab-item" data-goto="explore" role="menuitem">
+            <span class="premium-kebab-icon"><i class="fas fa-compass"></i></span>
+            <span class="premium-kebab-label">Explore</span>
+        </button>
+        <button class="premium-kebab-item" data-goto="library" role="menuitem">
+            <span class="premium-kebab-icon"><i class="fas fa-book-open"></i></span>
+            <span class="premium-kebab-label">Library</span>
+        </button>
+        <button class="premium-kebab-item" data-goto="liked" role="menuitem">
+            <span class="premium-kebab-icon"><i class="fas fa-heart"></i></span>
+            <span class="premium-kebab-label">Liked Songs</span>
+        </button>
+        <button class="premium-kebab-item" data-goto="playlists" role="menuitem">
+            <span class="premium-kebab-icon"><i class="fas fa-list"></i></span>
+            <span class="premium-kebab-label">Playlists</span>
+        </button>
+        <button class="premium-kebab-item" data-goto="home" role="menuitem">
+            <span class="premium-kebab-icon"><i class="fas fa-house"></i></span>
+            <span class="premium-kebab-label">Home</span>
+        </button>
+        <button class="premium-kebab-item" id="premiumKebabSettings" role="menuitem">
+            <span class="premium-kebab-icon"><i class="fas fa-gear"></i></span>
+            <span class="premium-kebab-label">Settings</span>
+        </button>
+    </div>
 
     <!-- ============ MINI PLAYER ============ -->
     <div class="ytm-mini-player" id="ytmMiniPlayer">
@@ -905,6 +1023,7 @@
             PremiumEffects.initParticles();
         });
     </script>
+    <script src="premium-landing.js"></script>
     <script src="pwa.js"></script>
 </body>
 </html>

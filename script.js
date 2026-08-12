@@ -1167,7 +1167,7 @@ function getStationInfo(stationName) {
 }
 
 function updatePlayPauseButton(playing) {
-    const playButtons = document.querySelectorAll('.slide-play-btn, .station-play-overlay i, .recent-play-btn i, .song-play-btn i, .playlist-song-play i');
+    const playButtons = document.querySelectorAll('.slide-play-btn, .station-play-overlay i, .recent-play-btn i, .song-play-btn i, .playlist-song-play i, .premium-radio-play');
     playButtons.forEach(btn => {
         if (playing) {
             btn.classList.remove('fa-play');
@@ -1245,9 +1245,9 @@ function showLiveStatus(isLive) {
 }
 
 function updateStationCardStates(playing) {
-    document.querySelectorAll('.station-card, .station-grid-card, .slide-card').forEach(card => {
+    document.querySelectorAll('.station-card, .station-grid-card, .slide-card, .premium-radio-card').forEach(card => {
         const cardName = card.querySelector('h3, h4')?.textContent || '';
-        const playBtn = card.querySelector('.slide-play-btn, .sg-play-btn, .station-play-overlay i');
+        const playBtn = card.querySelector('.slide-play-btn, .sg-play-btn, .station-play-overlay i, .premium-radio-play');
         if (!playBtn) return;
         if (cardName === currentStation && playing) {
             card.classList.add('active-station', 'playing-station');
@@ -1255,6 +1255,8 @@ function updateStationCardStates(playing) {
                 playBtn.classList.add('wave-active');
                 playBtn.classList.remove('pulse-active');
                 playBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            } else if (playBtn.classList.contains('premium-radio-play')) {
+                playBtn.className = 'fa-solid fa-pause premium-radio-play';
             } else {
                 playBtn.className = 'fas fa-pause';
             }
@@ -1263,6 +1265,8 @@ function updateStationCardStates(playing) {
             if (playBtn.classList.contains('slide-play-btn') || playBtn.classList.contains('sg-play-btn')) {
                 playBtn.classList.remove('wave-active', 'pulse-active');
                 playBtn.innerHTML = '<i class="fas fa-play"></i> Listen Now';
+            } else if (playBtn.classList.contains('premium-radio-play')) {
+                playBtn.className = 'fa-solid fa-play premium-radio-play';
             } else {
                 playBtn.className = 'fas fa-play';
             }
