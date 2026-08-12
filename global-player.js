@@ -439,6 +439,35 @@ const GlobalPlayer = (() => {
                 updateProgressUI();
             }, 50);
         };
+        // Click/tap to seek immediately (no drag needed)
+        const clickSeek = (e) => {
+            const rect = wrap.getBoundingClientRect();
+            if (!rect || rect.width <= 0) return;
+            const x = (e.clientX !== undefined) ? e.clientX : (e.touches?.[0]?.clientX ?? 0);
+            const pct = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
+            // Update UI immediately
+            if (elemId === 'gpExpBarWrap') {
+                setWidth('gpExpBar', (pct * 100) + '%');
+                setLeft('gpExpBarThumb', (pct * 100) + '%');
+                setText('gpExpCur', fmtTime(pct * (state.duration || 0)));
+            } else {
+                setWidth('gpMiniBar', (pct * 100) + '%');
+                setLeft('gpMiniThumb', (pct * 100) + '%');
+                setText('gpMiniCur', fmtTime(pct * (state.duration || 0)));
+            }
+            // Perform actual audio seek immediately
+            onSeek(pct);
+            // Force UI sync from actual audio position after seek
+            setTimeout(() => {
+                const ap = window.audioPlayer;
+                if (ap) {
+                    state.currentTime = ap.currentTime || 0;
+                    state.duration = ap.duration || 0;
+                }
+                updateProgressUI();
+            }, 50);
+        };
+        wrap.addEventListener('click', (e) => { clickSeek(e); e.preventDefault(); e.stopPropagation(); });
         wrap.addEventListener('mousedown', (e) => { isDragging = true; previewSeek(e); e.preventDefault(); e.stopPropagation(); });
         document.addEventListener('mousemove', (e) => { if (isDragging) previewSeek(e); });
         document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; commitSeek(); } });
@@ -640,6 +669,89 @@ const GlobalPlayer = (() => {
         if (expIcon) expIcon.className = playing ? 'fas fa-pause' : 'fas fa-play';
         updateEqBars(playing);
         if (typeof updatePlayPauseButton === 'function') updatePlayPauseButton(playing);
+        
+        // Sync playing state with song cards and station cards across the site
+        syncPlayingIndicators(playing);
+    }
+    
+    function syncPlayingIndicators(playing) {
+        // Get current track info
+        const track = state.track || getCurrentTrackFromScript();
+        const currentTrackId = track?.id || track?.songId;
+        const currentStationName = state.track?.title || state.track?.name || '';
+        
+        // Update song cards across the site (song-card, dash-song-card, etc.)
+        document.querySelectorAll('.song-card, .dash-song-card, .ai-glass-song-card, .ytm-song-card').forEach(card => {
+            const songId = card.dataset?.songId || card.dataset?.id;
+            const isCurrentSong = playing && currentTrackId && songId && songId === currentTrackId;
+            
+            // Add/remove playing class
+            card.classList.toggle('playing-song', isCurrentSong);
+            
+            // Update play overlay icon
+            const playOverlay = card.querySelector('.song-play-overlay i, .dash-song-play i, .song-play-btn i');
+            if (playOverlay) {
+                playOverlay.className = isCurrentSong ? 'fas fa-pause' : 'fas fa-play';
+            }
+            
+            // Add waveform/equalizer animation indicator
+            const thumbnail = card.querySelector('.song-thumbnail, .dash-song-art, .ytm-song-art');
+            if (thumbnail) {
+                if (isCurrentSong) {
+                    thumbnail.classList.add('playing-indicator');
+                } else {
+                    thumbnail.classList.remove('playing-indicator');
+                }
+            }
+        });
+        
+        // Update station cards
+        document.querySelectorAll('.station-card, .station-grid-card, .slide-card, .premium-radio-card').forEach(card => {
+            const cardName = card.querySelector('h3, h4')?.textContent || '';
+            const isCurrentStation = playing && currentStationName && cardName === currentStationName;
+            
+            card.classList.toggle('active-station', isCurrentStation);
+            card.classList.toggle('playing-station', isCurrentStation);
+            
+            const playBtn = card.querySelector('.slide-play-btn, .sg-play-btn, .station-play-overlay i, .premium-radio-play');
+            if (playBtn) {
+                if (playBtn.classList.contains('slide-play-btn') || playBtn.classList.contains('sg-play-btn')) {
+                    if (isCurrentStation) {
+                        playBtn.classList.add('wave-active');
+                        playBtn.classList.remove('pulse-active');
+                        playBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                    } else {
+                        playBtn.classList.remove('wave-active', 'pulse-active');
+                        playBtn.innerHTML = '<i class="fas fa-play"></i> Listen Now';
+                    }
+                } else if (playBtn.classList.contains('premium-radio-play')) {
+                    playBtn.className = isCurrentStation ? 'fa-solid fa-pause premium-radio-play' : 'fa-solid fa-play premium-radio-play';
+                } else {
+                    playBtn.className = isCurrentStation ? 'fas fa-pause' : 'fas fa-play';
+                }
+            }
+        });
+        
+        // Update YTMusic player if available
+        if (typeof YTMusic !== 'undefined') {
+            YTMusic.isPlaying = playing;
+            if (typeof YTMusic.updatePlayerUI === 'function') {
+                YTMusic.updatePlayerUI();
+            }
+        }
+        
+        // Update MiniAudioPlayer if available
+        if (typeof MiniAudioPlayer !== 'undefined') {
+            if (playing) {
+                if (typeof MiniAudioPlayer.syncPlayingUI === 'function') {
+                    MiniAudioPlayer.syncPlayingUI();
+                }
+            } else {
+                if (typeof MiniAudioPlayer.syncPausedUI === 'function') {
+                    MiniAudioPlayer.syncPausedUI();
+                }
+            }
+        }
     }
 
     function updateTrackUI() {
