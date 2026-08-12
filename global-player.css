@@ -23,6 +23,46 @@
     --gp-accent: #34d399;
 }
 
+/* ============================================
+   PWA TEXT COLOR FIX - Ensure all text is white/readable
+   ============================================ */
+html, body {
+    color: #fff !important;
+}
+
+/* Force white text on all headings */
+h1, h2, h3, h4, h5, h6 {
+    color: #fff !important;
+}
+
+/* Force white text on all paragraphs, spans, labels */
+p, span, label, li, td, th, dt, dd {
+    color: #fff !important;
+}
+
+/* Force white text on buttons */
+button, .btn, .gp-btn, .ytm-btn {
+    color: #fff !important;
+}
+
+/* Force white text on inputs */
+input, textarea, select {
+    color: #fff !important;
+    background: rgba(255,255,255,0.08) !important;
+    border-color: rgba(255,255,255,0.15) !important;
+}
+input::placeholder, textarea::placeholder {
+    color: rgba(255,255,255,0.5) !important;
+}
+
+/* Force white text on links */
+a {
+    color: #fff !important;
+}
+a:hover {
+    color: var(--gp-accent, #34d399) !important;
+}
+
 /* ---- Shared Button Style ---- */
 .gp-btn {
     width: 44px;
