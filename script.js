@@ -1995,26 +1995,21 @@ function logout() {
 document.getElementById('logoutBtn')?.addEventListener('click', logout);
 
 // ============================================
-// Top Header - Live Time, Date & Quotes
+// Top Header - Live Time & Date
 // ============================================
 let _topHeaderDateInterval = null;
 let _topHeaderTimeInterval = null;
-let _topHeaderQuoteInterval = null;
-let _tamilQuotes = [];
-let _quoteIndex = 0;
 
 function initTopHeader() {
     const dateEl = document.getElementById('liveDate');
     const timeEl = document.getElementById('liveTime');
-    const quoteEl = document.getElementById('tamilQuote');
-    
-    if (!dateEl && !timeEl && !quoteEl) return; // No top header elements
-    
+
+    if (!dateEl && !timeEl) return; // No top header elements
+
     // Clear existing intervals to prevent duplicates
     if (_topHeaderDateInterval) clearInterval(_topHeaderDateInterval);
     if (_topHeaderTimeInterval) clearInterval(_topHeaderTimeInterval);
-    if (_topHeaderQuoteInterval) clearInterval(_topHeaderQuoteInterval);
-    
+
     // Update date
     function updateDate() {
         if (dateEl) {
@@ -2023,79 +2018,27 @@ function initTopHeader() {
             dateEl.textContent = now.toLocaleDateString('en-US', options);
         }
     }
-    
+
     // Update time
     function updateTime() {
         if (timeEl) {
             const now = new Date();
-            timeEl.textContent = now.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit', 
+            timeEl.textContent = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
                 second: '2-digit',
-                hour12: true 
+                hour12: true
             });
         }
     }
-    
-    // Load quotes from DataStore
-    _tamilQuotes = [];
-    try {
-        const quotes = DataStore.getQuotes();
-        if (Array.isArray(quotes)) {
-            _tamilQuotes = quotes.filter(q => q && q.status === 'active').map(q => q.text).filter(Boolean);
-        }
-    } catch (error) {
-        console.warn('Quote data unavailable:', error);
-    }
-    _quoteIndex = 0;
-    
-    function updateQuote() {
-        if (quoteEl && _tamilQuotes.length > 0) {
-            quoteEl.style.opacity = '0';
-            quoteEl.style.transform = 'translateY(10px)';
-            setTimeout(() => {
-                quoteEl.textContent = _tamilQuotes[_quoteIndex];
-                quoteEl.style.opacity = '1';
-                quoteEl.style.transform = 'translateY(0)';
-                _quoteIndex = (_quoteIndex + 1) % _tamilQuotes.length;
-            }, 300);
-        }
-    }
-    
+
     // Initial updates
     updateDate();
     updateTime();
-    updateQuote();
-    
+
     // Intervals
     _topHeaderDateInterval = setInterval(updateDate, 60000);
     _topHeaderTimeInterval = setInterval(updateTime, 1000);
-    _topHeaderQuoteInterval = setInterval(updateQuote, 30000);
-}
-
-// Update quotes dynamically without reinitializing intervals
-function updateQuotesFromDataStore() {
-    try {
-        const quotes = DataStore.getQuotes();
-        if (Array.isArray(quotes)) {
-            _tamilQuotes = quotes.filter(q => q && q.status === 'active').map(q => q.text).filter(Boolean);
-            _quoteIndex = 0;
-            // Trigger immediate quote display if element exists
-            const quoteEl = document.getElementById('tamilQuote');
-            if (quoteEl && _tamilQuotes.length > 0) {
-                quoteEl.style.opacity = '0';
-                quoteEl.style.transform = 'translateY(10px)';
-                setTimeout(() => {
-                    quoteEl.textContent = _tamilQuotes[0];
-                    quoteEl.style.opacity = '1';
-                    quoteEl.style.transform = 'translateY(0)';
-                    _quoteIndex = 1;
-                }, 300);
-            }
-        }
-    } catch (error) {
-        console.warn('Quote update failed:', error);
-    }
 }
 
 // ============================================
@@ -2670,46 +2613,15 @@ function renderGreetingSection() {
     else if (hour < 21) { greeting = 'Good Evening'; emoji = '🌙'; }
     else { greeting = 'Good Night'; emoji = '🌙'; }
     
-    const quotes = DataStore.getQuotes().filter(q => q.status === 'active');
-    const quote = quotes.length > 0 ? quotes[Math.floor(Math.random() * quotes.length)].text : '';
-    
     container.innerHTML = `
         <div class="greeting-card">
             <div class="greeting-text">
                 <div class="greeting-label">${greeting}</div>
                 <h1 class="greeting-title">Welcome to Tamil AI Stream <span class="greeting-wave">${emoji}</span></h1>
                 <p class="greeting-subtitle">Discover the best of Tamil music, powered by AI</p>
-                ${quote ? `<div class="greeting-quote" id="greetingQuote">"${quote}"</div>` : ''}
             </div>
         </div>
     `;
-}
-
-function updateGreetingQuoteOnly() {
-    const container = document.querySelector('.greeting-section');
-    if (!container) return;
-    const quotes = DataStore.getQuotes().filter(q => q.status === 'active');
-    const quote = quotes.length > 0 ? quotes[Math.floor(Math.random() * quotes.length)].text : '';
-    if (!quote) return;
-    const quoteEl = container.querySelector('.greeting-quote') || container.querySelector('#greetingQuote');
-    if (quoteEl) {
-        quoteEl.style.opacity = '0';
-        quoteEl.style.transform = 'translateY(10px)';
-        setTimeout(() => {
-            quoteEl.textContent = `"${quote}"`;
-            quoteEl.style.opacity = '1';
-            quoteEl.style.transform = 'translateY(0)';
-        }, 300);
-    } else if (quote) {
-        const card = container.querySelector('.greeting-text');
-        if (card) {
-            const div = document.createElement('div');
-            div.className = 'greeting-quote';
-            div.id = 'greetingQuote';
-            div.textContent = `"${quote}"`;
-            card.appendChild(div);
-        }
-    }
 }
 
 // Generic carousel swipe handler
@@ -2870,10 +2782,6 @@ function setupRealtimeSync() {
                 break;
             case 'LATEST_COLLECTIONS':
                 renderLatestCollectionsDynamic();
-                break;
-            case 'QUOTES':
-                updateQuotesFromDataStore();
-                updateGreetingQuoteOnly();
                 break;
             case 'SITE_SETTINGS':
                 applySiteSettings();
