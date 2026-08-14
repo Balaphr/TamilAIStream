@@ -121,12 +121,29 @@ const TamilAIPremium = (function () {
             menu.classList.toggle('open', shouldOpen);
             btn.classList.toggle('active', shouldOpen);
         }
-        btn.addEventListener('click', (e) => { e.stopPropagation(); open(); });
+
+        // Desktop (>=1025px): clicking 3-dot opens the left sidebar
+        // Mobile (<1025px): clicking 3-dot opens the left sidebar (closed by default)
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close the kebab dropdown if it was open
+            open(false);
+            // Toggle the sidebar
+            if (typeof YTMusic !== 'undefined' && YTMusic.togglePremiumSidebar) {
+                YTMusic.togglePremiumSidebar();
+            }
+        });
+
+        // Dropdown menu item clicks
         menu.addEventListener('click', (e) => {
             const item = e.target.closest('.premium-kebab-item');
             if (!item) return;
             e.stopPropagation();
             open(false);
+            // On mobile: close sidebar after selecting an option
+            if (window.innerWidth < 1025 && typeof YTMusic !== 'undefined' && YTMusic.togglePremiumSidebar) {
+                YTMusic.togglePremiumSidebar(false);
+            }
             const goto = item.dataset.goto;
             if (goto) {
                 if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {

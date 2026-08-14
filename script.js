@@ -826,7 +826,7 @@ async function playSong(song, playlist = []) {
         id: song.id,
         title: song.title,
         artist: song.artist,
-        thumbnail: song.albumCover || song.cover || '',
+        thumbnail: song.thumbnail || song.albumCover || song.cover || '',
         audioUrl: song.audioUrl,
         movie: song.movie,
         duration: song.duration
@@ -845,7 +845,7 @@ async function playSong(song, playlist = []) {
             persistPlaybackState();
             updatePlayPauseButton(true);
             updateNowPlayingBar(song.title, `${song.artist} â€¢ ${song.movie}`);
-            updateMediaSessionMetadata(song.title, song.artist, song.albumCover || song.cover || '');
+            updateMediaSessionMetadata(song.title, song.artist, song.thumbnail || song.albumCover || song.cover || '');
             document.body.classList.add('gp-active');
             if (typeof GlobalPlayer !== 'undefined') {
                 GlobalPlayer.updateTrackUI();
@@ -866,6 +866,9 @@ async function playSong(song, playlist = []) {
             }
             hideLoadingSpinner();
             showToast(`Now playing: ${song.title}`, 'success');
+            if (typeof GlobalPlayer !== 'undefined' && window.innerWidth < 1025) {
+                setTimeout(() => { GlobalPlayer.expand(); }, 350);
+            }
         } catch (err) {
             console.error('Play error:', err);
             streamConnecting = false;
@@ -878,10 +881,13 @@ async function playSong(song, playlist = []) {
         isStreamPlaying = true;
         updatePlayPauseButton(true);
         updateNowPlayingBar(song.title, `${song.artist} â€¢ ${song.movie}`);
-        updateMediaSessionMetadata(song.title, song.artist, song.albumCover || song.cover || '');
+        updateMediaSessionMetadata(song.title, song.artist, song.thumbnail || song.albumCover || song.cover || '');
 // Record listening history even in demo mode (songs without an audioUrl)
         if (typeof ListeningHistory !== 'undefined') {
             ListeningHistory.trackPlayback(currentPlaybackTrack, 'song');
+        }
+        if (typeof GlobalPlayer !== 'undefined' && window.innerWidth < 1025) {
+            setTimeout(() => { GlobalPlayer.expand(); }, 350);
         }
     }
 }
@@ -897,6 +903,7 @@ function playTrackFromYTMusic(track, meta = {}) {
         title: track.title,
         artist: track.artist,
         movie: track.movie || '',
+        thumbnail: track.thumbnail || '',
         albumCover: track.thumbnail || track.cover || '',
         cover: track.thumbnail || track.cover || '',
         audioUrl: track.audioUrl
@@ -988,8 +995,10 @@ function applyPlaybackSeek(el, seconds) {
         el.currentTime = target;
     } catch (e3) {}
     persistPlaybackState();
-    // Keep playing if it was playing before the seek
-    if (window.isStreamPlaying && el.paused) {
+    // Keep playing if it was playing before the seek — but only if
+    // the audio has actually loaded (prevents restart from 0:00 on
+    // an element whose src was never set or was cleared).
+    if (window.isStreamPlaying && el.paused && playbackHasLoaded && el.src) {
         el.play().catch(() => {});
     }
 }
@@ -1741,10 +1750,11 @@ function displaySongs(songs) {
     }
     
     container.innerHTML = songs.map((song, index) => `
-        <div class="song-card" style="animation-delay: ${index * 0.05}s">
+        <div class="song-card" data-song-id="${song.id}" style="animation-delay: ${index * 0.05}s">
             <div class="song-card-header">
                 <div class="song-thumbnail">
                     <img src="${song.albumCover || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"%3E%3Ccircle cx="40" cy="40" r="30" fill="%2334d399" opacity="0.3"/%3E%3C/svg%3E'}" alt="${song.title || 'Song'}">
+                    <div class="song-eq-bars"><span></span><span></span><span></span><span></span></div>
                     <div class="song-play-overlay" data-song-id="${song.id}">
                         <i class="fas fa-play"></i>
                     </div>
@@ -1794,6 +1804,17 @@ function displaySongs(songs) {
             const icon = this.querySelector('i');
             icon.style.fontWeight = this.classList.contains('active') ? '900' : '400';
             createRipple(e, this);
+        });
+    });
+
+    // AI glow effect — track mouse position on song cards
+    container.querySelectorAll('.song-card').forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            card.style.setProperty('--mouse-x', x + '%');
+            card.style.setProperty('--mouse-y', y + '%');
         });
     });
 }
@@ -2900,7 +2921,10 @@ function initCarouselSwipe(track) {
 }
 
 // Render all dynamic content
+let _isRenderingAll = false;
 function renderAllDynamicContent() {
+    if (_isRenderingAll) return; // Prevent concurrent re-renders
+    _isRenderingAll = true;
     renderGreetingSection();
     renderFeaturedSliderDynamic();
     renderTrendingDynamic();
@@ -2924,6 +2948,7 @@ function renderAllDynamicContent() {
         const countEl = document.getElementById('songsCount');
         if (countEl) countEl.textContent = songs.length + ' songs';
 
+        _isRenderingAll = false;
     });
 }
 
@@ -3025,26 +3050,34 @@ function setupRealtimeSync() {
         console.warn('[Sync] BroadcastChannel not supported, using fallback');
     }
 
-    // Method 4: Polling fallback (checks every 3 seconds)
+    // Method 4: Polling fallback (checks every 30 seconds)
     startSyncPolling();
 }
 
 function handleSongsUpdate() {
-    loadSongs(true).then(songs => {
-        displaySongs(songs);
-        renderTickerItems(songs);
-        
-        // Update songs count
-        const countEl = document.getElementById('songsCount');
-        if (countEl) countEl.textContent = songs.length + ' songs';
-        
-        // Update Recently Added section
-        const publishedSongs = songs.filter(s => s.status === 'published');
-        if (publishedSongs.length > 0) {
-            renderRecentlyAdded(songs);
-        }
+    // Debounce: prevent cascading re-renders from multiple change events
+    if (handleSongsUpdate._debounceTimer) clearTimeout(handleSongsUpdate._debounceTimer);
+    handleSongsUpdate._debounceTimer = setTimeout(() => {
+        loadSongs(true).then(songs => {
+            // Content comparison: skip re-render if songs data hasn't changed
+            const newHash = songs.map(s => s.id + (s.updatedAt || '')).join(',');
+            if (handleSongsUpdate._lastHash === newHash) return;
+            handleSongsUpdate._lastHash = newHash;
 
-    });
+            displaySongs(songs);
+            renderTickerItems(songs);
+            
+            // Update songs count
+            const countEl = document.getElementById('songsCount');
+            if (countEl) countEl.textContent = songs.length + ' songs';
+            
+            // Update Recently Added section
+            const publishedSongs = songs.filter(s => s.status === 'published');
+            if (publishedSongs.length > 0) {
+                renderRecentlyAdded(songs);
+            }
+        });
+    }, 300);
 }
 
 function startSyncPolling() {
@@ -3053,7 +3086,7 @@ function startSyncPolling() {
     lastKnownSongCount = initialSongs.length;
     let lastVEOverrideTS = 0;
 
-    // Poll every 3 seconds
+    // Poll every 30 seconds (reduced from 3s to prevent home page blinking)
     syncCheckInterval = setInterval(() => {
         try {
             const currentSongs = DataStore.getSongs() || [];
@@ -3081,7 +3114,7 @@ function startSyncPolling() {
         } catch (e) {
             console.error('[Sync] Polling error:', e);
         }
-    }, 3000);
+    }, 30000);
 }
 
 function stopSyncPolling() {
@@ -3221,7 +3254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     id: song.id,
                     title: song.title,
                     artist: song.artist,
-                    thumbnail: song.cover || '',
+                    thumbnail: song.thumbnail || song.cover || '',
                     audioUrl: song.audioUrl
                 };
                 YTMusic.isPlaying = true;
@@ -3308,13 +3341,8 @@ function initTicker() {
 }
 
 function setupTickerSync() {
-    DataStore.on('change', (event) => {
-        if (event.keyName === 'SONGS') {
-            loadSongs(true).then(songs => {
-                renderTickerItems(songs);
-            });
-        }
-    });
+    // SONGS change is already handled by setupRealtimeSync -> handleSongsUpdate
+    // which calls renderTickerItems. No duplicate listener needed here.
 }
 
 // ============================================
@@ -3451,19 +3479,8 @@ function initRecentlyAdded() {
 }
 
 function setupRecentlyAddedSync() {
-    DataStore.on('change', (event) => {
-        if (event.keyName === 'SONGS') {
-            loadSongs(true).then(songs => {
-                renderRecentlyAdded(songs);
-                displaySongs(songs);
-                renderTickerItems(songs);
-                
-                // Update songs count
-                const countEl = document.getElementById('songsCount');
-                if (countEl) countEl.textContent = songs.length + ' songs';
-            });
-        }
-    });
+    // SONGS change is already handled by setupRealtimeSync -> handleSongsUpdate
+    // which calls renderRecentlyAdded. No duplicate listener needed here.
 }
 
 // ============================================
@@ -3506,6 +3523,7 @@ function renderSongTrack(container, songs, limit) {
             <div class="song-card-header">
                 <div class="song-thumbnail">
                     <img src="${song.albumCover || song.cover || placeholder}" alt="${song.title || 'Song'}" loading="lazy">
+                    <div class="song-eq-bars"><span></span><span></span><span></span><span></span></div>
                     <div class="song-play-overlay"><i class="fas fa-play"></i></div>
                 </div>
                 <div class="song-info">
