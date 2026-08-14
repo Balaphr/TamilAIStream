@@ -162,10 +162,11 @@ const TamilAIPremium = (function () {
         });
     }
 
-    /* ---- Premium Onboarding System ---- */
+    // Onboarding removed — users go directly to login page
     function initOnboarding() {
-        const overlay = document.getElementById('onboardingOverlay');
-        if (!overlay) return;
+        // Onboarding overlay removed from DOM — no-op
+        return;
+    }
 
         // Check if user has completed onboarding
         const hasOnboarded = localStorage.getItem('tamilAI_onboarded');

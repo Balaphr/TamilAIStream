@@ -49,6 +49,21 @@ input { font-family: inherit; }
 ::-webkit-scrollbar-thumb { background: linear-gradient(#1e293b, #334155); border-radius: 8px; }
 ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
+/* ---------- Hide Global Player on Login Page ---------- */
+.gp-mini,
+.gp-expanded,
+.mini-player,
+.full-player,
+.player-bar,
+.ytm-bottom-nav,
+#gp-mini,
+#gp-expanded {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
 /* ---------- AI Animation Background ---------- */
 .ai-bg {
     position: fixed;
