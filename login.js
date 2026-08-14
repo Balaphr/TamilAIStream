@@ -878,7 +878,7 @@ async function quickDemoLogin() {
 
 // Demo Copy Button
 function setupDemoCopyButtons() {
-    document.querySelectorAll('.demo-copy-btn').forEach(btn => {
+    document.querySelectorAll('.demo-copy-btn, .admin-copy-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const text = this.dataset.copy;
             if (navigator.clipboard && navigator.clipboard.writeText) {

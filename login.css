@@ -264,6 +264,105 @@ input { font-family: inherit; }
     color: var(--primary-2);
 }
 
+/* ---------- Admin Quick Access ---------- */
+.admin-quick-access {
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(239, 68, 68, 0.04);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.admin-quick-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--danger);
+    margin-bottom: 10px;
+}
+
+.admin-quick-header i {
+    font-size: 0.9rem;
+}
+
+.admin-quick-creds {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.admin-cred-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--stroke);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 0.8rem;
+}
+
+.admin-cred-label {
+    color: var(--faint);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
+
+.admin-cred-value {
+    flex: 1;
+    color: var(--text);
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.admin-copy-btn {
+    color: var(--primary);
+    font-size: 0.75rem;
+    padding: 4px 7px;
+    border-radius: 6px;
+    background: rgba(52, 211, 153, 0.1);
+    flex-shrink: 0;
+}
+
+.admin-copy-btn:hover {
+    background: rgba(52, 211, 153, 0.2);
+}
+
+.admin-quick-login-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: #fff;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+    transition: all 0.2s;
+}
+
+.admin-quick-login-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+}
+
+.admin-quick-login-btn:active {
+    transform: translateY(0);
+}
+
+.admin-quick-login-btn.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
 /* ---------- Divider ---------- */
 .divider {
     display: flex;
