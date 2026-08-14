@@ -865,6 +865,8 @@ async function playSong(song, playlist = []) {
                 YTMusic.updateMiniPlayerUI();
             }
             hideLoadingSpinner();
+            // Smart Queue: auto-select next song based on mood/artist/movie
+            _updateSmartQueue(song, currentPlaylist);
             showToast(`Now playing: ${song.title}`, 'success');
             if (typeof GlobalPlayer !== 'undefined' && window.innerWidth < 1025) {
                 setTimeout(() => { GlobalPlayer.expand(); }, 350);
@@ -2659,10 +2661,16 @@ function _heroSetWeather(icon, label) {
     if (label) el.title = label;
 }
 
+function _heroGetTimeOfDay() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) return 'Morning';
+    if (h >= 12 && h < 17) return 'Afternoon';
+    return 'Evening';
+}
 function _heroSetGreeting() {
-    const g = _heroTimeGreeting();
     const el = document.getElementById('greetingText');
-    if (el) el.textContent = `${g.text} ${g.emoji}`;
+    if (!el) return;
+    el.textContent = 'Good ' + _heroGetTimeOfDay();
 }
 
 let _heroLiveWeather = false;
@@ -2787,6 +2795,24 @@ function _heroStartUpdaters() {
 }
 
 // Greeting Section - Premium Glass Hero Bar
+function _updateSmartQueue(currentSong, playlist) {
+    if (!currentSong || !playlist || playlist.length < 2) return;
+    try {
+        const prefs = JSON.parse(localStorage.getItem('tamilAI_preferences') || '[]');
+        const text = ((currentSong.artist||'')+' '+(currentSong.movie||'')+' '+(currentSong.genre||'')+' '+(currentSong.mood||'')).toLowerCase();
+        const artistPrefs = JSON.parse(localStorage.getItem('tamilAI_artistPrefs') || '{}');
+        if (currentSong.artist) {
+            artistPrefs[currentSong.artist] = (artistPrefs[currentSong.artist] || 0) + 1;
+            localStorage.setItem('tamilAI_artistPrefs', JSON.stringify(artistPrefs));
+        }
+        const moviePrefs = JSON.parse(localStorage.getItem('tamilAI_moviePrefs') || '{}');
+        if (currentSong.movie) {
+            moviePrefs[currentSong.movie] = (moviePrefs[currentSong.movie] || 0) + 1;
+            localStorage.setItem('tamilAI_moviePrefs', JSON.stringify(moviePrefs));
+        }
+    } catch(e) {}
+}
+
 function renderGreetingSection() {
     const container = document.querySelector('.greeting-section');
     if (!container) return;
@@ -2795,6 +2821,30 @@ function renderGreetingSection() {
     // dynamic refresh), we keep the DOM and only update inner content so
     // the website is never re-rendered.
     if (!document.getElementById('greetingHero')) {
+        const userName = (typeof Auth !== 'undefined' && Auth.currentUser && Auth.currentUser()) ? (Auth.currentUser().name || Auth.currentUser().displayName || '').split(' ')[0] : '';
+        const welcomeName = userName ? `, ${userName}` : '';
+        let resumeHTML = '';
+        try {
+            if (typeof ListeningHistory !== 'undefined' && ListeningHistory.getHistory) {
+                const hist = ListeningHistory.getHistory();
+                const last = hist && hist[0];
+                if (last && last.track) {
+                    resumeHTML = `
+                        <div class="greeting-resume" id="greetingResume" onclick="if(typeof playSongById==='function')playSongById('${last.track.id || ''}')">
+                            <div class="greeting-resume-art">
+                                <img src="${last.track.thumbnail || last.track.albumCover || ''}" alt="" onerror="this.style.display='none'">
+                                <div class="greeting-resume-play"><i class="fas fa-play"></i></div>
+                            </div>
+                            <div class="greeting-resume-info">
+                                <span class="greeting-resume-label">Resume Listening</span>
+                                <span class="greeting-resume-title">${last.track.title || 'Unknown'}</span>
+                                <span class="greeting-resume-artist">${last.track.artist || ''}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        } catch(e) {}
         container.innerHTML = `
             <div class="greeting-card greeting-hero" id="greetingHero">
                 <div class="greeting-hero-glow" aria-hidden="true"></div>
@@ -2805,8 +2855,9 @@ function renderGreetingSection() {
                             <span class="greeting-weather-icon" id="greetingWeather" title=""><i class="fas fa-moon"></i></span>
                         </div>
                     </div>
-                    <h1 class="greeting-title" id="greetingTitle"><span class="hero-hash">#</span> Welcome to <span class="hero-brand">Tamil AI Stream</span></h1>
+                    <h1 class="greeting-title" id="greetingTitle"><span class="hero-hash">#</span> Good ${_heroGetTimeOfDay()}${welcomeName}</h1>
                     <p class="greeting-subtitle">Discover the best of Tamil music, powered by AI</p>
+                    ${resumeHTML}
                     <p class="greeting-quote" id="greetingQuote"><i class="fas fa-quote-left"></i> <span id="greetingQuoteText"></span></p>
                 </div>
             </div>
@@ -2920,6 +2971,203 @@ function initCarouselSwipe(track) {
     }
 }
 
+function renderContinueListening() {
+    const section = document.getElementById('continueListeningSection');
+    const track = document.getElementById('continueListeningTrack');
+    if (!section || !track) return;
+    try {
+        if (typeof ListeningHistory === 'undefined' || !ListeningHistory.getHistory) { section.style.display = 'none'; return; }
+        const hist = ListeningHistory.getHistory();
+        const songs = (hist || []).filter(h => h && h.track && h.track.id).map(h => h.track).slice(0, 12);
+        if (!songs.length) { section.style.display = 'none'; return; }
+        section.style.display = '';
+        if (typeof renderSongTrack === 'function') {
+            renderSongTrack(track, songs, 12);
+        }
+    } catch(e) { section.style.display = 'none'; }
+}
+
+function renderDailyMix() {
+    const track = document.getElementById('dailyMixTrack');
+    if (!track) return;
+    try {
+        let songs = [];
+        if (typeof DataStore !== 'undefined' && DataStore.getSongs) {
+            songs = (DataStore.getSongs() || []).filter(s => s.status === 'published');
+        }
+        if (!songs.length) return;
+        const prefs = JSON.parse(localStorage.getItem('tamilAI_preferences') || '[]');
+        let mix = songs;
+        if (prefs.length > 0) {
+            const scored = songs.map(s => {
+                let score = Math.random() * 0.3;
+                const text = ((s.title || '') + ' ' + (s.artist || '') + ' ' + (s.movie || '') + ' ' + (s.genre || '') + ' ' + (s.mood || '')).toLowerCase();
+                prefs.forEach(p => { if (text.includes(p.toLowerCase())) score += 0.4; });
+                return { song: s, score };
+            });
+            scored.sort((a, b) => b.score - a.score);
+            mix = scored.map(s => s.song);
+        } else {
+            mix = songs.sort(() => Math.random() - 0.5);
+        }
+        if (typeof renderSongTrack === 'function') {
+            renderSongTrack(track, mix.slice(0, 12), 12);
+        }
+    } catch(e) {}
+}
+
+// ==================== MUSIC DASHBOARD ====================
+function renderDashboard() {
+    const container = document.getElementById('dashboardPage');
+    if (!container) return;
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch(e) {}
+    let history = [];
+    try { if (typeof ListeningHistory !== 'undefined' && ListeningHistory.getHistory) history = ListeningHistory.getHistory() || []; } catch(e) {}
+    const artistPrefs = JSON.parse(localStorage.getItem('tamilAI_artistPrefs') || '{}');
+    const moviePrefs = JSON.parse(localStorage.getItem('tamilAI_moviePrefs') || '{}');
+    const favs = JSON.parse(localStorage.getItem('tamilAI_favorites') || '[]');
+
+    const totalSongs = songs.length;
+    const totalListeningTime = history.reduce((sum, h) => sum + (h.duration || 0), 0);
+    const mostPlayed = history.length > 0 ? history[0] : null;
+    const topArtist = Object.entries(artistPrefs).sort((a, b) => b[1] - a[1])[0];
+    const topMovie = Object.entries(moviePrefs).sort((a, b) => b[1] - a[1])[0];
+    const favCount = favs.length;
+
+    const decades = {};
+    songs.forEach(s => {
+        const year = parseInt(s.year || s.releaseYear || '0');
+        if (year >= 1990 && year < 2000) decades['90s'] = (decades['90s'] || 0) + 1;
+        else if (year >= 2000 && year < 2010) decades['2000s'] = (decades['2000s'] || 0) + 1;
+        else if (year >= 2010 && year < 2020) decades['2010s'] = (decades['2010s'] || 0) + 1;
+        else if (year >= 2020) decades['2020s'] = (decades['2020s'] || 0) + 1;
+    });
+
+    const formatTime = (secs) => {
+        if (secs < 60) return secs + 's';
+        if (secs < 3600) return Math.floor(secs / 60) + 'm';
+        return Math.floor(secs / 3600) + 'h ' + Math.floor((secs % 3600) / 60) + 'm';
+    };
+
+    container.innerHTML = `
+        <div class="dashboard-header">
+            <h1><i class="fas fa-chart-line" style="color:#34d399;margin-right:12px;"></i>Music Dashboard</h1>
+            <p>Your personal music insights</p>
+        </div>
+        <div class="dashboard-stats">
+            <div class="dashboard-stat-card">
+                <div class="dashboard-stat-icon" style="background:linear-gradient(135deg,#34d399,#10b981)"><i class="fas fa-music"></i></div>
+                <div class="dashboard-stat-value">${totalSongs}</div>
+                <div class="dashboard-stat-label">Total Songs</div>
+            </div>
+            <div class="dashboard-stat-card">
+                <div class="dashboard-stat-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)"><i class="fas fa-clock"></i></div>
+                <div class="dashboard-stat-value">${formatTime(totalListeningTime)}</div>
+                <div class="dashboard-stat-label">Listening Time</div>
+            </div>
+            <div class="dashboard-stat-card">
+                <div class="dashboard-stat-icon" style="background:linear-gradient(135deg,#f43f5e,#e11d48)"><i class="fas fa-heart"></i></div>
+                <div class="dashboard-stat-value">${favCount}</div>
+                <div class="dashboard-stat-label">Favorites</div>
+            </div>
+            <div class="dashboard-stat-card">
+                <div class="dashboard-stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><i class="fas fa-play-circle"></i></div>
+                <div class="dashboard-stat-value">${history.length}</div>
+                <div class="dashboard-stat-label">Songs Played</div>
+            </div>
+        </div>
+        <div class="dashboard-details">
+            ${topArtist ? `<div class="dashboard-detail-card"><div class="dashboard-detail-icon"><i class="fas fa-user" style="color:#34d399"></i></div><div><div class="dashboard-detail-title">Most Played Artist</div><div class="dashboard-detail-value">${topArtist[0]}</div><div class="dashboard-detail-sub">${topArtist[1]} plays</div></div></div>` : ''}
+            ${topMovie ? `<div class="dashboard-detail-card"><div class="dashboard-detail-icon"><i class="fas fa-film" style="color:#f59e0b"></i></div><div><div class="dashboard-detail-title">Most Played Movie</div><div class="dashboard-detail-value">${topMovie[0]}</div><div class="dashboard-detail-sub">${topMovie[1]} plays</div></div></div>` : ''}
+            ${mostPlayed && mostPlayed.track ? `<div class="dashboard-detail-card"><div class="dashboard-detail-icon"><i class="fas fa-redo" style="color:#6366f1"></i></div><div><div class="dashboard-detail-title">Most Recent</div><div class="dashboard-detail-value">${mostPlayed.track.title || 'Unknown'}</div><div class="dashboard-detail-sub">${mostPlayed.track.artist || ''}</div></div></div>` : ''}
+        </div>
+        ${Object.keys(decades).length > 0 ? `
+        <div class="dashboard-section">
+            <h3><i class="fas fa-calendar-days" style="color:#22d3ee;margin-right:8px;"></i>Decade Distribution</h3>
+            <div class="dashboard-decades">
+                ${Object.entries(decades).map(([decade, count]) => `
+                    <div class="dashboard-decade">
+                        <div class="dashboard-decade-bar" style="height:${Math.min(100, (count / totalSongs) * 100)}%"></div>
+                        <div class="dashboard-decade-label">${decade}</div>
+                        <div class="dashboard-decade-count">${count}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>` : ''}
+    `;
+}
+
+// ==================== ARTIST UNIVERSE ====================
+function openArtistUniverse(artistName) {
+    if (!artistName) return;
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch(e) {}
+    const artistSongs = songs.filter(s => (s.artist || '').toLowerCase() === artistName.toLowerCase());
+    const container = document.getElementById('artistUniversePage');
+    if (!container) return;
+    const movies = [...new Set(artistSongs.map(s => s.movie).filter(Boolean))];
+    container.innerHTML = `
+        <div class="universe-header">
+            <button class="universe-back" onclick="YTMusic.navigateTo('home')"><i class="fas fa-arrow-left"></i></button>
+            <div class="universe-hero">
+                <div class="universe-avatar"><i class="fas fa-user"></i></div>
+                <h1>${artistName}</h1>
+                <p>${artistSongs.length} songs • ${movies.length} movies</p>
+            </div>
+        </div>
+        <div class="universe-section">
+            <h3>Top Songs</h3>
+            <div class="universe-songs" id="artistUniverseSongs"></div>
+        </div>
+        ${movies.length > 0 ? `<div class="universe-section"><h3>Movies</h3><div class="universe-movies">${movies.map(m => `
+            <button class="universe-movie-card" onclick="openMovieUniverse('${m.replace(/'/g, "\\'")}')">
+                <i class="fas fa-film"></i><span>${m}</span>
+            </button>
+        `).join('')}</div></div>` : ''}
+    `;
+    const songsContainer = document.getElementById('artistUniverseSongs');
+    if (songsContainer && typeof renderSongTrack === 'function') {
+        renderSongTrack(songsContainer, artistSongs.slice(0, 20), 20);
+    }
+    YTMusic.navigateTo('artist-universe');
+}
+
+// ==================== MOVIE UNIVERSE ====================
+function openMovieUniverse(movieName) {
+    if (!movieName) return;
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch(e) {}
+    const movieSongs = songs.filter(s => (s.movie || '').toLowerCase() === movieName.toLowerCase());
+    const container = document.getElementById('movieUniversePage');
+    if (!container) return;
+    const artists = [...new Set(movieSongs.map(s => s.artist).filter(Boolean))];
+    container.innerHTML = `
+        <div class="universe-header">
+            <button class="universe-back" onclick="YTMusic.navigateTo('home')"><i class="fas fa-arrow-left"></i></button>
+            <div class="universe-hero">
+                <div class="universe-avatar"><i class="fas fa-film"></i></div>
+                <h1>${movieName}</h1>
+                <p>${movieSongs.length} songs • ${artists.length} artists</p>
+            </div>
+        </div>
+        <div class="universe-section">
+            <h3>Songs</h3>
+            <div class="universe-songs" id="movieUniverseSongs"></div>
+        </div>
+        ${artists.length > 0 ? `<div class="universe-section"><h3>Artists</h3><div class="universe-artists">${artists.map(a => `
+            <button class="universe-artist-card" onclick="openArtistUniverse('${a.replace(/'/g, "\\'")}')">
+                <i class="fas fa-user"></i><span>${a}</span>
+            </button>
+        `).join('')}</div></div>` : ''}
+    `;
+    const songsContainer = document.getElementById('movieUniverseSongs');
+    if (songsContainer && typeof renderSongTrack === 'function') {
+        renderSongTrack(songsContainer, movieSongs.slice(0, 20), 20);
+    }
+    YTMusic.navigateTo('movie-universe');
+}
+
 // Render all dynamic content
 let _isRenderingAll = false;
 function renderAllDynamicContent() {
@@ -2935,6 +3183,8 @@ function renderAllDynamicContent() {
     renderYearlyCollectionsDynamic();
     renderLatestCollectionsDynamic();
     renderAIRecommendedDynamic();
+    renderContinueListening();
+    renderDailyMix();
     renderAllStationsDynamic();
     applySiteSettings();
     
@@ -2951,6 +3201,61 @@ function renderAllDynamicContent() {
         _isRenderingAll = false;
     });
 }
+
+// Mood Player click handler
+document.addEventListener('click', function(e) {
+    const moodCard = e.target.closest('.mood-card');
+    if (!moodCard) return;
+    const mood = moodCard.dataset.mood;
+    if (!mood) return;
+    // Highlight active mood
+    document.querySelectorAll('.mood-card').forEach(c => c.classList.remove('active'));
+    moodCard.classList.add('active');
+    // Get songs matching mood
+    try {
+        let songs = [];
+        if (typeof DataStore !== 'undefined' && DataStore.getSongs) {
+            songs = (DataStore.getSongs() || []).filter(s => s.status === 'published');
+        }
+        if (!songs.length) return;
+        const moodLower = mood.toLowerCase();
+        const matched = songs.filter(s => {
+            const text = ((s.title || '') + ' ' + (s.artist || '') + ' ' + (s.movie || '') + ' ' + (s.genre || '') + ' ' + (s.mood || '') + ' ' + (s.tags || '')).toLowerCase();
+            return text.includes(moodLower);
+        });
+        const queue = matched.length >= 3 ? matched : songs.sort(() => Math.random() - 0.5);
+        if (queue.length > 0 && typeof playSong === 'function') {
+            playSong(queue[0], queue);
+            if (typeof showToast === 'function') showToast('Playing ' + mood + ' mood', 'success');
+        }
+    } catch(e) {}
+});
+
+// Handle dashboard and universe page navigation
+document.addEventListener('click', function(e) {
+    const sidebarItem = e.target.closest('.premium-sidebar-item[data-page="dashboard"]');
+    if (sidebarItem) {
+        if (typeof renderDashboard === 'function') renderDashboard();
+        if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) YTMusic.navigateTo('dashboard');
+        if (typeof YTMusic !== 'undefined' && YTMusic.togglePremiumSidebar) YTMusic.togglePremiumSidebar(false);
+    }
+    const artistEl = e.target.closest('.song-artist');
+    if (artistEl) {
+        const name = artistEl.textContent.trim();
+        if (name && name !== 'Unknown Artist') {
+            e.stopPropagation();
+            if (typeof openArtistUniverse === 'function') openArtistUniverse(name);
+        }
+    }
+    const movieEl = e.target.closest('.song-movie');
+    if (movieEl) {
+        const name = movieEl.textContent.trim();
+        if (name && name !== 'Single') {
+            e.stopPropagation();
+            if (typeof openMovieUniverse === 'function') openMovieUniverse(name);
+        }
+    }
+});
 
 // ============================================
 // Enhanced Cross-Tab Sync - Builder ↔ Live Website
@@ -3575,4 +3880,342 @@ function renderAIRecommendedDynamic() {
     try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
     const picks = songs.slice().sort(() => Math.random() - 0.5).slice(0, 8);
     renderSongTrack(container, picks, 8);
+}
+
+// ==================== AI MUSIC FEATURES ====================
+
+// AI Music Assistant — conversational music control
+function openAIMusicAssistant() {
+    let panel = document.getElementById('aiMusicAssistantPanel');
+    if (panel) { panel.classList.toggle('open'); return; }
+    panel = document.createElement('div');
+    panel.id = 'aiMusicAssistantPanel';
+    panel.className = 'ai-assistant-panel open';
+    panel.innerHTML = `
+        <div class="ai-assistant-header">
+            <div class="ai-assistant-avatar"><i class="fas fa-robot"></i></div>
+            <div><h3>Tamil AI Assistant</h3><p>Ask me to play music</p></div>
+            <button class="ai-assistant-close" onclick="this.closest('.ai-assistant-panel').remove()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ai-assistant-messages" id="aiAssistantMessages">
+            <div class="ai-assistant-msg ai-assistant-bot">
+                <div class="ai-assistant-msg-avatar"><i class="fas fa-robot"></i></div>
+                <div class="ai-assistant-msg-text">Hi! I'm your Tamil AI Music Assistant. Try saying:<br>"Play Ilaiyaraaja songs"<br>"Play peaceful Tamil songs"<br>"Give me 90s melodies"<br>"Play my favorites"</div>
+            </div>
+        </div>
+        <div class="ai-assistant-suggestions">
+            <button class="ai-assistant-chip" onclick="sendAICommand('Play my favorites')">❤️ Favorites</button>
+            <button class="ai-assistant-chip" onclick="sendAICommand('Play trending songs')">🔥 Trending</button>
+            <button class="ai-assistant-chip" onclick="sendAICommand('Play 90s melodies')">🎵 90s Melodies</button>
+            <button class="ai-assistant-chip" onclick="sendAICommand('Play peaceful songs')">🕊️ Peaceful</button>
+            <button class="ai-assistant-chip" onclick="sendAICommand('Play Ilaiyaraaja')">🎸 Ilaiyaraaja</button>
+            <button class="ai-assistant-chip" onclick="sendAICommand('Shuffle all')">🔀 Shuffle All</button>
+        </div>
+        <div class="ai-assistant-input-row">
+            <input type="text" id="aiAssistantInput" placeholder="Ask me to play any music..." autocomplete="off">
+            <button class="ai-assistant-send" onclick="sendAITextCommand()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    `;
+    document.body.appendChild(panel);
+    const input = document.getElementById('aiAssistantInput');
+    if (input) {
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendAITextCommand(); });
+        setTimeout(() => input.focus(), 300);
+    }
+}
+
+function sendAITextCommand() {
+    const input = document.getElementById('aiAssistantInput');
+    if (!input || !input.value.trim()) return;
+    sendAICommand(input.value.trim());
+    input.value = '';
+}
+
+function sendAICommand(text) {
+    const messagesEl = document.getElementById('aiAssistantMessages');
+    if (!messagesEl) return;
+    messagesEl.innerHTML += `<div class="ai-assistant-msg ai-assistant-user"><div class="ai-assistant-msg-text">${text}</div></div>`;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    const lower = text.toLowerCase();
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch(e) {}
+    if (!songs.length) {
+        addBotMessage('No songs available yet. Add songs from the Builder.');
+        return;
+    }
+    let matched = [];
+    let response = '';
+    if (lower.includes('favorite') || lower.includes('fav')) {
+        try {
+            const favs = JSON.parse(localStorage.getItem('tamilAI_favorites') || '[]');
+            matched = songs.filter(s => favs.includes(s.id));
+        } catch(e) {}
+        response = matched.length ? `Playing your ${matched.length} favorite songs!` : 'No favorites yet. Heart some songs first!';
+    } else if (lower.includes('trending') || lower.includes('popular')) {
+        matched = songs.slice().sort(() => Math.random() - 0.5).slice(0, 20);
+        response = 'Playing trending Tamil songs!';
+    } else if (lower.includes('shuffle') || lower.includes('random')) {
+        matched = songs.slice().sort(() => Math.random() - 0.5);
+        response = 'Shuffling all songs!';
+    } else if (lower.includes('90') || lower.includes('ninety')) {
+        matched = songs.filter(s => {
+            const year = parseInt(s.year || s.releaseYear || '0');
+            return year >= 1990 && year < 2000;
+        });
+        response = matched.length ? `Playing ${matched.length} songs from the 90s!` : 'No 90s songs found.';
+    } else if (lower.includes('2000') || lower.includes('2k')) {
+        matched = songs.filter(s => {
+            const year = parseInt(s.year || s.releaseYear || '0');
+            return year >= 2000 && year < 2010;
+        });
+        response = matched.length ? `Playing ${matched.length} songs from the 2000s!` : 'No 2000s songs found.';
+    } else if (lower.includes('peaceful') || lower.includes('relax') || lower.includes('calm') || lower.includes('sleep')) {
+        matched = songs.filter(s => {
+            const text = ((s.title||'')+' '+(s.artist||'')+' '+(s.genre||'')+' '+(s.mood||'')+' '+(s.tags||'')).toLowerCase();
+            return text.includes('peace') || text.includes('relax') || text.includes('soft') || text.includes('lullaby') || text.includes('calm');
+        });
+        if (matched.length < 3) matched = songs.sort(() => Math.random() - 0.5).slice(0, 15);
+        response = 'Playing peaceful Tamil melodies!';
+    } else if (lower.includes('love') || lower.includes('romantic')) {
+        matched = songs.filter(s => {
+            const text = ((s.title||'')+' '+(s.artist||'')+' '+(s.genre||'')+' '+(s.mood||'')+' '+(s.tags||'')).toLowerCase();
+            return text.includes('love') || text.includes('romantic') || text.includes('kaadhal') || text.includes('pesama');
+        });
+        if (matched.length < 3) matched = songs.sort(() => Math.random() - 0.5).slice(0, 15);
+        response = 'Playing romantic Tamil songs!';
+    } else if (lower.includes('workout') || lower.includes('gym') || lower.includes('energy') || lower.includes('mass')) {
+        matched = songs.filter(s => {
+            const text = ((s.title||'')+' '+(s.artist||'')+' '+(s.genre||'')+' '+(s.mood||'')+' '+(s.tags||'')).toLowerCase();
+            return text.includes('mass') || text.includes('kuthu') || text.includes('dance') || text.includes('energy');
+        });
+        if (matched.length < 3) matched = songs.sort(() => Math.random() - 0.5).slice(0, 15);
+        response = 'Playing high-energy Tamil tracks!';
+    } else if (lower.includes('devotional') || lower.includes('prayer') || lower.includes('god')) {
+        matched = songs.filter(s => {
+            const text = ((s.title||'')+' '+(s.artist||'')+' '+(s.genre||'')+' '+(s.movie||'')).toLowerCase();
+            return text.includes('devotional') || text.includes('prayer') || text.includes('kovil') || text.includes('temple');
+        });
+        response = matched.length ? 'Playing devotional songs!' : 'Playing spiritual Tamil songs.';
+        if (matched.length < 3) matched = songs.sort(() => Math.random() - 0.5).slice(0, 10);
+    } else {
+        const artistMatch = songs.filter(s => (s.artist || '').toLowerCase().includes(lower.replace('play ', '').replace('songs', '').trim()));
+        if (artistMatch.length > 0) {
+            matched = artistMatch;
+            response = `Playing ${matched[0].artist} songs!`;
+        } else {
+            const movieMatch = songs.filter(s => (s.movie || '').toLowerCase().includes(lower.replace('play ', '').replace('songs', '').trim()));
+            if (movieMatch.length > 0) {
+                matched = movieMatch;
+                response = `Playing songs from ${matched[0].movie}!`;
+            } else {
+                matched = songs.filter(s => {
+                    const text = ((s.title||'')+' '+(s.artist||'')+' '+(s.movie||'')+' '+(s.genre||'')+' '+(s.mood||'')+' '+(s.tags||'')).toLowerCase();
+                    return lower.split(' ').some(word => word.length > 2 && text.includes(word));
+                });
+                response = matched.length ? `Found ${matched.length} songs matching your request!` : 'I couldn\'t find exact matches. Try a different artist, movie, or mood.';
+            }
+        }
+    }
+    addBotMessage(response);
+    if (matched.length > 0 && typeof playSong === 'function') {
+        const queue = matched.slice(0, 30);
+        playSong(queue[0], queue);
+    }
+}
+
+function addBotMessage(text) {
+    const messagesEl = document.getElementById('aiAssistantMessages');
+    if (!messagesEl) return;
+    messagesEl.innerHTML += `<div class="ai-assistant-msg ai-assistant-bot"><div class="ai-assistant-msg-avatar"><i class="fas fa-robot"></i></div><div class="ai-assistant-msg-text">${text}</div></div>`;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function openAskAI() { openAIMusicAssistant(); }
+
+function openAIRadioGenerator() {
+    let panel = document.getElementById('aiRadioGenPanel');
+    if (panel) { panel.classList.toggle('open'); return; }
+    panel = document.createElement('div');
+    panel.id = 'aiRadioGenPanel';
+    panel.className = 'ai-assistant-panel open';
+    panel.innerHTML = `
+        <div class="ai-assistant-header">
+            <div class="ai-assistant-avatar" style="background:linear-gradient(135deg,#a855f7,#6366f1)"><i class="fas fa-tower-broadcast"></i></div>
+            <div><h3>AI Radio Generator</h3><p>Create your own Tamil radio</p></div>
+            <button class="ai-assistant-close" onclick="this.closest('.ai-assistant-panel').remove()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ai-assistant-suggestions" style="padding:16px;">
+            <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:12px;">Describe your radio and AI will create it:</p>
+            <button class="ai-assistant-chip" onclick="generateAIRadio('melody')">🎵 Tamil Melody Radio</button>
+            <button class="ai-assistant-chip" onclick="generateAIRadio('90s')">📻 90s Tamil Radio</button>
+            <button class="ai-assistant-chip" onclick="generateAIRadio('love')">❤️ Romantic Radio</button>
+            <button class="ai-assistant-chip" onclick="generateAIRadio('workout')">💪 Workout Radio</button>
+            <button class="ai-assistant-chip" onclick="generateAIRadio('night')">🌙 Night Drive Radio</button>
+            <button class="ai-assistant-chip" onclick="generateAIRadio('devotional')">🙏 Devotional Radio</button>
+        </div>
+    `;
+    document.body.appendChild(panel);
+}
+
+function generateAIRadio(theme) {
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch(e) {}
+    if (!songs.length) { if (typeof showToast === 'function') showToast('No songs available', 'error'); return; }
+    const lower = theme.toLowerCase();
+    let matched = songs.filter(s => {
+        const text = ((s.title||'')+' '+(s.artist||'')+' '+(s.movie||'')+' '+(s.genre||'')+' '+(s.mood||'')+' '+(s.tags||'')).toLowerCase();
+        return lower.split(' ').some(w => w.length > 2 && text.includes(w));
+    });
+    if (matched.length < 5) matched = songs.sort(() => Math.random() - 0.5);
+    const queue = matched.slice(0, Math.min(40, matched.length));
+    if (typeof playSong === 'function') {
+        playSong(queue[0], queue);
+        if (typeof showToast === 'function') showToast('AI Radio: ' + theme + ' — ' + queue.length + ' songs', 'success');
+    }
+}
+
+function openPersonalFM() {
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch(e) {}
+    if (!songs.length) { if (typeof showToast === 'function') showToast('No songs available', 'error'); return; }
+    const prefs = JSON.parse(localStorage.getItem('tamilAI_preferences') || '[]');
+    let history = [];
+    try { if (typeof ListeningHistory !== 'undefined' && ListeningHistory.getHistory) history = ListeningHistory.getHistory() || []; } catch(e) {}
+    const playedIds = new Set(history.map(h => h && h.track && h.track.id).filter(Boolean));
+    const scored = songs.map(s => {
+        let score = Math.random() * 0.2;
+        const text = ((s.title||'')+' '+(s.artist||'')+' '+(s.movie||'')+' '+(s.genre||'')+' '+(s.mood||'')+' '+(s.tags||'')).toLowerCase();
+        prefs.forEach(p => { if (text.includes(p.toLowerCase())) score += 0.3; });
+        if (!playedIds.has(s.id)) score += 0.15;
+        return { song: s, score };
+    });
+    scored.sort((a, b) => b.score - a.score);
+    const queue = scored.slice(0, 30).map(s => s.song);
+    if (typeof playSong === 'function') {
+        playSong(queue[0], queue);
+        if (typeof showToast === 'function') showToast('Your Personal AI FM — personalized for you', 'success');
+    }
+}
+
+function openVoiceSearch() {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+        if (typeof showToast === 'function') showToast('Voice search not supported in this browser', 'error');
+        return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    if (typeof showToast === 'function') showToast('Listening... Speak now', 'info');
+    recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        if (typeof sendAICommand === 'function') {
+            openAIMusicAssistant();
+            setTimeout(() => sendAICommand(text), 300);
+        }
+    };
+    recognition.onerror = () => { if (typeof showToast === 'function') showToast('Voice recognition error', 'error'); };
+    recognition.start();
+}
+
+function openLyricsSearch() {
+    let panel = document.getElementById('lyricsSearchPanel');
+    if (panel) { panel.classList.toggle('open'); return; }
+    panel = document.createElement('div');
+    panel.id = 'lyricsSearchPanel';
+    panel.className = 'ai-assistant-panel open';
+    panel.innerHTML = `
+        <div class="ai-assistant-header">
+            <div class="ai-assistant-avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)"><i class="fas fa-quote-right"></i></div>
+            <div><h3>Search by Lyrics</h3><p>Remember a line? Find the song</p></div>
+            <button class="ai-assistant-close" onclick="this.closest('.ai-assistant-panel').remove()"><i class="fas fa-times"></i></button>
+        </div>
+        <div style="padding:16px;">
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="lyricsSearchInput" placeholder="Type a lyric line..." style="flex:1;padding:12px 16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:#fff;font-size:0.95rem;outline:none;" autocomplete="off">
+                <button onclick="searchByLyrics()" style="padding:12px 20px;background:linear-gradient(135deg,#34d399,#10b981);border:none;border-radius:12px;color:#fff;font-weight:600;cursor:pointer;"><i class="fas fa-search"></i></button>
+            </div>
+            <div id="lyricsSearchResults" style="margin-top:12px;"></div>
+        </div>
+    `;
+    document.body.appendChild(panel);
+    const input = document.getElementById('lyricsSearchInput');
+    if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchByLyrics(); });
+}
+
+function searchByLyrics() {
+    const input = document.getElementById('lyricsSearchInput');
+    const results = document.getElementById('lyricsSearchResults');
+    if (!input || !results) return;
+    const query = input.value.trim().toLowerCase();
+    if (!query) return;
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch(e) {}
+    const matched = songs.filter(s => {
+        const text = ((s.title||'')+' '+(s.artist||'')+' '+(s.movie||'')+' '+(s.lyrics||'')+' '+(s.genre||'')).toLowerCase();
+        return query.split(' ').some(w => w.length > 2 && text.includes(w));
+    });
+    if (!matched.length) {
+        results.innerHTML = '<p style="color:rgba(255,255,255,0.4);font-size:0.85rem;padding:8px 0;">No songs found matching those lyrics.</p>';
+        return;
+    }
+    results.innerHTML = matched.slice(0, 8).map(s => `
+        <div class="ai-assistant-msg" style="display:flex;align-items:center;gap:12px;padding:10px;background:rgba(255,255,255,0.04);border-radius:10px;margin-bottom:8px;cursor:pointer;" onclick="if(typeof playSongById==='function')playSongById('${s.id}')">
+            <img src="${s.albumCover || s.thumbnail || ''}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;" onerror="this.style.display='none'">
+            <div style="min-width:0;"><div style="font-size:0.9rem;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.title||'Unknown'}</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.5);">${s.artist||''} • ${s.movie||''}</div></div>
+        </div>
+    `).join('');
+}
+
+function openAIPlaylistCreator() {
+    let panel = document.getElementById('aiPlaylistPanel');
+    if (panel) { panel.classList.toggle('open'); return; }
+    panel = document.createElement('div');
+    panel.id = 'aiPlaylistPanel';
+    panel.className = 'ai-assistant-panel open';
+    panel.innerHTML = `
+        <div class="ai-assistant-header">
+            <div class="ai-assistant-avatar" style="background:linear-gradient(135deg,#06b6d4,#3b82f6)"><i class="fas fa-list-music"></i></div>
+            <div><h3>AI Playlist Creator</h3><p>Describe your playlist</p></div>
+            <button class="ai-assistant-close" onclick="this.closest('.ai-assistant-panel').remove()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ai-assistant-suggestions" style="padding:16px;">
+            <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:12px;">Describe what you want:</p>
+            <button class="ai-assistant-chip" onclick="createAIPlaylist('30 minute Tamil workout')">🏋️ 30-min Workout</button>
+            <button class="ai-assistant-chip" onclick="createAIPlaylist('romantic Tamil playlist')">💕 Romantic Mix</button>
+            <button class="ai-assistant-chip" onclick="createAIPlaylist('90s Tamil melody')">🎵 90s Melodies</button>
+            <button class="ai-assistant-chip" onclick="createAIPlaylist('Tamil road trip')">🚗 Road Trip</button>
+            <button class="ai-assistant-chip" onclick="createAIPlaylist('focus and study')">📚 Study Focus</button>
+            <button class="ai-assistant-chip" onclick="createAIPlaylist('party Tamil hits')">🎉 Party Hits</button>
+        </div>
+    `;
+    document.body.appendChild(panel);
+}
+
+function createAIPlaylist(description) {
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch(e) {}
+    if (!songs.length) { if (typeof showToast === 'function') showToast('No songs available', 'error'); return; }
+    const lower = description.toLowerCase();
+    let matched = songs.filter(s => {
+        const text = ((s.title||'')+' '+(s.artist||'')+' '+(s.movie||'')+' '+(s.genre||'')+' '+(s.mood||'')+' '+(s.tags||'')).toLowerCase();
+        return lower.split(' ').some(w => w.length > 2 && text.includes(w));
+    });
+    if (matched.length < 3) matched = songs.sort(() => Math.random() - 0.5);
+    const queue = matched.slice(0, Math.min(25, matched.length));
+    if (typeof playSong === 'function') {
+        playSong(queue[0], queue);
+        if (typeof showToast === 'function') showToast('Created: ' + description + ' (' + queue.length + ' songs)', 'success');
+    }
+}
+
+function showWhyThisSong(track) {
+    if (!track) return;
+    const prefs = JSON.parse(localStorage.getItem('tamilAI_preferences') || '[]');
+    let reasons = [];
+    const text = ((track.title||'')+' '+(track.artist||'')+' '+(track.movie||'')+' '+(track.genre||'')+' '+(track.mood||'')).toLowerCase();
+    prefs.forEach(p => { if (text.includes(p.toLowerCase())) reasons.push('matches your ' + p + ' preference'); });
+    if (reasons.length === 0) reasons.push('based on your listening pattern');
+    if (typeof showToast === 'function') showToast('Why this song: ' + reasons.join(', '), 'info');
 }

@@ -162,6 +162,188 @@ const TamilAIPremium = (function () {
         });
     }
 
+    /* ---- Premium Onboarding System ---- */
+    function initOnboarding() {
+        const overlay = document.getElementById('onboardingOverlay');
+        if (!overlay) return;
+
+        // Check if user has completed onboarding
+        const hasOnboarded = localStorage.getItem('tamilAI_onboarded');
+        const isAuth = (typeof Auth !== 'undefined' && Auth.isAuthenticated && Auth.isAuthenticated());
+
+        // If already authenticated and onboarded, skip
+        if (isAuth && hasOnboarded) return;
+
+        // If not authenticated, show onboarding after splash
+        if (!isAuth) {
+            setTimeout(() => {
+                overlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }, 2500);
+        }
+
+        // Step navigation
+        const step1 = document.getElementById('onboardStep1');
+        const step2 = document.getElementById('onboardStep2');
+        const step3 = document.getElementById('onboardStep3');
+
+        function showStep(step) {
+            [step1, step2, step3].forEach(s => s.classList.remove('active'));
+            step.classList.add('active');
+        }
+
+        // Get Started button → show login
+        const getStartedBtn = document.getElementById('onboardGetStarted');
+        if (getStartedBtn) {
+            getStartedBtn.addEventListener('click', () => showStep(step2));
+        }
+
+        // Skip to login
+        const skipToLogin = document.getElementById('onboardSkipToLogin');
+        if (skipToLogin) {
+            skipToLogin.addEventListener('click', () => showStep(step2));
+        }
+
+        // Back button
+        const backBtn = document.getElementById('onboardBack');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => showStep(step1));
+        }
+
+        // Toggle login/register
+        const showReg = document.getElementById('onboardShowRegister');
+        const showLogin = document.getElementById('onboardShowLogin');
+        const loginForm = document.getElementById('onboardLoginForm');
+        const regForm = document.getElementById('onboardRegisterForm');
+        const regSwitch = document.getElementById('onboardRegisterSwitch');
+
+        if (showReg) showReg.addEventListener('click', () => {
+            loginForm.style.display = 'none';
+            regForm.style.display = 'flex';
+            regSwitch.style.display = 'block';
+            document.querySelector('.onboard-switch-text').style.display = 'none';
+        });
+        if (showLogin) showLogin.addEventListener('click', () => {
+            loginForm.style.display = 'flex';
+            regForm.style.display = 'none';
+            regSwitch.style.display = 'none';
+            document.querySelector('.onboard-switch-text').style.display = 'block';
+        });
+
+        // Login form submission
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('onboardEmail').value;
+                const password = document.getElementById('onboardPassword').value;
+                if (!email || !password) return;
+                try {
+                    if (typeof Auth !== 'undefined' && Auth.login) {
+                        await Auth.login(email, password);
+                    }
+                    closeOnboarding(true);
+                } catch (err) {
+                    alert(err.message || 'Login failed');
+                }
+            });
+        }
+
+        // Register form submission
+        if (regForm) {
+            regForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('onboardRegName').value;
+                const email = document.getElementById('onboardRegEmail').value;
+                const password = document.getElementById('onboardRegPassword').value;
+                const confirm = document.getElementById('onboardRegConfirm').value;
+                if (!name || !email || !password) return;
+                if (password !== confirm) { alert('Passwords do not match'); return; }
+                try {
+                    if (typeof Auth !== 'undefined' && Auth.register) {
+                        await Auth.register(email, password, name);
+                    }
+                    showStep(step3);
+                } catch (err) {
+                    alert(err.message || 'Registration failed');
+                }
+            });
+        }
+
+        // Google login
+        const googleBtn = document.getElementById('onboardGoogleLogin');
+        if (googleBtn) {
+            googleBtn.addEventListener('click', async () => {
+                try {
+                    if (typeof Auth !== 'undefined' && Auth.googleLogin) {
+                        await Auth.googleLogin();
+                    }
+                    closeOnboarding(true);
+                } catch (err) {
+                    alert(err.message || 'Google login failed');
+                }
+            });
+        }
+
+        // Guest login
+        const guestBtn = document.getElementById('onboardGuestLogin');
+        if (guestBtn) {
+            guestBtn.addEventListener('click', () => {
+                localStorage.setItem('tamilAI_onboarded', 'true');
+                closeOnboarding(false);
+            });
+        }
+
+        // Interest selection
+        const interestsGrid = document.getElementById('onboardInterests');
+        if (interestsGrid) {
+            interestsGrid.addEventListener('click', (e) => {
+                const btn = e.target.closest('.onboard-interest');
+                if (btn) btn.classList.toggle('selected');
+            });
+        }
+
+        // Finish button
+        const finishBtn = document.getElementById('onboardFinish');
+        if (finishBtn) {
+            finishBtn.addEventListener('click', () => {
+                const selected = [];
+                document.querySelectorAll('.onboard-interest.selected').forEach(el => {
+                    selected.push(el.dataset.mood);
+                });
+                if (selected.length > 0) {
+                    localStorage.setItem('tamilAI_preferences', JSON.stringify(selected));
+                }
+                localStorage.setItem('tamilAI_onboarded', 'true');
+                closeOnboarding(true);
+            });
+        }
+
+        // Skip prefs
+        const skipPrefs = document.getElementById('onboardSkipPrefs');
+        if (skipPrefs) {
+            skipPrefs.addEventListener('click', () => {
+                localStorage.setItem('tamilAI_onboarded', 'true');
+                closeOnboarding(true);
+            });
+        }
+
+        function closeOnboarding(reload) {
+            overlay.classList.add('onboard-hide');
+            document.body.style.overflow = '';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                if (reload) window.location.reload();
+            }, 600);
+        }
+    }
+
+    // Initialize onboarding when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initOnboarding);
+    } else {
+        initOnboarding();
+    }
+
     /* ------------------ Radio page ------------------ */
     let _radioFilter = 'all';
 

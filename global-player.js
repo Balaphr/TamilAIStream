@@ -254,10 +254,11 @@ const GlobalPlayer = (() => {
                         <div class="gp-exp-art-glow"></div>
                     </div>
                     <canvas class="gp-exp-visualizer" id="gpExpVisualizer"></canvas>
-                </div>
-                <div class="gp-exp-info">
-                    <div class="gp-exp-title" id="gpExpTitle">Select a song</div>
-                    <div class="gp-exp-artist" id="gpExpArtist">Tamil AI Stream</div>
+                    </div>
+                    <div class="gp-exp-info">
+                        <div class="gp-exp-title" id="gpExpTitle">Select a song</div>
+                        <div class="gp-exp-artist" id="gpExpArtist">Tamil AI Stream</div>
+                        <button class="gp-exp-why-btn" onclick="if(typeof showWhyThisSong==='function'){const t=state.track||getCurrentTrackFromScript();showWhyThisSong(t);}"><i class="fas fa-lightbulb"></i> Why this song?</button>
                     <div class="gp-exp-live" id="gpExpLive" style="display:none;">
                         <span class="gp-live-dot"></span><span>LIVE FM</span>
                     </div>
@@ -593,6 +594,28 @@ const GlobalPlayer = (() => {
     function playNext() {
         if (typeof window.playNextTrack === 'function') window.playNextTrack();
         else if (typeof PlayerEngine !== 'undefined') PlayerEngine.playNext();
+        // Show next song notification
+        setTimeout(() => {
+            const track = state.track || getCurrentTrackFromScript();
+            if (track) showNextNotification(track);
+        }, 300);
+    }
+
+    function showNextNotification(track) {
+        const existing = document.querySelector('.gp-next-notification');
+        if (existing) existing.remove();
+        const notif = document.createElement('div');
+        notif.className = 'gp-next-notification';
+        notif.innerHTML = `
+            <div class="gp-next-art"><img src="${track.thumbnail || track.albumCover || ''}" alt="" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-music\\' style=\\'padding:14px;color:rgba(255,255,255,0.3)\\'></i>'"></div>
+            <div class="gp-next-info">
+                <div class="gp-next-label">Up Next</div>
+                <div class="gp-next-title">${track.title || 'Unknown'}</div>
+                <div class="gp-next-artist">${track.artist || ''}</div>
+            </div>
+        `;
+        document.body.appendChild(notif);
+        setTimeout(() => { notif.classList.add('leaving'); setTimeout(() => notif.remove(), 300); }, 4000);
     }
 
     function toggleFavorite() {
@@ -769,6 +792,28 @@ const GlobalPlayer = (() => {
         setText('gpExpSource', track.movie || 'Tamil AI Stream');
         const bg = document.getElementById('gpExpBg');
         if (bg && artwork) bg.style.background = 'radial-gradient(circle at 50% 30%, ' + THEMES[themeIdx].glow + ' 0%, transparent 60%)';
+        // Dynamic gradient from artwork
+        try {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = artwork;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 50;
+                canvas.height = 50;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 50, 50);
+                const data = ctx.getImageData(10, 10, 1, 1).data;
+                const r = data[0], g = data[1], b = data[2];
+                const glowColor = `rgba(${r},${g},${b},0.2)`;
+                const gradientColor = `rgba(${r},${g},${b},0.12)`;
+                const expandedEl = document.getElementById('gp-expanded');
+                if (expandedEl) {
+                    expandedEl.style.setProperty('--gp-glow', glowColor);
+                    expandedEl.style.setProperty('--gp-dynamic-gradient', `radial-gradient(ellipse at 50% 0%, ${gradientColor} 0%, transparent 70%)`);
+                }
+            };
+        } catch(e) {}
         updateFavUI();
     }
 

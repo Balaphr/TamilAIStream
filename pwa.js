@@ -198,6 +198,30 @@
   }
 
   /* ============================================================
+     PWA Install Prompt
+     ============================================================ */
+  var _deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    _deferredPrompt = e;
+    setTimeout(function() {
+      if (!_deferredPrompt) return;
+      var btn = document.createElement('button');
+      btn.id = 'pwaInstallBtn';
+      btn.className = 'pwa-install-banner';
+      btn.innerHTML = '<i class="fas fa-download"></i> Install Tamil AI Stream';
+      btn.onclick = async function() {
+        _deferredPrompt.prompt();
+        await _deferredPrompt.userChoice;
+        _deferredPrompt = null;
+        btn.remove();
+      };
+      document.body.appendChild(btn);
+    }, 30000);
+  });
+  window.addEventListener('appinstalled', function() { _deferredPrompt = null; });
+
+  /* ============================================================
      Boot
      ============================================================ */
   if (document.readyState === 'loading') {
