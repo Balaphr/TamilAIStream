@@ -40,7 +40,7 @@ html.builder-preview .splash-screen {
     flex-direction: column;
     background: radial-gradient(ellipse at 50% 40%, #0d1b2a 0%, #060e1a 60%, #020810 100%);
     opacity: 1;
-    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: opacity, transform;
     overflow: hidden;
 }
@@ -255,7 +255,7 @@ html.builder-preview .splash-screen {
     width: 0%;
     border-radius: 3px;
     background: linear-gradient(90deg, #6366f1, #8b5cf6, #06b6d4);
-    animation: splashLoadFill 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: splashLoadFill 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
 }
 

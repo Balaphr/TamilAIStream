@@ -28,9 +28,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Performance: Preload critical CSS -->
-    <link rel="preload" href="ultra-perf.css" as="style">
-    <link rel="preload" href="yt-music.css" as="style">
+    <link rel="preload" href="ultra-perf.css" as="style" fetchpriority="high">
+    <link rel="preload" href="yt-music.css" as="style" fetchpriority="high">
     <!-- Performance: DNS prefetch for Firebase -->
     <link rel="dns-prefetch" href="https://firestore.googleapis.com">
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
@@ -112,7 +115,10 @@
     <!-- Splash Screen Script (inline for instant execution) -->
     <script>
     (function() {
-        const SPLASH_MIN_MS = 2200;
+        // First visit: show a brief 600ms splash. Returning visitors (this session): skip instantly.
+        var splashSeen = false;
+        try { splashSeen = sessionStorage.getItem('tamilai_splash_seen') === '1'; } catch (e) {}
+        const SPLASH_MIN_MS = splashSeen ? 0 : 600;
         const overlay = document.getElementById('splashOverlay');
         const skipBtn = document.getElementById('splashSkip');
         if (!overlay) return;
@@ -162,6 +168,7 @@
         function dismissSplash() {
             if (dismissed) return;
             dismissed = true;
+            try { sessionStorage.setItem('tamilai_splash_seen', '1'); } catch (e) {}
             if (overlay._splashRaf) cancelAnimationFrame(overlay._splashRaf);
 
             overlay.classList.add('splash-hide');
@@ -169,14 +176,23 @@
                 overlay.style.display = 'none';
                 overlay.remove();
                 restorePlayerIfPlaying();
-            }, 650);
+            }, 350);
         }
 
         /* ---------- Restore player after splash ---------- */
         function restorePlayerIfPlaying() {
             try {
                 var pe = window.PlayerEngine;
-                if (!pe || !pe.currentTrack) return;
+                if (!pe || !pe.currentTrack) {
+                    // Fast-path dismissal can run before deferred scripts finish loading — retry later.
+                    if (!window.PlayerEngine) {
+                        document.addEventListener('DOMContentLoaded', function h() {
+                            document.removeEventListener('DOMContentLoaded', h);
+                            restorePlayerIfPlaying();
+                        });
+                    }
+                    return;
+                }
 
                 /* Always restore mini player if a track was loaded */
                 var miniOpen = window.MiniAudioPlayer && MiniAudioPlayer.isOpen;
@@ -204,16 +220,30 @@
         skipBtn.addEventListener('click', dismissSplash);
 
         /* ---------- Auto-dismiss after min time + DOM ready ---------- */
-        var domReady = new Promise(function(resolve) {
-            if (document.readyState !== 'loading') resolve();
-            else document.addEventListener('DOMContentLoaded', resolve);
-        });
+        var domReady;
+        if (splashSeen) {
+            /* Returning visitor: reveal as soon as the HTML is parsed (before heavy scripts). */
+            domReady = new Promise(function(resolve) {
+                if (document.readyState !== 'loading') { resolve(); return; }
+                document.addEventListener('readystatechange', function onReady() {
+                    if (document.readyState === 'interactive') {
+                        document.removeEventListener('readystatechange', onReady);
+                        resolve();
+                    }
+                });
+            });
+        } else {
+            domReady = new Promise(function(resolve) {
+                if (document.readyState !== 'loading') resolve();
+                else document.addEventListener('DOMContentLoaded', resolve);
+            });
+        }
 
         Promise.all([
             new Promise(function(r) { setTimeout(r, SPLASH_MIN_MS); }),
             domReady
         ]).then(function() {
-            setTimeout(dismissSplash, 150);
+            setTimeout(dismissSplash, 50);
         });
     })();
     </script>
@@ -948,35 +978,35 @@
     </footer>
 
     <!-- Firebase SDK -->
-    <script src="ultra-perf.js"></script>
-    <script src="auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script defer src="ultra-perf.js"></script>
+    <script defer src="auth.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
     <!-- Scripts -->
-    <script src="firebase-config.js"></script>
-    <script src="firebase-init.js"></script>
-    <script src="data-store.js"></script>
-    <script src="r2-config.js"></script>
-    <script src="r2-upload.js"></script>
-    <script src="r2-content-sync.js"></script>
-    <script src="player-engine.js"></script>
-    <script src="equalizer.js"></script>
-    <script src="playlist-manager.js"></script>
-    <script src="search-engine.js"></script>
-    <script src="premium-effects.js"></script>
-    <script src="player-ui.js"></script>
-    <script src="global-player.js"></script>
-    <script src="ai-music-assistant.js"></script>
-    <script src="search-ui.js"></script>
-    <script src="eq-ui.js"></script>
-    <script src="yt-music.js"></script>
-    <script src="analytics-tracker.js"></script>
-    <script src="script.js"></script>
+    <script defer src="firebase-config.js"></script>
+    <script defer src="firebase-init.js"></script>
+    <script defer src="data-store.js"></script>
+    <script defer src="r2-config.js"></script>
+    <script defer src="r2-upload.js"></script>
+    <script defer src="r2-content-sync.js"></script>
+    <script defer src="player-engine.js"></script>
+    <script defer src="equalizer.js"></script>
+    <script defer src="playlist-manager.js"></script>
+    <script defer src="search-engine.js"></script>
+    <script defer src="premium-effects.js"></script>
+    <script defer src="player-ui.js"></script>
+    <script defer src="global-player.js"></script>
+    <script defer src="ai-music-assistant.js"></script>
+    <script defer src="search-ui.js"></script>
+    <script defer src="eq-ui.js"></script>
+    <script defer src="yt-music.js"></script>
+    <script defer src="analytics-tracker.js"></script>
+    <script defer src="script.js"></script>
 
-    <script src="listening-history.js"></script>
+    <script defer src="listening-history.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             PlayerEngine.init();
@@ -990,8 +1020,8 @@
             PremiumEffects.initParticles();
         });
     </script>
-    <script src="premium-landing.js"></script>
-    <script src="pwa.js"></script>
+    <script defer src="premium-landing.js"></script>
+    <script defer src="pwa.js"></script>
 </body>
 </html>
 
