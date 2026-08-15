@@ -66,7 +66,9 @@ const AIFeatures = (() => {
     function playQueue(songs, startIndex) {
         if (!songs || songs.length === 0) return;
         const idx = startIndex || 0;
-        if (typeof PlayerEngine !== 'undefined' && PlayerEngine.playTrack) {
+        if (typeof window.playTrackFromYTMusic === 'function') {
+            window.playTrackFromYTMusic(songs[idx], { queue: songs, queueIndex: idx });
+        } else if (typeof PlayerEngine !== 'undefined' && PlayerEngine.playTrack) {
             PlayerEngine.clearQueue();
             songs.forEach(s => PlayerEngine.addToQueue(s));
             PlayerEngine.playTrack(songs[idx], null, idx);

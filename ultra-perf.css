@@ -368,7 +368,16 @@ canvas,
    18. SCROLL PERFORMANCE — Reduce paint
    ============================================ */
 .premium-top-nav,
-.premium-topnav,
+.premium-topnav {
+    position: sticky;
+    top: 0;
+    z-index: 1700;
+    will-change: transform;
+    transform: translateZ(0);
+    left: auto;
+    right: auto;
+    width: auto;
+}
 .mini-player,
 .gp-mini {
     position: fixed;

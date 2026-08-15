@@ -2073,12 +2073,14 @@ function initTopHeader() {
 // ============================================
 function checkAdminAndShowBuilder() {
     const builderNavLink = document.getElementById('builderNavLink');
-    const premiumSidebarBuilder = document.getElementById('premiumSidebarBuilder');
+    const premiumNavBuilder = document.getElementById('premiumNavBuilder');
+    const premiumMobileNavBuilder = document.getElementById('premiumMobileNavBuilder');
     let isAdmin = false;
     
     // Default: hide builder everywhere
     if (builderNavLink) builderNavLink.style.display = 'none';
-    if (premiumSidebarBuilder) premiumSidebarBuilder.style.display = 'none';
+    if (premiumNavBuilder) premiumNavBuilder.style.display = 'none';
+    if (premiumMobileNavBuilder) premiumMobileNavBuilder.style.display = 'none';
     
     // Check if user is guest - NEVER show builder for guests
     const isGuest = localStorage.getItem('tamilAIStream_guest');
@@ -2111,7 +2113,8 @@ function checkAdminAndShowBuilder() {
     // Show/hide builder elements based on admin status
     if (isAdmin) {
         if (builderNavLink) builderNavLink.style.display = 'flex';
-        if (premiumSidebarBuilder) premiumSidebarBuilder.style.display = 'flex';
+        if (premiumNavBuilder) premiumNavBuilder.style.display = 'flex';
+        if (premiumMobileNavBuilder) premiumMobileNavBuilder.style.display = 'flex';
     }
 }
 
@@ -3644,11 +3647,11 @@ document.addEventListener('click', function(e) {
 
 // Handle dashboard and universe page navigation
 document.addEventListener('click', function(e) {
-    const sidebarItem = e.target.closest('.premium-sidebar-item[data-page="dashboard"]');
-    if (sidebarItem) {
+    const dashboardItem = e.target.closest('.premium-nav-item[data-page="dashboard"]');
+    if (dashboardItem) {
         if (typeof renderDashboard === 'function') renderDashboard();
         if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) YTMusic.navigateTo('dashboard');
-        if (typeof YTMusic !== 'undefined' && YTMusic.togglePremiumSidebar) YTMusic.togglePremiumSidebar(false);
+        if (typeof YTMusic !== 'undefined' && YTMusic.toggleMobileMenu) YTMusic.toggleMobileMenu(false);
     }
     const artistEl = e.target.closest('.song-artist');
     if (artistEl) {

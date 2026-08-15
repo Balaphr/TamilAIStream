@@ -227,107 +227,45 @@
     <!-- YouTube Music-like App Container -->
     <div class="ytm-app">
 
-        <!-- Premium Sidebar Overlay -->
-        <div class="premium-sidebar-overlay" id="premiumSidebarOverlay"></div>
-
-        <!-- Premium Grand Sidebar -->
-        <aside class="premium-sidebar" id="premiumSidebar">
-            <div class="premium-sidebar-inner">
-                <div class="premium-sidebar-header">
-                    <button class="premium-sidebar-close" id="premiumSidebarClose" aria-label="Close menu">
-                        <i class="fas fa-xmark"></i>
-                    </button>
-                </div>
-
-                <div class="premium-sidebar-content">
-                    <div class="premium-sidebar-section">
-                        <div class="premium-sidebar-section-title">Navigate</div>
-                        <button class="premium-sidebar-item active" data-page="home">
-                            <div class="premium-sidebar-item-icon"><i class="fas fa-house"></i></div>
-                            <span>Home</span>
-                            <div class="premium-sidebar-item-indicator"></div>
-                        </button>
-                        <button class="premium-sidebar-item" data-page="radio">
-                            <div class="premium-sidebar-item-icon premium-sidebar-item-icon-live"><i class="fas fa-radio"></i></div>
-                            <span>Radio</span>
-                            <span class="premium-sidebar-badge premium-sidebar-badge-live">LIVE</span>
-                        </button>
-                        <button class="premium-sidebar-item" data-page="explore">
-                            <div class="premium-sidebar-item-icon"><i class="fas fa-compass"></i></div>
-                            <span>Explore</span>
-                        </button>
-                        <button class="premium-sidebar-item" data-page="search">
-                            <div class="premium-sidebar-item-icon"><i class="fas fa-search"></i></div>
-                            <span>Search</span>
-                        </button>
-                        <button class="premium-sidebar-item" data-page="library">
-                            <div class="premium-sidebar-item-icon"><i class="fas fa-book-open"></i></div>
-                            <span>Library</span>
-                        </button>
-                    </div>
-
-                    <div class="premium-sidebar-divider"></div>
-
-                    <div class="premium-sidebar-section">
-                        <div class="premium-sidebar-section-title">Your Music</div>
-                        <button class="premium-sidebar-item" data-page="playlists">
-                            <div class="premium-sidebar-item-icon"><i class="fas fa-list"></i></div>
-                            <span>Playlists</span>
-                        </button>
-                        <button class="premium-sidebar-item" data-page="stations">
-                            <div class="premium-sidebar-item-icon"><i class="fas fa-tower-broadcast"></i></div>
-                            <span>Stations</span>
-                        </button>
-                        <button class="premium-sidebar-item" data-page="history">
-                            <div class="premium-sidebar-item-icon"><i class="fas fa-clock-rotate-left"></i></div>
-                            <span>History</span>
-                        </button>
-                    </div>
-
-                    <div class="premium-sidebar-divider"></div>
-
-                    <div class="premium-sidebar-section">
-                        <div class="premium-sidebar-section-title">Account</div>
-                        <button class="premium-sidebar-item" data-page="dashboard">
-                            <div class="premium-sidebar-item-icon"><i class="fas fa-chart-line"></i></div>
-                            <span>Music Dashboard</span>
-                        </button>
-                        <button class="premium-sidebar-item" onclick="YTMusic.toggleSettingsPanel();YTMusic.togglePremiumSidebar();">
-                            <div class="premium-sidebar-item-icon"><i class="fas fa-gear"></i></div>
-                            <span>Settings</span>
-                        </button>
-                        <button class="premium-sidebar-item" onclick="window.location.href='profile.html'">
-                            <div class="premium-sidebar-item-icon"><i class="fas fa-user"></i></div>
-                            <span>Profile</span>
-                        </button>
-                        <button class="premium-sidebar-item premium-sidebar-admin" id="premiumSidebarBuilder" style="display:none;" onclick="window.location.href='builder.html'">
-                            <div class="premium-sidebar-item-icon premium-sidebar-item-icon-admin"><i class="fas fa-tools"></i></div>
-                            <span>Builder</span>
-                            <span class="premium-sidebar-admin-badge">Admin</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="premium-sidebar-footer">
-                    <button class="premium-sidebar-logout" id="premiumSidebarLogout">
-                        <i class="fas fa-right-from-bracket"></i>
-                        <span>Logout</span>
-                    </button>
-                </div>
-            </div>
-        </aside>
-
         <!-- Main Content Area -->
         <div class="ytm-main-content">
             <!-- Premium Glassmorphism Top Navigation -->
             <header class="premium-top-nav" id="premiumTopNav">
                 <div class="premium-topnav-inner">
-                    <!-- Left: Hamburger Menu -->
+                    <!-- Left: Hamburger Menu (mobile/tablet only) -->
                     <button class="premium-hamburger" id="premiumHamburger" aria-label="Open menu">
                         <span class="premium-hamburger-line"></span>
                         <span class="premium-hamburger-line"></span>
                         <span class="premium-hamburger-line"></span>
                     </button>
+
+                    <!-- Left Cluster: Primary Navigation -->
+                    <nav class="premium-topnav-left" aria-label="Main navigation">
+                        <button class="premium-nav-item premium-topnav-item active" data-page="home" title="Home">
+                            <i class="fas fa-house"></i><span>Home</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="radio" title="Radio">
+                            <i class="fas fa-radio"></i><span>Radio</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="explore" title="Explore">
+                            <i class="fas fa-compass"></i><span>Explore</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="search" title="Search">
+                            <i class="fas fa-search"></i><span>Search</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="library" title="Library">
+                            <i class="fas fa-book-open"></i><span>Library</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="playlists" title="Playlists">
+                            <i class="fas fa-list"></i><span>Playlists</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="stations" title="Stations">
+                            <i class="fas fa-tower-broadcast"></i><span>Stations</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="history" title="History">
+                            <i class="fas fa-clock-rotate-left"></i><span>History</span>
+                        </button>
+                    </nav>
 
                     <!-- Center: Logo & Title -->
                     <div class="premium-topnav-brand">
@@ -346,7 +284,7 @@
                         <span class="premium-topnav-title">TamilAI<span class="premium-topnav-dot">.</span>Stream</span>
                     </div>
 
-                    <!-- Right: AI Search Bar + Actions -->
+                    <!-- Right: AI Search Bar + Account Navigation Cluster -->
                     <div class="premium-topnav-right">
                         <div class="premium-topnav-search hide-mobile">
                             <div class="premium-topnav-search-box">
@@ -355,17 +293,116 @@
                                 <button class="premium-topnav-search-clear" id="ytmSearchClear"><i class="fas fa-times"></i></button>
                             </div>
                         </div>
-                        <button class="premium-topnav-action hide-mobile" onclick="YTMusic.toggleNotificationsPanel()" title="Notifications">
-                            <i class="fas fa-bell"></i>
-                            <span class="premium-topnav-badge">3</span>
-                        </button>
-                        <button class="premium-topnav-logout" id="premiumTopNavLogout" title="Logout">
-                            <i class="fas fa-right-from-bracket"></i>
-                            <span class="premium-topnav-logout-text hide-mobile">Logout</span>
-                        </button>
+                        <nav class="premium-topnav-right-cluster" aria-label="Account navigation">
+                            <button class="premium-nav-item premium-topnav-item premium-topnav-item-account" data-page="dashboard" title="Music Dashboard">
+                                <i class="fas fa-chart-line"></i><span>Music Dashboard</span>
+                            </button>
+                            <button class="premium-nav-item premium-topnav-item premium-topnav-item-account" data-action="settings" title="Settings">
+                                <i class="fas fa-gear"></i><span>Settings</span>
+                            </button>
+                            <button class="premium-nav-item premium-topnav-item premium-topnav-item-account" data-action="profile" title="Profile">
+                                <i class="fas fa-user"></i><span>Profile</span>
+                            </button>
+                            <button class="premium-nav-item premium-topnav-item premium-topnav-item-account premium-topnav-admin" id="premiumNavBuilder" data-action="builder" style="display:none;" title="Builder">
+                                <i class="fas fa-tools"></i><span>Builder</span>
+                                <em class="premium-topnav-admin-badge">Admin</em>
+                            </button>
+                            <button class="premium-topnav-logout" id="premiumTopNavLogout" title="Logout">
+                                <i class="fas fa-right-from-bracket"></i>
+                                <span class="premium-topnav-logout-text hide-mobile">Logout</span>
+                            </button>
+                        </nav>
                     </div>
                 </div>
             </header>
+
+            <!-- Responsive Mobile/Tablet Menu (replaces old sidebar) -->
+            <div class="premium-mobile-menu-overlay" id="premiumMobileMenuOverlay"></div>
+            <aside class="premium-mobile-menu" id="premiumMobileMenu" aria-label="Responsive navigation menu">
+                <div class="premium-mobile-menu-inner">
+                    <div class="premium-mobile-menu-header">
+                        <span class="premium-mobile-menu-title"><i class="fas fa-bars-staggered"></i> Menu</span>
+                        <button class="premium-mobile-menu-close" id="premiumMobileMenuClose" aria-label="Close menu">
+                            <i class="fas fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="premium-mobile-menu-search">
+                        <div class="premium-topnav-search-box">
+                            <i class="fas fa-wand-magic-sparkles premium-search-ai-icon"></i>
+                            <input type="text" class="premium-topnav-search-input" id="ytmMobileSearchInput" placeholder="Search songs, artists, lyrics, movies..." autocomplete="off">
+                            <button class="premium-topnav-search-clear" id="ytmMobileSearchClear"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                    <div class="premium-mobile-menu-content">
+                        <div class="premium-sidebar-section">
+                            <div class="premium-sidebar-section-title">Navigate</div>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item active" data-page="home">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-house"></i></div>
+                                <span>Home</span>
+                                <div class="premium-sidebar-item-indicator"></div>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="radio">
+                                <div class="premium-sidebar-item-icon premium-sidebar-item-icon-live"><i class="fas fa-radio"></i></div>
+                                <span>Radio</span>
+                                <span class="premium-sidebar-badge premium-sidebar-badge-live">LIVE</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="explore">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-compass"></i></div>
+                                <span>Explore</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="search">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-search"></i></div>
+                                <span>Search</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="library">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-book-open"></i></div>
+                                <span>Library</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="playlists">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-list"></i></div>
+                                <span>Playlists</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="stations">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-tower-broadcast"></i></div>
+                                <span>Stations</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="history">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-clock-rotate-left"></i></div>
+                                <span>History</span>
+                            </button>
+                        </div>
+
+                        <div class="premium-sidebar-divider"></div>
+
+                        <div class="premium-sidebar-section">
+                            <div class="premium-sidebar-section-title">Account</div>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="dashboard">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-chart-line"></i></div>
+                                <span>Music Dashboard</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-action="settings">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-gear"></i></div>
+                                <span>Settings</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-action="profile">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-user"></i></div>
+                                <span>Profile</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item premium-sidebar-admin" id="premiumMobileNavBuilder" style="display:none;" data-action="builder">
+                                <div class="premium-sidebar-item-icon premium-sidebar-item-icon-admin"><i class="fas fa-tools"></i></div>
+                                <span>Builder</span>
+                                <span class="premium-sidebar-admin-badge">Admin</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="premium-mobile-menu-footer">
+                        <button class="premium-sidebar-logout" id="premiumMobileMenuLogout">
+                            <i class="fas fa-right-from-bracket"></i>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </aside>
 
             <!-- ============ PAGE: HOME ============ -->
             <div class="ytm-page ytm-page-home active" id="page-home">
@@ -500,6 +537,13 @@
 
             <!-- ============ PAGE: SEARCH ============ -->
             <div class="ytm-page ytm-page-search" id="page-search">
+                <div class="ytm-search-page-input">
+                    <div class="premium-topnav-search-box">
+                        <i class="fas fa-wand-magic-sparkles premium-search-ai-icon"></i>
+                        <input type="text" class="premium-topnav-search-input" id="ytmSearchPageInput" placeholder="Search songs, artists, lyrics, movies, or type a request like 'play Aalaporaan Thamizhan'..." autocomplete="off">
+                        <button class="premium-topnav-search-clear" id="ytmSearchPageClear"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
                 <div class="ytm-search-filters">
                     <button class="ytm-search-filter active" data-filter="all" onclick="YTMusic.setSearchFilter('all')">All</button>
                     <button class="ytm-search-filter" data-filter="stations" onclick="YTMusic.setSearchFilter('stations')">Stations</button>

@@ -264,6 +264,7 @@ const GlobalPlayer = (() => {
                     <div class="gp-exp-info">
                         <div class="gp-exp-title" id="gpExpTitle">Select a song</div>
                         <div class="gp-exp-artist" id="gpExpArtist">Tamil AI Stream</div>
+                        <div class="gp-exp-movie" id="gpExpMovie">Tamil AI Stream</div>
                         <button class="gp-exp-why-btn" onclick="if(typeof showWhyThisSong==='function'){const t=state.track||getCurrentTrackFromScript();showWhyThisSong(t);}"><i class="fas fa-lightbulb"></i> Why this song?</button>
                     <div class="gp-exp-live" id="gpExpLive" style="display:none;">
                         <span class="gp-live-dot"></span><span>LIVE FM</span>
@@ -779,6 +780,9 @@ const GlobalPlayer = (() => {
         setArtwork('gpMiniArtImg', artwork);
         setText('gpExpTitle', title);
         setText('gpExpArtist', artist);
+        setText('gpExpMovie', track.movie || track.album || track.movieName || '');
+        const movieEl = document.getElementById('gpExpMovie');
+        if (movieEl) movieEl.style.display = (track.movie || track.album || track.movieName) ? '' : 'none';
         setArtwork('gpExpArtImg', artwork);
         setText('gpExpSource', track.movie || 'Tamil AI Stream');
         const bg = document.getElementById('gpExpBg');
@@ -874,7 +878,12 @@ const GlobalPlayer = (() => {
             item.addEventListener('click', (e) => {
                 if (e.target.closest('.gp-q-remove')) return;
                 const i = parseInt(item.dataset.idx);
-                if (typeof PlayerEngine !== 'undefined') PlayerEngine.playTrack(q[i], q, i);
+                // Unify through the global audioPlayer engine so no duplicate players exist
+                if (typeof window.playTrackFromYTMusic === 'function') {
+                    window.playTrackFromYTMusic(q[i], { queue: q, queueIndex: i });
+                } else if (typeof PlayerEngine !== 'undefined') {
+                    PlayerEngine.playTrack(q[i], q, i);
+                }
             });
         });
         list.querySelectorAll('.gp-q-remove').forEach(btn => {

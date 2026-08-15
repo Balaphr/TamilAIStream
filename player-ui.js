@@ -567,7 +567,12 @@ const PlayerUI = (() => {
             item.addEventListener('click', (e) => {
                 if (e.target.closest('.fp-queue-remove')) return;
                 const i = parseInt(item.dataset.index);
-                PlayerEngine.playTrack(queue[i], queue, i);
+                // Route through the global engine to avoid a second player
+                if (typeof window.playTrackFromYTMusic === 'function') {
+                    window.playTrackFromYTMusic(queue[i], { queue, queueIndex: i });
+                } else {
+                    PlayerEngine.playTrack(queue[i], queue, i);
+                }
             });
             item.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', item.dataset.index));
             item.addEventListener('dragover', (e) => e.preventDefault());

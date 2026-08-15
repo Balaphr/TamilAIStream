@@ -113,10 +113,10 @@ const YTMusic = {
     setupEventListeners() {
         // Browser back/forward → restore previous page without touching playback.
         window.addEventListener('popstate', () => {
-            // Close sidebar if open (mobile/tablet)
-            const sidebar = document.getElementById('premiumSidebar');
-            if (sidebar && sidebar.classList.contains('open')) {
-                this.togglePremiumSidebar(false);
+            // Close mobile menu if open (mobile/tablet)
+            const menu = document.getElementById('premiumMobileMenu');
+            if (menu && menu.classList.contains('open')) {
+                this.toggleMobileMenu(false);
                 return;
             }
             const hash = (location.hash || '').replace('#', '');
@@ -124,11 +124,26 @@ const YTMusic = {
             this.navigateTo(target, { _fromPop: true });
         });
 
-        // Premium sidebar navigation
-        document.querySelectorAll('.premium-sidebar-item[data-page]').forEach(item => {
+        // Premium nav navigation (top nav clusters + mobile menu)
+        document.querySelectorAll('.premium-nav-item[data-page]').forEach(item => {
             item.addEventListener('click', () => {
                 this.navigateTo(item.dataset.page);
-                this.togglePremiumSidebar(false);
+                this.toggleMobileMenu(false);
+            });
+        });
+
+        // Premium nav actions (settings / profile / builder)
+        document.querySelectorAll('.premium-nav-item[data-action]').forEach(item => {
+            item.addEventListener('click', () => {
+                const action = item.dataset.action;
+                if (action === 'settings') {
+                    this.toggleSettingsPanel();
+                } else if (action === 'profile') {
+                    window.location.href = 'profile.html';
+                } else if (action === 'builder') {
+                    window.location.href = 'builder.html';
+                }
+                this.toggleMobileMenu(false);
             });
         });
 
@@ -149,24 +164,21 @@ const YTMusic = {
             item.addEventListener('click', () => this.navigateTo(item.dataset.page));
         });
 
-        // Premium sidebar toggle
+        // Responsive mobile/tablet menu toggle
         const hamburger = document.getElementById('premiumHamburger');
-        const sidebarOverlay = document.getElementById('premiumSidebarOverlay');
-        const sidebarClose = document.getElementById('premiumSidebarClose');
-        if (hamburger) hamburger.addEventListener('click', () => this.togglePremiumSidebar());
-        if (sidebarOverlay) sidebarOverlay.addEventListener('click', () => this.togglePremiumSidebar(false));
-        if (sidebarClose) sidebarClose.addEventListener('click', () => this.togglePremiumSidebar(false));
+        const menuOverlay = document.getElementById('premiumMobileMenuOverlay');
+        const menuClose = document.getElementById('premiumMobileMenuClose');
+        if (hamburger) hamburger.addEventListener('click', () => this.toggleMobileMenu());
+        if (menuOverlay) menuOverlay.addEventListener('click', () => this.toggleMobileMenu(false));
+        if (menuClose) menuClose.addEventListener('click', () => this.toggleMobileMenu(false));
 
-        // Premium sidebar logout
-        const sidebarLogout = document.getElementById('premiumSidebarLogout');
-        if (sidebarLogout) sidebarLogout.addEventListener('click', () => { if (typeof window.logout === 'function') window.logout(); });
+        // Mobile menu logout
+        const mobileMenuLogout = document.getElementById('premiumMobileMenuLogout');
+        if (mobileMenuLogout) mobileMenuLogout.addEventListener('click', () => { if (typeof window.logout === 'function') window.logout(); });
 
         // Premium top nav logout
         const topNavLogout = document.getElementById('premiumTopNavLogout');
         if (topNavLogout) topNavLogout.addEventListener('click', () => { if (typeof window.logout === 'function') window.logout(); });
-
-        // Premium sidebar user info
-        this.updatePremiumSidebarUser();
 
         // Search input
         const searchInput = document.getElementById('ytmSearchInput');
@@ -183,6 +195,26 @@ const YTMusic = {
             });
         }
 
+        // Search page input (all devices)
+        const pageSearchInput = document.getElementById('ytmSearchPageInput');
+        if (pageSearchInput) {
+            pageSearchInput.addEventListener('input', (e) => {
+                const val = e.target.value;
+                const desktopInput = document.getElementById('ytmSearchInput');
+                if (desktopInput) desktopInput.value = val;
+                this.handleSearch(val);
+            });
+        }
+
+        // Search page clear
+        const pageSearchClear = document.getElementById('ytmSearchPageClear');
+        if (pageSearchClear) {
+            pageSearchClear.addEventListener('click', () => {
+                const input = document.getElementById('ytmSearchPageInput');
+                if (input) { input.value = ''; this.handleSearch(''); }
+            });
+        }
+
         // Mobile search input
         const mobileSearchInput = document.getElementById('ytmMobileSearchInput');
         if (mobileSearchInput) {
@@ -194,6 +226,15 @@ const YTMusic = {
             });
             mobileSearchInput.addEventListener('focus', () => {
                 if (this.currentPage !== 'search') this.navigateTo('search');
+            });
+        }
+
+        // Mobile search clear
+        const mobileSearchClear = document.getElementById('ytmMobileSearchClear');
+        if (mobileSearchClear) {
+            mobileSearchClear.addEventListener('click', () => {
+                const input = document.getElementById('ytmMobileSearchInput');
+                if (input) { input.value = ''; this.handleSearch(''); }
             });
         }
 
@@ -539,8 +580,8 @@ const YTMusic = {
         }
         this.currentPage = page;
         document.body.classList.toggle('home-active', page === 'home');
-        // Premium sidebar active state
-        document.querySelectorAll('.premium-sidebar-item[data-page]').forEach(item => {
+        // Premium nav active state (top nav clusters + mobile menu)
+        document.querySelectorAll('.premium-nav-item[data-page]').forEach(item => {
             item.classList.toggle('active', item.dataset.page === page);
         });
         // Bottom nav active state
@@ -573,9 +614,12 @@ const YTMusic = {
                 break;
             case 'artists': this.renderArtistsContent(); break;
             case 'search':
+                const pageSI = document.getElementById('ytmSearchPageInput');
                 const mobileSI = document.getElementById('ytmMobileSearchInput');
                 const desktopSI = document.getElementById('ytmSearchInput');
-                if (window.innerWidth <= 640 && mobileSI) {
+                if (window.innerWidth <= 640 && pageSI) {
+                    pageSI.focus();
+                } else if (window.innerWidth <= 640 && mobileSI) {
                     mobileSI.focus();
                 } else if (desktopSI) {
                     desktopSI.focus();
@@ -598,40 +642,39 @@ const YTMusic = {
     },
 
     // ========================================
-    // Premium Sidebar
+    // Responsive Mobile/Tablet Menu (replaces old sidebar)
     // ========================================
-    togglePremiumSidebar(force) {
-        const sidebar = document.getElementById('premiumSidebar');
-        const overlay = document.getElementById('premiumSidebarOverlay');
+    toggleMobileMenu(force) {
+        const menu = document.getElementById('premiumMobileMenu');
+        const overlay = document.getElementById('premiumMobileMenuOverlay');
         const hamburger = document.getElementById('premiumHamburger');
-        if (!sidebar || !overlay) return;
-        // Desktop (>=1025px): sidebar is always visible, no toggle needed
+        if (!menu || !overlay) return;
+        // Desktop (>=1025px): clusters are shown in the top nav, menu is not needed
         if (window.innerWidth >= 1025) return;
-        const isOpen = sidebar.classList.contains('open');
+        const isOpen = menu.classList.contains('open');
         const shouldOpen = force !== undefined ? force : !isOpen;
-        sidebar.classList.toggle('open', shouldOpen);
+        menu.classList.toggle('open', shouldOpen);
         overlay.classList.toggle('active', shouldOpen);
         if (hamburger) hamburger.classList.toggle('active', shouldOpen);
         document.body.style.overflow = shouldOpen ? 'hidden' : '';
         // Push/pop history for back button support
         if (shouldOpen && !isOpen) {
-            history.pushState({ sidebar: true }, '');
+            history.pushState({ menu: true }, '');
         } else if (!shouldOpen && isOpen) {
             // Only pop if we pushed the state
-            if (history.state && history.state.sidebar) {
+            if (history.state && history.state.menu) {
                 history.back();
             }
         }
     },
 
+    // Backward-compat alias
+    togglePremiumSidebar(force) {
+        this.toggleMobileMenu(force);
+    },
+
     updatePremiumSidebarUser() {
-        const user = JSON.parse(localStorage.getItem('tamilAIStream_user') || '{}');
-        const nameEl = document.getElementById('premiumSidebarUserName');
-        const emailEl = document.getElementById('premiumSidebarUserEmail');
-        const avatarEl = document.getElementById('premiumSidebarUserAvatar');
-        if (nameEl) nameEl.textContent = user.name || user.email?.split('@')[0] || 'User';
-        if (emailEl) emailEl.textContent = user.email || 'guest';
-        if (avatarEl && user.avatar) avatarEl.innerHTML = '<img src="' + user.avatar + '" alt="Profile">';
+        // User info block was removed with the old sidebar; kept as a safe no-op.
     },
 
     // ========================================
@@ -698,6 +741,24 @@ const YTMusic = {
             // Play first match
             this.playTrack(results.songs[0]);
             this.showToast('Playing: ' + results.songs[0].title, 'success');
+        } else {
+            // AI natural-language search: even without an explicit "play" word,
+            // a strong exact title match should start playing immediately.
+            const exact = results.songs.filter(s => (s.title || '').toLowerCase() === query);
+            if (exact.length === 1) {
+                this.playTrack(exact[0]);
+                this.showToast('Playing: ' + exact[0].title, 'success');
+            } else if (results.songs.length === 1 && query.trim().length > 1) {
+                // Single strong match for a non-trivial query → auto-play it
+                const s = results.songs[0];
+                const qWords = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+                const titleWords = (s.title || '').toLowerCase();
+                const matchCount = qWords.filter(w => titleWords.includes(w)).length;
+                if (matchCount >= Math.min(2, qWords.length)) {
+                    this.playTrack(s);
+                    this.showToast('Playing: ' + s.title, 'success');
+                }
+            }
         }
 
         this.renderSearchResults(results);
@@ -1306,7 +1367,6 @@ const YTMusic = {
 
     renderSidebarPlaylists() {
         const container = document.getElementById('sidebarPlaylists');
-        const premiumContainer = document.getElementById('premiumSidebarPlaylists');
         const playlistsHtml = this.playlists.map(p => `
             <div class="ytm-sidebar-playlist-item" onclick="YTMusic.playPlaylist(YTMusic.playlists.find(pl=>pl.id==='${p.id}'))">
                 <i class="fas fa-music"></i>
@@ -1314,14 +1374,6 @@ const YTMusic = {
             </div>
         `).join('');
         if (container) container.innerHTML = playlistsHtml;
-        if (premiumContainer) {
-            premiumContainer.innerHTML = this.playlists.map(p => `
-                <button class="premium-sidebar-item" onclick="YTMusic.playPlaylist(YTMusic.playlists.find(pl=>pl.id==='${p.id}'));YTMusic.togglePremiumSidebar(false);">
-                    <div class="premium-sidebar-item-icon"><i class="fas fa-music"></i></div>
-                    <span>${p.name}</span>
-                </button>
-            `).join('');
-        }
     },
 
     renderSearchResults(results) {

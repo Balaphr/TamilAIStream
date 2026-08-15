@@ -3230,6 +3230,7 @@ html.builder-preview #premiumKebabMenu {
 .premium-topnav-search {
     flex: 1;
     max-width: 480px;
+    min-width: 0;
 }
 .premium-topnav-search-box {
     display: flex;
@@ -3237,6 +3238,7 @@ html.builder-preview #premiumKebabMenu {
     gap: 10px;
     padding: 0 14px;
     height: 40px;
+    min-width: 0;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;

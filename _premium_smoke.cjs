@@ -81,7 +81,7 @@ async function main() {
       heroVinyl: !!document.getElementById('premiumHeroVinyl'),
       heroEq: !!document.getElementById('premiumHeroEq'),
       kebabBtn: !!document.getElementById('premiumKebabBtn'),
-      sidebarRadio: document.querySelectorAll('.premium-sidebar-item[data-page="radio"]').length,
+      navRadio: document.querySelectorAll('.premium-nav-item[data-page="radio"]').length,
       kebabMenu: !!document.getElementById('premiumKebabMenu'),
       radioPage: !!document.getElementById('page-radio'),
       radioGrid: document.querySelectorAll('#premiumRadioGrid .premium-radio-card').length,

@@ -128,8 +128,12 @@ const AIMusicAssistant = (() => {
     function executeAction(action, data) {
         switch (action) {
             case 'play_song':
-                if (data.audioUrl) {
-                    PlayerEngine.playTrack(data, [data], 0);
+                if (data.audioUrl || data.streamUrl) {
+                    if (typeof window.playTrackFromYTMusic === 'function') {
+                        window.playTrackFromYTMusic(data, { queue: [data], queueIndex: 0 });
+                    } else if (data.audioUrl) {
+                        PlayerEngine.playTrack(data, [data], 0);
+                    }
                     return `Now playing **${data.title}** by ${data.artist || 'Unknown'}`;
                 }
                 return `I found **${data.title}** but it doesn't have a playable URL.`;
@@ -138,21 +142,29 @@ const AIMusicAssistant = (() => {
                 return `Now playing **${data.name}** (${data.freq || ''})`;
             case 'play_artist':
                 if (data.songs && data.songs.length) {
-                    PlayerEngine.playTrack(data.songs[0], data.songs, 0);
+                    if (typeof window.playTrackFromYTMusic === 'function') {
+                        window.playTrackFromYTMusic(data.songs[0], { queue: data.songs, queueIndex: 0 });
+                    } else {
+                        PlayerEngine.playTrack(data.songs[0], data.songs, 0);
+                    }
                     return `Playing **${data.name}** hits (${data.count} songs)`;
                 }
                 return `I found **${data.name}** but couldn't load their songs.`;
             case 'pause':
-                PlayerEngine.pause();
+                if (typeof window.pausePlayback === 'function') window.pausePlayback();
+                else PlayerEngine.pause();
                 return 'Paused.';
             case 'resume':
-                PlayerEngine.play();
+                if (typeof window.resumePlayback === 'function') window.resumePlayback();
+                else PlayerEngine.play();
                 return 'Resumed.';
             case 'next':
-                PlayerEngine.playNext();
+                if (typeof window.playNextTrack === 'function') window.playNextTrack();
+                else PlayerEngine.playNext();
                 return 'Playing next track.';
             case 'previous':
-                PlayerEngine.playPrevious();
+                if (typeof window.playPreviousTrack === 'function') window.playPreviousTrack();
+                else PlayerEngine.playPrevious();
                 return 'Playing previous track.';
             case 'shuffle':
                 PlayerEngine.toggleShuffle();
