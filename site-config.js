@@ -43,7 +43,7 @@ const SiteConfig = {
             visible: true,
             order: 1,
             config: {
-                logo: { text: 'Tamil AI Stream', icon: 'fa-microphone-alt', showIcon: true, fontSize: 24 },
+                logo: { text: 'Tamil AI Stream', icon: 'fa-headphones-alt', showIcon: true, fontSize: 24 },
                 searchBar: {
                     visible: true,
                     placeholder: 'Search songs, artists, stations...',
