@@ -4401,11 +4401,11 @@ function loadAdsTable() {
         const thumbSrc = ad.imageUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 60'%3E%3Crect width='120' height='60' rx='6' fill='%23374151'/%3E%3Ctext x='60' y='35' text-anchor='middle' fill='%239ca3af' font-size='11'%3EAd Banner%3C/text%3E%3C/svg%3E";
         return `
         <tr>
-            <td><img src="${thumbSrc}" alt="${ad.title || ''}" style="width:120px;height:60px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);"></td>
-            <td><strong>${ad.title || 'Untitled'}</strong><br><small style="color:#888;">${ad.description || ''}</small></td>
-            <td><span style="background:rgba(52,211,153,0.15);color:#6ee7b7;padding:3px 10px;border-radius:12px;font-size:12px;">Position ${ad.position || '?'} — ${AD_POSITIONS[ad.position] || 'Unknown'}</span></td>
-            <td><span class="status-badge ${ad.enabled !== false ? 'active' : 'inactive'}" style="cursor:pointer;" onclick="toggleAd('${ad.id}')">${ad.enabled !== false ? 'Enabled' : 'Disabled'}</span></td>
-            <td>
+            <td data-label="Preview"><img src="${thumbSrc}" alt="${ad.title || ''}" style="width:120px;height:60px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);"></td>
+            <td data-label="Title"><strong>${ad.title || 'Untitled'}</strong><br><small style="color:#888;">${ad.description || ''}</small></td>
+            <td data-label="Position"><span style="background:rgba(52,211,153,0.15);color:#6ee7b7;padding:3px 10px;border-radius:12px;font-size:12px;">Position ${ad.position || '?'} — ${AD_POSITIONS[ad.position] || 'Unknown'}</span></td>
+            <td data-label="Status"><span class="status-badge ${ad.enabled !== false ? 'active' : 'inactive'}" style="cursor:pointer;" onclick="toggleAd('${ad.id}')">${ad.enabled !== false ? 'Enabled' : 'Disabled'}</span></td>
+            <td data-label="Actions">
                 <div style="display:flex;gap:6px;">
                     <button class="builder-btn small" onclick="openEditAdModal('${ad.id}')" title="Edit"><i class="fas fa-edit"></i></button>
                     <button class="builder-btn small danger" onclick="deleteAd('${ad.id}')" title="Delete"><i class="fas fa-trash"></i></button>
@@ -4594,16 +4594,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const mobileToggle = document.getElementById('builderMobileToggle');
     const sidebar = document.querySelector('.builder-sidebar');
+    const sidebarOverlay = document.getElementById('builderSidebarOverlay');
     if (mobileToggle && sidebar) {
         mobileToggle.addEventListener('click', () => {
             sidebar.classList.toggle('mobile-open');
+            if (sidebarOverlay) sidebarOverlay.classList.toggle('active', sidebar.classList.contains('mobile-open'));
             const icon = mobileToggle.querySelector('i');
             icon.classList.toggle('fa-bars');
             icon.classList.toggle('fa-times');
         });
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', () => {
+                sidebar.classList.remove('mobile-open');
+                sidebarOverlay.classList.remove('active');
+                const icon = mobileToggle.querySelector('i');
+                icon.classList.add('fa-bars');
+                icon.classList.remove('fa-times');
+            });
+        }
         document.addEventListener('click', (e) => {
             if (sidebar.classList.contains('mobile-open') && !sidebar.contains(e.target) && e.target !== mobileToggle && !mobileToggle.contains(e.target)) {
                 sidebar.classList.remove('mobile-open');
+                if (sidebarOverlay) sidebarOverlay.classList.remove('active');
                 const icon = mobileToggle.querySelector('i');
                 icon.classList.add('fa-bars');
                 icon.classList.remove('fa-times');
@@ -4612,6 +4624,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         sidebar.querySelectorAll('.builder-sidebar-item').forEach(item => {
             item.addEventListener('click', () => {
                 sidebar.classList.remove('mobile-open');
+                if (sidebarOverlay) sidebarOverlay.classList.remove('active');
                 const icon = mobileToggle.querySelector('i');
                 icon.classList.add('fa-bars');
                 icon.classList.remove('fa-times');

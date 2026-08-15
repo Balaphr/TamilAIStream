@@ -882,6 +882,11 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 
 @media (max-width: 1024px) {
     .mobile-menu-toggle { display: flex; align-items: center; justify-content: center; }
+    .builder-sidebar-overlay {
+        display: none; position: fixed; inset: 0; z-index: 999;
+        background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    }
+    .builder-sidebar-overlay.active { display: block; }
     .builder-sidebar.mobile-open {
         position: fixed; top: 0; left: 0; width: 260px; height: 100vh;
         z-index: 1000; background: var(--bg-primary, #0a0f1e);
@@ -895,6 +900,54 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
         white-space: normal; padding: 12px 16px; font-size: 0.85rem;
     }
     .builder-sidebar.mobile-open .builder-sidebar-title { display: block; }
+    .builder-content { padding: 12px !important; }
+    .builder-page { padding: 0 !important; }
+
+    /* Mobile: Stack table into cards */
+    .builder-table-wrap { overflow-x: visible !important; }
+    .builder-table { width: 100% !important; }
+    .builder-table thead { display: none !important; }
+    .builder-table tbody tr {
+        display: flex !important; flex-wrap: wrap !important;
+        gap: 8px !important; padding: 12px !important;
+        margin-bottom: 8px !important;
+        background: var(--bg-glass, rgba(255,255,255,0.04));
+        border: 1px solid var(--border-glass, rgba(255,255,255,0.08));
+        border-radius: var(--radius-md, 12px) !important;
+    }
+    .builder-table tbody td {
+        display: flex !important; align-items: center !important;
+        gap: 6px !important; padding: 4px 0 !important;
+        border: none !important; white-space: normal !important;
+        font-size: 0.8rem !important;
+    }
+    .builder-table tbody td::before {
+        content: attr(data-label) !important;
+        font-weight: 600 !important; color: var(--text-muted, #888) !important;
+        min-width: 70px !important;
+    }
+    .builder-table tbody td:last-child {
+        width: 100% !important;
+        justify-content: flex-end !important;
+    }
+
+    /* Mobile: Card header stacks */
+    .builder-card-header {
+        flex-direction: column !important; gap: 12px !important;
+        align-items: flex-start !important;
+    }
+    .builder-card-header .builder-btn { width: 100% !important; justify-content: center !important; }
+
+    /* Mobile: Form grid single column */
+    .form-grid { grid-template-columns: 1fr !important; }
+
+    /* Mobile: Modal full width */
+    .builder-modal { width: 95% !important; max-height: 90vh !important; }
+    .builder-modal-body { padding: 16px !important; }
+
+    /* Mobile: Page title smaller */
+    .builder-page-title { font-size: 1.2rem !important; }
+    .builder-page-subtitle { font-size: 0.75rem !important; }
 }
 
 /* Toast Notifications */

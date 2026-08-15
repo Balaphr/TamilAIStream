@@ -52,8 +52,16 @@ textarea {
    3. Premium 3-dot (kebab) menu on the top navigation
    ------------------------------------------------------------ */
 .premium-kebab-btn {
-    /* Always visible on all screen sizes */
     display: flex !important;
+}
+
+@media (max-width: 1024px) {
+    .premium-kebab-btn {
+        display: none !important;
+    }
+    .premium-kebab-menu {
+        display: none !important;
+    }
 }
 
 .premium-kebab-btn.active {
