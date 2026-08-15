@@ -56,9 +56,16 @@ html {
    ============================================ */
 html,
 body {
-    overscroll-behavior: none;
+    /* Allow natural vertical page scrolling and overscroll chaining to the
+       viewport. The previous `none` value killed scroll momentum and trapped
+       every touch inside the page root. Horizontal page scroll is already
+       prevented by `overflow-x: hidden/clip` on html/body in style.css. */
+    overscroll-behavior: auto;
 }
 
+/* Horizontal scroll containers — contain *horizontal* overscroll so the page
+   never scrolls sideways when a carousel reaches its edge, but let *vertical*
+   scroll propagate to the page viewport so song sections scroll up/down freely. */
 .ytm-main-content,
 .ytm-page-home,
 .stations-track,
@@ -72,9 +79,24 @@ body {
 .gp-lyrics-content,
 .categories-grid,
 .stations-grid,
-.song-card,
 .ai-artists-row {
-    overscroll-behavior: contain;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+}
+
+/* Card elements inside scroll containers — never trap scroll.
+   These have `overflow: hidden` for clipping, but must let touch
+   gestures propagate to the parent scroll container / page. */
+.song-card,
+.station-card,
+.radio-card,
+.collection-card,
+.movie-card,
+.artist-hit-card,
+.tamil-hit-card,
+.ad-banner-card,
+.hero-ad-card {
+    overscroll-behavior: auto;
 }
 
 /* ============================================
@@ -424,7 +446,8 @@ a,
 @media (max-width: 1024px) {
     .ytm-main-content {
         -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
+        /* Let vertical page scroll propagate; only contain horizontal overscroll */
+        overscroll-behavior-y: auto;
     }
 
     .ytm-page-home {

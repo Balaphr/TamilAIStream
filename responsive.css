@@ -1092,15 +1092,18 @@ body {
     .ytm-page-home .stations-track {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        touch-action: pan-x;
-        scroll-snap-type: x mandatory;
+        /* `auto` allows both horizontal (carousel) and vertical (page) pan so
+           users can swipe left/right to browse cards AND scroll the page up/down.
+           `pan-x` previously blocked all vertical scrolling on these sections. */
+        touch-action: auto;
+        scroll-snap-type: x proximity;
         padding-bottom: 8px;
     }
     .ytm-page-home .carousel-track {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        touch-action: pan-x;
-        scroll-snap-type: x mandatory;
+        touch-action: auto;
+        scroll-snap-type: x proximity;
         padding-bottom: 8px;
     }
     .carousel-btn { display: none !important; }
