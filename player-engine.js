@@ -399,16 +399,15 @@ const PlayerEngine = (() => {
 
     function seekTo(time) {
         if (window.__BUILDER_PREVIEW__) return;
-        var target = Math.max(0, Math.min(time, (audio && audio.duration) || 0));
-        // Set the seeking flag so the waiting handler suppresses the toast
+        var dur = (audio && audio.duration) || 0;
+        var target = Math.max(0, Math.min(time, dur));
         window._isSeeking = true;
-        window._seekingUntil = Date.now() + 1200;
-        if (audio && audio.duration) {
+        window._seekingUntil = Date.now() + 1500;
+        if (audio && dur && isFinite(dur)) {
             try { audio.currentTime = target; } catch (e) {}
         }
-        if (typeof window.audioPlayer !== 'undefined' && window.audioPlayer && window.audioPlayer.duration) {
-            try { window.audioPlayer.currentTime = target; } catch (e) {}
-        }
+        state.currentTime = target;
+        emit('timeupdate', { current: target, duration: dur });
     }
 
     function seekToPercent(pct) {

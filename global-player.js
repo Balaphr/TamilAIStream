@@ -655,33 +655,31 @@ const GlobalPlayer = (() => {
     function seekToPercent(pct) {
         const derived = Math.max(0, Math.min(1, pct));
         const targetTime = derived * (state.duration || 0);
-        // Update state immediately so UI shows correct position
         state.currentTime = targetTime;
+        window._isSeeking = true;
+        window._seekingUntil = Date.now() + 1500;
         updateProgressUI();
-        if (typeof seekPlaybackToPercent === 'function') { seekPlaybackToPercent(derived); return; }
-        if (window.audioPlayer) {
-            const dur = window.audioPlayer.duration;
-            if (dur && isFinite(dur) && dur > 0) {
-                window._isSeeking = true;
-                window._seekingUntil = Date.now() + 1200;
-                window.audioPlayer.currentTime = derived * dur;
-                state.currentTime = window.audioPlayer.currentTime;
-                updateProgressUI();
-                return;
-            }
+        if (window.audioPlayer && window.audioPlayer.duration && isFinite(window.audioPlayer.duration)) {
+            window.audioPlayer.currentTime = derived * window.audioPlayer.duration;
+            state.currentTime = window.audioPlayer.currentTime;
+            updateProgressUI();
+            return;
         }
-        if (typeof PlayerEngine !== 'undefined') PlayerEngine.seekToPercent(derived);
+        if (typeof PlayerEngine !== 'undefined') {
+            PlayerEngine.seekTo(targetTime);
+        }
     }
 
     function seekToTime(time) {
-        if (window.audioPlayer && window.audioPlayer.duration) {
-            const target = Math.max(0, Math.min(time, window.audioPlayer.duration));
-            // Set the seeking flag so the waiting handler suppresses the toast
-            window._isSeeking = true;
-            window._seekingUntil = Date.now() + 1200;
+        const target = Math.max(0, Math.min(time, (window.audioPlayer && window.audioPlayer.duration) || (state.duration || 0)));
+        state.currentTime = target;
+        window._isSeeking = true;
+        window._seekingUntil = Date.now() + 1500;
+        updateProgressUI();
+        if (window.audioPlayer && window.audioPlayer.duration && isFinite(window.audioPlayer.duration)) {
             window.audioPlayer.currentTime = target;
         }
-        if (typeof PlayerEngine !== 'undefined') PlayerEngine.seekTo(time);
+        if (typeof PlayerEngine !== 'undefined') PlayerEngine.seekTo(target);
     }
 
     function updatePlayUI(playing) {

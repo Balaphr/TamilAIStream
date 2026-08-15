@@ -2344,6 +2344,225 @@ function renderLatestCollectionsDynamic() {
     renderCollectionsTrack('latestCollectionTrack', DataStore.getLatestCollections());
 }
 
+// ============================================
+// Advertisement Banner Rendering
+// ============================================
+const _adTimers = {};
+
+function renderAdBanners() {
+    const ads = DataStore.getAdvertisements().filter(a => a.enabled !== false);
+    for (let pos = 1; pos <= 4; pos++) {
+        const container = document.getElementById('adBannerContainer' + pos);
+        if (!container) continue;
+        const posAds = ads.filter(a => a.position === pos);
+        if (!posAds.length) {
+            container.innerHTML = '';
+            container.style.display = 'none';
+            if (_adTimers[pos]) { clearInterval(_adTimers[pos]); delete _adTimers[pos]; }
+            continue;
+        }
+        container.style.display = 'block';
+        renderAdSlot(container, posAds, pos);
+    }
+}
+
+function renderAdSlot(container, ads, pos) {
+    if (ads.length === 1) {
+        const ad = ads[0];
+        container.innerHTML = buildAdBannerHTML(ad);
+        initAdTiltEffect(container);
+        return;
+    }
+    let currentIdx = 0;
+    container.innerHTML = `<div class="ad-banner-slide active">${buildAdBannerHTML(ads[0])}</div>`;
+    initAdTiltEffect(container);
+
+    if (_adTimers[pos]) clearInterval(_adTimers[pos]);
+    _adTimers[pos] = setInterval(() => {
+        const slides = container.querySelectorAll('.ad-banner-slide');
+        if (slides.length) slides[currentIdx].classList.remove('active');
+        currentIdx = (currentIdx + 1) % ads.length;
+        container.innerHTML = `<div class="ad-banner-slide active">${buildAdBannerHTML(ads[currentIdx])}</div>`;
+        initAdTiltEffect(container);
+    }, 40000);
+}
+
+function buildAdBannerHTML(ad) {
+    const wrapper = ad.targetLink ? 'a' : 'div';
+    const attrs = ad.targetLink ? `href="${ad.targetLink}" ${ad.targetLink.startsWith('#') ? '' : 'target="_blank" rel="noopener"'}` : '';
+    return `<${wrapper} class="ad-banner-card" ${attrs}>
+        <div class="ad-banner-glow"></div>
+        <img src="${ad.imageUrl}" alt="${ad.title || 'Advertisement'}" class="ad-banner-image" loading="lazy">
+        <div class="ad-banner-overlay">
+            <div class="ad-banner-content">
+                <span class="ad-banner-title">${ad.title || ''}</span>
+                ${ad.description ? `<span class="ad-banner-desc">${ad.description}</span>` : ''}
+            </div>
+        </div>
+        <div class="ad-banner-3d-layer"></div>
+    </${wrapper}>`;
+}
+
+function initAdTiltEffect(container) {
+    const card = container.querySelector('.ad-banner-card');
+    if (!card) return;
+    card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        card.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) scale(1.01)`;
+    });
+    card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) scale(1)';
+    });
+}
+
+// ============================================
+// Albums Section Rendering
+// ============================================
+function renderAlbumsDynamic() {
+    const container = document.getElementById('albumsTrack');
+    if (!container) return;
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
+    if (!songs.length) {
+        container.innerHTML = '<div style="padding:20px;color:#888;text-align:center;width:100%;">No albums yet. Add songs from Builder.</div>';
+        return;
+    }
+    const albumMap = {};
+    songs.forEach(s => {
+        const key = s.movie || s.album || s.artist || 'Singles';
+        if (!albumMap[key]) albumMap[key] = { name: key, songs: [], cover: s.albumCover || s.cover || '' };
+        albumMap[key].songs.push(s);
+        if (!albumMap[key].cover && (s.albumCover || s.cover)) albumMap[key].cover = s.albumCover || s.cover;
+    });
+    const albums = Object.values(albumMap).sort((a, b) => b.songs.length - a.songs.length).slice(0, 20);
+    const placeholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='16' fill='%23374151'/%3E%3Ctext x='60' y='68' text-anchor='middle' fill='%239ca3af' font-size='28'%3E🎵%3C/text%3E%3C/svg%3E";
+    container.innerHTML = albums.map(album => `
+        <div class="album-card" onclick="playAlbumSongs('${album.name.replace(/'/g, "\\'")}')">
+            <div class="album-art">
+                <img src="${album.cover || placeholder}" alt="${album.name}" loading="lazy">
+                <div class="album-play-overlay"><i class="fas fa-play"></i></div>
+                <span class="album-count">${album.songs.length}</span>
+            </div>
+            <div class="album-info">
+                <span class="album-name" title="${album.name}">${album.name}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function playAlbumSongs(albumName) {
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
+    const matched = songs.filter(s => (s.movie || s.album || s.artist || 'Singles') === albumName);
+    if (matched.length && typeof playSong === 'function') {
+        playSong(matched[0], matched);
+        if (typeof showToast === 'function') showToast('Playing ' + albumName, 'success');
+    }
+}
+window.playAlbumSongs = playAlbumSongs;
+
+// ============================================
+// Movie Sidebar (Desktop)
+// ============================================
+function toggleMovieSidebar() {
+    const panel = document.getElementById('movieSidebarPanel');
+    if (!panel) return;
+    if (panel.classList.contains('active')) {
+        closeMovieSidebar();
+    } else {
+        openMovieSidebar();
+    }
+}
+window.toggleMovieSidebar = toggleMovieSidebar;
+
+function openMovieSidebar() {
+    const panel = document.getElementById('movieSidebarPanel');
+    if (!panel) return;
+    panel.classList.add('active');
+    document.getElementById('page-home').classList.add('movie-sidebar-open');
+    renderMovieSidebarContent();
+}
+window.openMovieSidebar = openMovieSidebar;
+
+function closeMovieSidebar() {
+    const panel = document.getElementById('movieSidebarPanel');
+    if (!panel) return;
+    panel.classList.remove('active');
+    document.getElementById('page-home').classList.remove('movie-sidebar-open');
+}
+window.closeMovieSidebar = closeMovieSidebar;
+
+function renderMovieSidebarContent() {
+    const container = document.getElementById('movieSidebarContent');
+    if (!container) return;
+    const collections = DataStore.getMoviesCollections().filter(c => c.status !== 'inactive');
+    if (!collections.length) {
+        container.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#888;"><i class="fas fa-film" style="font-size:40px;margin-bottom:12px;display:block;color:#555;"></i><p>No movie collections yet.</p><p style="font-size:12px;margin-top:8px;">Add from Builder → Content</p></div>';
+        return;
+    }
+    const allSongs = DataStore.getSongs();
+    const placeholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 280'%3E%3Crect width='200' height='280' rx='12' fill='%23374151'/%3E%3Ctext x='100' y='150' text-anchor='middle' fill='%239ca3af' font-size='36'%3E🎬%3C/text%3E%3C/svg%3E";
+    container.innerHTML = collections.map(col => {
+        const thumb = col.thumbnail || placeholder;
+        const songCount = col.songs ? col.songs.length : (col.songCount || 0);
+        const yearMatch = (col.name || '').match(/\d{4}/);
+        const year = yearMatch ? yearMatch[0] : '';
+        return `
+        <div class="movie-sidebar-card" onclick="playCollectionSongs('${col.id}', 'movies')">
+            <div class="movie-sidebar-poster">
+                <img src="${thumb}" alt="${col.name}" loading="lazy">
+                <div class="movie-sidebar-play"><i class="fas fa-play"></i></div>
+            </div>
+            <div class="movie-sidebar-info">
+                <span class="movie-sidebar-title">${col.name}</span>
+                <div class="movie-sidebar-meta">
+                    ${year ? `<span class="movie-sidebar-year"><i class="fas fa-calendar"></i> ${year}</span>` : ''}
+                    <span class="movie-sidebar-count"><i class="fas fa-music"></i> ${songCount} songs</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ============================================
+// Movie Collection Card (separate from round card)
+// ============================================
+function renderMovieCollectionCard(item) {
+    const thumbSrc = item.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 280'%3E%3Crect width='200' height='280' rx='12' fill='%23374151'/%3E%3Ctext x='100' y='150' text-anchor='middle' fill='%239ca3af' font-size='36'%3E🎬%3C/text%3E%3C/svg%3E";
+    const yearMatch = (item.name || '').match(/\d{4}/);
+    const year = yearMatch ? yearMatch[0] : '';
+    return `
+    <div class="movie-collection-card" data-id="${item.id}" onclick="playCollectionSongs('${item.id}', '${item.type || 'movies'}')">
+        <div class="movie-card-poster">
+            <img src="${thumbSrc}" alt="${item.name}" loading="lazy">
+            <div class="movie-card-play"><i class="fas fa-play"></i></div>
+            ${year ? `<span class="movie-card-year">${year}</span>` : ''}
+        </div>
+        <div class="movie-card-info">
+            <span class="movie-card-title">${item.name}</span>
+            <span class="movie-card-count">${item.songCount || (item.songs ? item.songs.length : 0)} songs</span>
+        </div>
+    </div>`;
+}
+
+// Override renderCollectionsTrack to use movie cards for movies type
+const _originalRenderCollectionsTrack = renderCollectionsTrack;
+function renderCollectionsTrack(trackId, items) {
+    const track = document.getElementById(trackId);
+    if (!track) return;
+    if (!items.length) {
+        track.innerHTML = '<div style="padding:20px;color:#888;text-align:center;width:100%;">No collections yet. Add from Builder.</div>';
+        return;
+    }
+    const isMovies = trackId === 'moviesCollectionTrack';
+    track.innerHTML = items.filter(i => i.status !== 'inactive').map(item =>
+        isMovies ? renderMovieCollectionCard(item) : renderRoundCollectionCard(item)
+    ).join('');
+}
+window.renderCollectionsTrack = renderCollectionsTrack;
+
 function playCollectionSongs(collectionId, collectionType) {
     let collections = [];
     if (collectionType === 'movies') collections = DataStore.getMoviesCollections();
@@ -3182,15 +3401,12 @@ function renderAllDynamicContent() {
     renderMoviesCollectionsDynamic();
     renderYearlyCollectionsDynamic();
     renderLatestCollectionsDynamic();
-    renderAIRecommendedDynamic();
-    renderContinueListening();
-    renderDailyMix();
-    renderAllStationsDynamic();
+    renderAdBanners();
+    renderAlbumsDynamic();
     applySiteSettings();
     
     // Re-render songs
     loadSongs(true).then(songs => {
-        displaySongs(songs);
         renderTickerItems(songs);
         renderRecentlyAdded(songs);
         
@@ -3297,6 +3513,9 @@ function setupRealtimeSync() {
             case 'LATEST_COLLECTIONS':
                 renderLatestCollectionsDynamic();
                 break;
+            case 'ADVERTISEMENTS':
+                renderAdBanners();
+                break;
             case 'SITE_SETTINGS':
                 applySiteSettings();
                 break;
@@ -3320,6 +3539,10 @@ function setupRealtimeSync() {
         if (e.key === 'tamilAIStream_songs') {
             console.log('[Sync] Songs updated in another tab');
             handleSongsUpdate();
+        }
+        if (e.key === 'tamilAIStream_advertisements') {
+            console.log('[Sync] Advertisements updated in another tab');
+            renderAdBanners();
         }
         if (e.key === 'tamilAIStream_veOverrides') {
             console.log('[Sync] VE overrides updated from Builder');
@@ -3347,6 +3570,7 @@ function setupRealtimeSync() {
             if (event.data && (event.data.type === 'songs-updated' || event.data.type === 'content-updated')) {
                 console.log('[Sync] Received BroadcastChannel message:', event.data.type);
                 handleSongsUpdate();
+                renderAdBanners();
                 applyVEOverrides();
             }
         };

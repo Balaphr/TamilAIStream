@@ -33,7 +33,8 @@ const DataStore = {
         SITE_CONFIG: 'siteConfig',
         MOVIES_COLLECTIONS: 'tamilAIStream_moviesCollections',
         YEARLY_COLLECTIONS: 'tamilAIStream_yearlyCollections',
-        LATEST_COLLECTIONS: 'tamilAIStream_latestCollections'
+        LATEST_COLLECTIONS: 'tamilAIStream_latestCollections',
+        ADVERTISEMENTS: 'tamilAIStream_advertisements'
     },
 
     get(key) {
@@ -132,6 +133,9 @@ const DataStore = {
     getLatestCollections() { return this.get(this.KEYS.LATEST_COLLECTIONS) || []; },
     setLatestCollections(data) { this.set(this.KEYS.LATEST_COLLECTIONS, data); },
 
+    getAdvertisements() { return this.get(this.KEYS.ADVERTISEMENTS) || []; },
+    setAdvertisements(ads) { this.set(this.KEYS.ADVERTISEMENTS, ads); },
+
     // Initialize with defaults
 init() {
         // Songs
@@ -224,6 +228,9 @@ init() {
         }
         if (!localStorage.getItem(this.KEYS.LATEST_COLLECTIONS)) {
             this.setLatestCollections([]);
+        }
+        if (!localStorage.getItem(this.KEYS.ADVERTISEMENTS)) {
+            this.setAdvertisements([]);
         }
     },
 

@@ -442,15 +442,12 @@
                 <!-- AI Greeting Section -->
                 <div class="greeting-section" data-section="greeting"></div>
 
-                <!-- Continue Listening -->
-                <section class="section continue-listening-section" data-section="continue-listening" data-premium-reveal id="continueListeningSection" style="display:none;">
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Resume"><i class="fas fa-history" style="color:#22d3ee;margin-right:8px;"></i>Continue Listening</h2>
-                    </div>
-                    <div class="stations-track" id="continueListeningTrack"></div>
+                <!-- Advertisement Banner — Position 1 (Top) -->
+                <section class="section ad-banner-section" data-section="ad-banner-1" data-premium-reveal>
+                    <div class="ad-banner-container" id="adBannerContainer1"></div>
                 </section>
 
-                <!-- Recently Added Songs Marquee -->
+                <!-- Recently Added Songs -->
                 <section class="section recently-added-section" data-section="recently-added" data-premium-reveal>
                     <div class="section-header">
                         <h2 class="section-title" data-kicker="Fresh"><i class="fas fa-clock-rotate-left" style="color:var(--emerald-400);margin-right:8px;"></i>Recently Added</h2>
@@ -458,6 +455,11 @@
                     <div class="recently-added-viewport" id="recentlyAddedViewport">
                         <div class="recently-added-track" id="recentlyAddedTrack"></div>
                     </div>
+                </section>
+
+                <!-- Advertisement Banner — Position 2 -->
+                <section class="section ad-banner-section" data-section="ad-banner-2" data-premium-reveal>
+                    <div class="ad-banner-container" id="adBannerContainer2"></div>
                 </section>
 
                 <!-- Trending Songs -->
@@ -472,89 +474,12 @@
                     <div class="stations-track"></div>
                 </section>
 
-                <!-- AI Recommended -->
-                <section class="section ai-section" data-section="ai-recommended" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="For You">
-                            <span class="ai-orb-container">
-                                <span class="ai-orb">
-                                    <span class="ai-orb-ring ai-orb-ring-1"></span>
-                                    <span class="ai-orb-ring ai-orb-ring-2"></span>
-                                    <span class="ai-orb-ring ai-orb-ring-3"></span>
-                                    <span class="ai-orb-core"></span>
-                                </span>
-                            </span>
-                            AI Recommended
-                        </h2>
-                        <div class="slider-controls">
-                            <button class="slider-btn scroll-left" aria-label="Scroll left"><i class="fas fa-chevron-left"></i></button>
-                            <button class="slider-btn scroll-right" aria-label="Scroll right"><i class="fas fa-chevron-right"></i></button>
-                        </div>
-                    </div>
-                    <div class="stations-track"></div>
+                <!-- Advertisement Banner — Position 3 -->
+                <section class="section ad-banner-section" data-section="ad-banner-3" data-premium-reveal>
+                    <div class="ad-banner-container" id="adBannerContainer3"></div>
                 </section>
 
-                <!-- Daily Mix -->
-                <section class="section daily-mix-section" data-section="daily-mix" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Mix"><i class="fas fa-shuffle" style="color:#a855f7;margin-right:8px;"></i>Your Daily Mix</h2>
-                        <button class="see-all-btn" onclick="if(typeof renderDailyMix==='function')renderDailyMix()">Refresh</button>
-                    </div>
-                    <div class="stations-track" id="dailyMixTrack"></div>
-                </section>
-
-                <!-- Mood Player -->
-                <section class="section mood-section" data-section="mood-player" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Moods"><i class="fas fa-wand-magic-sparkles" style="color:#f43f5e;margin-right:8px;"></i>AI Mood Player</h2>
-                    </div>
-                    <div class="mood-grid" id="moodGrid">
-                        <button class="mood-card" data-mood="happy"><div class="mood-icon">😊</div><span>Happy</span></button>
-                        <button class="mood-card" data-mood="love"><div class="mood-icon">❤️</div><span>Love</span></button>
-                        <button class="mood-card" data-mood="sad"><div class="mood-icon">😢</div><span>Sad</span></button>
-                        <button class="mood-card" data-mood="peaceful"><div class="mood-icon">🕊️</div><span>Peaceful</span></button>
-                        <button class="mood-card" data-mood="devotional"><div class="mood-icon">🙏</div><span>Devotional</span></button>
-                        <button class="mood-card" data-mood="travel"><div class="mood-icon">✈️</div><span>Travel</span></button>
-                        <button class="mood-card" data-mood="party"><div class="mood-icon">🎉</div><span>Party</span></button>
-                        <button class="mood-card" data-mood="motivation"><div class="mood-icon">💪</div><span>Motivation</span></button>
-                        <button class="mood-card" data-mood="relax"><div class="mood-icon">😌</div><span>Relax</span></button>
-                        <button class="mood-card" data-mood="focus"><div class="mood-icon">🎯</div><span>Focus</span></button>
-                        <button class="mood-card" data-mood="sleep"><div class="mood-icon">🌙</div><span>Sleep</span></button>
-                        <button class="mood-card" data-mood="workout"><div class="mood-icon">🏋️</div><span>Workout</span></button>
-                    </div>
-                </section>
-
-                <!-- Artist Hits -->
-                <section class="section tamil-hits-section" data-section="tamil-hits" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Artists">Artist Hits</h2>
-                        <button class="see-all-btn" onclick="document.querySelector('[data-page=\'artists\']').click()">See All</button>
-                    </div>
-                    <div class="tamil-hits-grid" id="tamilHitsGrid"></div>
-                </section>
-
-                <section class="section movies-collection-section" data-section="movies-collection" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Movies"><i class="fas fa-film" style="color:#f59e0b;margin-right:8px;"></i>Movie Collections</h2>
-                    </div>
-                    <div class="carousel-container">
-                        <button class="carousel-btn carousel-prev" onclick="scrollCarousel(this, -1)"><i class="fas fa-chevron-left"></i></button>
-                        <div class="carousel-track" id="moviesCollectionTrack"></div>
-                        <button class="carousel-btn carousel-next" onclick="scrollCarousel(this, 1)"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </section>
-
-                <section class="section yearly-collection-section" data-section="yearly-collection" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Years"><i class="fas fa-calendar-days" style="color:#10b981;margin-right:8px;"></i>Yearly Collections</h2>
-                    </div>
-                    <div class="carousel-container">
-                        <button class="carousel-btn carousel-prev" onclick="scrollCarousel(this, -1)"><i class="fas fa-chevron-left"></i></button>
-                        <div class="carousel-track" id="yearlyCollectionTrack"></div>
-                        <button class="carousel-btn carousel-next" onclick="scrollCarousel(this, 1)"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </section>
-
+                <!-- Latest Releases -->
                 <section class="section latest-collection-section" data-section="latest-collection" data-premium-reveal>
                     <div class="section-header">
                         <h2 class="section-title" data-kicker="New"><i class="fas fa-bolt" style="color:#ec4899;margin-right:8px;"></i>Latest Releases</h2>
@@ -566,16 +491,67 @@
                     </div>
                 </section>
 
-                <!-- All Published Songs (from Builder) -->
-                <section class="section songs-section" data-section="songs" data-premium-reveal>
+                <!-- Advertisement Banner — Position 4 -->
+                <section class="section ad-banner-section" data-section="ad-banner-4" data-premium-reveal>
+                    <div class="ad-banner-container" id="adBannerContainer4"></div>
+                </section>
+
+                <!-- Albums -->
+                <section class="section albums-section" data-section="albums" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title" data-kicker="Songs"><i class="fas fa-compact-disc" style="color:var(--emerald-400);margin-right:8px;"></i>Popular Songs</h2>
-                        <span class="songs-count" id="songsCount"></span>
+                        <h2 class="section-title" data-kicker="Albums"><i class="fas fa-compact-disc" style="color:#a855f7;margin-right:8px;"></i>Albums</h2>
+                        <div class="slider-controls">
+                            <button class="slider-btn scroll-left" aria-label="Scroll left"><i class="fas fa-chevron-left"></i></button>
+                            <button class="slider-btn scroll-right" aria-label="Scroll right"><i class="fas fa-chevron-right"></i></button>
+                        </div>
                     </div>
-                    <div class="songs-grid" id="songsContainer"></div>
+                    <div class="stations-track" id="albumsTrack"></div>
+                </section>
+
+                <!-- Artist Hits -->
+                <section class="section tamil-hits-section" data-section="tamil-hits" data-premium-reveal>
+                    <div class="section-header">
+                        <h2 class="section-title" data-kicker="Artists">Artist Hits</h2>
+                        <button class="see-all-btn" onclick="document.querySelector('[data-page=\'artists\']').click()">See All</button>
+                    </div>
+                    <div class="tamil-hits-grid" id="tamilHitsGrid"></div>
+                </section>
+
+                <!-- Movie Collections -->
+                <section class="section movies-collection-section" data-section="movies-collection" data-premium-reveal>
+                    <div class="section-header">
+                        <h2 class="section-title" data-kicker="Movies"><i class="fas fa-film" style="color:#f59e0b;margin-right:8px;"></i>Movie Collections</h2>
+                        <button class="see-all-btn movie-sidebar-toggle" onclick="toggleMovieSidebar()" title="Browse Movies"><i class="fas fa-chevron-right"></i> Browse</button>
+                    </div>
+                    <div class="carousel-container">
+                        <button class="carousel-btn carousel-prev" onclick="scrollCarousel(this, -1)"><i class="fas fa-chevron-left"></i></button>
+                        <div class="carousel-track" id="moviesCollectionTrack"></div>
+                        <button class="carousel-btn carousel-next" onclick="scrollCarousel(this, 1)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </section>
+
+                <!-- Yearly Collections -->
+                <section class="section yearly-collection-section" data-section="yearly-collection" data-premium-reveal>
+                    <div class="section-header">
+                        <h2 class="section-title" data-kicker="Years"><i class="fas fa-calendar-days" style="color:#10b981;margin-right:8px;"></i>Yearly Collections</h2>
+                    </div>
+                    <div class="carousel-container">
+                        <button class="carousel-btn carousel-prev" onclick="scrollCarousel(this, -1)"><i class="fas fa-chevron-left"></i></button>
+                        <div class="carousel-track" id="yearlyCollectionTrack"></div>
+                        <button class="carousel-btn carousel-next" onclick="scrollCarousel(this, 1)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
                 </section>
 
             </div><!-- /page-home -->
+
+            <!-- Desktop Movie Sidebar Panel -->
+            <div class="movie-sidebar-panel" id="movieSidebarPanel">
+                <div class="movie-sidebar-header">
+                    <h3><i class="fas fa-film"></i> Movie Collections</h3>
+                    <button class="movie-sidebar-close" onclick="closeMovieSidebar()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="movie-sidebar-content" id="movieSidebarContent"></div>
+            </div>
 
             <!-- ============ PAGE: SEARCH ============ -->
             <div class="ytm-page ytm-page-search" id="page-search">

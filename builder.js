@@ -370,6 +370,7 @@ function navigateTo(page) {
         'player': 'playerPage',
         'navigation': 'navigationPage',
         'sections': 'sectionsPage',
+        'ads': 'adsPage',
         'visualeditor': 'visualeditorPage',
         'miniplayersettings': 'miniplayersettingsPage',
         'preview': 'previewPage',
@@ -407,6 +408,7 @@ function navigateTo(page) {
     if (page === 'player') loadPlayerPrefs();
     if (page === 'navigation') loadNavigation();
     if (page === 'sections') loadSectionsOrder();
+    if (page === 'ads') loadAdsTable();
     if (page === 'visualeditor') initVisualEditor();
     if (page === 'miniplayersettings') loadMiniPlayerSettings();
     if (page === 'preview') updatePreview();
@@ -1291,6 +1293,7 @@ function saveDraft() {
             navigation: DataStore.getNavigation(),
             sectionsOrder: DataStore.getSectionsOrder(),
             miniPlayerSettings: DataStore.getMiniPlayerSettings(),
+            advertisements: DataStore.getAdvertisements(),
             savedAt: new Date().toISOString()
         };
         localStorage.setItem('builderDraft', JSON.stringify(draftData));
@@ -1351,7 +1354,8 @@ async function publishChanges() {
                 artistHits: DataStore.getArtistHits().length,
                 quotes: DataStore.getQuotes().length,
                 sections: DataStore.getLayout().length,
-                miniPlayer: Object.keys(DataStore.getMiniPlayerSettings()).length > 0
+                miniPlayer: Object.keys(DataStore.getMiniPlayerSettings()).length > 0,
+                advertisements: DataStore.getAdvertisements().length
             }
         };
         publishHistory.unshift(publishEntry);
@@ -4368,6 +4372,172 @@ function saveSectionsOrder() {
     updateSectionOrders();
     showToast('Sections order saved', 'success');
     syncToLiveWebsite();
+}
+
+// ============================================
+// Advertisement/Banner Management
+// ============================================
+const AD_POSITIONS = {
+    1: 'Top (Before Recently Added)',
+    2: 'After Recently Added',
+    3: 'After Trending',
+    4: 'After Latest Releases'
+};
+
+function loadAdsTable() {
+    const ads = DataStore.getAdvertisements();
+    const tbody = document.getElementById('adsTableBody');
+    const emptyState = document.getElementById('adsEmptyState');
+    if (!tbody) return;
+
+    if (!ads.length) {
+        tbody.innerHTML = '';
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+    }
+    if (emptyState) emptyState.style.display = 'none';
+
+    tbody.innerHTML = ads.sort((a, b) => (a.position || 0) - (b.position || 0)).map(ad => {
+        const thumbSrc = ad.imageUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 60'%3E%3Crect width='120' height='60' rx='6' fill='%23374151'/%3E%3Ctext x='60' y='35' text-anchor='middle' fill='%239ca3af' font-size='11'%3EAd Banner%3C/text%3E%3C/svg%3E";
+        return `
+        <tr>
+            <td><img src="${thumbSrc}" alt="${ad.title || ''}" style="width:120px;height:60px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);"></td>
+            <td><strong>${ad.title || 'Untitled'}</strong><br><small style="color:#888;">${ad.description || ''}</small></td>
+            <td><span style="background:rgba(52,211,153,0.15);color:#6ee7b7;padding:3px 10px;border-radius:12px;font-size:12px;">Position ${ad.position || '?'} — ${AD_POSITIONS[ad.position] || 'Unknown'}</span></td>
+            <td><span class="status-badge ${ad.enabled !== false ? 'active' : 'inactive'}" style="cursor:pointer;" onclick="toggleAd('${ad.id}')">${ad.enabled !== false ? 'Enabled' : 'Disabled'}</span></td>
+            <td>
+                <div style="display:flex;gap:6px;">
+                    <button class="builder-btn small" onclick="openEditAdModal('${ad.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+                    <button class="builder-btn small danger" onclick="deleteAd('${ad.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function openAddAdModal() {
+    document.getElementById('adModalTitle').textContent = 'Add Advertisement';
+    document.getElementById('adEditId').value = '';
+    document.getElementById('adForm').reset();
+    document.getElementById('adEnabled').value = 'true';
+    document.getElementById('adPosition').value = '1';
+    const preview = document.getElementById('adImagePreview');
+    if (preview) preview.style.display = 'none';
+    document.getElementById('adModalOverlay').style.display = 'flex';
+}
+
+function openEditAdModal(adId) {
+    const ads = DataStore.getAdvertisements();
+    const ad = ads.find(a => a.id === adId);
+    if (!ad) return;
+
+    document.getElementById('adModalTitle').textContent = 'Edit Advertisement';
+    document.getElementById('adEditId').value = ad.id;
+    document.getElementById('adTitle').value = ad.title || '';
+    document.getElementById('adDescription').value = ad.description || '';
+    document.getElementById('adImageUrl').value = ad.imageUrl || '';
+    document.getElementById('adTargetLink').value = ad.targetLink || '';
+    document.getElementById('adPosition').value = String(ad.position || 1);
+    document.getElementById('adEnabled').value = ad.enabled !== false ? 'true' : 'false';
+
+    const preview = document.getElementById('adImagePreview');
+    if (ad.imageUrl && preview) {
+        preview.querySelector('img').src = ad.imageUrl;
+        preview.style.display = 'block';
+    } else if (preview) {
+        preview.style.display = 'none';
+    }
+
+    document.getElementById('adModalOverlay').style.display = 'flex';
+}
+
+function closeAdModal() {
+    document.getElementById('adModalOverlay').style.display = 'none';
+}
+
+async function saveAd(event) {
+    event.preventDefault();
+    const editId = document.getElementById('adEditId').value;
+    const title = document.getElementById('adTitle').value.trim();
+    const description = document.getElementById('adDescription').value.trim();
+    const imageUrlInput = document.getElementById('adImageUrl').value.trim();
+    const imageFile = document.getElementById('adImageFile').files[0];
+    const targetLink = document.getElementById('adTargetLink').value.trim();
+    const position = parseInt(document.getElementById('adPosition').value) || 1;
+    const enabled = document.getElementById('adEnabled').value === 'true';
+
+    if (!title) { showToast('Title is required', 'warning'); return; }
+
+    let imageUrl = imageUrlInput;
+    let imagePublicId = '';
+
+    if (imageFile) {
+        try {
+            const result = await R2Uploader.uploadImage(imageFile, 'tamil-ai-stream/banners', (pct) => {
+                console.log('Upload progress:', pct + '%');
+            });
+            if (result && result.url) {
+                imageUrl = result.url;
+                imagePublicId = result.publicId || '';
+            }
+        } catch (err) {
+            console.error('Banner upload failed:', err);
+            showToast('Image upload failed. Using URL fallback.', 'warning');
+            if (!imageUrl) { showToast('Please provide an image URL or file', 'error'); return; }
+        }
+    }
+
+    if (!imageUrl) { showToast('Banner image is required', 'warning'); return; }
+
+    const ads = DataStore.getAdvertisements();
+    const now = new Date().toISOString();
+
+    if (editId) {
+        const idx = ads.findIndex(a => a.id === editId);
+        if (idx !== -1) {
+            ads[idx] = Object.assign({}, ads[idx], {
+                title, description, imageUrl,
+                imagePublicId: imagePublicId || ads[idx].imagePublicId,
+                targetLink, position, enabled, updatedAt: now
+            });
+        }
+    } else {
+        ads.push({
+            id: 'ad_' + Date.now(),
+            title, description, imageUrl, imagePublicId,
+            targetLink, position, enabled,
+            createdAt: now, updatedAt: now
+        });
+    }
+
+    DataStore.setAdvertisements(ads);
+    closeAdModal();
+    loadAdsTable();
+    showToast(editId ? 'Advertisement updated' : 'Advertisement added', 'success');
+    syncToLiveWebsite();
+}
+
+function deleteAd(adId) {
+    if (!confirm('Delete this advertisement?')) return;
+    let ads = DataStore.getAdvertisements();
+    ads = ads.filter(a => a.id !== adId);
+    DataStore.setAdvertisements(ads);
+    loadAdsTable();
+    showToast('Advertisement deleted', 'success');
+    syncToLiveWebsite();
+}
+
+function toggleAd(adId) {
+    const ads = DataStore.getAdvertisements();
+    const ad = ads.find(a => a.id === adId);
+    if (ad) {
+        ad.enabled = !ad.enabled;
+        ad.updatedAt = new Date().toISOString();
+        DataStore.setAdvertisements(ads);
+        loadAdsTable();
+        showToast(ad.enabled ? 'Advertisement enabled' : 'Advertisement disabled', 'info');
+        syncToLiveWebsite();
+    }
 }
 
 // ============================================

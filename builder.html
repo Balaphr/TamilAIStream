@@ -180,6 +180,9 @@
                         <button class="builder-nav-item" data-page="sections">
                             <i class="fas fa-sort-amount-up"></i> Sections
                         </button>
+                        <button class="builder-nav-item" data-page="ads">
+                            <i class="fas fa-ad"></i> Ads
+                        </button>
                         <button class="builder-nav-item" data-page="visualeditor">
                             <i class="fas fa-wand-magic-sparkles"></i> Visual Editor
                         </button>
@@ -1243,6 +1246,100 @@
                             <div class="builder-card-body">
                                 <div id="sectionsList" class="sections-drag-list"></div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Ads/Banners Management Page -->
+                    <div class="builder-page" id="adsPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Advertisement Banners</h1>
+                            <p class="builder-page-subtitle">Manage advertisement banners displayed on the Home page</p>
+                        </div>
+                        <div class="builder-content-card">
+                            <div class="builder-card-header">
+                                <h3>All Advertisements</h3>
+                                <button class="builder-btn primary" onclick="openAddAdModal()"><i class="fas fa-plus"></i> Add Advertisement</button>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="builder-table-wrap">
+                                    <table class="builder-table" id="adsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Preview</th>
+                                                <th>Title</th>
+                                                <th>Position</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="adsTableBody"></tbody>
+                                    </table>
+                                </div>
+                                <div id="adsEmptyState" style="display:none;text-align:center;padding:40px 20px;color:#888;">
+                                    <i class="fas fa-ad" style="font-size:48px;margin-bottom:16px;display:block;color:#555;"></i>
+                                    <p>No advertisements yet. Click "Add Advertisement" to create one.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add/Edit Advertisement Modal -->
+                    <div class="builder-modal-overlay" id="adModalOverlay" style="display:none;">
+                        <div class="builder-modal" style="max-width:640px;">
+                            <div class="builder-modal-header">
+                                <h3 id="adModalTitle">Add Advertisement</h3>
+                                <button class="builder-modal-close" onclick="closeAdModal()"><i class="fas fa-times"></i></button>
+                            </div>
+                            <form id="adForm" onsubmit="return saveAd(event)">
+                                <div class="builder-modal-body">
+                                    <input type="hidden" id="adEditId" value="">
+                                    <div class="form-grid">
+                                        <div class="form-group" style="grid-column:1/-1;">
+                                            <label class="form-label">Banner Title</label>
+                                            <input type="text" class="form-input" id="adTitle" placeholder="e.g. Summer Music Festival" required>
+                                        </div>
+                                        <div class="form-group" style="grid-column:1/-1;">
+                                            <label class="form-label">Description</label>
+                                            <textarea class="form-input" id="adDescription" rows="2" placeholder="Brief description of the advertisement"></textarea>
+                                        </div>
+                                        <div class="form-group" style="grid-column:1/-1;">
+                                            <label class="form-label">Banner Image</label>
+                                            <div style="display:flex;gap:10px;align-items:center;">
+                                                <input type="file" class="form-input" id="adImageFile" accept="image/*" style="flex:1;">
+                                                <span style="color:#888;font-size:12px;">or</span>
+                                                <input type="text" class="form-input" id="adImageUrl" placeholder="Image URL" style="flex:1;">
+                                            </div>
+                                            <div id="adImagePreview" style="margin-top:10px;display:none;">
+                                                <img src="" alt="Preview" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);">
+                                            </div>
+                                        </div>
+                                        <div class="form-group" style="grid-column:1/-1;">
+                                            <label class="form-label">Target Link</label>
+                                            <input type="text" class="form-input" id="adTargetLink" placeholder="e.g. #trending or https://example.com">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Position on Home Page</label>
+                                            <select class="form-input" id="adPosition" required>
+                                                <option value="1">Position 1 — Top (Before Recently Added)</option>
+                                                <option value="2">Position 2 — After Recently Added</option>
+                                                <option value="3">Position 3 — After Trending</option>
+                                                <option value="4">Position 4 — After Latest Releases</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Status</label>
+                                            <select class="form-input" id="adEnabled">
+                                                <option value="true">Enabled</option>
+                                                <option value="false">Disabled</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="builder-modal-footer">
+                                    <button type="button" class="builder-btn" onclick="closeAdModal()">Cancel</button>
+                                    <button type="submit" class="builder-btn primary"><i class="fas fa-save"></i> Save Advertisement</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
 

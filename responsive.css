@@ -1011,7 +1011,135 @@ body {
 }
 }
 
+/* ============================================
+   Responsive: Advertisement Banners
+   ============================================ */
+@media (max-width: 640px) {
+    .ad-banner-section { padding: 0 12px; margin: 6px 0; }
+    .ad-banner-image { height: 120px; }
+    .ad-banner-title { font-size: 14px; }
+    .ad-banner-desc { font-size: 11px; }
+    .ad-banner-overlay { padding: 14px 16px; }
+}
+@media (min-width: 641px) and (max-width: 1024px) {
+    .ad-banner-image { height: 150px; }
+}
+@media (min-width: 1025px) {
+    .ad-banner-section { max-width: 900px; margin: 8px auto; }
+    .ad-banner-image { height: 180px; }
+}
 
+/* ============================================
+   Responsive: Album Cards
+   ============================================ */
+@media (max-width: 640px) {
+    .album-card { flex: 0 0 140px; }
+    .album-art { width: 140px; height: 140px; }
+}
+@media (min-width: 641px) and (max-width: 1024px) {
+    .album-card { flex: 0 0 160px; }
+    .album-art { width: 160px; height: 160px; }
+}
+
+/* ============================================
+   Responsive: Movie Collection Cards
+   ============================================ */
+@media (max-width: 640px) {
+    .movie-collection-card { flex: 0 0 150px; }
+    .movie-card-poster { width: 150px; height: 210px; }
+    .movie-card-title { font-size: 12px; }
+}
+@media (min-width: 641px) and (max-width: 1024px) {
+    .movie-collection-card { flex: 0 0 180px; }
+    .movie-card-poster { width: 180px; height: 252px; }
+}
+
+/* ============================================
+   Responsive: Horizontal Scroll Touch
+   ============================================ */
+@media (max-width: 1024px) {
+    .ytm-page-home .stations-track {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 8px;
+    }
+    .ytm-page-home .carousel-track {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 8px;
+    }
+    .carousel-btn { display: none !important; }
+}
+
+/* ============================================
+   Responsive: Desktop Enhancements
+   ============================================ */
+@media (min-width: 1025px) {
+    .ytm-page-home .stations-track:hover .slider-controls .slider-btn {
+        opacity: 1;
+    }
+    .slider-controls .slider-btn {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    .slider-controls:hover .slider-btn {
+        opacity: 1;
+    }
+    .section-header {
+        position: relative;
+    }
+    .slider-controls {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+}
+
+/* ============================================
+   Responsive: Movie Sidebar
+   ============================================ */
+@media (min-width: 1025px) {
+    .movie-sidebar-panel {
+        box-shadow: -4px 0 30px rgba(0,0,0,0.5);
+    }
+    .movie-sidebar-panel.active ~ .ytm-page-home,
+    .ytm-page-home.movie-sidebar-open {
+        transition: margin-right 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+}
+
+/* ============================================
+   Responsive: Song Cards Horizontal Scroll
+   ============================================ */
+@media (max-width: 640px) {
+    .song-card {
+        flex: 0 0 140px;
+    }
+    .song-card .song-thumbnail {
+        width: 140px;
+        height: 140px;
+    }
+    .song-card .song-title {
+        font-size: 12px;
+    }
+    .song-card .song-artist {
+        font-size: 11px;
+    }
+}
+@media (min-width: 641px) and (max-width: 1024px) {
+    .song-card {
+        flex: 0 0 160px;
+    }
+    .song-card .song-thumbnail {
+        width: 160px;
+        height: 160px;
+    }
+}
 
 
 
