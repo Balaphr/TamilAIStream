@@ -113,6 +113,23 @@ const YTMusic = {
     setupEventListeners() {
         // Browser back/forward → restore previous page without touching playback.
         window.addEventListener('popstate', () => {
+            // If kebab menu is being closed by its own handler, skip navigation
+            const kebabMenu = document.getElementById('premiumKebabMenu');
+            if (kebabMenu && kebabMenu.classList.contains('open')) {
+                // Kebab is still open — its own popstate will close it, we skip
+                return;
+            }
+            // Check if we just came from a kebab-closed state (flag set by kebab close)
+            if (window._kebabClosing) {
+                window._kebabClosing = false;
+                return;
+            }
+            // Close sidebar if open (mobile/tablet)
+            const sidebar = document.getElementById('premiumSidebar');
+            if (sidebar && sidebar.classList.contains('open')) {
+                this.togglePremiumSidebar(false);
+                return;
+            }
             const hash = (location.hash || '').replace('#', '');
             const target = hash && document.getElementById('page-' + hash) ? hash : 'home';
             this.navigateTo(target, { _fromPop: true });
@@ -123,6 +140,18 @@ const YTMusic = {
             item.addEventListener('click', () => {
                 this.navigateTo(item.dataset.page);
                 this.togglePremiumSidebar(false);
+            });
+        });
+
+        // Premium bottom navigation
+        document.querySelectorAll('.tamilai-nav-item[data-page]').forEach(item => {
+            item.addEventListener('click', () => {
+                this.navigateTo(item.dataset.page);
+                // Update active state
+                document.querySelectorAll('.tamilai-nav-item').forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+                // Scroll to top
+                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e) {}
             });
         });
 
@@ -525,6 +554,10 @@ const YTMusic = {
         document.querySelectorAll('.premium-sidebar-item[data-page]').forEach(item => {
             item.classList.toggle('active', item.dataset.page === page);
         });
+        // Bottom nav active state
+        document.querySelectorAll('.tamilai-nav-item[data-page]').forEach(item => {
+            item.classList.toggle('active', item.dataset.page === page);
+        });
         // Legacy sidebar compat
         document.querySelectorAll('.ytm-sidebar-item[data-page]').forEach(item => {
             item.classList.toggle('active', item.dataset.page === page);
@@ -591,6 +624,15 @@ const YTMusic = {
         overlay.classList.toggle('active', shouldOpen);
         if (hamburger) hamburger.classList.toggle('active', shouldOpen);
         document.body.style.overflow = shouldOpen ? 'hidden' : '';
+        // Push/pop history for back button support
+        if (shouldOpen && !isOpen) {
+            history.pushState({ sidebar: true }, '');
+        } else if (!shouldOpen && isOpen) {
+            // Only pop if we pushed the state
+            if (history.state && history.state.sidebar) {
+                history.back();
+            }
+        }
     },
 
     updatePremiumSidebarUser() {

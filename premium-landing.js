@@ -123,23 +123,57 @@ const TamilAIPremium = (function () {
     function bindKebabMenu() {
         const btn = $('premiumKebabBtn');
         const menu = $('premiumKebabMenu');
+        const overlay = $('premiumKebabOverlay');
+        const closeBtn = $('premiumKebabClose');
         if (!btn || !menu) return;
 
-        function open(force) {
+        function openKebab(force) {
             const shouldOpen = typeof force === 'boolean' ? force : !menu.classList.contains('open');
             menu.classList.toggle('open', shouldOpen);
             btn.classList.toggle('active', shouldOpen);
+            if (overlay) overlay.classList.toggle('open', shouldOpen);
+            document.body.style.overflow = shouldOpen ? 'hidden' : '';
         }
 
-        // Desktop (>=1025px): clicking 3-dot opens the left sidebar
-        // Mobile (<1025px): clicking 3-dot opens the left sidebar (closed by default)
+        // 3-dot button opens the kebab dropdown menu
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Close the kebab dropdown if it was open
-            open(false);
-            // Toggle the sidebar
-            if (typeof YTMusic !== 'undefined' && YTMusic.togglePremiumSidebar) {
-                YTMusic.togglePremiumSidebar();
+            const isNowOpen = !menu.classList.contains('open');
+            openKebab(isNowOpen);
+            // Push history only when opening so back button can close it
+            if (isNowOpen) {
+                history.pushState({ kebab: true }, '');
+            }
+        });
+
+        // Close button
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (menu.classList.contains('open') && history.state && history.state.kebab) {
+                    history.back();
+                } else {
+                    openKebab(false);
+                }
+            });
+        }
+
+        // Overlay click closes
+        if (overlay) {
+            overlay.addEventListener('click', () => {
+                if (menu.classList.contains('open') && history.state && history.state.kebab) {
+                    history.back();
+                } else {
+                    openKebab(false);
+                }
+            });
+        }
+
+        // Back button closes kebab — just close UI, don't push/pop again
+        window.addEventListener('popstate', () => {
+            if (menu.classList.contains('open')) {
+                window._kebabClosing = true;
+                openKebab(false);
             }
         });
 
@@ -148,10 +182,11 @@ const TamilAIPremium = (function () {
             const item = e.target.closest('.premium-kebab-item');
             if (!item) return;
             e.stopPropagation();
-            open(false);
-            // On mobile: close sidebar after selecting an option
-            if (window.innerWidth < 1025 && typeof YTMusic !== 'undefined' && YTMusic.togglePremiumSidebar) {
-                YTMusic.togglePremiumSidebar(false);
+            // Close via history.back() if we pushed state
+            if (history.state && history.state.kebab) {
+                history.back();
+            } else {
+                openKebab(false);
             }
             const goto = item.dataset.goto;
             if (goto) {
@@ -163,11 +198,29 @@ const TamilAIPremium = (function () {
                 if (typeof YTMusic.toggleSettingsPanel === 'function') YTMusic.toggleSettingsPanel();
             }
         });
+
+        // Outside click closes
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.premium-kebab-btn') && !e.target.closest('.premium-kebab-menu')) open(false);
+            if (!e.target.closest('.premium-kebab-btn') && !e.target.closest('.premium-kebab-menu')) {
+                if (menu.classList.contains('open')) {
+                    if (history.state && history.state.kebab) {
+                        history.back();
+                    } else {
+                        openKebab(false);
+                    }
+                }
+            }
         });
+
+        // Escape key closes
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') open(false);
+            if (e.key === 'Escape' && menu.classList.contains('open')) {
+                if (history.state && history.state.kebab) {
+                    history.back();
+                } else {
+                    openKebab(false);
+                }
+            }
         });
     }
 

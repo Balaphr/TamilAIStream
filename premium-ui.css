@@ -55,13 +55,20 @@ textarea {
     display: flex !important;
 }
 
-@media (max-width: 1024px) {
-    .premium-kebab-btn {
-        display: none !important;
-    }
-    .premium-kebab-menu {
-        display: none !important;
-    }
+/* Kebab overlay */
+.premium-kebab-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2190;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s;
+    -webkit-tap-highlight-color: transparent;
+}
+.premium-kebab-overlay.open {
+    opacity: 1;
+    visibility: visible;
 }
 
 .premium-kebab-btn.active {
@@ -74,11 +81,13 @@ textarea {
     position: fixed;
     right: 20px;
     top: calc(var(--ytm-header-height, 64px) + 12px);
-    width: 250px;
+    width: 280px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
     z-index: 2200;
-    background: rgba(13, 18, 30, 0.92);
-    backdrop-filter: blur(30px) saturate(160%);
-    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    background: rgba(13, 18, 30, 0.95);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 18px;
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6), 0 0 40px rgba(52, 211, 153, 0.06);
@@ -96,13 +105,43 @@ textarea {
     visibility: visible;
 }
 
+/* Header with close button */
 .premium-kebab-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding: 10px 14px 8px;
+}
+
+.premium-kebab-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.4);
+}
+
+.premium-kebab-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s, color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.premium-kebab-close:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
 }
 
 .premium-kebab-item {
@@ -730,8 +769,9 @@ textarea {
 
 @media (max-width: 700px) {
     .premium-kebab-menu {
-        right: 10px;
-        width: min(250px, calc(100vw - 20px));
+        right: 0;
+        left: 0;
+        width: 100%;
     }
 
     .premium-radio-page {
@@ -2049,7 +2089,7 @@ html.builder-preview #premiumKebabMenu {
     background: rgba(52, 211, 153, 0.08) !important;
 }
 .premium-kebab-menu {
-    max-height: 70vh;
+    max-height: calc(100vh - 120px);
     overflow-y: auto;
 }
 .premium-kebab-menu::-webkit-scrollbar {
@@ -2808,4 +2848,34 @@ html.builder-preview #premiumKebabMenu {
     .universe-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
     .dashboard-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .ai-top-notif { max-width: 100%; }
+}
+
+/* ---- KEBAB MENU — Mobile Bottom Sheet ---- */
+@media (max-width: 1024px) {
+    .premium-kebab-menu {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: 100%;
+        max-height: 80vh;
+        border-radius: 20px 20px 0 0;
+        transform-origin: bottom center;
+        transform: translateY(100%);
+        padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    }
+    .premium-kebab-menu.open {
+        transform: translateY(0);
+    }
+    .premium-kebab-header {
+        padding: 12px 16px 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .premium-kebab-section {
+        padding: 4px 8px;
+    }
+    .premium-kebab-section-title {
+        padding: 8px 12px 4px;
+    }
 }

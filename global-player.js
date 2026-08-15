@@ -920,7 +920,10 @@ const GlobalPlayer = (() => {
         if (!isOpen) loadLyrics();
     }
 
-    function showMiniPlayer() { miniEl?.classList.add('visible'); }
+    function showMiniPlayer() {
+        miniEl?.classList.add('visible');
+        document.body.classList.add('gp-visible');
+    }
 
     function loadLyrics() {
         const content = document.getElementById('gpLyricsContent');
@@ -1138,6 +1141,7 @@ const GlobalPlayer = (() => {
         const miniEl = document.getElementById('gp-mini');
         if (miniEl) miniEl.classList.remove('visible');
         document.body.classList.remove('gp-active');
+        document.body.classList.remove('gp-visible');
     }
 
     function toggleAiBot() {
