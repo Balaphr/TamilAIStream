@@ -2351,17 +2351,19 @@ const _adTimers = {};
 
 function renderAdBanners() {
     const ads = DataStore.getAdvertisements().filter(a => a.enabled !== false);
+    const newHash = JSON.stringify(ads.map(a => a.id + a.imageUrl + a.position + a.enabled));
+    if (window._lastAdHash === newHash) return;
+    window._lastAdHash = newHash;
+
     for (let pos = 1; pos <= 4; pos++) {
         const container = document.getElementById('adBannerContainer' + pos);
         if (!container) continue;
         const posAds = ads.filter(a => a.position === pos);
         if (!posAds.length) {
-            container.innerHTML = '';
-            container.style.display = 'none';
+            if (container.children.length > 0) container.innerHTML = '';
             if (_adTimers[pos]) { clearInterval(_adTimers[pos]); delete _adTimers[pos]; }
             continue;
         }
-        container.style.display = 'block';
         renderAdSlot(container, posAds, pos);
     }
 }
@@ -3390,31 +3392,29 @@ function openMovieUniverse(movieName) {
 // Render all dynamic content
 let _isRenderingAll = false;
 function renderAllDynamicContent() {
-    if (_isRenderingAll) return; // Prevent concurrent re-renders
+    if (_isRenderingAll) return;
     _isRenderingAll = true;
     renderGreetingSection();
-    renderFeaturedSliderDynamic();
-    renderTrendingDynamic();
-    renderCategoriesDynamic();
-    renderArtistHitsDynamic();
-    initTamilHitsCarousel();
-    renderMoviesCollectionsDynamic();
-    renderYearlyCollectionsDynamic();
-    renderLatestCollectionsDynamic();
     renderAdBanners();
     renderAlbumsDynamic();
     applySiteSettings();
     
-    // Re-render songs
-    loadSongs(true).then(songs => {
-        renderTickerItems(songs);
-        renderRecentlyAdded(songs);
-        
-        // Update songs count
-        const countEl = document.getElementById('songsCount');
-        if (countEl) countEl.textContent = songs.length + ' songs';
+    // Batch DOM-heavy renders into a single animation frame to prevent blinking
+    requestAnimationFrame(() => {
+        renderFeaturedSliderDynamic();
+        renderTrendingDynamic();
+        renderArtistHitsDynamic();
+        initTamilHitsCarousel();
+        renderMoviesCollectionsDynamic();
+        renderYearlyCollectionsDynamic();
+        renderLatestCollectionsDynamic();
+        renderCategoriesDynamic();
 
-        _isRenderingAll = false;
+        loadSongs(true).then(songs => {
+            renderTickerItems(songs);
+            renderRecentlyAdded(songs);
+            _isRenderingAll = false;
+        });
     });
 }
 
@@ -3553,8 +3553,7 @@ function setupRealtimeSync() {
     // Method 2: Listen for custom storage-sync event from Builder
     window.addEventListener('storage-sync', () => {
         console.log('[Sync] Received storage-sync event from Builder');
-        handleSongsUpdate();
-        applyVEOverrides();
+        renderAdBanners();
     });
 
     // Method 2b: Listen for premium-sections-sync event from Builder
@@ -3569,9 +3568,7 @@ function setupRealtimeSync() {
         channel.onmessage = (event) => {
             if (event.data && (event.data.type === 'songs-updated' || event.data.type === 'content-updated')) {
                 console.log('[Sync] Received BroadcastChannel message:', event.data.type);
-                handleSongsUpdate();
                 renderAdBanners();
-                applyVEOverrides();
             }
         };
         window._syncChannel = channel;
