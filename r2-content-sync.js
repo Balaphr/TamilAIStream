@@ -67,6 +67,11 @@
                 siteSettings: safeGet(global.DataStore.getSiteSettings?.bind(global.DataStore), {}),
                 layout: safeGet(global.DataStore.getLayout?.bind(global.DataStore), []),
                 images: safeGet(global.DataStore.getImages?.bind(global.DataStore), []),
+                moviesCollections: safeGet(global.DataStore.getMoviesCollections?.bind(global.DataStore), []),
+                yearlyCollections: safeGet(global.DataStore.getYearlyCollections?.bind(global.DataStore), []),
+                latestCollections: safeGet(global.DataStore.getLatestCollections?.bind(global.DataStore), []),
+                musicCollections: safeGet(global.DataStore.getMusicCollections?.bind(global.DataStore), []),
+                advertisements: safeGet(global.DataStore.getAdvertisements?.bind(global.DataStore), []),
                 moods: safeGet(global.DataStore.getMoods?.bind(global.DataStore), []),
                 aiRadio: safeGet(global.DataStore.getAIRadio?.bind(global.DataStore), []),
                 notifications: safeGet(global.DataStore.getNotifications?.bind(global.DataStore), []),
@@ -95,6 +100,11 @@
             siteSettings: readLocalStorage('tamilAIStream_siteSettings', {}),
             layout: readLocalStorage('websiteLayout', []),
             images: readLocalStorage('tamilAIStream_images', []),
+            moviesCollections: readLocalStorage('tamilAIStream_moviesCollections', []),
+            yearlyCollections: readLocalStorage('tamilAIStream_yearlyCollections', []),
+            latestCollections: readLocalStorage('tamilAIStream_latestCollections', []),
+            musicCollections: readLocalStorage('tamilAIStream_musicCollections', []),
+            advertisements: readLocalStorage('tamilAIStream_advertisements', []),
             moods: readLocalStorage('tamilAIStream_moods', []),
             aiRadio: readLocalStorage('tamilAIStream_aiRadio', []),
             notifications: readLocalStorage('tamilAIStream_notifications', []),
@@ -128,7 +138,7 @@
         const localTime = localPayload?.updatedAt ? new Date(localPayload.updatedAt).getTime() : 0;
         const remoteTime = remotePayload?.updatedAt ? new Date(remotePayload.updatedAt).getTime() : 0;
 
-        const sharedKeys = ['songs', 'stations', 'categories', 'featured', 'trending', 'artistHits', 'quotes', 'siteSettings', 'layout', 'images', 'moods', 'aiRadio', 'notifications', 'splash', 'playerPrefs', 'navigation', 'sectionsOrder', 'miniPlayerSettings'];
+        const sharedKeys = ['songs', 'stations', 'categories', 'featured', 'trending', 'artistHits', 'quotes', 'siteSettings', 'layout', 'images', 'moods', 'aiRadio', 'notifications', 'splash', 'playerPrefs', 'navigation', 'sectionsOrder', 'miniPlayerSettings', 'moviesCollections', 'yearlyCollections', 'latestCollections', 'musicCollections', 'advertisements'];
         const userKeys = ['likedSongs', 'playlists', 'history', 'queue', 'settings'];
 
         keys.forEach((key) => {
@@ -211,6 +221,11 @@
                 setSiteSettings: data.siteSettings || {},
                 setLayout: data.layout || [],
                 setImages: data.images || [],
+                setMoviesCollections: data.moviesCollections || [],
+                setYearlyCollections: data.yearlyCollections || [],
+                setLatestCollections: data.latestCollections || [],
+                setMusicCollections: data.musicCollections || [],
+                setAdvertisements: data.advertisements || [],
                 setMoods: data.moods || [],
                 setAIRadio: data.aiRadio || [],
                 setNotifications: data.notifications || [],
@@ -242,6 +257,11 @@
         writeLocalStorage('tamilAIStream_siteSettings', data.siteSettings || {});
         writeLocalStorage('websiteLayout', data.layout || []);
         writeLocalStorage('tamilAIStream_images', data.images || []);
+        writeLocalStorage('tamilAIStream_moviesCollections', data.moviesCollections || []);
+        writeLocalStorage('tamilAIStream_yearlyCollections', data.yearlyCollections || []);
+        writeLocalStorage('tamilAIStream_latestCollections', data.latestCollections || []);
+        writeLocalStorage('tamilAIStream_musicCollections', data.musicCollections || []);
+        writeLocalStorage('tamilAIStream_advertisements', data.advertisements || []);
         writeLocalStorage('tamilAIStream_moods', data.moods || []);
         writeLocalStorage('tamilAIStream_aiRadio', data.aiRadio || []);
         writeLocalStorage('tamilAIStream_notifications', data.notifications || []);

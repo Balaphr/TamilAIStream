@@ -378,6 +378,16 @@ input { font-family: inherit; }
     pointer-events: none;
 }
 
+.admin-builder-open-btn {
+    margin-top: 10px;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+}
+
+.admin-builder-open-btn:hover {
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
+}
+
 /* ---------- Divider ---------- */
 .divider {
     display: flex;

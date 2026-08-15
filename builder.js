@@ -38,6 +38,15 @@ function saveBuilderUsers(users) {
     localStorage.setItem(BUILDER_USERS_KEY, JSON.stringify(users));
 }
 
+// Detect requests arriving from the login page's "Open Website Builder" button (?auto=1)
+function isAutoLoginRequest() {
+    try {
+        return new URLSearchParams(window.location.search).get('auto') === '1';
+    } catch (e) {
+        return false;
+    }
+}
+
 function checkAuth() {
     return new Promise((resolve) => {
         const session = localStorage.getItem('adminSession');
@@ -45,8 +54,11 @@ function checkAuth() {
             try {
                 const data = JSON.parse(session);
                 if (data.expiry > Date.now()) {
-                    // Show access gate for returning admin sessions
-                    showAccessGate(data);
+                    // Skip the access gate when arriving through ?auto=1 so the
+                    // login page's "Open Website Builder" drops straight into the dashboard
+                    if (!isAutoLoginRequest()) {
+                        showAccessGate(data);
+                    }
                     resolve(data);
                 } else {
                     localStorage.removeItem('adminSession');
@@ -84,8 +96,10 @@ function checkWebsiteAuth(resolve) {
                     expiry: Date.now() + (24 * 60 * 60 * 1000)
                 };
                 localStorage.setItem('adminSession', JSON.stringify(sessionData));
-                // Show access gate instead of directly entering builder
-                showAccessGate(sessionData);
+                // Show access gate (skipped for ?auto=1 coming from the login page)
+                if (!isAutoLoginRequest()) {
+                    showAccessGate(sessionData);
+                }
                 resolve(sessionData);
             } else {
                 resolve(null);
@@ -252,6 +266,58 @@ async function signInAsGuest() {
     showToast('Guest access is disabled. Please login or register.', 'error');
 }
 
+// One-click admin login on the Builder login screen.
+// Signs in with the built-in admin credentials, persists both sessions
+// (adminSession + main website session) and enters the dashboard directly.
+function quickAdminLogin() {
+    const btn = document.getElementById('builderQuickLogin');
+    if (!btn) return;
+
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Signing in...';
+
+    setTimeout(() => {
+        const adminUser = {
+            username: ADMIN_CREDENTIALS.username,
+            email: ADMIN_CREDENTIALS.username,
+            displayName: 'Admin',
+            role: 'admin',
+            password: ADMIN_CREDENTIALS.password
+        };
+
+        // Sync the main website session so the admin is also logged in site-wide
+        try {
+            if (typeof Auth !== 'undefined' && Auth.createSession) {
+                Auth.createSession({ name: 'Admin', email: ADMIN_CREDENTIALS.username, uid: 'admin-local', photoURL: '' }, true, false);
+            } else {
+                localStorage.setItem('tamilAIStream_user', JSON.stringify({
+                    uid: 'admin-local',
+                    name: 'Admin',
+                    email: ADMIN_CREDENTIALS.username,
+                    loginTime: Date.now()
+                }));
+                localStorage.setItem('tamilAIStream_loggedIn', 'true');
+            }
+        } catch (e) {
+            console.warn('Unable to sync website session:', e);
+        }
+
+        localStorage.setItem('adminSession', JSON.stringify({
+            username: ADMIN_CREDENTIALS.username,
+            email: ADMIN_CREDENTIALS.username,
+            displayName: 'Admin',
+            role: 'admin',
+            loginTime: Date.now(),
+            expiry: Date.now() + (24 * 60 * 60 * 1000)
+        }));
+
+        showToast('Welcome Admin!', 'success');
+        // Enter the Builder immediately on this express path
+        showBuilderDashboard(adminUser);
+    }, 400);
+}
+
 // Sign Out
 async function signOut() {
     try {
@@ -326,6 +392,9 @@ function setupLoginScreen() {
     
     // Guest Sign In - Disabled
     document.getElementById('guestSignIn')?.addEventListener('click', signInAsGuest);
+
+    // Admin Quick Login (one-click)
+    document.getElementById('builderQuickLogin')?.addEventListener('click', quickAdminLogin);
     
     // Switch to sign up tab
     document.getElementById('signupTab')?.addEventListener('click', (e) => {
@@ -400,8 +469,7 @@ function navigateTo(page) {
         loadCollectionsTable('latest');
     }
     if (page === 'musiccollections') loadMusicCollections();
-        loadQuotes();
-    }
+    if (page === 'content') loadQuotes();
     if (page === 'images') loadAllImages();
     if (page === 'settings') loadSettings();
     if (page === 'moods') loadMoods();
@@ -3725,9 +3793,14 @@ function loadMusicCollections() {
     collectionsList.innerHTML = collections.map(col => `
         <div class="collection-card" style="border-left: 4px solid var(--emerald-400); margin-bottom: 16px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; transition: all 0.3s;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                <div style="flex: 1;">
-                    <h3 style="margin: 0; font-size: 16px; color: #fff;">${col.name}</h3>
-                    <p style="margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.6);">${col.description || ''}</p>
+                <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
+                    ${col.thumbnail
+                        ? `<img src="${col.thumbnail}" alt="" style="width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">`
+                        : '<div style="width: 56px; height: 56px; border-radius: 8px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 22px;">🎵</div>'}
+                    <div>
+                        <h3 style="margin: 0; font-size: 16px; color: #fff;">${col.name}</h3>
+                        <p style="margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.6);">${col.description || ''}</p>
+                    </div>
                 </div>
                 <span style="font-size: 12px; color: var(--emerald-400);">${col.songCount || 0} songs</span>
             </div>
@@ -3763,11 +3836,16 @@ function openAddCollectionModalMusic() {
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">Collection Name *</label>
-                    <input type="text" class="form-input" id "colMusicName" required placeholder="e.g. 2026 Collection">
+                    <input type="text" class="form-input" id="colMusicName" required placeholder="e.g. 2026 Collection">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Description</label>
                     <input type="text" class="form-input" id="colMusicDescription" placeholder="Optional description">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cover / Poster Image URL</label>
+                    <input type="text" class="form-input" id="colMusicThumbnail" placeholder="https://… or /uploads/cover.jpg (optional)">
+                    <div id="colMusicThumbPreview" style="margin-top:8px;display:none;"><img src="" alt="Preview" style="max-width:140px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);"></div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Select Songs</label>
@@ -3790,15 +3868,17 @@ function openAddCollectionModalMusic() {
 function saveMusicCollection() {
     const name = document.getElementById('colMusicName').value.trim();
     const description = document.getElementById('colMusicDescription').value.trim();
-    const songIds = document.getElementById('colMusicSongs').value || [];
+    const thumbnail = document.getElementById('colMusicThumbnail').value.trim() || '';
+    const songsSelect = document.getElementById('colMusicSongs');
+    const selectedOptions = songsSelect ? Array.from(songsSelect.selectedOptions) : [];
     
     if (!name) {
         showToast('Collection name is required', 'error');
         return;
     }
     
-    const songs = songIds.map(id => {
-        const parts = id.split('|');
+    const songs = selectedOptions.map(id => {
+        const parts = id.value.split('|');
         return {
             songId: parts[0],
             title: parts[1] || '',
@@ -3812,6 +3892,7 @@ function saveMusicCollection() {
         id: 'music_' + Date.now(),
         name: name,
         description: description,
+        thumbnail: thumbnail,
         songs: songs,
         type: 'music',
         status: 'active',
@@ -3826,6 +3907,7 @@ function saveMusicCollection() {
     showToast('Collection created successfully', 'success');
     document.getElementById('musicCollectionModal').remove();
     loadMusicCollections();
+    syncToLiveWebsite();
 }
 
 function deleteMusicCollection(id) {
@@ -3835,6 +3917,7 @@ function deleteMusicCollection(id) {
         DataStore.setMusicCollections(collections);
         showToast('Collection deleted', 'info');
         loadMusicCollections();
+        syncToLiveWebsite();
     }
 }
 
@@ -3863,6 +3946,10 @@ function openEditCollectionModalMusic(id) {
                     <input type="text" class="form-input" id="editColDescription" value="${collection.description || ''}">
                 </div>
                 <div class="form-group">
+                    <label class="form-label">Cover / Poster Image URL</label>
+                    <input type="text" class="form-input" id="editColThumbnail" value="${collection.thumbnail || ''}">
+                </div>
+                <div class="form-group">
                     <label class="form-label">Select Songs</label>
                     <select class="form-input" id="editColSongs" multiple style="height:300px;">
                         ${DataStore.getSongs().map(s => {
@@ -3886,15 +3973,17 @@ function openEditCollectionModalMusic(id) {
 function updateMusicCollection(id) {
     const name = document.getElementById('editColName').value.trim();
     const description = document.getElementById('editColDescription').value.trim();
-    const songIds = document.getElementById('editColSongs').value || [];
+    const thumbnail = document.getElementById('editColThumbnail').value.trim() || '';
+    const songsSelect = document.getElementById('editColSongs');
+    const selectedOptions = songsSelect ? Array.from(songsSelect.selectedOptions) : [];
     
     if (!name) {
         showToast('Collection name is required', 'error');
         return;
     }
     
-    const songs = songIds.map(id => {
-        const parts = id.split('|');
+    const songs = selectedOptions.map(id => {
+        const parts = id.value.split('|');
         return {
             songId: parts[0],
             title: parts[1] || '',
@@ -3909,6 +3998,7 @@ function updateMusicCollection(id) {
     if (collection) {
         collection.name = name;
         collection.description = description;
+        collection.thumbnail = thumbnail;
         collection.songs = songs;
         collection.songCount = songs.length;
         collection.updatedAt = new Date().toISOString();
@@ -3918,7 +4008,10 @@ function updateMusicCollection(id) {
     showToast('Collection updated successfully', 'success');
     document.getElementById('editMusicCollectionModal').remove();
     loadMusicCollections();
+    syncToLiveWebsite();
 }
+
+function openAddCollectionModal(type) {
     const typeLabel = type === 'movies' ? 'Movie' : type === 'yearly' ? 'Yearly' : 'Latest';
     const songs = DataStore.getSongs();
     

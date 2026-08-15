@@ -2341,26 +2341,29 @@ function renderCollectionsTrack(trackId, items) {
         track.innerHTML = '<div style="padding:20px;color:#888;text-align:center;width:100%;">No collections yet. Add from Builder.</div>';
         return;
     }
-    track.innerHTML = items.filter(i => i.status !== 'inactive').map(item => renderRoundCollectionCard(item)).join('');
+    const isMovies = trackId === 'moviesCollectionTrack';
+    track.innerHTML = items.filter(i => i.status !== 'inactive').map(item =>
+        isMovies ? renderMovieCollectionCard(item) : renderRoundCollectionCard(item)
+    ).join('');
 }
 
 function renderMoviesCollectionsDynamic() {
     const data = DataStore.getMoviesCollections();
-    const hash = data.map(c => c.id + (c.status || '')).join(',');
+    const hash = data.map(c => c.id + '|' + (c.status || '') + '|' + (c.name || '') + '|' + (c.thumbnail || '') + '|' + (c.songCount || 0)).join(',');
     if (!_hasSectionChanged('movies', hash)) return;
     renderCollectionsTrack('moviesCollectionTrack', data);
 }
 
 function renderYearlyCollectionsDynamic() {
     const data = DataStore.getYearlyCollections();
-    const hash = data.map(c => c.id + (c.status || '')).join(',');
+    const hash = data.map(c => c.id + '|' + (c.status || '') + '|' + (c.name || '') + '|' + (c.thumbnail || '') + '|' + (c.songCount || 0)).join(',');
     if (!_hasSectionChanged('yearly', hash)) return;
     renderCollectionsTrack('yearlyCollectionTrack', data);
 }
 
 function renderLatestCollectionsDynamic() {
     const data = DataStore.getLatestCollections();
-    const hash = data.map(c => c.id + (c.status || '')).join(',');
+    const hash = data.map(c => c.id + '|' + (c.status || '') + '|' + (c.name || '') + '|' + (c.thumbnail || '') + '|' + (c.songCount || 0)).join(',');
     if (!_hasSectionChanged('latest', hash)) return;
     renderCollectionsTrack('latestCollectionTrack', data);
 }
@@ -2371,7 +2374,7 @@ function renderLatestCollectionsDynamic() {
 
 function renderMusicCollectionsDynamic() {
     const data = DataStore.getMusicCollections();
-    const hash = data.map(c => c.id + (c.status || '')).join(',');
+    const hash = data.map(c => c.id + '|' + (c.status || '') + '|' + (c.name || '') + '|' + (c.thumbnail || '') + '|' + (c.songCount || 0)).join(',');
     if (!_hasSectionChanged('music-collections', hash)) return;
     renderMusicCollectionTrack('musicCollectionTrack', data);
 }
@@ -2908,30 +2911,20 @@ function renderMovieCollectionCard(item) {
 
 // Override renderCollectionsTrack to use movie cards for movies type
 const _originalRenderCollectionsTrack = renderCollectionsTrack;
-function renderCollectionsTrack(trackId, items) {
-    const track = document.getElementById(trackId);
-    if (!track) return;
-    if (!items.length) {
-        track.innerHTML = '<div style="padding:20px;color:#888;text-align:center;width:100%;">No collections yet. Add from Builder.</div>';
-        return;
-    }
-    const isMovies = trackId === 'moviesCollectionTrack';
-    track.innerHTML = items.filter(i => i.status !== 'inactive').map(item =>
-        isMovies ? renderMovieCollectionCard(item) : renderRoundCollectionCard(item)
-    ).join('');
-}
 window.renderCollectionsTrack = renderCollectionsTrack;
 
 function playCollectionSongs(collectionId, collectionType) {
     let collections = [];
+    if (collectionType === 'music') collections = DataStore.getMusicCollections();
     if (collectionType === 'movies') collections = DataStore.getMoviesCollections();
-    else if (collectionType === 'yearly') collections = DataStore.getYearlyCollections();
-    else if (collectionType === 'latest') collections = DataStore.getLatestCollections();
+    if (collectionType === 'yearly') collections = DataStore.getYearlyCollections();
+    if (collectionType === 'latest') collections = DataStore.getLatestCollections();
 
     // If the type is missing/mismatched, fall back to searching every library
     // so a valid tap always resolves regardless of which section rendered it.
     if (!collections.length) {
         collections = [].concat(
+            DataStore.getMusicCollections() || [],
             DataStore.getMoviesCollections() || [],
             DataStore.getYearlyCollections() || [],
             DataStore.getLatestCollections() || []
@@ -3848,15 +3841,28 @@ document.addEventListener('click', function(e) {
 // ============================================
 
 function setupRealtimeSync() {
-    // ONLY listen for ad changes from the builder (cross-tab)
+    // Listen for content changes from the Builder (cross-tab)
     window.addEventListener('storage', (e) => {
         if (e.key === 'tamilAIStream_advertisements') {
             renderAdBanners();
         }
+        if (e.key === 'tamilAIStream_musicCollections' ||
+            e.key === 'tamilAIStream_moviesCollections' ||
+            e.key === 'tamilAIStream_yearlyCollections' ||
+            e.key === 'tamilAIStream_latestCollections') {
+            renderMusicCollectionsDynamic();
+            renderMoviesCollectionsDynamic();
+            renderYearlyCollectionsDynamic();
+            renderLatestCollectionsDynamic();
+        }
     });
-    // Custom event from builder for immediate ad sync
+    // Custom event from builder for immediate sync
     window.addEventListener('storage-sync', () => {
         renderAdBanners();
+        renderMusicCollectionsDynamic();
+        renderMoviesCollectionsDynamic();
+        renderYearlyCollectionsDynamic();
+        renderLatestCollectionsDynamic();
     });
 }
 

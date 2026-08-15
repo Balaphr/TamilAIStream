@@ -876,6 +876,55 @@ async function quickDemoLogin() {
     }
 }
 
+/**
+ * Open the Website Builder — ensures the admin account is seeded and the
+ * adminSession flag exists, then navigates to builder.html?auto=1 so the
+ * Builder opens straight into the dashboard (no extra typing / gate click).
+ */
+async function openBuilderFromLogin() {
+    const btn = document.getElementById('openBuilderBtn');
+    if (!btn) return;
+
+    btn.classList.add('loading');
+    btn.disabled = true;
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Opening Builder...';
+
+    try {
+        const rememberMe = DOM.rememberMe ? DOM.rememberMe.checked : true;
+        await applyPersistence(rememberMe);
+
+        let user = validateCredentials(DEMO_EMAIL, DEMO_PASSWORD);
+        if (!user) {
+            user = createUser(DEMO_EMAIL, DEMO_PASSWORD, DEMO_NAME);
+        }
+        if (!user) {
+            throw new Error('Failed to prepare admin session');
+        }
+
+        Auth.createSession({ name: user.name, email: user.email, photoURL: user.photoURL || '', uid: user.uid }, rememberMe, false);
+
+        // Set adminSession so builder.html recognizes the admin login
+        localStorage.setItem('adminSession', JSON.stringify({
+            username: DEMO_EMAIL,
+            email: DEMO_EMAIL,
+            displayName: user.name,
+            loginTime: Date.now(),
+            expiry: Date.now() + (24 * 60 * 60 * 1000)
+        }));
+
+        showToast('Opening Website Builder...', 'success');
+        setTimeout(() => {
+            window.location.href = 'builder.html?auto=1';
+        }, 600);
+    } catch (error) {
+        btn.innerHTML = originalHTML;
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        showToast(error.message || 'Failed to open Website Builder', 'error');
+    }
+}
+
 // Demo Copy Button
 function setupDemoCopyButtons() {
     document.querySelectorAll('.demo-copy-btn, .admin-copy-btn').forEach(btn => {
@@ -928,6 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     setupDemoCopyButtons();
     document.getElementById('demoLoginBtn')?.addEventListener('click', quickDemoLogin);
+    document.getElementById('openBuilderBtn')?.addEventListener('click', openBuilderFromLogin);
     
     seedDemoAccount();
     
