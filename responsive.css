@@ -1141,6 +1141,50 @@ body {
     }
 }
 
+/* ============================================
+   Responsive: Home Search & Categories
+   ============================================ */
+@media (max-width: 640px) {
+    .home-search-bar { padding: 8px 12px 6px; }
+    .home-categories { padding: 6px 12px 10px; gap: 6px; }
+    .home-cat-btn { padding: 6px 12px; font-size: 12px; }
+}
+@media (min-width: 1025px) {
+    .home-search-bar {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .home-categories {
+        max-width: 800px;
+        margin: 0 auto;
+        justify-content: center;
+    }
+}
 
+/* ============================================
+   Responsive: Hero Ad
+   ============================================ */
+@media (max-width: 640px) {
+    .hero-ad-section { padding: 0 12px 8px; }
+}
+
+/* ============================================
+   Responsive: Fix empty space on all devices
+   ============================================ */
+@media (max-width: 640px) {
+    #page-home {
+        padding-bottom: 80px !important;
+    }
+}
+@media (min-width: 641px) and (max-width: 1024px) {
+    #page-home {
+        padding-bottom: 40px !important;
+    }
+}
+@media (min-width: 1025px) {
+    #page-home {
+        padding-bottom: 20px !important;
+    }
+}
 
 

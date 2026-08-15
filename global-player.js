@@ -11,6 +11,8 @@ const GlobalPlayer = (() => {
     let _currentLyrics = [];
     let _activeAudio = null;
     let _bc = null;
+    let _lastActiveCard = null;
+    let _lastActiveStation = null;
 
     const state = {
         isPlaying: false,
@@ -691,87 +693,74 @@ const GlobalPlayer = (() => {
         updateEqBars(playing);
         if (typeof updatePlayPauseButton === 'function') updatePlayPauseButton(playing);
         
+        // Restart animation loops when playback starts
+        if (playing) {
+            if (!eqRAF) startEqAnimation();
+            if (!_lyricsRAF) drawMiniWaveform();
+        } else {
+            if (eqRAF) startEqAnimation();
+        }
+
         // Sync playing state with song cards and station cards across the site
         syncPlayingIndicators(playing);
     }
     
     function syncPlayingIndicators(playing) {
-        // Get current track info
         const track = state.track || getCurrentTrackFromScript();
         const currentTrackId = track?.id || track?.songId;
         const currentStationName = state.track?.title || state.track?.name || '';
-        
-        // Update song cards across the site (song-card, dash-song-card, etc.)
-        document.querySelectorAll('.song-card, .dash-song-card, .ai-glass-song-card, .ytm-song-card').forEach(card => {
-            const songId = card.dataset?.songId || card.dataset?.id;
-            const isCurrentSong = playing && currentTrackId && songId && songId === currentTrackId;
-            
-            // Add/remove playing class
-            card.classList.toggle('playing-song', isCurrentSong);
-            
-            // Update play overlay icon
-            const playOverlay = card.querySelector('.song-play-overlay i, .dash-song-play i, .song-play-btn i');
-            if (playOverlay) {
-                playOverlay.className = isCurrentSong ? 'fas fa-pause' : 'fas fa-play';
-            }
-            
-            // Add waveform/equalizer animation indicator
-            const thumbnail = card.querySelector('.song-thumbnail, .dash-song-art, .ytm-song-art');
-            if (thumbnail) {
-                if (isCurrentSong) {
-                    thumbnail.classList.add('playing-indicator');
-                } else {
-                    thumbnail.classList.remove('playing-indicator');
-                }
-            }
-        });
-        
-        // Update station cards
-        document.querySelectorAll('.station-card, .station-grid-card, .slide-card, .premium-radio-card').forEach(card => {
-            const cardName = card.querySelector('h3, h4')?.textContent || '';
-            const isCurrentStation = playing && currentStationName && cardName === currentStationName;
-            
-            card.classList.toggle('active-station', isCurrentStation);
-            card.classList.toggle('playing-station', isCurrentStation);
-            
-            const playBtn = card.querySelector('.slide-play-btn, .sg-play-btn, .station-play-overlay i, .premium-radio-play');
-            if (playBtn) {
-                if (playBtn.classList.contains('slide-play-btn') || playBtn.classList.contains('sg-play-btn')) {
-                    if (isCurrentStation) {
-                        playBtn.classList.add('wave-active');
-                        playBtn.classList.remove('pulse-active');
-                        playBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
-                    } else {
-                        playBtn.classList.remove('wave-active', 'pulse-active');
-                        playBtn.innerHTML = '<i class="fas fa-play"></i> Listen Now';
-                    }
-                } else if (playBtn.classList.contains('premium-radio-play')) {
-                    playBtn.className = isCurrentStation ? 'fa-solid fa-pause premium-radio-play' : 'fa-solid fa-play premium-radio-play';
-                } else {
-                    playBtn.className = isCurrentStation ? 'fas fa-pause' : 'fas fa-play';
-                }
-            }
-        });
-        
-        // Update YTMusic player if available
-        if (typeof YTMusic !== 'undefined') {
-            YTMusic.isPlaying = playing;
-            if (typeof YTMusic.updatePlayerUI === 'function') {
-                YTMusic.updatePlayerUI();
+
+        // --- Song card: only update previous + new active card ---
+        let newActiveCard = null;
+        if (playing && currentTrackId) {
+            const selector = '.song-card, .dash-song-card, .ai-glass-song-card, .ytm-song-card';
+            document.querySelectorAll(selector).forEach(card => {
+                const songId = card.dataset?.songId || card.dataset?.id;
+                if (songId && songId === currentTrackId) newActiveCard = card;
+            });
+        }
+
+        if (_lastActiveCard && _lastActiveCard !== newActiveCard) {
+            _lastActiveCard.classList.remove('playing-song');
+            const thumb = _lastActiveCard.querySelector('.song-thumbnail, .dash-song-art, .ytm-song-art');
+            if (thumb) thumb.classList.remove('playing-indicator');
+        }
+        if (newActiveCard) {
+            if (!newActiveCard.classList.contains('playing-song')) {
+                newActiveCard.classList.add('playing-song');
+                const thumb = newActiveCard.querySelector('.song-thumbnail, .dash-song-art, .ytm-song-art');
+                if (thumb) thumb.classList.add('playing-indicator');
             }
         }
-        
-        // Update MiniAudioPlayer if available
-        if (typeof MiniAudioPlayer !== 'undefined') {
-            if (playing) {
-                if (typeof MiniAudioPlayer.syncPlayingUI === 'function') {
-                    MiniAudioPlayer.syncPlayingUI();
-                }
-            } else {
-                if (typeof MiniAudioPlayer.syncPausedUI === 'function') {
-                    MiniAudioPlayer.syncPausedUI();
-                }
+        _lastActiveCard = newActiveCard;
+
+        // --- Station card: only update previous + new active card ---
+        let newActiveStation = null;
+        if (playing && currentStationName) {
+            document.querySelectorAll('.station-card, .station-grid-card, .slide-card, .premium-radio-card').forEach(card => {
+                const cardName = card.querySelector('h3, h4')?.textContent || '';
+                if (cardName && cardName === currentStationName) newActiveStation = card;
+            });
+        }
+
+        if (_lastActiveStation && _lastActiveStation !== newActiveStation) {
+            _lastActiveStation.classList.remove('active-station', 'playing-station');
+        }
+        if (newActiveStation) {
+            if (!newActiveStation.classList.contains('active-station')) {
+                newActiveStation.classList.add('active-station', 'playing-station');
             }
+        }
+        _lastActiveStation = newActiveStation;
+
+        // YTMusic / MiniAudioPlayer external sync
+        if (typeof YTMusic !== 'undefined') {
+            YTMusic.isPlaying = playing;
+            if (typeof YTMusic.updatePlayerUI === 'function') YTMusic.updatePlayerUI();
+        }
+        if (typeof MiniAudioPlayer !== 'undefined') {
+            if (playing && typeof MiniAudioPlayer.syncPlayingUI === 'function') MiniAudioPlayer.syncPlayingUI();
+            else if (!playing && typeof MiniAudioPlayer.syncPausedUI === 'function') MiniAudioPlayer.syncPausedUI();
         }
     }
 
@@ -1014,6 +1003,7 @@ const GlobalPlayer = (() => {
         canvas.height = canvas.offsetHeight * window.devicePixelRatio;
         ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         function draw() {
+            if (document.hidden) { waveformRAF = requestAnimationFrame(draw); return; }
             if (!isExpanded) { ctx.clearRect(0, 0, canvas.width, canvas.height); waveformRAF = requestAnimationFrame(draw); return; }
             const freqData = (typeof PlayerEngine !== 'undefined' && PlayerEngine.getFrequencyData) ? PlayerEngine.getFrequencyData() : null;
             const w = canvas.offsetWidth;
@@ -1041,13 +1031,24 @@ const GlobalPlayer = (() => {
     function stopVisualizer() { if (waveformRAF) cancelAnimationFrame(waveformRAF); }
 
     function startEqAnimation() {
+        if (eqRAF) cancelAnimationFrame(eqRAF);
+        eqRAF = null;
+        if (!state.isPlaying) {
+            document.querySelectorAll('.gp-mini-eq span, .gp-exp-eq span').forEach(bar => { bar.style.height = '3px'; });
+            return;
+        }
         function animate() {
+            if (!state.isPlaying || document.hidden) {
+                document.querySelectorAll('.gp-mini-eq span, .gp-exp-eq span').forEach(bar => { bar.style.height = '3px'; });
+                eqRAF = null;
+                return;
+            }
             document.querySelectorAll('.gp-mini-eq span, .gp-exp-eq span').forEach((bar) => {
-                bar.style.height = state.isPlaying ? (4 + Math.random() * 14) + 'px' : '3px';
+                bar.style.height = (4 + Math.random() * 14) + 'px';
             });
             eqRAF = requestAnimationFrame(animate);
         }
-        animate();
+        eqRAF = requestAnimationFrame(animate);
     }
 
     function drawMiniWaveform() {
@@ -1057,8 +1058,12 @@ const GlobalPlayer = (() => {
         canvas.width = 80;
         canvas.height = 32;
         function draw() {
+            if (document.hidden) { _lyricsRAF = requestAnimationFrame(draw); return; }
             ctx.clearRect(0, 0, 80, 32);
-            if (!state.isPlaying) { _lyricsRAF = requestAnimationFrame(draw); return; }
+            if (!state.isPlaying) {
+                _lyricsRAF = null;
+                return;
+            }
             const freqData = (typeof PlayerEngine !== 'undefined' && PlayerEngine.getFrequencyData) ? PlayerEngine.getFrequencyData() : null;
             if (!freqData) { _lyricsRAF = requestAnimationFrame(draw); return; }
             const bars = 16;

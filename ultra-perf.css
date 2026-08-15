@@ -1,0 +1,492 @@
+/* ============================================================
+   ULTRA PERFORMANCE — 144Hz Smooth QLED Ultra-Fast
+   TamilAI.Stream — All Devices (Desktop, Mobile, PWA, Tablet)
+   ============================================================ */
+
+/* ============================================
+   1. SMOOTH SCROLLING (144Hz-ready)
+   ============================================ */
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Allow 144Hz+ refresh rate on supported displays */
+    color-gamut: srgb;
+}
+
+/* ============================================
+   2. GPU ACCELERATION — Global
+   ============================================ */
+.ytm-page,
+.ytm-page-home,
+.ytm-main-content,
+.premium-topnav,
+.premium-top-nav,
+.mini-player,
+.gp-mini,
+.gp-expanded,
+.gp-mini-progress,
+.stations-track,
+.carousel-track,
+.recently-added-track,
+.song-card,
+.radio-card,
+.station-card,
+.collection-card,
+.movie-card,
+.movie-sidebar-card,
+.artist-hit-card,
+.tamil-hit-card,
+.ad-banner-card,
+.hero-ad-card,
+.premium-sidebar,
+.premium-sidebar-inner,
+.ytm-page-home .section,
+.greeting-section {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* ============================================
+   3. OVERSCROLL CONTAIN — Prevent scroll chaining
+   ============================================ */
+html,
+body {
+    overscroll-behavior: none;
+}
+
+.ytm-main-content,
+.ytm-page-home,
+.stations-track,
+.carousel-track,
+.recently-added-track,
+.home-categories,
+.ytm-sidebar,
+.premium-sidebar-content,
+.gp-exp-container,
+.fp-container,
+.gp-lyrics-content,
+.categories-grid,
+.stations-grid,
+.song-card,
+.ai-artists-row {
+    overscroll-behavior: contain;
+}
+
+/* ============================================
+   4. LAYOUT CONTAINMENT — Isolate paint/layout
+   ============================================ */
+.ytm-page,
+.ytm-page-home {
+    contain: layout style;
+}
+
+.ytm-page .section,
+.section {
+    contain: layout style;
+}
+
+.song-card,
+.station-card,
+.radio-card,
+.collection-card,
+.movie-card,
+.artist-hit-card,
+.tamil-hit-card,
+.ad-banner-card,
+.hero-ad-card {
+    contain: layout style paint;
+}
+
+.premium-sidebar {
+    contain: layout style;
+}
+
+.gp-mini,
+.gp-expanded,
+.mini-player,
+.full-player {
+    contain: layout style;
+}
+
+/* ============================================
+   5. CONTENT VISIBILITY — Skip off-screen rendering
+   ============================================ */
+.ytm-page .section:nth-child(n+4) {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 300px;
+}
+
+.movies-collection-section,
+.yearly-collection-section,
+.tamil-hits-section,
+.albums-section,
+.ai-recommended-section {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 320px;
+}
+
+/* ============================================
+   6. SMOOTH TRANSITIONS — Replace transition: all
+   ============================================ */
+.song-card,
+.station-card,
+.radio-card,
+.collection-card,
+.movie-card,
+.artist-hit-card,
+.tamil-hit-card {
+    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                opacity 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.song-card:hover,
+.station-card:hover,
+.radio-card:hover,
+.collection-card:hover,
+.movie-card:hover,
+.artist-hit-card:hover,
+.tamil-hit-card:hover {
+    transform: translateZ(0) scale(1.02);
+}
+
+/* ============================================
+   7. TOUCH OPTIMIZATIONS — Mobile/Tablet
+   ============================================ */
+@media (pointer: coarse) {
+    .song-card,
+    .station-card,
+    .radio-card,
+    .collection-card,
+    .movie-card,
+    .artist-hit-card,
+    .tamil-hit-card,
+    .home-cat-btn,
+    .slider-btn,
+    .premium-sidebar-item,
+    .premium-hamburger {
+        min-height: 44px;
+        min-width: 44px;
+        touch-action: manipulation;
+    }
+}
+
+/* ============================================
+   8. HORIZONTAL SCROLL — GPU-accelerated
+   ============================================ */
+.stations-track,
+.carousel-track,
+.recently-added-track,
+.home-categories {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    will-change: scroll-position;
+    transform: translateZ(0);
+}
+
+.stations-track > *,
+.carousel-track > *,
+.recently-added-track > * {
+    scroll-snap-align: start;
+}
+
+/* ============================================
+   9. IMAGE PERFORMANCE
+   ============================================ */
+img,
+.premium-radio-art img,
+.song-thumbnail img,
+.movie-poster img,
+.artist-avatar img,
+.collection-poster img,
+.hero-ad-image {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 200px;
+    will-change: transform;
+    transform: translateZ(0);
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+/* ============================================
+   10. CANVAS PERFORMANCE
+   ============================================ */
+canvas,
+.premium-particles-canvas,
+.hero-particles-canvas,
+.neural-bg-canvas {
+    will-change: transform;
+    transform: translateZ(0);
+    image-rendering: optimizeSpeed;
+}
+
+/* ============================================
+   11. GLOBAL PLAYER — Smooth animations
+   ============================================ */
+.gp-mini {
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+                opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.gp-expanded {
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+                opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.premium-sidebar {
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.premium-sidebar-overlay {
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   12. EQ BAR ANIMATION — GPU-optimized
+   ============================================ */
+@keyframes ultraEq {
+    0%, 100% { transform: scaleY(0.3); }
+    50% { transform: scaleY(1); }
+}
+
+.mini-eq-bar,
+.gp-eq-bar,
+.eq-bar {
+    animation: ultraEq 0.8s ease-in-out infinite;
+    will-change: transform;
+    transform-origin: bottom center;
+}
+
+.mini-eq-bar:nth-child(1), .gp-eq-bar:nth-child(1) { animation-delay: 0s; }
+.mini-eq-bar:nth-child(2), .gp-eq-bar:nth-child(2) { animation-delay: 0.15s; }
+.mini-eq-bar:nth-child(3), .gp-eq-bar:nth-child(3) { animation-delay: 0.3s; }
+.mini-eq-bar:nth-child(4), .gp-eq-bar:nth-child(4) { animation-delay: 0.1s; }
+.mini-eq-bar:nth-child(5), .gp-eq-bar:nth-child(5) { animation-delay: 0.25s; }
+
+/* ============================================
+   13. RAINBOW LINE — GPU-optimized
+   ============================================ */
+@keyframes ultraRainbow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.mini-rainbow-line,
+.gp-rainbow-line {
+    background-size: 200% 200% !important;
+    animation: ultraRainbow 3s linear infinite;
+    will-change: background-position;
+}
+
+/* ============================================
+   14. FLOAT ANIMATION — GPU-optimized
+   ============================================ */
+@keyframes ultraFloat {
+    0%, 100% { transform: translateY(0) translateZ(0); }
+    50% { transform: translateY(-8px) translateZ(0); }
+}
+
+.artwork-float,
+.gp-art-float {
+    animation: ultraFloat 4s ease-in-out infinite;
+    will-change: transform;
+}
+
+/* ============================================
+   15. PULSE ANIMATIONS — GPU-optimized
+   ============================================ */
+@keyframes ultraPulse {
+    0%, 100% { opacity: 0.4; transform: scale(1) translateZ(0); }
+    50% { opacity: 1; transform: scale(1.05) translateZ(0); }
+}
+
+@keyframes ultraGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(52, 211, 153, 0.2); }
+    50% { box-shadow: 0 0 40px rgba(52, 211, 153, 0.4); }
+}
+
+/* ============================================
+   16. PREFERS-REDUCED-MOTION — Accessibility
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .mini-eq-bar,
+    .gp-eq-bar,
+    .eq-bar {
+        animation: none !important;
+    }
+
+    .mini-rainbow-line,
+    .gp-rainbow-line {
+        animation: none !important;
+    }
+
+    .artwork-float,
+    .gp-art-float {
+        animation: none !important;
+    }
+
+    canvas,
+    .premium-particles-canvas,
+    .hero-particles-canvas,
+    .neural-bg-canvas {
+        display: none !important;
+    }
+}
+
+/* ============================================
+   17. LAZY LOADING — IntersectionObserver-ready
+   ============================================ */
+.lazy-section {
+    opacity: 0;
+    transform: translateY(20px) translateZ(0);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    will-change: opacity, transform;
+}
+
+.lazy-section.visible {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+}
+
+/* ============================================
+   18. SCROLL PERFORMANCE — Reduce paint
+   ============================================ */
+.premium-top-nav,
+.premium-topnav,
+.mini-player,
+.gp-mini {
+    position: fixed;
+    z-index: 1000;
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+/* Sticky section headers */
+.section-header {
+    position: sticky;
+    z-index: 10;
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+/* ============================================
+   19. FONT PERFORMANCE
+   ============================================ */
+@font-face {
+    font-family: 'System';
+    src: local('system-ui'), local('-apple-system'), local('BlinkMacSystemFont'),
+         local('Segoe UI'), local('Roboto'), local('Helvetica Neue'), local('Arial');
+    font-display: swap;
+}
+
+/* ============================================
+   20. BUTTON/INTERACTIVE PERFORMANCE
+   ============================================ */
+button,
+a,
+.premium-sidebar-item,
+.home-cat-btn,
+.slider-btn,
+.premium-hamburger,
+.premium-kebab-btn {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* ============================================
+   21. MOBILE SCROLL SMOOTHING
+   ============================================ */
+@media (max-width: 1024px) {
+    .ytm-main-content {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+
+    .ytm-page-home {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .stations-track,
+    .carousel-track,
+    .recently-added-track {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ============================================
+   22. TABLET OPTIMIZATIONS
+   ============================================ */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .song-card {
+        contain: layout style paint;
+    }
+
+    .collection-card,
+    .movie-card {
+        contain: layout style paint;
+    }
+}
+
+/* ============================================
+   23. DESKTOP ULTRA PERFORMANCE
+   ============================================ */
+@media (min-width: 1025px) {
+    .song-card:hover {
+        transform: translateZ(0) scale(1.03);
+        transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                    box-shadow 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .slider-btn {
+        transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .premium-sidebar-item {
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+}
+
+/* ============================================
+   24. PWA SPLASH/LOADING PERFORMANCE
+   ============================================ */
+.splash-screen,
+.pwa-loading {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: #080c18;
+    will-change: opacity;
+    transform: translateZ(0);
+}
+
+/* ============================================
+   25. AD BANNER PERFORMANCE
+   ============================================ */
+.ad-banner-container,
+.hero-ad-container {
+    contain: layout style paint;
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+.ad-banner-container:empty,
+.hero-ad-container:empty {
+    display: none;
+    contain: strict;
+}

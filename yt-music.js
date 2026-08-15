@@ -583,6 +583,8 @@ const YTMusic = {
         const overlay = document.getElementById('premiumSidebarOverlay');
         const hamburger = document.getElementById('premiumHamburger');
         if (!sidebar || !overlay) return;
+        // Desktop (>=1025px): sidebar is always visible, no toggle needed
+        if (window.innerWidth >= 1025) return;
         const isOpen = sidebar.classList.contains('open');
         const shouldOpen = force !== undefined ? force : !isOpen;
         sidebar.classList.toggle('open', shouldOpen);

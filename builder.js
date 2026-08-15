@@ -4378,7 +4378,7 @@ function saveSectionsOrder() {
 // Advertisement/Banner Management
 // ============================================
 const AD_POSITIONS = {
-    1: 'Top (Before Recently Added)',
+    0: 'Hero (Top Carousel)',
     2: 'After Recently Added',
     3: 'After Trending',
     4: 'After Latest Releases'
@@ -4420,7 +4420,7 @@ function openAddAdModal() {
     document.getElementById('adEditId').value = '';
     document.getElementById('adForm').reset();
     document.getElementById('adEnabled').value = 'true';
-    document.getElementById('adPosition').value = '1';
+    document.getElementById('adPosition').value = '0';
     const preview = document.getElementById('adImagePreview');
     if (preview) preview.style.display = 'none';
     document.getElementById('adModalOverlay').style.display = 'flex';

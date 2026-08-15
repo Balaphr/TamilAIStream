@@ -21,11 +21,30 @@
 
 const APP_VERSION = '__BUILD_VERSION__';
 const CACHE_NAME = 'tamilai-v' + APP_VERSION;
+const CRITICAL_ASSETS = [
+  '/',
+  '/index.html',
+  '/ultra-perf.css',
+  '/yt-music.css',
+  '/style.css',
+  '/premium-ui.css',
+  '/global-player.css',
+  '/ultra-perf.js',
+  '/script.js',
+  '/global-player.js',
+  '/premium-landing.js',
+  '/yt-music.js',
+  '/data-store.js',
+  '/player-engine.js'
+];
 
 /* ---- Install ---- */
-self.addEventListener('install', () => {
-  // Do NOT skipWaiting here.  The page controls activation via
-  // a SKIP_WAITING message when the user clicks "Update Now".
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(CRITICAL_ASSETS))
+      .then(() => self.skipWaiting())
+  );
 });
 
 /* ---- Activate ---- */
@@ -39,6 +58,20 @@ self.addEventListener('activate', (event) => {
         )
       )
       .then(() => self.clients.claim())
+  );
+});
+
+/* ---- Prune old caches on activation ---- */
+self.addEventListener('activate', (event) => {
+  const MAX_CACHES = 3;
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      const oldCaches = keys
+        .filter((k) => k.startsWith('tamilai-v') && k !== CACHE_NAME)
+        .sort()
+        .slice(0, Math.max(0, keys.length - MAX_CACHES));
+      return Promise.all(oldCaches.map((k) => caches.delete(k)));
+    })
   );
 });
 
@@ -82,15 +115,19 @@ self.addEventListener('fetch', (event) => {
   }
 
   // 3b. Static assets (JS / CSS / images / fonts served from same origin)
+  // Strategy: stale-while-revalidate for instant loading, background update
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response && response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(request, clone));
-        }
-        return response;
-      })
-      .catch(() => caches.open(CACHE_NAME).then((c) => c.match(request)))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.match(request).then((cached) => {
+        const fetchPromise = fetch(request).then((response) => {
+          if (response && response.ok) {
+            cache.put(request, response.clone());
+          }
+          return response;
+        }).catch(() => cached);
+
+        return cached || fetchPromise;
+      });
+    })
   );
 });

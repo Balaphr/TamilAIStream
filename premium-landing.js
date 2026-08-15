@@ -53,7 +53,7 @@ const TamilAIPremium = (function () {
             ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
         }
         resize();
-        window.addEventListener('resize', resize);
+        window.addEventListener('resize', resize, { passive: true });
         for (let i = 0; i < 22; i++) {
             notes.push({
                 x: Math.random() * W,
@@ -67,6 +67,7 @@ const TamilAIPremium = (function () {
             });
         }
         let raf;
+        let isVisible = true;
         function draw(t) {
             ctx.clearRect(0, 0, W, H);
             for (const p of notes) {
@@ -82,10 +83,18 @@ const TamilAIPremium = (function () {
                 ctx.fillStyle = g;
                 ctx.fill();
             }
-            raf = requestAnimationFrame(draw);
+            if (isVisible && !document.hidden) raf = requestAnimationFrame(draw);
         }
         raf = requestAnimationFrame(draw);
         TamilAIPremium._heroRaf = raf;
+        // Stop animation when canvas is off-screen to save resources
+        if ('IntersectionObserver' in window) {
+            const heroIo = new IntersectionObserver((entries) => {
+                isVisible = entries.some(e => e.isIntersecting);
+                if (isVisible && !raf) raf = requestAnimationFrame(draw);
+            }, { threshold: 0 });
+            heroIo.observe(canvas);
+        }
     }
 
     function updateHeroStats() {
@@ -166,183 +175,6 @@ const TamilAIPremium = (function () {
     function initOnboarding() {
         // Onboarding overlay removed from DOM — no-op
         return;
-    }
-
-        // Check if user has completed onboarding
-        const hasOnboarded = localStorage.getItem('tamilAI_onboarded');
-        const isAuth = (typeof Auth !== 'undefined' && Auth.isAuthenticated && Auth.isAuthenticated());
-
-        // If already authenticated and onboarded, skip
-        if (isAuth && hasOnboarded) return;
-
-        // If not authenticated, show onboarding after splash
-        if (!isAuth) {
-            setTimeout(() => {
-                overlay.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-            }, 2500);
-        }
-
-        // Step navigation
-        const step1 = document.getElementById('onboardStep1');
-        const step2 = document.getElementById('onboardStep2');
-        const step3 = document.getElementById('onboardStep3');
-
-        function showStep(step) {
-            [step1, step2, step3].forEach(s => s.classList.remove('active'));
-            step.classList.add('active');
-        }
-
-        // Get Started button → show login
-        const getStartedBtn = document.getElementById('onboardGetStarted');
-        if (getStartedBtn) {
-            getStartedBtn.addEventListener('click', () => showStep(step2));
-        }
-
-        // Skip to login
-        const skipToLogin = document.getElementById('onboardSkipToLogin');
-        if (skipToLogin) {
-            skipToLogin.addEventListener('click', () => showStep(step2));
-        }
-
-        // Back button
-        const backBtn = document.getElementById('onboardBack');
-        if (backBtn) {
-            backBtn.addEventListener('click', () => showStep(step1));
-        }
-
-        // Toggle login/register
-        const showReg = document.getElementById('onboardShowRegister');
-        const showLogin = document.getElementById('onboardShowLogin');
-        const loginForm = document.getElementById('onboardLoginForm');
-        const regForm = document.getElementById('onboardRegisterForm');
-        const regSwitch = document.getElementById('onboardRegisterSwitch');
-
-        if (showReg) showReg.addEventListener('click', () => {
-            loginForm.style.display = 'none';
-            regForm.style.display = 'flex';
-            regSwitch.style.display = 'block';
-            document.querySelector('.onboard-switch-text').style.display = 'none';
-        });
-        if (showLogin) showLogin.addEventListener('click', () => {
-            loginForm.style.display = 'flex';
-            regForm.style.display = 'none';
-            regSwitch.style.display = 'none';
-            document.querySelector('.onboard-switch-text').style.display = 'block';
-        });
-
-        // Login form submission
-        if (loginForm) {
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('onboardEmail').value;
-                const password = document.getElementById('onboardPassword').value;
-                if (!email || !password) return;
-                try {
-                    if (typeof Auth !== 'undefined' && Auth.login) {
-                        await Auth.login(email, password);
-                    }
-                    closeOnboarding(true);
-                } catch (err) {
-                    alert(err.message || 'Login failed');
-                }
-            });
-        }
-
-        // Register form submission
-        if (regForm) {
-            regForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const name = document.getElementById('onboardRegName').value;
-                const email = document.getElementById('onboardRegEmail').value;
-                const password = document.getElementById('onboardRegPassword').value;
-                const confirm = document.getElementById('onboardRegConfirm').value;
-                if (!name || !email || !password) return;
-                if (password !== confirm) { alert('Passwords do not match'); return; }
-                try {
-                    if (typeof Auth !== 'undefined' && Auth.register) {
-                        await Auth.register(email, password, name);
-                    }
-                    showStep(step3);
-                } catch (err) {
-                    alert(err.message || 'Registration failed');
-                }
-            });
-        }
-
-        // Google login
-        const googleBtn = document.getElementById('onboardGoogleLogin');
-        if (googleBtn) {
-            googleBtn.addEventListener('click', async () => {
-                try {
-                    if (typeof Auth !== 'undefined' && Auth.googleLogin) {
-                        await Auth.googleLogin();
-                    }
-                    closeOnboarding(true);
-                } catch (err) {
-                    alert(err.message || 'Google login failed');
-                }
-            });
-        }
-
-        // Guest login
-        const guestBtn = document.getElementById('onboardGuestLogin');
-        if (guestBtn) {
-            guestBtn.addEventListener('click', () => {
-                localStorage.setItem('tamilAI_onboarded', 'true');
-                closeOnboarding(false);
-            });
-        }
-
-        // Interest selection
-        const interestsGrid = document.getElementById('onboardInterests');
-        if (interestsGrid) {
-            interestsGrid.addEventListener('click', (e) => {
-                const btn = e.target.closest('.onboard-interest');
-                if (btn) btn.classList.toggle('selected');
-            });
-        }
-
-        // Finish button
-        const finishBtn = document.getElementById('onboardFinish');
-        if (finishBtn) {
-            finishBtn.addEventListener('click', () => {
-                const selected = [];
-                document.querySelectorAll('.onboard-interest.selected').forEach(el => {
-                    selected.push(el.dataset.mood);
-                });
-                if (selected.length > 0) {
-                    localStorage.setItem('tamilAI_preferences', JSON.stringify(selected));
-                }
-                localStorage.setItem('tamilAI_onboarded', 'true');
-                closeOnboarding(true);
-            });
-        }
-
-        // Skip prefs
-        const skipPrefs = document.getElementById('onboardSkipPrefs');
-        if (skipPrefs) {
-            skipPrefs.addEventListener('click', () => {
-                localStorage.setItem('tamilAI_onboarded', 'true');
-                closeOnboarding(true);
-            });
-        }
-
-        function closeOnboarding(reload) {
-            overlay.classList.add('onboard-hide');
-            document.body.style.overflow = '';
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                if (reload) window.location.reload();
-            }, 600);
-        }
-    }
-
-    // Initialize onboarding when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initOnboarding);
-    } else {
-        initOnboarding();
     }
 
     /* ------------------ Radio page ------------------ */
@@ -504,7 +336,6 @@ const TamilAIPremium = (function () {
             origNavigate(page, opts);
             if (page === 'radio' || page === 'stations') {
                 syncRadioState();
-                requestAnimationFrame(syncRadioState);
             } else if (page === 'home') {
                 syncHeroState();
             }
@@ -515,8 +346,7 @@ const TamilAIPremium = (function () {
         if (typeof DataStore === 'undefined' || typeof DataStore.on !== 'function') return;
         try {
             DataStore.on('change', (event) => {
-                if (event && (event.keyName === 'STATIONS' || event.keyName === 'IMAGES')) {
-                    syncRadioState();
+                if (event && event.keyName === 'STATIONS') {
                     updateHeroStats();
                 }
             });
@@ -525,19 +355,17 @@ const TamilAIPremium = (function () {
 
     /* ------------------ global state hooks ------------------ */
     function installStateHooks() {
-        // Keep vinyl + radio cards in sync with play/pause across the app.
+        // Keep hero CSS in sync with play/pause — lightweight, no DOM rebuilds.
         document.addEventListener('play', (e) => {
-            if (e.target === window.audioPlayer) { syncHeroState(); syncRadioState(); }
+            if (e.target === window.audioPlayer) { syncHeroState(); }
         }, true);
         document.addEventListener('pause', (e) => {
-            if (e.target === window.audioPlayer) { syncHeroState(); syncRadioState(); }
+            if (e.target === window.audioPlayer) { syncHeroState(); }
         }, true);
         if (window.audioPlayer) {
-            window.audioPlayer.addEventListener('play', () => { syncHeroState(); syncRadioState(); }, { capture: true });
-            window.audioPlayer.addEventListener('pause', () => { syncHeroState(); syncRadioState(); }, { capture: true });
+            window.audioPlayer.addEventListener('play', () => { syncHeroState(); }, { capture: true });
+            window.audioPlayer.addEventListener('pause', () => { syncHeroState(); }, { capture: true });
         }
-        // Re-check every second in case a custom player bypasses events.
-        setInterval(() => syncHeroState(), 900);
     }
 
     /* ------------------ init ------------------ */
@@ -606,12 +434,6 @@ const TamilAIPremium = (function () {
     };
     window.TamilAIPremium = api;
     return api;
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
 })();
 
 // Public alias for inline onclick handlers in the existing HTML.

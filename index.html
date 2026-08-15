@@ -24,6 +24,16 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://tamilai.stream">
     <meta name="theme-color" content="#000000">
+    <!-- Performance: Preconnect to critical origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <!-- Performance: Preload critical CSS -->
+    <link rel="preload" href="ultra-perf.css" as="style">
+    <link rel="preload" href="yt-music.css" as="style">
+    <!-- Performance: DNS prefetch for Firebase -->
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
+    <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -44,6 +54,7 @@
     <link rel="stylesheet" href="ai-glass.css">
     <link rel="stylesheet" href="splash.css">
     <link rel="stylesheet" href="premium-ui.css">
+    <link rel="stylesheet" href="ultra-perf.css">
 </head>
 <body>
     <!-- Startup Splash Screen -->
@@ -422,29 +433,44 @@
             <!-- ============ PAGE: HOME ============ -->
             <div class="ytm-page ytm-page-home active" id="page-home">
 
-                <!-- Premium Top Header Bar -->
-                <div class="top-header-bar">
-                    <div class="top-header-container">
-                        <div class="top-header-item">
-                            <i class="fas fa-calendar-alt top-header-icon"></i>
-                            <span class="top-header-label">Today</span>
-                            <span class="top-header-value" id="liveDate">Loading...</span>
-                        </div>
-                        <div class="top-header-divider"></div>
-                        <div class="top-header-item">
-                            <i class="fas fa-clock top-header-icon"></i>
-                            <span class="top-header-label">Live</span>
-                            <span class="top-header-value" id="liveTime">Loading...</span>
-                        </div>
+                <!-- Top Search Bar -->
+                <div class="home-search-bar">
+                    <div class="home-search-inner">
+                        <i class="fas fa-search home-search-icon"></i>
+                        <input type="text" class="home-search-input" id="homeSearchInput" placeholder="Search songs, artists, albums..." autocomplete="off">
+                        <button class="home-search-voice" onclick="if(typeof YTMusic!=='undefined')YTMusic.toggleVoiceSearch()" title="Voice Search"><i class="fas fa-microphone"></i></button>
+                        <button class="home-search-ai" onclick="if(typeof openAIMusicAssistant==='function')openAIMusicAssistant()" title="AI Search"><i class="fas fa-wand-magic-sparkles"></i></button>
                     </div>
                 </div>
 
-                <!-- AI Greeting Section -->
-                <div class="greeting-section" data-section="greeting"></div>
+                <!-- Category Navigation -->
+                <div class="home-categories" id="homeCategories">
+                    <button class="home-cat-btn active" data-cat="all" onclick="filterHomeCategory('all')"><i class="fas fa-fire"></i> All</button>
+                    <button class="home-cat-btn" data-cat="songs" onclick="filterHomeCategory('songs')"><i class="fas fa-music"></i> Songs</button>
+                    <button class="home-cat-btn" data-cat="albums" onclick="filterHomeCategory('albums')"><i class="fas fa-compact-disc"></i> Albums</button>
+                    <button class="home-cat-btn" data-cat="artists" onclick="filterHomeCategory('artists')"><i class="fas fa-users"></i> Artists</button>
+                    <button class="home-cat-btn" data-cat="movies" onclick="filterHomeCategory('movies')"><i class="fas fa-film"></i> Movies</button>
+                    <button class="home-cat-btn" data-cat="collections" onclick="filterHomeCategory('collections')"><i class="fas fa-layer-group"></i> Collections</button>
+                    <button class="home-cat-btn" data-cat="radio" onclick="filterHomeCategory('radio')"><i class="fas fa-radio"></i> Radio</button>
+                    <button class="home-cat-btn" data-cat="ai" onclick="filterHomeCategory('ai')"><i class="fas fa-robot"></i> AI Music</button>
+                </div>
 
-                <!-- Advertisement Banner — Position 1 (Top) -->
-                <section class="section ad-banner-section" data-section="ad-banner-1">
-                    <div class="ad-banner-container" id="adBannerContainer1"></div>
+                <!-- Hero Advertisement -->
+                <section class="section hero-ad-section" data-section="hero-ad">
+                    <div class="hero-ad-container" id="heroAdContainer"></div>
+                </section>
+
+                <!-- Personalized Music / Made For You -->
+                <section class="section personalized-section" data-section="personalized" data-premium-reveal>
+                    <div class="section-header">
+                        <h2 class="section-title" data-kicker="For You"><i class="fas fa-heart" style="color:#f43f5e;margin-right:8px;"></i>Made For You</h2>
+                    </div>
+                    <div class="stations-track" id="personalizedTrack"></div>
+                </section>
+
+                <!-- Advertisement Banner — Position 2 -->
+                <section class="section ad-banner-section" data-section="ad-banner-2">
+                    <div class="ad-banner-container" id="adBannerContainer2"></div>
                 </section>
 
                 <!-- Recently Added Songs -->
@@ -457,15 +483,15 @@
                     </div>
                 </section>
 
-                <!-- Advertisement Banner — Position 2 -->
-                <section class="section ad-banner-section" data-section="ad-banner-2">
-                    <div class="ad-banner-container" id="adBannerContainer2"></div>
+                <!-- Advertisement Banner — Position 3 -->
+                <section class="section ad-banner-section" data-section="ad-banner-3">
+                    <div class="ad-banner-container" id="adBannerContainer3"></div>
                 </section>
 
                 <!-- Trending Songs -->
                 <section class="section trending-section" data-section="trending" id="trendingScroll" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title" data-kicker="Trending">Trending Songs</h2>
+                        <h2 class="section-title" data-kicker="Trending"><i class="fas fa-fire" style="color:#f97316;margin-right:8px;"></i>Trending Songs</h2>
                         <div class="slider-controls">
                             <button class="slider-btn scroll-left" aria-label="Scroll left"><i class="fas fa-chevron-left"></i></button>
                             <button class="slider-btn scroll-right" aria-label="Scroll right"><i class="fas fa-chevron-right"></i></button>
@@ -474,9 +500,9 @@
                     <div class="stations-track"></div>
                 </section>
 
-                <!-- Advertisement Banner — Position 3 -->
-                <section class="section ad-banner-section" data-section="ad-banner-3">
-                    <div class="ad-banner-container" id="adBannerContainer3"></div>
+                <!-- Advertisement Banner — Position 4 -->
+                <section class="section ad-banner-section" data-section="ad-banner-4">
+                    <div class="ad-banner-container" id="adBannerContainer4"></div>
                 </section>
 
                 <!-- Latest Releases -->
@@ -491,9 +517,16 @@
                     </div>
                 </section>
 
-                <!-- Advertisement Banner — Position 4 -->
-                <section class="section ad-banner-section" data-section="ad-banner-4">
-                    <div class="ad-banner-container" id="adBannerContainer4"></div>
+                <!-- AI Recommended -->
+                <section class="section ai-recommended-section" data-section="ai-recommended" data-premium-reveal>
+                    <div class="section-header">
+                        <h2 class="section-title" data-kicker="AI"><i class="fas fa-robot" style="color:#8b5cf6;margin-right:8px;"></i>AI Recommended</h2>
+                        <div class="slider-controls">
+                            <button class="slider-btn scroll-left" aria-label="Scroll left"><i class="fas fa-chevron-left"></i></button>
+                            <button class="slider-btn scroll-right" aria-label="Scroll right"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="stations-track" id="aiRecommendedTrack"></div>
                 </section>
 
                 <!-- Albums -->
@@ -511,7 +544,7 @@
                 <!-- Artist Hits -->
                 <section class="section tamil-hits-section" data-section="tamil-hits" data-premium-reveal>
                     <div class="section-header">
-                        <h2 class="section-title" data-kicker="Artists">Artist Hits</h2>
+                        <h2 class="section-title" data-kicker="Artists"><i class="fas fa-users" style="color:#22d3ee;margin-right:8px;"></i>Artist Hits</h2>
                         <button class="see-all-btn" onclick="document.querySelector('[data-page=\'artists\']').click()">See All</button>
                     </div>
                     <div class="tamil-hits-grid" id="tamilHitsGrid"></div>
@@ -1024,7 +1057,8 @@
     </footer>
 
     <!-- Firebase SDK -->
-<script src="auth.js"></script>
+    <script src="ultra-perf.js"></script>
+    <script src="auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>

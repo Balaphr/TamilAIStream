@@ -141,8 +141,8 @@ class ParticleSystem {
         });
     }
     bindEvents() {
-        window.addEventListener('resize', () => { this.resize(); this.createParticles(); this.createNeuralNodes(); });
-        document.addEventListener('mousemove', (e) => { this.mouse.x = e.clientX; this.mouse.y = e.clientY; });
+        window.addEventListener('resize', () => { this.resize(); this.createParticles(); this.createNeuralNodes(); }, { passive: true });
+        document.addEventListener('mousemove', (e) => { this.mouse.x = e.clientX; this.mouse.y = e.clientY; }, { passive: true });
         document.addEventListener('mouseleave', () => { this.mouse.x = null; this.mouse.y = null; });
     }
     drawGlassParticle(p) {
@@ -234,7 +234,7 @@ class ParticleSystem {
             node.connections.forEach(conn => this.drawNeuralConnection(node, conn));
             this.drawNeuralNode(node);
         });
-        requestAnimationFrame(() => this.animate());
+        if (!document.hidden) requestAnimationFrame(() => this.animate());
     }
 }
 
@@ -289,7 +289,7 @@ class FeaturedSlider {
             if (Math.abs(diff) > 50) { diff > 0 ? this.next() : this.prev(); this.resetAutoplay(); }
         });
     }
-    startAutoplay() { this.autoplayInterval = setInterval(() => this.next(), 5000); }
+    startAutoplay() { this.autoplayInterval = setInterval(() => { if (!document.hidden) this.next(); }, 5000); }
     resetAutoplay() { clearInterval(this.autoplayInterval); this.startAutoplay(); }
     destroy() { clearInterval(this.autoplayInterval); }
 }
@@ -462,7 +462,7 @@ const ProgressSync = (() => {
                 }
             }
         }
-        _rafId = requestAnimationFrame(_tick);
+        if (!document.hidden) _rafId = requestAnimationFrame(_tick);
     }
 
     function start() {
@@ -2124,9 +2124,12 @@ function renderFeaturedSliderDynamic() {
     const track = document.getElementById('sliderTrack');
     const dotsContainer = document.getElementById('sliderDots');
     if (!track) return;
-    
+
     const featured = DataStore.getFeatured();
     const stations = DataStore.getStations();
+
+    const hash = featured.map(f => f.id + (f.stationId || '') + (f.status || '')).join(',');
+    if (!_hasSectionChanged('featured', hash)) return;
     
     if (!featured.length) {
         track.innerHTML = '<div class="slide-card"><div class="slide-info"><h3>No featured stations</h3></div></div>';
@@ -2194,8 +2197,11 @@ function renderTrendingDynamicStationsLegacy() {
 function renderCategoriesDynamic() {
     const container = document.querySelector('.categories-grid');
     if (!container) return;
-    
+
     const categories = DataStore.getCategories();
+
+    const hash = categories.map(c => c.id + (c.status || '')).join(',');
+    if (!_hasSectionChanged('categories', hash)) return;
     
     if (!categories.length) {
         container.innerHTML = '<div class="category-card"><span class="category-name">No categories</span></div>';
@@ -2224,8 +2230,11 @@ function renderCategoriesDynamic() {
 function renderArtistHitsDynamic() {
     const container = document.getElementById('tamilHitsGrid');
     if (!container) return;
-    
+
     const artistHits = DataStore.getArtistHits();
+
+    const hash = artistHits.map(a => a.id + (a.status || '')).join(',');
+    if (!_hasSectionChanged('artistHits', hash)) return;
     
     if (!artistHits.length) {
         container.innerHTML = '<div class="tamil-hit-card"><div class="hit-card-content"><h3>No artist collections</h3></div></div>';
@@ -2333,15 +2342,24 @@ function renderCollectionsTrack(trackId, items) {
 }
 
 function renderMoviesCollectionsDynamic() {
-    renderCollectionsTrack('moviesCollectionTrack', DataStore.getMoviesCollections());
+    const data = DataStore.getMoviesCollections();
+    const hash = data.map(c => c.id + (c.status || '')).join(',');
+    if (!_hasSectionChanged('movies', hash)) return;
+    renderCollectionsTrack('moviesCollectionTrack', data);
 }
 
 function renderYearlyCollectionsDynamic() {
-    renderCollectionsTrack('yearlyCollectionTrack', DataStore.getYearlyCollections());
+    const data = DataStore.getYearlyCollections();
+    const hash = data.map(c => c.id + (c.status || '')).join(',');
+    if (!_hasSectionChanged('yearly', hash)) return;
+    renderCollectionsTrack('yearlyCollectionTrack', data);
 }
 
 function renderLatestCollectionsDynamic() {
-    renderCollectionsTrack('latestCollectionTrack', DataStore.getLatestCollections());
+    const data = DataStore.getLatestCollections();
+    const hash = data.map(c => c.id + (c.status || '')).join(',');
+    if (!_hasSectionChanged('latest', hash)) return;
+    renderCollectionsTrack('latestCollectionTrack', data);
 }
 
 // ============================================
@@ -2355,7 +2373,19 @@ function renderAdBanners() {
     if (window._lastAdHash === newHash) return;
     window._lastAdHash = newHash;
 
-    for (let pos = 1; pos <= 4; pos++) {
+    // Hero ad (position 0)
+    const heroContainer = document.getElementById('heroAdContainer');
+    if (heroContainer) {
+        const heroAds = ads.filter(a => a.position === 0);
+        if (!heroAds.length) {
+            heroContainer.innerHTML = '';
+        } else {
+            renderHeroAd(heroContainer, heroAds);
+        }
+    }
+
+    // Banner ads (positions 2, 3, 4)
+    for (let pos = 2; pos <= 4; pos++) {
         const container = document.getElementById('adBannerContainer' + pos);
         if (!container) continue;
         const posAds = ads.filter(a => a.position === pos);
@@ -2366,6 +2396,36 @@ function renderAdBanners() {
         }
         renderAdSlot(container, posAds, pos);
     }
+}
+
+function renderHeroAd(container, ads) {
+    if (ads.length === 1) {
+        container.innerHTML = buildHeroAdHTML(ads[0]);
+        initAdTiltEffect(container);
+        return;
+    }
+    let currentIdx = 0;
+    container.innerHTML = buildHeroAdHTML(ads[0]);
+    initAdTiltEffect(container);
+
+    if (_adTimers[0]) clearInterval(_adTimers[0]);
+    _adTimers[0] = setInterval(() => {
+        currentIdx = (currentIdx + 1) % ads.length;
+        container.innerHTML = buildHeroAdHTML(ads[currentIdx]);
+        initAdTiltEffect(container);
+    }, 40000);
+}
+
+function buildHeroAdHTML(ad) {
+    const wrapper = ad.targetLink ? 'a' : 'div';
+    const attrs = ad.targetLink ? `href="${ad.targetLink}" ${ad.targetLink.startsWith('#') ? '' : 'target="_blank" rel="noopener"'}` : '';
+    return `<${wrapper} class="hero-ad-card" ${attrs}>
+        <img src="${ad.imageUrl}" alt="${ad.title || 'Advertisement'}" class="hero-ad-image" loading="lazy">
+        <div class="hero-ad-overlay">
+            ${ad.title ? `<span class="hero-ad-title">${ad.title}</span>` : ''}
+            ${ad.description ? `<span class="hero-ad-desc">${ad.description}</span>` : ''}
+        </div>
+    </${wrapper}>`;
 }
 
 function renderAdSlot(container, ads, pos) {
@@ -2427,6 +2487,9 @@ function renderAlbumsDynamic() {
     if (!container) return;
     let songs = [];
     try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
+
+    const hash = songs.map(s => s.id).join(',');
+    if (!_hasSectionChanged('albums', hash)) return;
     if (!songs.length) {
         container.innerHTML = '<div style="padding:20px;color:#888;text-align:center;width:100%;">No albums yet. Add songs from Builder.</div>';
         return;
@@ -2464,6 +2527,126 @@ function playAlbumSongs(albumName) {
     }
 }
 window.playAlbumSongs = playAlbumSongs;
+
+// ============================================
+// Personalized Music / Made For You
+// ============================================
+function renderPersonalizedMusic() {
+    const container = document.getElementById('personalizedTrack');
+    if (!container) return;
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
+    // Use liked songs + recently played for personalization
+    let liked = [];
+    try { liked = JSON.parse(localStorage.getItem('ytm_likedSongs') || '[]'); } catch (e) {}
+    let personalized = songs.filter(s => liked.includes(s.id));
+    if (personalized.length < 5) {
+        // Fallback: random published songs
+        personalized = songs.slice().sort(() => Math.random() - 0.5).slice(0, 10);
+    } else {
+        personalized = personalized.slice(0, 10);
+    }
+    const hash = personalized.map(s => s.id).join(',');
+    if (!_hasSectionChanged('personalized', hash)) return;
+    if (!personalized.length) {
+        container.innerHTML = '<div style="padding:20px;color:#888;text-align:center;width:100%;">Like some songs to get personalized recommendations!</div>';
+        return;
+    }
+    renderSongTrack(container, personalized, 10);
+}
+
+// ============================================
+// AI Recommended
+// ============================================
+function renderAIRecommendedSection() {
+    const container = document.getElementById('aiRecommendedTrack');
+    if (!container) return;
+    let songs = [];
+    try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
+    const picks = songs.slice().sort(() => Math.random() - 0.5).slice(0, 10);
+    const hash = picks.map(s => s.id).join(',') + Date.now();
+    // AI recommended is random, so always render with a time-based hash that changes slowly
+    const slowHash = Math.floor(Date.now() / 300000).toString(); // changes every 5 min
+    if (!_hasSectionChanged('ai-recommended', slowHash)) return;
+    renderSongTrack(container, picks, 10);
+}
+
+// ============================================
+// Category Navigation Filter
+// ============================================
+function filterHomeCategory(cat) {
+    document.querySelectorAll('.home-cat-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector('.home-cat-btn[data-cat="' + cat + '"]');
+    if (btn) btn.classList.add('active');
+    // Show/hide sections based on category
+    const sections = {
+        all: null,
+        songs: ['trending', 'recently-added', 'ai-recommended'],
+        albums: ['albums'],
+        artists: ['tamil-hits'],
+        movies: ['movies-collection', 'yearly-collection'],
+        collections: ['latest-collection', 'yearly-collection'],
+        radio: [],
+        ai: ['ai-recommended']
+    };
+    const showSections = sections[cat] || null;
+    document.querySelectorAll('#page-home .section').forEach(sec => {
+        if (!showSections) {
+            sec.style.display = '';
+        } else {
+            const secId = sec.dataset.section || '';
+            sec.style.display = showSections.includes(secId) ? '' : 'none';
+        }
+    });
+}
+window.filterHomeCategory = filterHomeCategory;
+
+// ============================================
+// Home Search (debounced)
+// ============================================
+(function() {
+    let _searchTimer = null;
+    document.addEventListener('DOMContentLoaded', () => {
+        const input = document.getElementById('homeSearchInput');
+        if (!input) return;
+        input.addEventListener('input', () => {
+            clearTimeout(_searchTimer);
+            _searchTimer = setTimeout(() => {
+                const q = input.value.trim().toLowerCase();
+                if (q.length < 2) {
+                    // Show all sections
+                    document.querySelectorAll('#page-home .section').forEach(s => s.style.display = '');
+                    return;
+                }
+                // Filter visible sections by search query
+                let songs = [];
+                try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
+                const matched = songs.filter(s => {
+                    const text = ((s.title||'') + ' ' + (s.artist||'') + ' ' + (s.movie||'') + ' ' + (s.album||'')).toLowerCase();
+                    return text.includes(q);
+                });
+                // Update trending with filtered results
+                const trendingContainer = document.querySelector('#trendingScroll .stations-track');
+                if (trendingContainer && matched.length) {
+                    renderSongTrack(trendingContainer, matched.slice(0, 12), 12);
+                }
+            }, 300);
+        });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {
+                    YTMusic.navigateTo('search');
+                    const searchInput = document.getElementById('ytmSearchInput');
+                    if (searchInput) {
+                        searchInput.value = input.value;
+                        searchInput.dispatchEvent(new Event('input'));
+                    }
+                }
+            }
+        });
+    });
+})();
 
 // ============================================
 // Movie Sidebar (Desktop)
@@ -2820,6 +3003,9 @@ function renderAIRecommendedStationsLegacy() {
 function applySiteSettings() {
     const settings = DataStore.getSiteSettings();
     if (!settings) return;
+
+    const hash = JSON.stringify(settings);
+    if (!_hasSectionChanged('siteSettings', hash)) return;
     
     document.title = settings.title || 'Tamil AI Stream';
     
@@ -3391,17 +3577,24 @@ function openMovieUniverse(movieName) {
 
 // Render all dynamic content
 let _isRenderingAll = false;
+const _homeSectionHashes = {};
+function _hasSectionChanged(sectionId, data) {
+    const hash = typeof data === 'string' ? data : JSON.stringify(data);
+    if (_homeSectionHashes[sectionId] === hash) return false;
+    _homeSectionHashes[sectionId] = hash;
+    return true;
+}
+
 function renderAllDynamicContent() {
     if (_isRenderingAll) return;
     _isRenderingAll = true;
-    renderGreetingSection();
+
+    // Light synchronous renders
     renderAdBanners();
-    renderAlbumsDynamic();
     applySiteSettings();
-    
-    // Batch DOM-heavy renders into a single animation frame to prevent blinking
+
+    // Heavy renders batched in animation frame
     requestAnimationFrame(() => {
-        renderFeaturedSliderDynamic();
         renderTrendingDynamic();
         renderArtistHitsDynamic();
         initTamilHitsCarousel();
@@ -3409,6 +3602,9 @@ function renderAllDynamicContent() {
         renderYearlyCollectionsDynamic();
         renderLatestCollectionsDynamic();
         renderCategoriesDynamic();
+        renderAlbumsDynamic();
+        renderPersonalizedMusic();
+        renderAIRecommendedSection();
 
         loadSongs(true).then(songs => {
             renderTickerItems(songs);
@@ -3417,7 +3613,6 @@ function renderAllDynamicContent() {
         });
     });
 }
-
 // Mood Player click handler
 document.addEventListener('click', function(e) {
     const moodCard = e.target.closest('.mood-card');
@@ -3474,180 +3669,20 @@ document.addEventListener('click', function(e) {
 });
 
 // ============================================
-// Enhanced Cross-Tab Sync - Builder ↔ Live Website
+// Cross-Tab Sync - Builder ↔ Live Website
 // ============================================
-let lastKnownSongCount = 0;
-let syncCheckInterval = null;
 
 function setupRealtimeSync() {
-    // Listen for DataStore changes (same window)
-    DataStore.on('change', (event) => {
-        console.log('[Realtime] Data changed:', event.keyName);
-        
-        switch (event.keyName) {
-            case 'STATIONS':
-                renderAllStationsDynamic();
-                renderFeaturedSliderDynamic();
-                renderTrendingDynamic();
-                renderAIRecommendedDynamic();
-                break;
-            case 'FEATURED':
-                renderFeaturedSliderDynamic();
-                break;
-            case 'TRENDING':
-                renderTrendingDynamic();
-                break;
-            case 'CATEGORIES':
-                renderCategoriesDynamic();
-                break;
-            case 'ARTIST_HITS':
-                renderArtistHitsDynamic();
-                initTamilHitsCarousel();
-                break;
-            case 'MOVIES_COLLECTIONS':
-                renderMoviesCollectionsDynamic();
-                break;
-            case 'YEARLY_COLLECTIONS':
-                renderYearlyCollectionsDynamic();
-                break;
-            case 'LATEST_COLLECTIONS':
-                renderLatestCollectionsDynamic();
-                break;
-            case 'ADVERTISEMENTS':
-                renderAdBanners();
-                break;
-            case 'SITE_SETTINGS':
-                applySiteSettings();
-                break;
-            case 'SONGS':
-                handleSongsUpdate();
-                break;
-            case 'LAYOUT':
-                setupLayoutSync();
-                break;
-            case 'IMAGES':
-                renderAllStationsDynamic();
-                renderFeaturedSliderDynamic();
-                renderTrendingDynamic();
-                renderAIRecommendedDynamic();
-                break;
-        }
-    });
-
-    // Method 1: Listen for native storage events (cross-tab)
+    // ONLY listen for ad changes from the builder (cross-tab)
     window.addEventListener('storage', (e) => {
-        if (e.key === 'tamilAIStream_songs') {
-            console.log('[Sync] Songs updated in another tab');
-            handleSongsUpdate();
-        }
         if (e.key === 'tamilAIStream_advertisements') {
-            console.log('[Sync] Advertisements updated in another tab');
             renderAdBanners();
         }
-        if (e.key === 'tamilAIStream_veOverrides') {
-            console.log('[Sync] VE overrides updated from Builder');
-            applyVEOverrides();
-        }
     });
-
-    // Method 2: Listen for custom storage-sync event from Builder
+    // Custom event from builder for immediate ad sync
     window.addEventListener('storage-sync', () => {
-        console.log('[Sync] Received storage-sync event from Builder');
         renderAdBanners();
     });
-
-    // Method 2b: Listen for premium-sections-sync event from Builder
-    window.addEventListener('premium-sections-sync', () => {
-        console.log('[Sync] Received premium-sections-sync event');
-        applyVEOverrides();
-    });
-
-    // Method 3: BroadcastChannel (modern browsers)
-    try {
-        const channel = new BroadcastChannel('tamilAIStream_sync');
-        channel.onmessage = (event) => {
-            if (event.data && (event.data.type === 'songs-updated' || event.data.type === 'content-updated')) {
-                console.log('[Sync] Received BroadcastChannel message:', event.data.type);
-                renderAdBanners();
-            }
-        };
-        window._syncChannel = channel;
-    } catch (e) {
-        console.warn('[Sync] BroadcastChannel not supported, using fallback');
-    }
-
-    // Method 4: Polling fallback (checks every 30 seconds)
-    startSyncPolling();
-}
-
-function handleSongsUpdate() {
-    // Debounce: prevent cascading re-renders from multiple change events
-    if (handleSongsUpdate._debounceTimer) clearTimeout(handleSongsUpdate._debounceTimer);
-    handleSongsUpdate._debounceTimer = setTimeout(() => {
-        loadSongs(true).then(songs => {
-            // Content comparison: skip re-render if songs data hasn't changed
-            const newHash = songs.map(s => s.id + (s.updatedAt || '')).join(',');
-            if (handleSongsUpdate._lastHash === newHash) return;
-            handleSongsUpdate._lastHash = newHash;
-
-            displaySongs(songs);
-            renderTickerItems(songs);
-            
-            // Update songs count
-            const countEl = document.getElementById('songsCount');
-            if (countEl) countEl.textContent = songs.length + ' songs';
-            
-            // Update Recently Added section
-            const publishedSongs = songs.filter(s => s.status === 'published');
-            if (publishedSongs.length > 0) {
-                renderRecentlyAdded(songs);
-            }
-        });
-    }, 300);
-}
-
-function startSyncPolling() {
-    // Initial count
-    const initialSongs = DataStore.getSongs() || [];
-    lastKnownSongCount = initialSongs.length;
-    let lastVEOverrideTS = 0;
-
-    // Poll every 30 seconds (reduced from 3s to prevent home page blinking)
-    syncCheckInterval = setInterval(() => {
-        try {
-            const currentSongs = DataStore.getSongs() || [];
-            const currentCount = currentSongs.length;
-            
-            // Check if songs count changed
-            if (currentCount !== lastKnownSongCount) {
-                console.log('[Sync] Detected song changes via polling');
-                handleSongsUpdate();
-                lastKnownSongCount = currentCount;
-            }
-
-            // Check if VE overrides changed
-            try {
-                const raw = localStorage.getItem('tamilAIStream_veOverrides');
-                if (raw) {
-                    const data = JSON.parse(raw);
-                    if (data && data.timestamp && data.timestamp !== lastVEOverrideTS) {
-                        console.log('[Sync] Detected VE override changes via polling');
-                        applyVEOverrides();
-                        lastVEOverrideTS = data.timestamp;
-                    }
-                }
-            } catch (e) { /* ignore */ }
-        } catch (e) {
-            console.error('[Sync] Polling error:', e);
-        }
-    }, 30000);
-}
-
-function stopSyncPolling() {
-    if (syncCheckInterval) {
-        clearInterval(syncCheckInterval);
-        syncCheckInterval = null;
-    }
 }
 
 // ============================================
@@ -3712,18 +3747,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Apply visual editor overrides from builder
     applyVEOverrides();
     
-    // Setup ticker sync
-    setupTickerSync();
-    
     // Initialize ticker
     initTicker();
 
-    // Setup recently added sync
-    setupRecentlyAddedSync();
-
-    // Initialize recently added marquee
+    // Initialize recently added event listeners (hover/touch)
     initRecentlyAdded();
-    
+
     // Setup filter buttons
     setTimeout(() => {
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -3806,6 +3835,9 @@ function renderTickerItems(songs) {
     if (!track) return;
 
     const publishedSongs = (songs || []).filter(s => s.status === 'published').slice(0, 20);
+
+    const hash = publishedSongs.map(s => s.id).join(',');
+    if (!_hasSectionChanged('ticker', hash)) return;
     if (publishedSongs.length === 0) {
         track.innerHTML = `
             <div class="ytm-ticker-item">
@@ -3866,11 +3898,6 @@ function initTicker() {
     }
 }
 
-function setupTickerSync() {
-    // SONGS change is already handled by setupRealtimeSync -> handleSongsUpdate
-    // which calls renderTickerItems. No duplicate listener needed here.
-}
-
 // ============================================
 // Recently Added Songs Marquee (Dashboard)
 // ============================================
@@ -3885,6 +3912,9 @@ function renderRecentlyAdded(songs) {
         .filter(s => s.status === 'published')
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
         .slice(0, 20);
+
+    const hash = publishedSongs.map(s => s.id + (s.createdAt || '')).join(',');
+    if (!_hasSectionChanged('recentlyAdded', hash)) return;
 
     if (publishedSongs.length === 0) {
         viewport.innerHTML = `
@@ -3955,11 +3985,6 @@ function renderRecentlyAdded(songs) {
 }
 
 function initRecentlyAdded() {
-    // Always load and render songs (allows updates when new songs added via Builder)
-    loadSongs(true).then(songs => {
-        renderRecentlyAdded(songs);
-    });
-
     const viewport = document.getElementById('recentlyAddedViewport');
     if (!viewport) return;
 
@@ -4002,11 +4027,6 @@ function initRecentlyAdded() {
             viewport.classList.remove('touching');
         }, 800);
     }, { passive: true });
-}
-
-function setupRecentlyAddedSync() {
-    // SONGS change is already handled by setupRealtimeSync -> handleSongsUpdate
-    // which calls renderRecentlyAdded. No duplicate listener needed here.
 }
 
 // ============================================
@@ -4091,6 +4111,8 @@ function renderTrendingDynamic() {
     if (!container) return;
     let songs = [];
     try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
+    const hash = songs.map(s => s.id).join(',');
+    if (!_hasSectionChanged('trending', hash)) return;
     renderSongTrack(container, songs, 12);
 }
 
@@ -4100,6 +4122,8 @@ function renderAIRecommendedDynamic() {
     let songs = [];
     try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
     const picks = songs.slice().sort(() => Math.random() - 0.5).slice(0, 8);
+    const hash = picks.map(s => s.id).join(',');
+    if (!_hasSectionChanged('aiRecommended', hash)) return;
     renderSongTrack(container, picks, 8);
 }
 

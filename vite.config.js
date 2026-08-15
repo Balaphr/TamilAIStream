@@ -2,6 +2,36 @@ import { defineConfig } from 'vite'
 import { resolve } from 'path'
 import { readdirSync, copyFileSync, existsSync, mkdirSync, statSync } from 'fs'
 
+const vanillaFiles = [
+  'ultra-perf.js',
+  'auth.js', 'data-store.js', 'firebase-init.js', 'firebase-config.js',
+  'r2-config.js', 'r2-upload.js', 'r2-content-sync.js',
+  'player-engine.js', 'equalizer.js', 'eq-ui.js',
+  'playlist-manager.js', 'search-engine.js', 'search-ui.js',
+  'premium-effects.js', 'player-ui.js',
+  'ai-music-assistant.js', 'ai-autofill.js', 'ai-automation.js',
+  'ai-command-bot.js', 'ai-publish-check.js',
+  'yt-music.js', 'script.js', 'mini-audio-player.js',
+  'global-player.js', 'listening-history.js',
+  'premium-landing.js',
+  'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
+  'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
+  'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js'
+]
+
+function skipVanillaTransform() {
+  return {
+    name: 'skip-vanilla-transform',
+    enforce: 'pre',
+    transform(code, id) {
+      const fileName = id.split(/[\\/]/).pop()
+      if (vanillaFiles.includes(fileName)) {
+        return { code, map: null }
+      }
+    }
+  }
+}
+
 function copyVanillaScripts() {
   return {
     name: 'copy-vanilla-scripts',
@@ -28,7 +58,7 @@ function copyVanillaScripts() {
         'global-player.css', 'mini-audio-player.css',
         'listening-history.css', 'search-ui.css',
         'responsive.css', 'ai-glass.css', 'splash.css',
-        'premium-ui.css',
+        'premium-ui.css', 'ultra-perf.css',
         'builder.css', 'admin.css', 'admin-login.css', 'analytics.css',
         'profile.css', 'playlist.css', 'dashboard.css'
       ]
@@ -72,7 +102,7 @@ function copyVanillaScripts() {
 export default defineConfig({
   root: '.',
   publicDir: 'public',
-  plugins: [copyVanillaScripts()],
+  plugins: [skipVanillaTransform(), copyVanillaScripts()],
   build: {
     outDir: 'dist',
     rollupOptions: {
@@ -93,11 +123,20 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    hmr: { overlay: false },
     proxy: {
       '/api': {
         target: 'http://localhost:8788',
         changeOrigin: true,
       }
     }
+  },
+  optimizeDeps: {
+    exclude: [
+      'premium-landing.js', 'script.js', 'yt-music.js', 'global-player.js',
+      'premium-effects.js', 'player-engine.js', 'r2-content-sync.js',
+      'pwa.js', 'ai-music-assistant.js', 'listening-history.js',
+      'builder.js', 'admin.js', 'login.js', 'profile.js', 'dashboard.js'
+    ]
   }
 })

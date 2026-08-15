@@ -27,9 +27,24 @@ const PremiumEffects = (() => {
         window.addEventListener('resize', () => {
             clearTimeout(_resizeTimer);
             _resizeTimer = setTimeout(resizeCanvas, 200);
-        });
+        }, { passive: true });
         for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(createParticle());
         animateParticles();
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) pauseParticles();
+            else if (!_zoomPaused) resumeParticles();
+        });
+
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) pauseParticles();
+                    else if (!document.hidden && !_zoomPaused) resumeParticles();
+                });
+            }, { threshold: 0 });
+            observer.observe(particlesCanvas);
+        }
 
         // Pause particles during pinch-to-zoom to prevent freeze
         let _lastTouchCount = 0;
@@ -82,7 +97,7 @@ const PremiumEffects = (() => {
     }
 
     function animateParticles() {
-        if (!particlesCtx || !particlesCanvas || !isActive) return;
+        if (!particlesCtx || !particlesCanvas || !isActive || document.hidden) return;
         particlesCtx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
         particles.forEach(p => {
             p.x += p.speedX;

@@ -20,7 +20,7 @@
 
   /* ---------- constants ---------- */
   var VERSION_KEY    = 'tamilai_pwa_last_content_version';
-  var POLL_INTERVAL  = 60000;   // 60 s
+  var POLL_INTERVAL  = 300000;   // 5 minutes
 
   /* ---------- state ---------- */
   var registration    = null;
@@ -40,7 +40,6 @@
     registerSW();
     startPolling();
     listenBroadcastChannel();
-    document.addEventListener('visibilitychange', onVisibility);
   }
 
   /* ============================================================
@@ -58,10 +57,7 @@
         console.warn('[PWA] registration failed', err);
       });
 
-    navigator.serviceWorker.addEventListener('controllerchange', function () {
-      // A new SW has taken control → reload to pick up the new version.
-      window.location.reload();
-    });
+    // A new SW has taken control – just show a banner; the user can refresh manually.
   }
 
   /* ============================================================
@@ -107,9 +103,7 @@
     } catch (_) { /* offline / endpoint missing */ }
   }
 
-  function onVisibility() {
-    if (document.visibilityState === 'visible') pollVersion();
-  }
+
 
   /* ============================================================
      BroadcastChannel  (instant Builder notification)
@@ -191,10 +185,7 @@
       registration.waiting.postMessage({ type: 'SKIP_WAITING' });
     }
 
-    // 3. Safety: reload after 2 s even if controllerchange doesn't fire.
-    setTimeout(function () {
-      window.location.reload();
-    }, 2000);
+    // 3. Do not auto-reload; the banner stays visible for manual refresh.
   }
 
   /* ============================================================

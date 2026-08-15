@@ -5102,6 +5102,48 @@ body.home-active .ytm-page-home {
     }
 }
 
+/* ============================================
+   DESKTOP: Sidebar permanently visible
+   ============================================ */
+@media (min-width: 1025px) {
+    .premium-sidebar {
+        transform: translateX(0) !important;
+        width: 280px;
+        pointer-events: auto;
+    }
+    .premium-sidebar-overlay {
+        display: none !important;
+    }
+    .premium-hamburger {
+        display: none !important;
+    }
+    .premium-sidebar-close {
+        display: none !important;
+    }
+    /* Shift main content to make room for sidebar */
+    .premium-top-nav {
+        margin-left: 280px;
+    }
+    .ytm-main-content {
+        margin-left: 280px;
+    }
+}
+
+/* ============================================
+   MOBILE/TABLET: Sidebar auto-hide (toggle)
+   ============================================ */
+@media (max-width: 1024px) {
+    .premium-sidebar {
+        transform: translateX(-100%);
+    }
+    .premium-sidebar.open {
+        transform: translateX(0);
+    }
+    .premium-hamburger {
+        display: flex;
+    }
+}
+
 
 
 

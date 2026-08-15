@@ -303,7 +303,19 @@
 
     // Notify every open page (same browser tab + other windows of this origin)
     // that shared content has changed.
+    // Simple hash of the last-notified content to avoid re-firing events when
+    // nothing actually changed. Only a fast string comparison is needed.
+    let _lastNotifiedHash = '';
+    function _hashPayload(payload) {
+        try { return JSON.stringify(payload?.data || {}); } catch (e) { return ''; }
+    }
+
     function notifyContentChanged() {
+        const currentPayload = buildContentPayload();
+        const hash = _hashPayload(currentPayload);
+        if (hash === _lastNotifiedHash) return; // no real change
+        _lastNotifiedHash = hash;
+
         try {
             global.dispatchEvent(new CustomEvent(SYNC_EVENT, { detail: { timestamp: Date.now() } }));
             global.dispatchEvent(new CustomEvent('storage-sync', { detail: { timestamp: Date.now() } }));
@@ -312,17 +324,7 @@
 
         try {
             writeLocalStorage('tamilAIStream_lastSyncedAt', new Date().toISOString());
-            global.dispatchEvent(new StorageEvent('storage', {
-                key: 'tamilAIStream_songs',
-                newValue: JSON.stringify(readLocalStorage('tamilAIStream_songs', [])),
-                url: global.location?.href || ''
-            }));
         } catch (e) { /* ignore */ }
-
-        try {
-            const channel = new BroadcastChannel('tamilAIStream_sync');
-            channel.postMessage({ type: 'content-updated', timestamp: Date.now() });
-        } catch (e) { /* BroadcastChannel unsupported */ }
     }
 
     // ------------------------------------------------------------------
@@ -389,11 +391,6 @@
             const remoteUrl = await uploadManifest(payload);
             persistLocalContent(payload);
             notifyContentChanged();
-            // BroadcastChannel not needed here; notifyContentChanged handles it.
-            try {
-                const channel = new BroadcastChannel('tamilAIStream_sync');
-                channel.postMessage({ type: 'content-updated', timestamp: Date.now() });
-            } catch (e) { /* ignore */ }
             return { payload, remoteUrl };
         } finally {
             releaseSyncLock();
@@ -442,7 +439,7 @@
         }
     }
 
-    function startSyncing(intervalMs = 15000) {
+    function startSyncing(intervalMs = 120000) {
         if (_syncTimer) return;
         _syncTimer = setInterval(() => {
             pollForChanges();
@@ -479,7 +476,7 @@
         // Pull the authoritative R2 manifest once on load.
         global.ContentSync?.bootstrapSharedContent?.().then(() => {
             // Keep open sessions in sync in near real-time.
-            global.ContentSync?.startSyncing?.(15000);
+            global.ContentSync?.startSyncing?.(120000);
         }).catch(() => {});
     });
 
