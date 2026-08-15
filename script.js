@@ -700,14 +700,23 @@ function initAudioPlayer() {
 function stopCurrentStream() {
     if (window.__BUILDER_PREVIEW__) return;
     if (audioPlayer) {
+        // CRITICAL FIX: Preserve current playback position instead of always resetting to 0:00
+        // This ensures position is saved when switching views/players
+        const preservedPosition = audioPlayer.currentTime;
         audioPlayer.pause();
-        audioPlayer.currentTime = 0;
+        // Do NOT reset currentTime to 0 - preserve the position
+        // Only remove src if we're truly stopping (not just pausing between tracks)
         audioPlayer.src = '';
         audioPlayer.removeAttribute('src');
         audioPlayer.load();
         isStreamPlaying = false;
         streamConnecting = false;
         playbackHasLoaded = false;
+        // Restore preserved position after pause if available
+        if (window.__PLAYBACK_POSITION__) {
+            audioPlayer.currentTime = window.__PLAYBACK_POSITION__;
+            window.__PLAYBACK_POSITION__ = null;
+        }
         updatePlayPauseButton(false);
         showLiveStatus(false);
     }

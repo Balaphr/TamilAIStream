@@ -158,6 +158,7 @@ const GlobalPlayer = (() => {
                 else if (saved.shuffle !== undefined) state.shuffle = saved.shuffle;
                 if (saved.playbackRepeat !== undefined) state.repeat = saved.playbackRepeat;
                 else if (saved.repeat !== undefined) state.repeat = saved.repeat;
+                if (saved.playbackPosition !== undefined) state.currentTime = saved.playbackPosition;
                 updateShuffleUI();
                 updateRepeatUI();
             }

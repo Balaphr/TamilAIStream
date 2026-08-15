@@ -107,14 +107,22 @@
 
     function stopCurrentStream() {
         if (!audioPlayer) return;
+        // CRITICAL FIX: Preserve current playback position instead of always resetting to 0:00
+        // This ensures position is saved when switching views/players
+        const preservedPosition = audioPlayer.currentTime;
         audioPlayer.pause();
-        audioPlayer.currentTime = 0;
-        audioPlayer.removeAttribute('src');
-        audioPlayer.load();
+        // Do NOT reset currentTime to 0 - preserve the position
+        // Only remove src if we're truly stopping (not just pausing between tracks)
+        if (!isStreamPlaying) {
+            audioPlayer.removeAttribute('src');
+            audioPlayer.load();
+        }
         isStreamPlaying = false;
         streamConnecting = false;
         currentStation = null;
         currentPlaybackTrack = null;
+        // Store preserved position in state for cross-page sync
+        if (window.__PLAYBACK_POSITION__) window.__PLAYBACK_POSITION__ = preservedPosition;
     }
 
     /* ---------- UI sync ---------- */
@@ -228,7 +236,15 @@
         if (isPreview) return;
         if (!song || !song.audioUrl) { showToast('No audio available for this track', 'error'); return; }
         initAudioPlayer();
+        // CRITICAL FIX: Preserve existing playback position if available
+        // This prevents restarting from 00:00 when clicking a song while another is playing
+        const preservedPos = window.__PLAYBACK_POSITION__ || 0;
         stopCurrentStream();
+        // Restore preserved position after stream is initialized
+        if (window.__PLAYBACK_POSITION__) {
+            audioPlayer.currentTime = window.__PLAYBACK_POSITION__;
+            window.__PLAYBACK_POSITION__ = null; // Clear after use
+        }
         userPaused = false;
         currentPlaybackMode = 'song';
         currentPlaybackQueue = (playlist && playlist.length) ? playlist.slice() : [song];
