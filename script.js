@@ -866,11 +866,12 @@ async function playSong(song, playlist = []) {
             }
             hideLoadingSpinner();
             // Smart Queue: auto-select next song based on mood/artist/movie
-            _updateSmartQueue(song, currentPlaylist);
+                        _updateSmartQueue(song, currentPlaylist);
             showToast(`Now playing: ${song.title}`, 'success');
-            if (typeof GlobalPlayer !== 'undefined' && window.innerWidth < 1025) {
-                setTimeout(() => { GlobalPlayer.expand(); }, 350);
-            }
+            // Playback plays in the bottom mini bar only. The full-screen
+            // player (gp-expanded) is opened exclusively by the user via the
+            // mini-player expand control (gpMiniExpand / gpMiniInfo) — never
+            // automatically on track start, so song clicks stay non-intrusive.
         } catch (err) {
             console.error('Play error:', err);
             streamConnecting = false;
@@ -888,9 +889,7 @@ async function playSong(song, playlist = []) {
         if (typeof ListeningHistory !== 'undefined') {
             ListeningHistory.trackPlayback(currentPlaybackTrack, 'song');
         }
-        if (typeof GlobalPlayer !== 'undefined' && window.innerWidth < 1025) {
-            setTimeout(() => { GlobalPlayer.expand(); }, 350);
-        }
+                // (No auto-expand here either — bottom player only; see playSong note.)
     }
 }
 
@@ -4222,6 +4221,18 @@ if (typeof window !== 'undefined') {
     window.playStation = playStation;
     window.toggleStationFromCard = toggleStationFromCard;
     window.playTickerSong = playTickerSong;
+    // Playback bridge globals. yt-music.js (YTMusic) and global-player.js (GlobalPlayer)
+    // delegate play/pause/volume/seek through these so the single audio engine stays
+    // the source of truth. They MUST be exported here so seek never falls back to the
+    // naive `audioPlayer.currentTime = percent*(duration||0)` path (which snaps live
+    // stations to 0:00).
+    window.getPlaybackDuration = getPlaybackDuration;
+    window.seekPlaybackToPercent = seekPlaybackToPercent;
+    window.setPlaybackVolume = setPlaybackVolume;
+    window.togglePlayPause = togglePlayPause;
+    window.playNextTrack = playNextTrack;
+    window.playPreviousTrack = playPreviousTrack;
+    window.pausePlayback = pausePlayback;
 }
 
 

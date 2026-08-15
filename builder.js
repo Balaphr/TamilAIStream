@@ -1967,7 +1967,42 @@ function initBuilder() {
             await uploadImage(file, category, title);
             closeUploadImageModal();
         }
-    });
+        });
+
+    // Music collection form – prevent page reload (fixes auto-logout bug)
+    const collectionForm = document.getElementById('newCollectionForm');
+    if (collectionForm) {
+        collectionForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            createCollectionFromForm();
+        });
+    }
+
+    // Thumbnail preview – auto-update when a URL is typed/pasted
+    const thumbInput = document.getElementById('collectionThumbnail');
+    if (thumbInput) {
+        thumbInput.addEventListener('input', () => {
+            const url = thumbInput.value.trim();
+            const preview = document.getElementById('collectionThumbPreview');
+            const img = document.getElementById('collectionThumbImg');
+            if (url) {
+                img.src = url;
+                preview.style.display = 'flex';
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+    }
+
+    // Audio / folder upload – click on the styled drop zone
+    const audioUploadZone = document.getElementById('collectionAudioUpload');
+    const audioFileInput = document.getElementById('collectionAudioFiles');
+    if (audioUploadZone && audioFileInput) {
+        audioUploadZone.addEventListener('click', () => audioFileInput.click());
+    }
+    if (audioFileInput) {
+        audioFileInput.addEventListener('change', handleCollectionAudioUpload);
+    }
 
     // Search functionality
     document.getElementById('songSearch')?.addEventListener('input', (e) => {
@@ -3785,6 +3820,10 @@ function loadCollectionsTable(type) {
 function loadMusicCollections() {
     const collections = DataStore.getMusicCollections();
     const collectionsList = document.getElementById('musicCollectionsList');
+    
+    // Populate the "Select Songs" multi-select in the create-collection form
+    populateCollectionSongs();
+    
     if (!collections.length) {
         collectionsList.innerHTML = '<div class="empty-state" style="padding: 40px; text-align: center; color: #888;"><i class="fas fa-folder"></i><p>No collections yet. Create your first collection.</p></div>';
         return;
@@ -3904,10 +3943,271 @@ function saveMusicCollection() {
     collections.push(collection);
     DataStore.setMusicCollections(collections);
     
-    showToast('Collection created successfully', 'success');
+        showToast('Collection created successfully', 'success');
     document.getElementById('musicCollectionModal').remove();
     loadMusicCollections();
     syncToLiveWebsite();
+}
+
+// ------------------------------------------------------------------
+// Inline Music Collection Form (builder.html – "Create New Collection")
+// ------------------------------------------------------------------
+
+/**
+ * Save a music collection from the inline form on the Music Collections
+ * page. Reads every field (name, description, thumbnail, songs, status,
+ * colour theme) and persists it via DataStore.
+ */
+function createCollectionFromForm() {
+    const nameEl = document.getElementById('collectionName');
+    if (!nameEl) return;
+
+    const name = nameEl.value.trim();
+    if (!name) {
+        showToast('Please enter a collection name', 'error');
+        nameEl.focus();
+        return;
+    }
+
+    const descEl = document.getElementById('collectionDescription');
+    const thumbEl = document.getElementById('collectionThumbnail');
+    const colorEl = document.getElementById('collectionColor');
+    const statusEl = document.getElementById('collectionStatus');
+    const songsEl = document.getElementById('collectionSongs');
+
+    const description = descEl ? descEl.value.trim() : '';
+    const thumbnail = thumbEl ? thumbEl.value.trim() : '';
+    const colorTheme = colorEl ? colorEl.value : 'emerald';
+    const status = statusEl ? statusEl.value : 'active';
+
+    // Gather selected songs from the multi-select
+    const selectedSongs = [];
+    if (songsEl) {
+        Array.from(songsEl.selectedOptions).forEach(opt => {
+            if (!opt.value) return;
+            const parts = opt.value.split('||');
+            selectedSongs.push({
+                songId: parts[0],
+                title: parts[1] || '',
+                artist: parts[2] || '',
+                movie: parts[3] || '',
+                thumbnail: parts[4] || ''
+            });
+        });
+    }
+
+    // Pick up songs uploaded via the folder/audio upload widget
+    const uploadedSongs = window._collectionUploadedSongs || [];
+
+    const collection = {
+        id: 'music_' + Date.now(),
+        name: name,
+        description: description,
+        thumbnail: thumbnail,
+        type: 'music',
+        status: status,
+        colorTheme: colorTheme,
+        songs: selectedSongs.length ? selectedSongs : uploadedSongs,
+        songCount: (selectedSongs.length || uploadedSongs.length),
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser?.uid || 'admin'
+    };
+
+    const collections = DataStore.getMusicCollections();
+    collections.push(collection);
+    DataStore.setMusicCollections(collections);
+
+    showToast('Collection created successfully!', 'success');
+    addActivity('Collection Created', name);
+    resetCollectionForm();
+    loadMusicCollections();
+    syncToLiveWebsite();
+}
+
+/**
+ * Reset the inline "Create New Collection" form to its default state.
+ */
+function resetCollectionForm() {
+    const nameEl = document.getElementById('collectionName');
+    const descEl = document.getElementById('collectionDescription');
+    const thumbEl = document.getElementById('collectionThumbnail');
+    const colorEl = document.getElementById('collectionColor');
+    const statusEl = document.getElementById('collectionStatus');
+    const songsEl = document.getElementById('collectionSongs');
+    const preview = document.getElementById('collectionThumbPreview');
+    const filesContainer = document.getElementById('collectionAudioListContainer');
+    const filesList = document.getElementById('collectionAudioList');
+
+    if (nameEl) nameEl.value = '';
+    if (descEl) descEl.value = '';
+    if (thumbEl) thumbEl.value = '';
+    if (colorEl) colorEl.value = 'emerald';
+    if (statusEl) statusEl.value = 'active';
+    if (songsEl) songsEl.selectedIndex = -1;
+    if (preview) preview.style.display = 'none';
+    if (filesContainer) filesContainer.style.display = 'none';
+    if (filesList) filesList.innerHTML = '';
+
+        window._collectionUploadedSongs = [];
+}
+
+/**
+ * Handle audio / folder uploads for the Music Collection form.
+ * Supports selecting individual audio files or an entire folder
+ * (webkitdirectory). Each audio file is uploaded to R2 and a song
+ * entry is created automatically.
+ */
+async function handleCollectionAudioUpload(e) {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    const audioFiles = files.filter(f =>
+        f.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac)$/i.test(f.name)
+    );
+
+    if (!audioFiles.length) {
+        showToast('No audio files found in your selection', 'error');
+        return;
+    }
+
+    const filesContainer = document.getElementById('collectionAudioListContainer');
+    const filesList = document.getElementById('collectionAudioList');
+    if (filesContainer) filesContainer.style.display = 'block';
+    if (filesList) filesList.innerHTML = '';
+
+    window._collectionUploadedSongs = window._collectionUploadedSongs || [];
+    let uploaded = 0;
+
+    for (const file of audioFiles) {
+        const row = document.createElement('div');
+        row.className = 'file-upload-item';
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:rgba(255,255,255,0.7);';
+        row.innerHTML = '<span style="flex:1;"><i class="fas fa-music"></i> ' + file.name + ' (' + formatFileSize(file.size) + ')</span><span class="status">Uploading…</span>';
+        if (filesList) filesList.appendChild(row);
+
+        try {
+            const result = await R2Uploader.uploadAudio(
+                file,
+                'tamil-ai-stream/audio',
+                (pct) => {
+                    const statusSpan = row.querySelector('.status');
+                    if (statusSpan) statusSpan.textContent = 'Uploading ' + pct + '%';
+                }
+            );
+
+            const song = {
+                id: 'song_' + Date.now() + '_' + uploaded,
+                title: file.name.replace(/\.[^.]+$/, ''),
+                artist: '', album: '', movie: '',
+                src: result.url,
+                duration: '0:00',
+                size: formatFileSize(file.size),
+                format: result.format || 'mp3',
+                thumbnail: '',
+                year: new Date().getFullYear(),
+                language: 'Tamil',
+                genre: [], mood: [],
+                status: 'active', plays: 0,
+                createdAt: new Date().toISOString()
+            };
+
+            const songs = DataStore.getSongs();
+            songs.unshift(song);
+            DataStore.setSongs(songs);
+
+            window._collectionUploadedSongs.push(song);
+            uploaded++;
+
+            row.querySelector('.status').textContent = 'Done';
+            row.querySelector('.status').style.color = 'var(--emerald-400)';
+
+        } catch (err) {
+            console.error('Audio upload error:', err);
+            row.querySelector('.status').textContent = 'Failed';
+            row.querySelector('.status').style.color = '#ef4444';
+            showToast('Failed: ' + file.name, 'error');
+        }
+    }
+
+    e.target.value = '';
+
+    if (uploaded > 0) {
+        showToast(uploaded + ' audio file(s) uploaded & added to song library!', 'success');
+        loadAllSongs();
+        populateCollectionSongs();
+    }
+}
+
+/**
+ * Populate the "Select Songs" multi-select in the collection form
+ * with all existing songs from the DataStore.
+ */
+function populateCollectionSongs() {
+    const songs = DataStore.getSongs();
+    const select = document.getElementById('collectionSongs');
+    if (!select) return;
+
+    if (!songs.length) {
+        select.innerHTML = '<option value="">-- No songs in library --</option>';
+        return;
+    }
+
+    select.innerHTML = songs.map(s => {
+        const value = s.id + '||' + (s.title || '') + '||' + (s.artist || '') + '||' + (s.movie || '') + '||' + (s.thumbnail || '');
+        const label = (s.title || 'Untitled') + (s.artist ? ' — ' + s.artist : '') + (s.movie ? ' (' + s.movie + ')' : '');
+        return '<option value="' + value + '">' + label + '</option>';
+        }).join('');
+}
+
+/**
+ * Pick a thumbnail from the Image Gallery. Opens a simple picker modal
+ * showing all uploaded images.
+ */
+function useGalleryImage(inputId, previewId, imgId) {
+    const images = DataStore.getImages();
+    if (!images.length) {
+        showToast('No images in gallery. Upload one first.', 'info');
+        openUploadImageModal();
+        return;
+    }
+
+    const existing = document.getElementById('galleryPickerModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'galleryPickerModal';
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    modal.innerHTML =
+        '<div class="modal-overlay" onclick="document.getElementById(\'galleryPickerModal\').remove()"></div>' +
+        '<div class="modal-content" style="max-width:600px;">' +
+        '<div class="modal-header">' +
+        '<h2>Select Thumbnail</h2>' +
+        '<button class="modal-close" onclick="document.getElementById(\'galleryPickerModal\').remove()">&times;</button>' +
+        '</div>' +
+        '<div class="modal-body" style="max-height:400px;overflow-y:auto;">' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;">' +
+        images.map(img =>
+            '<div style="text-align:center;cursor:pointer;" onclick="pickGalleryImage(\'' + img.url + '\',\'' + inputId + '\',\'' + previewId + '\',\'' + imgId + '\');document.getElementById(\'galleryPickerModal\').remove();">' +
+            '<img src="' + img.url + '" style="width:80px;height:80px;border-radius:8px;object-fit:cover;">' +
+            '<div style="font-size:10px;color:#aaa;margin-top:4px;word-break:break-all;">' + (img.title || 'Image') + '</div>' +
+            '</div>'
+        ).join('') +
+        '</div>' +
+        '</div>' +
+        '</div>';
+    document.body.appendChild(modal);
+}
+
+/**
+ * Fill the thumbnail input and preview when an image is picked from the gallery.
+ */
+function pickGalleryImage(url, inputId, previewId, imgId) {
+    document.getElementById(inputId).value = url;
+    const imgEl = document.getElementById(imgId);
+    const previewEl = document.getElementById(previewId);
+    if (imgEl) imgEl.src = url;
+    if (previewEl) previewEl.style.display = 'flex';
 }
 
 function deleteMusicCollection(id) {
@@ -6324,13 +6624,27 @@ if (typeof window !== 'undefined') {
     window.updateArtistName = updateArtistName;
     window.updateBulkRemoveBtn = updateBulkRemoveBtn;
     window.bulkRemoveSongsFromArtist = bulkRemoveSongsFromArtist;
-    window.openAddCollectionModal = openAddCollectionModal;
+        window.openAddCollectionModal = openAddCollectionModal;
     window.openEditCollectionModal = openEditCollectionModal;
     window.saveCollection = saveCollection;
     window.deleteCollection = deleteCollection;
     window.loadCollectionsTable = loadCollectionsTable;
     window.uploadFeaturedImage = uploadFeaturedImage;
     window.uploadTrendingImage = uploadTrendingImage;
+
+    // Music Collections (inline form + modal)
+    window.openAddCollectionModalMusic = openAddCollectionModalMusic;
+    window.saveMusicCollection = saveMusicCollection;
+    window.deleteMusicCollection = deleteMusicCollection;
+    window.openEditCollectionModalMusic = openEditCollectionModalMusic;
+    window.updateMusicCollection = updateMusicCollection;
+    window.createCollectionFromForm = createCollectionFromForm;
+    window.resetCollectionForm = resetCollectionForm;
+    window.handleCollectionAudioUpload = handleCollectionAudioUpload;
+    window.useGalleryImage = useGalleryImage;
+    window.pickGalleryImage = pickGalleryImage;
+    window.populateCollectionSongs = populateCollectionSongs;
+
     window.initVisualEditor = initVisualEditor;
     window.veSelectTreeItem = veSelectTreeItem;
     window.veSelectSection = veSelectSection;

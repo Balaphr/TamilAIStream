@@ -594,19 +594,68 @@
                             </div>
                         </div>
 
-                        <div class="content-card">
-                            <div class="content-card-header">
+                                                                        <div class="content-card">
+                            <div class="content-card-header" style="display:flex;justify-content:space-between;align-items:center;">
                                 <h2 class="content-card-title">Create New Collection</h2>
+                                <button type="button" class="builder-btn" onclick="openAddCollectionModalMusic()" style="font-size:12px;padding:8px 16px;">
+                                    <i class="fas fa-plus-circle"></i> Advanced Modal
+                                </button>
                             </div>
-                            <form id="newCollectionForm">
+                            <form id="newCollectionForm" onsubmit="return false;">
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label class="form-label">Collection Name *</label>
-                                        <input type="text" class="form-input" id="collectionName" required>
-                                    </div>
+                                        <input type="text" class="form-input" id="collectionName" required placeholder="e.g. Latest Hits 2026">
+                                                                        </div>
                                     <div class="form-group">
                                         <label class="form-label">Description</label>
                                         <input type="text" class="form-input" id="collectionDescription" placeholder="Optional description">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Thumbnail Image URL</label>
+                                        <input type="url" class="form-input" id="collectionThumbnail" placeholder="https://… or /path/to/image.jpg">
+                                        <div id="collectionThumbPreview" style="margin-top:10px;display:none;">
+                                            <img src="" alt="Thumbnail Preview" id="collectionThumbImg" style="max-width:140px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);">
+                                        </div>
+                                        <div style="margin-top:8px;">
+                                            <button type="button" class="builder-btn small-btn" onclick="openUploadImageModal()" style="font-size:11px;padding:4px 10px;">
+                                                <i class="fas fa-upload"></i> Upload Image
+                                            </button>
+                                            <button type="button" class="builder-btn small-btn" onclick="useGalleryImage('collectionThumbnail','collectionThumbPreview','collectionThumbImg')" style="font-size:11px;padding:4px 10px;margin-left:6px;">
+                                                <i class="fas fa-images"></i> From Gallery
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Select Songs</label>
+                                        <select class="form-select" id="collectionSongs" multiple style="height:180px;">
+                                            <option value="">-- Loading songs... --</option>
+                                        </select>
+                                        <div style="margin-top:6px;font-size:12px;color:rgba(255,255,255,0.5);">
+                                            <i class="fas fa-mouse-pointer"></i> Hold Ctrl/Cmd to select multiple songs
+                                        </div>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Upload Audio / Folder</label>
+                                        <input type="file" id="collectionAudioFiles" accept="audio/*" webkitdirectory multiple style="display:none;">
+                                        <div class="file-upload" id="collectionAudioUpload" style="cursor:pointer;">
+                                            <div class="file-upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                                            <div class="file-upload-text">Drop audio files here or click to browse</div>
+                                            <div class="file-upload-hint">Supports: MP3, WAV, OGG, M4A, AAC — Select multiple files or a folder</div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group" id="collectionAudioListContainer" style="display:none;">
+                                        <label class="form-label">Uploaded Audio Files</label>
+                                        <div id="collectionAudioList" style="max-height:140px;overflow-y:auto;padding:8px;border:1px dashed rgba(255,255,255,0.15);border-radius:6px;">
+                                            <!-- List populated dynamically -->
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" id="collectionStatus">
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive</option>
+                                        </select>
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">Color Theme</label>
@@ -619,7 +668,7 @@
                                     </div>
                                 </div>
                                 <div class="form-actions">
-                                    <button type="submit" class="builder-btn primary">
+                                    <button type="button" class="builder-btn primary" onclick="createCollectionFromForm()">
                                         <i class="fas fa-save"></i> Create Collection
                                     </button>
                                     <button type="button" class="builder-btn" onclick="resetCollectionForm()">
@@ -628,9 +677,6 @@
                                 </div>
                             </form>
                         </div>
-                    </div>
-
-                    <!-- Images Management Page -->
                     <div class="builder-page" id="imagesPage" style="display:none;">
                         <div class="builder-page-header">
                             <h1 class="builder-page-title">Manage Images</h1>

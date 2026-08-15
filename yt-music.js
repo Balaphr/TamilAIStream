@@ -905,11 +905,17 @@ const YTMusic = {
             this.duration = actualDuration;
             this.progress = percent * actualDuration;
         }
-        if (typeof window.seekPlaybackToPercent === 'function') {
+                if (typeof window.seekPlaybackToPercent === 'function') {
             window.seekPlaybackToPercent(percent);
-        } else if (typeof audioPlayer !== 'undefined' && audioPlayer) {
-            try { audioPlayer.currentTime = percent * (actualDuration || 0); } catch (e) {}
+        } else if (typeof PlayerEngine !== 'undefined' && typeof PlayerEngine.seekToPercent === 'function') {
+            PlayerEngine.seekToPercent(percent);
+        } else if (typeof audioPlayer !== 'undefined' && audioPlayer && actualDuration && isFinite(actualDuration) && actualDuration > 0) {
+            try { audioPlayer.currentTime = percent * actualDuration; } catch (e) {}
         }
+        // When duration is unknown (e.g. a live station stream with no seekable
+        // range) we intentionally do NOT touch audioPlayer.currentTime — seeking a
+        // live source is unsupported and forcing it to 0:00 breaks playback
+        // continuity. The UI progress preview above still reflects the tap.
         this.updateProgressUI();
     },
 
