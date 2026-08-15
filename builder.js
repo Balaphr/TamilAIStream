@@ -467,6 +467,7 @@ function navigateTo(page) {
         loadCollectionsTable('movies');
         loadCollectionsTable('yearly');
         loadCollectionsTable('latest');
+        loadAllSongs();
     }
     if (page === 'musiccollections') loadMusicCollections();
     if (page === 'content') loadQuotes();
@@ -518,16 +519,66 @@ async function loadDashboardStats() {
 // ============================================
 async function loadAllSongs() {
     try {
+        // Auto-discover songs already uploaded to Cloudflare R2 and merge them
+        // into the library (idempotent — never duplicates existing entries).
+        if (typeof ContentSync !== 'undefined' && typeof ContentSync.discoverR2Songs === 'function') {
+            try { await ContentSync.discoverR2Songs(); } catch (e) { console.warn('R2 song discovery failed:', e); }
+        }
+
         const songs = DataStore.getSongs();
         songs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        
+
         previewSongList = songs;
-        
+
         const tableBody = document.getElementById('allSongsTable');
-        tableBody.innerHTML = songs.map(song => createSongRow(song)).join('');
+        if (tableBody) tableBody.innerHTML = songs.map(song => createSongRow(song)).join('');
+
+        const contentTableBody = document.getElementById('contentSongsTable');
+        if (contentTableBody) contentTableBody.innerHTML = songs.map(song => createSongRow(song)).join('');
+
+        const totalCount = document.getElementById('totalSongsCount');
+        if (totalCount) totalCount.textContent = songs.length;
     } catch (error) {
         console.error('Error loading songs:', error);
         showToast('Error loading songs', 'error');
+    }
+}
+
+// One-click import of every song file already sitting in Cloudflare R2.
+// Reuses the existing R2 bucket + metadata store; no re-upload, no duplicates.
+async function syncR2Songs() {
+    const buttons = document.querySelectorAll('.sync-r2-btn');
+    const originals = new Map();
+    buttons.forEach(btn => {
+        originals.set(btn, btn.innerHTML);
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Syncing...';
+    });
+
+    try {
+        if (typeof ContentSync === 'undefined' || typeof ContentSync.discoverR2Songs !== 'function') {
+            showToast('R2 sync is unavailable on this build', 'error');
+            return;
+        }
+        const result = await ContentSync.discoverR2Songs();
+        await loadAllSongs();
+        showToast(
+            result.added > 0
+                ? result.added + ' song(s) detected in Cloudflare R2 and added to Content'
+                : 'Already in sync — ' + result.total + ' song(s) available',
+            result.added > 0 ? 'success' : 'info'
+        );
+        // Push the merged library to the live site + R2 manifest.
+        if (typeof syncToLiveWebsite === 'function') syncToLiveWebsite();
+        addActivity('R2 Sync', 'Synchronized song library with Cloudflare R2');
+    } catch (e) {
+        console.error('R2 sync error:', e);
+        showToast('R2 sync failed: ' + e.message, 'error');
+    } finally {
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            if (originals.has(btn)) btn.innerHTML = originals.get(btn);
+        });
     }
 }
 
@@ -1329,17 +1380,7 @@ async function syncToLiveWebsite() {
         // Method 3: Direct website update - apply settings immediately
         applySavedSettingsToWebsite();
 
-        return true;
-    } catch (e) {
-        console.error('Error in syncToLiveWebsite:', e);
-        return false;
-    }
-}
-            newValue: JSON.stringify(DataStore.getSongs()),
-            url: window.location.href
-        }));
-
-        // Method 3: BroadcastChannel (modern browsers)
+        // Method 4: BroadcastChannel for cross-tab instant messaging
         try {
             const channel = new BroadcastChannel('tamilAIStream_sync');
             channel.postMessage({
@@ -1353,7 +1394,7 @@ async function syncToLiveWebsite() {
             console.warn('[Builder] BroadcastChannel not supported');
         }
 
-        // Method 4: Dispatch premium section re-render event
+        // Dispatch premium section re-render event
         window.dispatchEvent(new CustomEvent('premium-sections-sync', {
             detail: { timestamp: Date.now() }
         }));
@@ -1379,8 +1420,11 @@ async function syncToLiveWebsite() {
                 veIframe.src = currentSrc;
             }, 200);
         }
+
+        return true;
     } catch (e) {
-        console.error('Error syncing to live website:', e);
+        console.error('Error in syncToLiveWebsite:', e);
+        return false;
     }
 }
 function saveDraft() {
@@ -2114,6 +2158,15 @@ function initBuilder() {
             const tabName = this.dataset.tab;
             const panel = document.getElementById(tabName + 'Tab');
             if (panel) panel.style.display = 'block';
+            if (tabName === 'songs') loadAllSongs();
+        });
+    });
+
+    // Content page — Song Library search
+    document.getElementById('contentSongSearch')?.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        document.querySelectorAll('#contentSongsTable tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
         });
     });
 
@@ -6701,10 +6754,12 @@ if (typeof window !== 'undefined') {
     window.loadMiniPlayerSettings = loadMiniPlayerSettings;
     window.saveMiniPlayerSettings = saveMiniPlayerSettings;
     window.resetMiniPlayerSettings = resetMiniPlayerSettings;
+    window.syncR2Songs = syncR2Songs;
+    window.loadAllSongs = loadAllSongs;
     if (typeof initV2Enhancements === 'function') window.initV2Enhancements = initV2Enhancements;
-    window.showVEToast = showVEToast;
-    window.openVEPreview = openVEPreview;
-    window.closeVEPreview = closeVEPreview;
+    if (typeof showVEToast === 'function') window.showVEToast = showVEToast;
+    if (typeof openVEPreview === 'function') window.openVEPreview = openVEPreview;
+    if (typeof closeVEPreview === 'function') window.closeVEPreview = closeVEPreview;
 }
 
 // ============================================

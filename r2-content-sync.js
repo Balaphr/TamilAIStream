@@ -473,6 +473,167 @@
         }
     }
 
+    // ------------------------------------------------------------------
+    // R2 media discovery — import existing Cloudflare R2 uploads into the
+    // local content store so previously uploaded songs are never lost.
+    // Idempotent: matches by R2 key/audio URL, never creates duplicates.
+    // ------------------------------------------------------------------
+    function hashCode(str) {
+        let h = 0;
+        for (let i = 0; i < str.length; i++) {
+            h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+        }
+        return Math.abs(h).toString(36);
+    }
+
+    function cleanTitleFromKey(key) {
+        const base = key.split('/').pop() || key;
+        const withoutExt = base.replace(/\.[^.]+$/, '');
+        const withoutTs = withoutExt.replace(/^\d{10,}-?/, '');
+        return (withoutTs || withoutExt).replace(/[_]+/g, ' ').replace(/\s+/g, ' ').trim() || 'Untitled';
+    }
+
+    function keyFromUrl(url) {
+        if (!url) return '';
+        const m = /\/api\/media\/(.+)$/.exec(String(url));
+        if (m) {
+            try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; }
+        }
+        return '';
+    }
+
+    // Build a public URL for an R2 key (keeps folder separators, encodes segments).
+    function r2PublicUrl(key) {
+        const encoded = String(key).split('/').map((seg) => encodeURIComponent(seg)).join('/');
+        return '/api/media/' + encoded;
+    }
+
+    // List objects in the R2 bucket under a prefix (paginated via cursors).
+    async function listR2Objects(prefix = '', limit = 1000) {
+        const objects = [];
+        try {
+            let cursor = undefined;
+            do {
+                const params = new URLSearchParams();
+                if (prefix) params.set('prefix', prefix);
+                params.set('limit', String(limit));
+                if (cursor) params.set('cursor', cursor);
+                const response = await fetch('/api/media/list?' + params.toString(), { cache: 'no-store' });
+                if (!response.ok) throw new Error('R2 list failed with status ' + response.status);
+                const data = await response.json();
+                if (Array.isArray(data.objects)) objects.push(...data.objects);
+                cursor = data.truncated && data.cursor ? data.cursor : undefined;
+            } while (cursor);
+        } catch (e) {
+            console.warn('[ContentSync] R2 list failed:', e);
+        }
+        return objects;
+    }
+
+    const R2_AUDIO_EXT_RE = /\.(mp3|wav|ogg|oga|aac|m4a|flac|opus|webm)$/i;
+    const R2_IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp|svg|avif|bmp)$/i;
+
+    /**
+     * Detect songs already uploaded to Cloudflare R2 and merge them into the
+     * local song library (DataStore + localStorage). Existing songs matched by
+     * their R2 key / audio URL are left untouched — no re-upload, no duplicates.
+     * Returns { added, total }.
+     */
+    async function discoverR2Songs() {
+        try {
+            const existing = safeGet(global.DataStore.getSongs?.bind(global.DataStore), []) || [];
+            const existingByKey = new Set();
+            existing.forEach((s) => {
+                if (!s) return;
+                if (s.audioPublicId) existingByKey.add(s.audioPublicId);
+                const k = keyFromUrl(s.audioUrl || s.src || s.streamUrl || '');
+                if (k) existingByKey.add(k);
+                if (s.r2Key) existingByKey.add(s.r2Key);
+            });
+
+            // Audio has been stored under several prefixes across the app's history.
+            const prefixes = ['audio/', 'songs/', 'music/', 'media/', ''];
+            const audioObjects = [];
+            const seen = new Set();
+            for (const prefix of prefixes) {
+                const objs = await listR2Objects(prefix, 1000);
+                for (const o of objs) {
+                    if (!o || !o.key) continue;
+                    if (R2_AUDIO_EXT_RE.test(o.key) && !seen.has(o.key)) {
+                        seen.add(o.key);
+                        audioObjects.push(o);
+                    }
+                }
+            }
+
+            if (!audioObjects.length) return { added: 0, total: existing.length };
+
+            // Best-effort album cover matching using the leading upload timestamp.
+            const imageByTs = new Map();
+            for (const prefix of ['albums/', 'images/', 'thumbnails/', '']) {
+                const objs = await listR2Objects(prefix, 1000);
+                for (const o of objs) {
+                    if (!o || !o.key || !R2_IMAGE_EXT_RE.test(o.key)) continue;
+                    const m = /^(\d{10,})/.exec(o.key.split('/').pop() || '');
+                    if (m && !imageByTs.has(m[1])) imageByTs.set(m[1], o.key);
+                }
+            }
+
+            const additions = [];
+            audioObjects.forEach((obj) => {
+                const key = obj.key;
+                if (existingByKey.has(key)) return;
+                const url = r2PublicUrl(key);
+                const tsMatch = /^(\d{10,})/.exec(key.split('/').pop() || '');
+                const ts = tsMatch ? tsMatch[1] : '';
+                const createdAt = obj.uploaded ||
+                    (ts ? new Date(parseInt(ts, 10)).toISOString() : new Date().toISOString());
+                const coverKey = ts && imageByTs.has(ts) ? imageByTs.get(ts) : '';
+
+                additions.push({
+                    id: 'r2_' + hashCode(key),
+                    title: cleanTitleFromKey(key),
+                    artist: '',
+                    movie: '',
+                    album: '',
+                    language: 'Tamil',
+                    genre: '',
+                    mood: '',
+                    duration: '0:00',
+                    audioUrl: url,
+                    src: url,
+                    audioPublicId: key,
+                    r2Key: key,
+                    albumCover: coverKey ? r2PublicUrl(coverKey) : '',
+                    thumbnail: coverKey ? r2PublicUrl(coverKey) : '',
+                    status: 'published',
+                    plays: 0,
+                    source: 'r2',
+                    createdAt,
+                    updatedAt: createdAt,
+                    uploadedAt: obj.uploaded || null,
+                    size: obj.size || 0,
+                    format: key.split('.').pop().toLowerCase(),
+                });
+            });
+
+            if (additions.length) {
+                const merged = additions.concat(existing);
+                if (typeof global.DataStore?.setSongs === 'function') {
+                    global.DataStore.setSongs(merged);
+                }
+                writeLocalStorage('tamilAIStream_songs', merged);
+                notifyContentChanged();
+            }
+
+            return { added: additions.length, total: existing.length + additions.length };
+        } catch (e) {
+            console.warn('[ContentSync] R2 song discovery failed:', e);
+            const current = safeGet(global.DataStore.getSongs?.bind(global.DataStore), []);
+            return { added: 0, total: Array.isArray(current) ? current.length : 0 };
+        }
+    }
+
     const ContentSync = {
         buildContentPayload,
         mergePayloads,
@@ -487,6 +648,8 @@
         stopSyncing,
         onSync,
         isWriterPage,
+        listR2Objects,
+        discoverR2Songs,
         getRuntimeConfig: () => ({})
     };
 
@@ -495,8 +658,10 @@
     global.addEventListener?.('DOMContentLoaded', () => {
         // Pull the authoritative R2 manifest once on load.
         global.ContentSync?.bootstrapSharedContent?.().then(() => {
+            // Auto-import any existing R2 media not yet tracked locally.
+            global.ContentSync?.discoverR2Songs?.().catch(() => {});
             // Keep open sessions in sync in near real-time.
-            global.ContentSync?.startSyncing?.(120000);
+            global.ContentSync?.startSyncing?.(30000);
         }).catch(() => {});
     });
 

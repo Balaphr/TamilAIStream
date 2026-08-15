@@ -74,6 +74,9 @@ export default {
       if (url.pathname === '/api/manifest' && request.method === 'POST') {
         return handleManifestPost(request, env);
       }
+      if (url.pathname === '/api/media/list' && request.method === 'GET') {
+        return handleMediaList(url, env);
+      }
       if (url.pathname.startsWith('/api/media/')) {
         return handleMediaGet(url, env);
       }
@@ -254,6 +257,37 @@ async function handleMediaGet(url, env) {
     return new Response(obj.body, { status: 200, headers });
   } catch (e) {
     return new Response('Error: ' + e.message, { status: 500 });
+  }
+}
+
+/**
+ * GET /api/media/list?prefix=audio/&limit=1000&cursor=...
+ * Lists objects stored in the R2 bucket so the Builder/Admin can discover
+ * previously uploaded media (songs, album art) that may not yet be tracked
+ * in the content manifest. Paginated with R2 cursors.
+ */
+async function handleMediaList(url, env) {
+  try {
+    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
+    const prefix = url.searchParams.get('prefix') || '';
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '1000', 10) || 1000, 1000);
+    const cursor = url.searchParams.get('cursor') || undefined;
+    const listed = await env.MEDIA_BUCKET.list({ prefix, limit, cursor });
+    const objects = (listed.objects || []).map((obj) => ({
+      key: obj.key,
+      size: obj.size,
+      uploaded: obj.uploaded ? obj.uploaded.toISOString() : null,
+      etag: obj.etag || null,
+      contentType: obj.httpMetadata ? obj.httpMetadata.contentType || null : null,
+    }));
+    return json({
+      prefix,
+      objects,
+      truncated: !!listed.truncated,
+      cursor: listed.truncated ? listed.cursor : null,
+    });
+  } catch (e) {
+    return json({ error: e.message }, 500);
   }
 }
 

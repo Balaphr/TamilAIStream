@@ -3915,11 +3915,37 @@ document.addEventListener('click', function(e) {
 // Cross-Tab Sync - Builder ↔ Live Website
 // ============================================
 
+// Re-pull the authoritative R2 manifest and re-render every dynamic section.
+// This runs on a live site tab whenever the Builder publishes — no full-page
+// reload, no duplicate records, and the audio player is left completely alone
+// (no playback interruption / reset).
+function refreshLiveContent() {
+    const render = () => {
+        _isRenderingAll = false;
+        renderAllDynamicContent();
+        if (typeof YTMusic !== 'undefined' && typeof YTMusic.renderAllPages === 'function') {
+            try { YTMusic.renderAllPages(); } catch (e) { /* ignore */ }
+        }
+    };
+
+    if (typeof ContentSync !== 'undefined' && typeof ContentSync.bootstrapSharedContent === 'function') {
+        ContentSync.bootstrapSharedContent().then(render).catch(render);
+    } else {
+        render();
+    }
+}
+
 function setupRealtimeSync() {
     // Listen for content changes from the Builder (cross-tab)
     window.addEventListener('storage', (e) => {
+        if (!e.key) return;
         if (e.key === 'tamilAIStream_advertisements') {
             renderAdBanners();
+        }
+        if (['tamilAIStream_songs', 'tamilAIStream_stations', 'tamilAIStream_featured',
+            'tamilAIStream_trending', 'tamilAIStream_artistHits', 'tamilAIStream_categories',
+            'tamilAIStream_moods', 'tamilAIStream_aiRadio', 'tamilAIStream_quotes'].includes(e.key)) {
+            refreshLiveContent();
         }
         if (e.key === 'tamilAIStream_musicCollections' ||
             e.key === 'tamilAIStream_moviesCollections' ||
@@ -3933,11 +3959,14 @@ function setupRealtimeSync() {
     });
     // Custom event from builder for immediate sync
     window.addEventListener('storage-sync', () => {
-        renderAdBanners();
-        renderMusicCollectionsDynamic();
-        renderMoviesCollectionsDynamic();
-        renderYearlyCollectionsDynamic();
-        renderLatestCollectionsDynamic();
+        refreshLiveContent();
+    });
+    // ContentSync change notifications (manifest pulled/applied)
+    window.addEventListener('tamilAIStream-content-synced', () => {
+        refreshLiveContent();
+    });
+    window.addEventListener('premium-sections-sync', () => {
+        refreshLiveContent();
     });
 }
 

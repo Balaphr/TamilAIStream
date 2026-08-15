@@ -551,9 +551,14 @@
 
                         <!-- Songs List -->
                         <div class="content-card">
-                            <div class="content-card-header">
+                            <div class="content-card-header" style="flex-wrap:wrap;gap:10px;">
                                 <h2 class="content-card-title">All Songs</h2>
-                                <input type="text" class="form-input" id="songSearch" placeholder="Search songs..." style="width:300px;">
+                                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                    <input type="text" class="form-input" id="songSearch" placeholder="Search songs..." style="width:280px;">
+                                    <button type="button" class="builder-btn sync-r2-btn" onclick="syncR2Songs()" title="Detect songs already uploaded to Cloudflare R2 and add them to Content">
+                                        <i class="fas fa-cloud-download-alt"></i> Sync from R2
+                                    </button>
+                                </div>
                             </div>
                             <div class="data-table">
                                 <table>
@@ -833,12 +838,13 @@
                     <div class="builder-page" id="contentPage" style="display:none;">
                         <div class="builder-page-header">
                             <h1 class="builder-page-title">Content Management</h1>
-                            <p class="builder-page-subtitle">Manage Featured, Trending, Categories, Artist Hits, and Quotes</p>
+                            <p class="builder-page-subtitle">Manage Songs, Featured, Trending, Categories, Artist Hits, and Quotes — all synced with Cloudflare R2</p>
                         </div>
 
                         <!-- Content Tabs -->
                         <div class="content-tabs">
-                            <button class="content-tab active" data-tab="featured">Featured</button>
+                            <button class="content-tab active" data-tab="songs">Songs</button>
+                            <button class="content-tab" data-tab="featured">Featured</button>
                             <button class="content-tab" data-tab="trending">Trending</button>
                             <button class="content-tab" data-tab="categories">Categories</button>
                             <button class="content-tab" data-tab="artistHits">Artist Hits</button>
@@ -848,8 +854,44 @@
                             <button class="content-tab" data-tab="quotes">Quotes</button>
                         </div>
 
+                        <!-- Songs Tab (auto-synced with Cloudflare R2) -->
+                        <div class="content-tab-panel active" id="songsTab">
+                            <div class="content-card">
+                                <div class="content-card-header" style="flex-wrap:wrap;gap:10px;">
+                                    <h2 class="content-card-title">Song Library</h2>
+                                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                        <input type="text" class="form-input" id="contentSongSearch" placeholder="Search songs..." style="width:280px;">
+                                        <button type="button" class="builder-btn sync-r2-btn" onclick="syncR2Songs()" title="Detect songs already uploaded to Cloudflare R2 and add them to Content">
+                                            <i class="fas fa-cloud-download-alt"></i> Sync from R2
+                                        </button>
+                                        <button type="button" class="builder-btn primary" onclick="navigateTo('songs')" title="Add a new song manually">
+                                            <i class="fas fa-plus"></i> Add Song
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="data-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Cover</th>
+                                                <th>Title</th>
+                                                <th>Artist</th>
+                                                <th>Movie</th>
+                                                <th>Duration</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="contentSongsTable">
+                                            <!-- Dynamic content -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Featured Tab -->
-                        <div class="content-tab-panel active" id="featuredTab">
+                        <div class="content-tab-panel" id="featuredTab" style="display:none;">
                             <div class="content-card">
                                 <div class="content-card-header">
                                     <h2 class="content-card-title">Featured Stations</h2>
