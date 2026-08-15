@@ -374,7 +374,8 @@ function navigateTo(page) {
         'visualeditor': 'visualeditorPage',
         'miniplayersettings': 'miniplayersettingsPage',
         'preview': 'previewPage',
-        'analytics': 'analyticsPage'
+        'analytics': 'analyticsPage',
+        'musiccollections': 'musicCollectionsPage'
     };
 
     const pageId = pageMap[page];
@@ -397,6 +398,8 @@ function navigateTo(page) {
         loadCollectionsTable('movies');
         loadCollectionsTable('yearly');
         loadCollectionsTable('latest');
+    }
+    if (page === 'musiccollections') loadMusicCollections();
         loadQuotes();
     }
     if (page === 'images') loadAllImages();
@@ -3711,7 +3714,211 @@ function loadCollectionsTable(type) {
     `).join('');
 }
 
-function openAddCollectionModal(type) {
+function loadMusicCollections() {
+    const collections = DataStore.getMusicCollections();
+    const collectionsList = document.getElementById('musicCollectionsList');
+    if (!collections.length) {
+        collectionsList.innerHTML = '<div class="empty-state" style="padding: 40px; text-align: center; color: #888;"><i class="fas fa-folder"></i><p>No collections yet. Create your first collection.</p></div>';
+        return;
+    }
+    
+    collectionsList.innerHTML = collections.map(col => `
+        <div class="collection-card" style="border-left: 4px solid var(--emerald-400); margin-bottom: 16px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; transition: all 0.3s;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="flex: 1;">
+                    <h3 style="margin: 0; font-size: 16px; color: #fff;">${col.name}</h3>
+                    <p style="margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.6);">${col.description || ''}</p>
+                </div>
+                <span style="font-size: 12px; color: var(--emerald-400);">${col.songCount || 0} songs</span>
+            </div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.5);">${col.type || 'Music Collection'}</div>
+            <div style="margin-top: 8px;">
+                <button class="small-btn" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 4px; font-size: 12px;" onclick="playCollectionSongs('${col.id}', 'music')">
+                    <i class="fas fa-play"></i> Play
+                </button>
+                <button class="small-btn" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 4px; font-size: 12px; margin-left: 8px;" onclick="openEditCollectionModalMusic('${col.id}')">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="small-btn" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 4px; font-size: 12px; margin-left: 8px;" onclick="deleteMusicCollection('${col.id}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openAddCollectionModalMusic() {
+    const songs = DataStore.getSongs();
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'musicCollectionModal';
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="document.getElementById('musicCollectionModal').remove()"></div>
+        <div class="modal-content" style="max-width:800px;max-height:90vh;">
+            <div class="modal-header">
+                <h2>Create Music Collection</h2>
+                <button class="modal-close" onclick="document.getElementById('musicCollectionModal').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Collection Name *</label>
+                    <input type="text" class="form-input" id "colMusicName" required placeholder="e.g. 2026 Collection">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-input" id="colMusicDescription" placeholder="Optional description">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Select Songs</label>
+                    <select class="form-input" id="colMusicSongs" multiple style="height:300px;">
+                        ${songs.map(s => `<option value="${s.id}|${s.title}|${s.artist}|${s.movie || ''}|${s.thumbnail || ''}">${s.title} - ${s.artist}${s.movie ? ` (${s.movie})` : ''}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="builder-btn primary" onclick="saveMusicCollection()">
+                        <i class="fas fa-save"></i> Create Collection
+                    </button>
+                    <button type="button" class="builder-btn" onclick="document.getElementById('musicCollectionModal').remove()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function saveMusicCollection() {
+    const name = document.getElementById('colMusicName').value.trim();
+    const description = document.getElementById('colMusicDescription').value.trim();
+    const songIds = document.getElementById('colMusicSongs').value || [];
+    
+    if (!name) {
+        showToast('Collection name is required', 'error');
+        return;
+    }
+    
+    const songs = songIds.map(id => {
+        const parts = id.split('|');
+        return {
+            songId: parts[0],
+            title: parts[1] || '',
+            artist: parts[2] || '',
+            movie: parts[3] || '',
+            thumbnail: parts[4] || ''
+        };
+    });
+    
+    const collection = {
+        id: 'music_' + Date.now(),
+        name: name,
+        description: description,
+        songs: songs,
+        type: 'music',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        songCount: songs.length
+    };
+    
+    const collections = DataStore.getMusicCollections();
+    collections.push(collection);
+    DataStore.setMusicCollections(collections);
+    
+    showToast('Collection created successfully', 'success');
+    document.getElementById('musicCollectionModal').remove();
+    loadMusicCollections();
+}
+
+function deleteMusicCollection(id) {
+    if (confirm('Are you sure you want to delete this collection?')) {
+        let collections = DataStore.getMusicCollections();
+        collections = collections.filter(c => c.id !== id);
+        DataStore.setMusicCollections(collections);
+        showToast('Collection deleted', 'info');
+        loadMusicCollections();
+    }
+}
+
+function openEditCollectionModalMusic(id) {
+    const collections = DataStore.getMusicCollections();
+    const collection = collections.find(c => c.id === id);
+    if (!collection) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'editMusicCollectionModal';
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="document.getElementById('editMusicCollectionModal').remove()"></div>
+        <div class="modal-content" style="max-width:800px;max-height:90vh;">
+            <div class="modal-header">
+                <h2>Edit Collection: ${collection.name}</h2>
+                <button class="modal-close" onclick="document.getElementById('editMusicCollectionModal').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Collection Name *</label>
+                    <input type="text" class="form-input" id="editColName" value="${collection.name}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-input" id="editColDescription" value="${collection.description || ''}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Select Songs</label>
+                    <select class="form-input" id="editColSongs" multiple style="height:300px;">
+                        ${DataStore.getSongs().map(s => {
+                            const hasSong = collection.songs.some(cs => cs.songId === s.id);
+                            return `<option value="${s.id}|${s.title}|${s.artist}|${s.movie || ''}|${s.thumbnail || ''}" ${hasSong ? 'selected' : ''}>${s.title} - ${s.artist}${s.movie ? ` (${s.movie})` : ''}</option>`;
+                        }).join('')}
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="builder-btn primary" onclick="updateMusicCollection('${collection.id}')">
+                        <i class="fas fa-save"></i> Update
+                    </button>
+                    <button type="button" class="builder-btn" onclick="document.getElementById('editMusicCollectionModal').remove()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function updateMusicCollection(id) {
+    const name = document.getElementById('editColName').value.trim();
+    const description = document.getElementById('editColDescription').value.trim();
+    const songIds = document.getElementById('editColSongs').value || [];
+    
+    if (!name) {
+        showToast('Collection name is required', 'error');
+        return;
+    }
+    
+    const songs = songIds.map(id => {
+        const parts = id.split('|');
+        return {
+            songId: parts[0],
+            title: parts[1] || '',
+            artist: parts[2] || '',
+            movie: parts[3] || '',
+            thumbnail: parts[4] || ''
+        };
+    });
+    
+    let collections = DataStore.getMusicCollections();
+    const collection = collections.find(c => c.id === id);
+    if (collection) {
+        collection.name = name;
+        collection.description = description;
+        collection.songs = songs;
+        collection.songCount = songs.length;
+        collection.updatedAt = new Date().toISOString();
+    }
+    
+    DataStore.setMusicCollections(collections);
+    showToast('Collection updated successfully', 'success');
+    document.getElementById('editMusicCollectionModal').remove();
+    loadMusicCollections();
+}
     const typeLabel = type === 'movies' ? 'Movie' : type === 'yearly' ? 'Yearly' : 'Latest';
     const songs = DataStore.getSongs();
     

@@ -420,6 +420,7 @@
                     <button class="home-cat-btn" data-cat="artists" onclick="filterHomeCategory('artists')"><i class="fas fa-users"></i> Artists</button>
                     <button class="home-cat-btn" data-cat="movies" onclick="filterHomeCategory('movies')"><i class="fas fa-film"></i> Movies</button>
                     <button class="home-cat-btn" data-cat="collections" onclick="filterHomeCategory('collections')"><i class="fas fa-layer-group"></i> Collections</button>
+                    <button class="home-cat-btn" data-cat="musiccollections" onclick="filterHomeCategory('musiccollections')"><i class="fas fa-folder-tree"></i> Music Collections</button>
                     <button class="home-cat-btn" data-cat="radio" onclick="filterHomeCategory('radio')"><i class="fas fa-radio"></i> Radio</button>
                     <button class="home-cat-btn" data-cat="ai" onclick="filterHomeCategory('ai')"><i class="fas fa-robot"></i> AI Music</button>
                 </div>
@@ -524,6 +525,19 @@
                     </div>
                 </section>
 
+                <!-- Music Collections -->
+                <section class="section music-collection-section" data-section="music-collection" data-premium-reveal>
+                    <div class="section-header">
+                        <h2 class="section-title" data-kicker="Collections"><i class="fas fa-folder" style="color:#34d399;margin-right:8px;"></i>Music Collections</h2>
+                        <button class="see-all-btn" onclick="toggleMusicCollectionSidebar()" title="Browse Collections"><i class="fas fa-chevron-right"></i> Browse</button>
+                    </div>
+                    <div class="carousel-container">
+                        <button class="carousel-btn carousel-prev" onclick="scrollCarousel(this, -1)"><i class="fas fa-chevron-left"></i></button>
+                        <div class="carousel-track" id="musicCollectionTrack"></div>
+                        <button class="carousel-btn carousel-next" onclick="scrollCarousel(this, 1)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </section>
+
             </div><!-- /page-home -->
 
             <!-- Desktop Movie Sidebar Panel -->
@@ -533,6 +547,15 @@
                     <button class="movie-sidebar-close" onclick="closeMovieSidebar()"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="movie-sidebar-content" id="movieSidebarContent"></div>
+            </div>
+
+            <!-- Desktop Music Collections Sidebar Panel -->
+            <div class="music-sidebar-panel" id="musicSidebarPanel">
+                <div class="music-sidebar-header">
+                    <h3><i class="fas fa-folder"></i> Music Collections</h3>
+                    <button class="music-sidebar-close" onclick="closeMusicCollectionSidebar()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="music-sidebar-content" id="musicSidebarContent"></div>
             </div>
 
             <!-- ============ PAGE: SEARCH ============ -->

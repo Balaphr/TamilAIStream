@@ -184,6 +184,9 @@
                         <button class="builder-nav-item" data-page="ads">
                             <i class="fas fa-ad"></i> Ads
                         </button>
+                        <button class="builder-nav-item" data-page="musiccollections">
+                            <i class="fas fa-folder-tree"></i> Music Collections
+                        </button>
                         <button class="builder-nav-item" data-page="visualeditor">
                             <i class="fas fa-wand-magic-sparkles"></i> Visual Editor
                         </button>
@@ -255,6 +258,9 @@
                             </button>
                             <button class="builder-sidebar-item" data-page="ads">
                                 <i class="fas fa-ad"></i> Advertisements
+                            </button>
+                            <button class="builder-sidebar-item" data-page="musiccollections">
+                                <i class="fas fa-folder-tree"></i> Music Collections
                             </button>
                             <button class="builder-sidebar-item" data-page="notifications">
                                 <i class="fas fa-bell"></i> Notifications
@@ -552,6 +558,61 @@
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Music Collections Page -->
+                    <div class="builder-page" id="musicCollectionsPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Music Collections</h1>
+                            <p class="builder-page-subtitle">Create and manage music collections playlists</p>
+                        </div>
+
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">My Collections</h2>
+                            </div>
+                            <div id="musicCollectionsList">
+                                <div class="empty-state" style="padding: 40px; text-align: center; color: #888;">
+                                    <i class="fas fa-folder"></i>
+                                    <p>No collections yet. Create your first collection.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">Create New Collection</h2>
+                            </div>
+                            <form id="newCollectionForm">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Collection Name *</label>
+                                        <input type="text" class="form-input" id="collectionName" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Description</label>
+                                        <input type="text" class="form-input" id="collectionDescription" placeholder="Optional description">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Color Theme</label>
+                                        <select class="form-select" id="collectionColor">
+                                            <option value="emerald">Emerald (Green)</option>
+                                            <option value="sapphire">Sapphire (Blue)</option>
+                                            <option value="ruby">Ruby (Red)</option>
+                                            <option value="amethyst">Amethyst (Purple)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="builder-btn primary">
+                                        <i class="fas fa-save"></i> Create Collection
+                                    </button>
+                                    <button type="button" class="builder-btn" onclick="resetCollectionForm()">
+                                        <i class="fas fa-times"></i> Clear
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
 

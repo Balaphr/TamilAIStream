@@ -34,6 +34,7 @@ const DataStore = {
         MOVIES_COLLECTIONS: 'tamilAIStream_moviesCollections',
         YEARLY_COLLECTIONS: 'tamilAIStream_yearlyCollections',
         LATEST_COLLECTIONS: 'tamilAIStream_latestCollections',
+        MUSIC_COLLECTIONS: 'tamilAIStream_musicCollections',
         ADVERTISEMENTS: 'tamilAIStream_advertisements'
     },
 
@@ -133,6 +134,9 @@ const DataStore = {
     getLatestCollections() { return this.get(this.KEYS.LATEST_COLLECTIONS) || []; },
     setLatestCollections(data) { this.set(this.KEYS.LATEST_COLLECTIONS, data); },
 
+    getMusicCollections() { return this.get(this.KEYS.MUSIC_COLLECTIONS) || []; },
+    setMusicCollections(data) { this.set(this.KEYS.MUSIC_COLLECTIONS, data); },
+
     getAdvertisements() { return this.get(this.KEYS.ADVERTISEMENTS) || []; },
     setAdvertisements(ads) { this.set(this.KEYS.ADVERTISEMENTS, ads); },
 
@@ -228,6 +232,10 @@ init() {
         }
         if (!localStorage.getItem(this.KEYS.LATEST_COLLECTIONS)) {
             this.setLatestCollections([]);
+        }
+        // Music Collections (Admin-created playlists/collections)
+        if (!localStorage.getItem(this.KEYS.MUSIC_COLLECTIONS)) {
+            this.setMusicCollections([]);
         }
         if (!localStorage.getItem(this.KEYS.ADVERTISEMENTS)) {
             this.setAdvertisements([]);

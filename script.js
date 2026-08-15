@@ -2366,6 +2366,43 @@ function renderLatestCollectionsDynamic() {
 }
 
 // ============================================
+// Music Collections Rendering
+// ============================================
+
+function renderMusicCollectionsDynamic() {
+    const data = DataStore.getMusicCollections();
+    const hash = data.map(c => c.id + (c.status || '')).join(',');
+    if (!_hasSectionChanged('music-collections', hash)) return;
+    renderMusicCollectionTrack('musicCollectionTrack', data);
+}
+
+// Render individual music collection card
+function renderMusicCollectionCard(item) {
+    const thumbSrc = item.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='20' fill='%23374151'/%3E%3Ctext x='60' y='68' text-anchor='middle' fill='%239ca3af' font-size='32'%3E🎵%3C/text%3E%3C/svg%3E";
+    return `
+    <div class="music-collection-card" data-id="${item.id}" onclick="playCollectionSongs('${item.id}', 'music')">
+        <div class="music-collection-thumb">
+            <img src="${thumbSrc}" alt="${item.name}">
+            <div class="music-collection-play"><i class="fas fa-play"></i></div>
+        </div>
+        <div class="music-collection-info">
+            <span class="music-collection-name">${item.name}</span>
+            <span class="music-collection-count">${item.songCount || 0} songs</span>
+        </div>
+    </div>`;
+}
+
+function renderMusicCollectionTrack(trackId, items) {
+    const track = document.getElementById(trackId);
+    if (!track) return;
+    if (!items.length) {
+        track.innerHTML = '<div style="padding:20px;color:#888;text-align:center;width:100%;">No music collections yet. Add from Builder.</div>';
+        return;
+    }
+    track.innerHTML = items.filter(i => i.status !== 'inactive').map(item => renderMusicCollectionCard(item)).join('');
+}
+
+// ============================================
 // Advertisement Banner Rendering
 // ============================================
 const _adTimers = {};
@@ -2429,6 +2466,85 @@ function buildHeroAdHTML(ad) {
             ${ad.description ? `<span class="hero-ad-desc">${ad.description}</span>` : ''}
         </div>
     </${wrapper}>`;
+}
+
+/* AI-Assisted Collection Organization */
+function organizeSongsByMovieTitle(movieTitle) {
+    const allSongs = DataStore.getSongs() || [];
+    const matchingSongs = allSongs.filter(s => {
+        const movie = (s.movie || '').toLowerCase();
+        const title = (s.title || '').toLowerCase();
+        return movie.includes(movieTitle.toLowerCase()) || title.includes(movieTitle.toLowerCase());
+    });
+    
+    // Group by artist and create collections
+    const collections = {};
+    matchingSongs.forEach(song => {
+        const artist = song.artist || 'Unknown';
+        if (!collections[artist]) {
+            collections[artist] = [];
+        }
+        collections[artist].push({
+            songId: song.id,
+            title: song.title,
+            artist: song.artist,
+            movie: song.movie,
+            thumbnail: song.thumbnail
+        });
+    });
+    
+    // Create collection entries
+    const collectionEntries = [];
+    for (const [artist, songs] of Object.entries(collections)) {
+        collectionEntries.push({
+            id: 'ai_' + artist.replace(/\s+/g, '_') + '_' + Date.now(),
+            name: `${artist} - ${movieTitle} Collection`,
+            description: `AI-organized collection for ${movieTitle}`,
+            songs: songs,
+            type: 'music',
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            songCount: songs.length
+        });
+    }
+    
+    return collectionEntries;
+}
+
+function organizeAllSongsByMovie() {
+    const allSongs = DataStore.getSongs() || [];
+    const movieTitles = [...new Set(allSongs.map(s => s.movie).filter(Boolean))];
+    
+    const collections = [];
+    movieTitles.forEach(title => {
+        const entries = organizeSongsByMovieTitle(title);
+        collections.push(...entries);
+    });
+    
+    return collections;
+}
+
+/* Home page AI collection builder */
+function AIOrganizeCollections() {
+    const collectionEntries = organizeAllSongsByMovie();
+    if (!collectionEntries.length) {
+        showToast('No songs found to organize', 'info');
+        return;
+    }
+    
+    const collections = DataStore.getMusicCollections();
+    // Add new collections, avoiding duplicates
+    const existingIds = new Set(collections.map(c => c.id));
+    
+    collectionEntries.forEach(entry => {
+        if (!existingIds.has(entry.id)) {
+            collections.push(entry);
+        }
+    });
+    
+    DataStore.setMusicCollections(collections);
+    showToast(`AI organized ${collectionEntries.length} collections from movie titles`, 'success');
+    loadMusicCollections();
 }
 
 function renderAdSlot(container, ads, pos) {
@@ -2589,6 +2705,7 @@ function filterHomeCategory(cat) {
         artists: ['tamil-hits'],
         movies: ['movies-collection', 'yearly-collection'],
         collections: ['latest-collection', 'yearly-collection'],
+        musiccollections: ['music-collection'],
         radio: [],
         ai: ['ai-recommended']
     };
@@ -2681,6 +2798,60 @@ function closeMovieSidebar() {
     document.getElementById('page-home').classList.remove('movie-sidebar-open');
 }
 window.closeMovieSidebar = closeMovieSidebar;
+
+function toggleMusicCollectionSidebar() {
+    const panel = document.getElementById('musicSidebarPanel');
+    if (!panel) return;
+    if (panel.classList.contains('active')) {
+        closeMusicCollectionSidebar();
+    } else {
+        openMusicCollectionSidebar();
+    }
+}
+window.toggleMusicCollectionSidebar = toggleMusicCollectionSidebar;
+
+function openMusicCollectionSidebar() {
+    const panel = document.getElementById('musicSidebarPanel');
+    if (!panel) return;
+    panel.classList.add('active');
+    document.getElementById('page-home').classList.add('music-sidebar-open');
+    renderMusicCollectionSidebarContent();
+}
+window.openMusicCollectionSidebar = openMusicCollectionSidebar;
+
+function closeMusicCollectionSidebar() {
+    const panel = document.getElementById('musicSidebarPanel');
+    if (!panel) return;
+    panel.classList.remove('active');
+    document.getElementById('page-home').classList.remove('music-sidebar-open');
+}
+window.closeMusicCollectionSidebar = closeMusicCollectionSidebar;
+
+function renderMusicCollectionSidebarContent() {
+    const container = document.getElementById('musicSidebarContent');
+    if (!container) return;
+    const collections = DataStore.getMusicCollections().filter(c => c.status !== 'inactive');
+    const allSongs = DataStore.getSongs();
+    const placeholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 280'%3E%3Crect width='200' height='280' rx='12' fill='%23374151'/%3E%3Ctext x='100' y='150' text-anchor='middle' fill='%239ca3af' font-size='36'%3E🎵%3C/text%3E%3C/svg%3E";
+    if (!collections.length) {
+        container.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#888;"><i class="fas fa-folder" style="font-size:40px;margin-bottom:12px;display:block;color:#555;"></i><p>No music collections yet.</p><p style="font-size:12px;margin-top:8px;">Create from Builder → Music Collections</p></div>';
+        return;
+    }
+    container.innerHTML = collections.map(col => {
+        const colSongs = col.songs || [];
+        const songCount = allSongs.filter(s => colSongs.some(cs => cs.songId === s.id)).length;
+        return `<div class="sidebar-collection-item" style="border-left: 4px solid var(--emerald-400); margin-bottom: 12px; padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; cursor: pointer; transition: all 0.2s;" onclick="selectMusicCollectionSidebar('${col.id}')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; border-radius: 6px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 18px;">${col.name.substring(0,2)}</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${col.name}</div>
+                            <div style="font-size: 12px; color: rgba(255,255,255,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">${col.songCount || 0} songs</div>
+                        </div>
+                        <div style="font-size: 12px; color: var(--emerald-400);"><i class="fas fa-play"></i> Play</div>
+                    </div>
+                </div>`;
+    }).join('');
+}
 
 function renderMovieSidebarContent() {
     const container = document.getElementById('movieSidebarContent');
@@ -3604,6 +3775,7 @@ function renderAllDynamicContent() {
         renderMoviesCollectionsDynamic();
         renderYearlyCollectionsDynamic();
         renderLatestCollectionsDynamic();
+        renderMusicCollectionsDynamic();
         renderCategoriesDynamic();
         renderAlbumsDynamic();
         renderPersonalizedMusic();
