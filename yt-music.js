@@ -113,17 +113,6 @@ const YTMusic = {
     setupEventListeners() {
         // Browser back/forward → restore previous page without touching playback.
         window.addEventListener('popstate', () => {
-            // If kebab menu is being closed by its own handler, skip navigation
-            const kebabMenu = document.getElementById('premiumKebabMenu');
-            if (kebabMenu && kebabMenu.classList.contains('open')) {
-                // Kebab is still open — its own popstate will close it, we skip
-                return;
-            }
-            // Check if we just came from a kebab-closed state (flag set by kebab close)
-            if (window._kebabClosing) {
-                window._kebabClosing = false;
-                return;
-            }
             // Close sidebar if open (mobile/tablet)
             const sidebar = document.getElementById('premiumSidebar');
             if (sidebar && sidebar.classList.contains('open')) {
@@ -661,24 +650,91 @@ const YTMusic = {
 
     performSearch() {
         const results = { stations: [], songs: [], artists: [] };
+        const query = this.searchQuery;
+
+        // AI-enhanced natural language search
+        const nlQuery = this.parseNaturalLanguage(query);
+
         const stations = DataStore.getStations();
         results.stations = stations.filter(s =>
-            s.name.toLowerCase().includes(this.searchQuery) ||
-            s.genre.toLowerCase().includes(this.searchQuery) ||
-            s.city.toLowerCase().includes(this.searchQuery)
+            s.name.toLowerCase().includes(query) ||
+            s.genre.toLowerCase().includes(query) ||
+            s.city.toLowerCase().includes(query)
         );
+
         const songs = DataStore.getSongs();
-        results.songs = (songs || []).filter(s =>
-            (s.title || '').toLowerCase().includes(this.searchQuery) ||
-            (s.artist || '').toLowerCase().includes(this.searchQuery) ||
-            (s.movie || '').toLowerCase().includes(this.searchQuery)
-        );
+        results.songs = (songs || []).filter(s => {
+            const title = (s.title || '').toLowerCase();
+            const artist = (s.artist || '').toLowerCase();
+            const movie = (s.movie || '').toLowerCase();
+            const genre = (s.genre || '').toLowerCase();
+            const lyrics = (s.lyrics || '').toLowerCase();
+
+            // Direct match
+            if (title.includes(query) || artist.includes(query) || movie.includes(query) || genre.includes(query)) return true;
+
+            // Lyrics match
+            if (query.split(' ').length >= 2 && lyrics.includes(query)) return true;
+
+            // NL intent matches
+            if (nlQuery.mood && s.mood && s.mood.toLowerCase().includes(nlQuery.mood)) return true;
+            if (nlQuery.artist && artist.includes(nlQuery.artist)) return true;
+            if (nlQuery.movie && movie.includes(nlQuery.movie)) return true;
+
+            return false;
+        });
+
         const artistHits = DataStore.getArtistHits();
         results.artists = artistHits.filter(a =>
-            a.name.toLowerCase().includes(this.searchQuery) ||
-            a.artist.toLowerCase().includes(this.searchQuery)
+            a.name.toLowerCase().includes(query) ||
+            a.artist.toLowerCase().includes(query)
         );
+
+        // If NL query has "play" intent and exactly one song matches, play it immediately
+        if (nlQuery.isPlayIntent && results.songs.length === 1) {
+            this.playTrack(results.songs[0]);
+            this.showToast('Playing: ' + results.songs[0].title, 'success');
+        } else if (nlQuery.isPlayIntent && results.songs.length > 1) {
+            // Play first match
+            this.playTrack(results.songs[0]);
+            this.showToast('Playing: ' + results.songs[0].title, 'success');
+        }
+
         this.renderSearchResults(results);
+    },
+
+    parseNaturalLanguage(query) {
+        const result = { isPlayIntent: false, mood: null, artist: null, movie: null };
+        const lower = query.toLowerCase();
+
+        // Play intent
+        if (/^(play|start|put on|listen to|play me|play the)/i.test(lower)) {
+            result.isPlayIntent = true;
+        }
+
+        // Mood detection
+        const moods = {
+            'happy': 'happy', 'joy': 'happy', 'cheerful': 'happy',
+            'sad': 'sad', 'melancholy': 'sad', 'depressed': 'sad',
+            'love': 'romance', 'romantic': 'romance', 'romance': 'romance',
+            'chill': 'chill', 'relax': 'chill', 'calm': 'chill', 'peaceful': 'chill',
+            'energy': 'energy', 'energetic': 'energy', 'workout': 'energy', 'party': 'energy',
+            'focus': 'focus', 'study': 'focus', 'concentrate': 'focus',
+            'night': 'night', 'midnight': 'night', 'sleep': 'night'
+        };
+        for (const [key, mood] of Object.entries(moods)) {
+            if (lower.includes(key)) { result.mood = mood; break; }
+        }
+
+        // Artist extraction (simple pattern: "by <artist>" or just artist name)
+        const byMatch = lower.match(/\bby\s+([a-z\s]+?)(?:\s+from|\s+in|\s+from the|$)/i);
+        if (byMatch) result.artist = byMatch[1].trim();
+
+        // Movie extraction
+        const movieMatch = lower.match(/\b(?:from|in|movie|film|soundtrack)\s+([a-z\s]+?)(?:\s+by|\s+song|$)/i);
+        if (movieMatch) result.movie = movieMatch[1].trim();
+
+        return result;
     },
 
     setSearchFilter(filter) {

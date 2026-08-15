@@ -40,6 +40,12 @@ const CRITICAL_ASSETS = [
 
 /* ---- Install ---- */
 self.addEventListener('install', (event) => {
+  // Skip aggressive caching in development (Vite dev server on localhost)
+  const isDev = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
+  if (isDev) {
+    self.skipWaiting();
+    return;
+  }
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(CRITICAL_ASSETS))
@@ -88,6 +94,10 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+
+  // Skip caching entirely in development — always fetch fresh
+  const isDev = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
+  if (isDev) return;
 
   // 1. Never intercept /api/* – this covers /api/manifest, /api/media,
   //    /api/version and any future endpoints.

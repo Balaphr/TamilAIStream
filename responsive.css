@@ -27,20 +27,25 @@ body {
 }
 
 /* ---- Bottom Navigation (Mobile) ---- */
-.ytm-bottom-nav {
-    display: none;
+.tamilai-bottom-nav {
+    display: flex;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 1400;
-    background: rgba(10,12,24,0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(255,255,255,0.06);
+    z-index: 1800;
+    background: rgba(8, 12, 22, 0.92);
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     padding: 4px 0 calc(4px + env(safe-area-inset-bottom, 0));
-    height: auto;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4);
+    justify-content: space-around;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
+.tamilai-bottom-nav::-webkit-scrollbar { display: none; }
 .ytm-bottom-nav-items {
     display: flex;
     justify-content: space-around;
@@ -164,6 +169,30 @@ body {
     .ytm-page,
     .ytm-page-home {
         padding-bottom: calc(60px + 52px + 8px + 16px);
+    }
+
+    /* Mobile bottom nav with 8 items */
+    .tamilai-bottom-nav {
+        justify-content: space-between;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+    .tamilai-nav-item {
+        min-width: 36px;
+        padding: 5px 2px;
+        flex: 1;
+        max-width: 50px;
+    }
+    .tamilai-nav-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 14px;
+    }
+    .tamilai-nav-label {
+        font-size: 0.48rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* AI FAB above bottom nav — clear the player */

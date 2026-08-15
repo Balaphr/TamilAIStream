@@ -251,7 +251,11 @@ const GlobalPlayer = (() => {
                     </div>
                 </div>
                 <div class="gp-exp-artwork-wrap">
+                    <div class="gp-exp-artwork-particles">
+                        <span></span><span></span><span></span><span></span><span></span><span></span>
+                    </div>
                     <div class="gp-exp-artwork" id="gpExpArtwork">
+                        <div class="gp-exp-artwork-ai-ring"></div>
                         <div class="gp-exp-art-img" id="gpExpArtImg"></div>
                         <div class="gp-exp-art-glow"></div>
                     </div>
