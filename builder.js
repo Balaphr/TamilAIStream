@@ -1290,9 +1290,51 @@ async function syncToLiveWebsite() {
         // Method 1: Dispatch custom event
         window.dispatchEvent(new Event('storage-sync'));
 
-        // Method 2: Dispatch storage event for cross-tab
-        window.dispatchEvent(new StorageEvent('storage', {
-            key: 'tamilAIStream_songs',
+        // Method 2: Dispatch storage events for cross-tab sync
+        // Sync all builder settings to trigger website updates
+        const keysToSync = [
+            'tamilAIStream_siteSettings',
+            'tamilAIStream_navigation',
+            'tamilAIStream_sectionsOrder',
+            'tamilAIStream_miniPlayerSettings',
+            'tamilAIStream_playerPrefs',
+            'tamilAIStream_advertisements',
+            'tamilAIStream_splash',
+            'tamilAIStream_moods',
+            'tamilAIStream_aiRadio',
+            'tamilAIStream_notifications',
+            'tamilAIStream_images'
+        ];
+
+        keysToSync.forEach(key => {
+            try {
+                localStorage.setItem(key, localStorage.getItem(key) || 'null');
+            } catch (e) {
+                console.error('Error syncing key ' + key + ':', e);
+            }
+        });
+
+        // Dispatch storage events for each key to trigger website updates
+        keysToSync.forEach(key => {
+            try {
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: key,
+                    newValue: localStorage.getItem(key)
+                }));
+            } catch (e) {
+                console.error('Error dispatching storage event for ' + key + ':', e);
+            }
+        });
+
+        // Method 3: Direct website update - apply settings immediately
+        applySavedSettingsToWebsite();
+
+        return true;
+    } catch (e) {
+        console.error('Error in syncToLiveWebsite:', e);
+        return false;
+    }
+}
             newValue: JSON.stringify(DataStore.getSongs()),
             url: window.location.href
         }));

@@ -305,6 +305,22 @@ const PlayerEngine = (() => {
         const url = track.streamUrl || track.audioUrl || track.url;
         if (!url) { emit('error', new Error('No audio URL')); return; }
 
+        // CRITICAL FIX: If the same track is already loaded and playing/paused,
+        // do NOT reset the audio source or position. Just resume if paused.
+        const currentSrc = audio.src;
+        const isSameTrack = currentSrc && currentSrc.indexOf(url) !== -1;
+        if (isSameTrack && (state.isPlaying || !audio.paused)) {
+            // Same track already loaded - just ensure it's playing
+            if (audio.paused) {
+                await audio.play().catch(() => {});
+            }
+            addToRecentlyPlayed(track);
+            state.mostPlayed[track.id || track.name] = (state.mostPlayed[track.id || track.name] || 0) + 1;
+            saveState();
+            emit('trackChange', state);
+            return;
+        }
+
         if (state.crossfadeDuration > 0 && state.isPlaying) {
             await crossfadeTo(url);
         } else {

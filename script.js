@@ -725,6 +725,46 @@ function stopCurrentStream() {
     currentPlaybackMode = 'station';
 }
 
+/**
+ * Check whether the same song/station is already the active playback source.
+ * Returns true when clicking the currently-playing track must NOT restart it.
+ */
+function isSameActivePlayback(trackOrStation) {
+    if (!trackOrStation) return false;
+    if (typeof trackOrStation === 'string') {
+        // Station name comparison
+        return !!(currentStation && currentStation === trackOrStation);
+    }
+    // Track object comparison (by id, then by audioUrl/streamUrl, then by title+artist)
+    const id = trackOrStation.id || trackOrStation.songId;
+    if (id && currentPlaybackTrack && currentPlaybackTrack.id === id) return true;
+    const url = trackOrStation.audioUrl || trackOrStation.streamUrl || trackOrStation.url;
+    if (url && audioPlayer && audioPlayer.src && audioPlayer.src.indexOf(url) !== -1) return true;
+    if (currentPlaybackTrack && trackOrStation.title && currentPlaybackTrack.title === trackOrStation.title
+        && (!trackOrStation.artist || !currentPlaybackTrack.artist || currentPlaybackTrack.artist === trackOrStation.artist)) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Resume the currently active playback session without creating a new audio
+ * instance or resetting currentTime. Used when the user clicks/touches the
+ * currently playing song/station — playback must continue from its exact
+ * position, never jump back to 00:00.
+ */
+function resumeActivePlaybackSession() {
+    if (window.__BUILDER_PREVIEW__) return;
+    if (!audioPlayer || !audioPlayer.src) return false;
+    // Preserve the current playback position — do NOT reset currentTime to 0.
+    // DO NOT call audioPlayer.load() as it resets currentTime to 0 per HTML spec.
+    const preservedPosition = audioPlayer.currentTime || 0;
+    if (audioPlayer.paused) {
+        audioPlayer.play().catch(() => {});
+    }
+    return true;
+}
+
 function toggleStationFromCard(btn, stationName) {
     if (isStreamPlaying && currentStation === stationName) {
         pauseStation();
@@ -735,6 +775,15 @@ function toggleStationFromCard(btn, stationName) {
 
 function playStation(stationName) {
     if (window.__BUILDER_PREVIEW__) return;
+    // CRITICAL FIX: If the user clicks/touches the station that is ALREADY the
+    // active playback source, do NOT stop, restart, or reset it. Preserve the
+    // current currentTime, play/pause state, volume and selected station.
+    // Only create/load a new audio source when the user selects a DIFFERENT station.
+    if (isSameActivePlayback(stationName)) {
+        // If currently paused, resume the existing session from its position.
+        if (audioPlayer && audioPlayer.paused) resumeActivePlaybackSession();
+        return;
+    }
     initAudioPlayer();
     stopCurrentStream();
     userPaused = false;
@@ -823,6 +872,15 @@ function playStation(stationName) {
 
 async function playSong(song, playlist = []) {
     if (window.__BUILDER_PREVIEW__) return;
+    // CRITICAL FIX: If the user clicks/touches the song that is ALREADY the
+    // active playback source, do NOT stop, restart, or reset it. Preserve the
+    // current currentTime, play/pause state, volume and selected track/station.
+    // Only create/load a new audio source when the user selects a DIFFERENT song.
+    if (isSameActivePlayback(song)) {
+        // If currently paused, resume the existing session from its position.
+        if (audioPlayer && audioPlayer.paused) resumeActivePlaybackSession();
+        return;
+    }
     initAudioPlayer();
     stopCurrentStream();
     userPaused = false;
@@ -904,6 +962,15 @@ async function playSong(song, playlist = []) {
 
 function playTrackFromYTMusic(track, meta = {}) {
     if (!track) return;
+    // CRITICAL FIX: If the user clicks/touches the track that is ALREADY the
+    // active playback source, do NOT stop, restart, or reset it. Preserve the
+    // current currentTime, play/pause state, volume and selected track/station.
+    // Only create/load a new audio source when the user selects a DIFFERENT track.
+    if (isSameActivePlayback(track)) {
+        // If currently paused, resume the existing session from its position.
+        if (audioPlayer && audioPlayer.paused) resumeActivePlaybackSession();
+        return;
+    }
     if (track.streamUrl) {
         playStation(track.title || track.artist || 'Tamil Hits Songs');
         return;

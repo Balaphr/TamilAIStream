@@ -851,7 +851,10 @@ async function quickDemoLogin() {
         const userData = { name: user.name, email: user.email, photoURL: user.photoURL || '', uid: user.uid };
         Auth.createSession(userData, rememberMe, false);
         
+        showToast('Demo login successful! Welcome Admin.', 'success');
+        
         // Also set adminSession so builder.html recognizes the admin login
+        // (Auth.createSession above also sets main website session, but we also set adminSession explicitly)
         localStorage.setItem('adminSession', JSON.stringify({
             username: DEMO_EMAIL,
             email: DEMO_EMAIL,
@@ -860,13 +863,29 @@ async function quickDemoLogin() {
             expiry: Date.now() + (24 * 60 * 60 * 1000)
         }));
         
-        showToast('Demo login successful! Welcome Admin.', 'success');
+        // Also set main website session so builder auth fallback works
+        // (Ensures checkWebsiteAuth() in builder.js can authenticate even if adminSession check fails)
+        try {
+            localStorage.setItem('tamilAIStream_user', JSON.stringify({
+                uid: user.uid || 'admin-local',
+                name: user.name || 'Admin',
+                email: user.email,
+                loginTime: Date.now(),
+                photoURL: user.photoURL || ''
+            }));
+            localStorage.setItem('tamilAIStream_loggedIn', 'true');
+        } catch (e) {
+            console.warn('Unable to sync website session:', e);
+        }
         
         DOM.successTitle.textContent = 'Welcome Admin!';
         DOM.successMessage.textContent = 'Redirecting to your dashboard...';
         DOM.successOverlay.classList.add('visible');
         
-        setTimeout(() => redirectToHome(), 1500);
+        // Navigate to builder (not home) so admin can immediately access builder
+        setTimeout(() => {
+            window.location.href = 'builder.html?auto=1';
+        }, 1500);
         
     } catch (error) {
         demoBtn.innerHTML = originalHTML;
@@ -913,7 +932,23 @@ async function openBuilderFromLogin() {
             expiry: Date.now() + (24 * 60 * 60 * 1000)
         }));
 
+        // Also set main website session so builder auth fallback works
+        // (Ensures checkWebsiteAuth() in builder.js can authenticate even if adminSession check fails)
+        try {
+            localStorage.setItem('tamilAIStream_user', JSON.stringify({
+                uid: user.uid || 'admin-local',
+                name: user.name || 'Admin',
+                email: user.email,
+                loginTime: Date.now(),
+                photoURL: user.photoURL || ''
+            }));
+            localStorage.setItem('tamilAIStream_loggedIn', 'true');
+        } catch (e) {
+            console.warn('Unable to sync website session:', e);
+        }
+
         showToast('Opening Website Builder...', 'success');
+
         setTimeout(() => {
             window.location.href = 'builder.html?auto=1';
         }, 600);
