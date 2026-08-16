@@ -711,6 +711,11 @@ const GlobalPlayer = (() => {
         syncPlayingIndicators(playing);
     }
     
+    let _songCardsCache = null;
+    let _songCardsCacheTime = 0;
+    let _stationCardsCache = null;
+    let _stationCardsCacheTime = 0;
+
     function syncPlayingIndicators(playing) {
         const track = state.track || getCurrentTrackFromScript();
         const currentTrackId = track?.id || track?.songId;
@@ -719,8 +724,12 @@ const GlobalPlayer = (() => {
         // --- Song card: only update previous + new active card ---
         let newActiveCard = null;
         if (playing && currentTrackId) {
-            const selector = '.song-card, .dash-song-card, .ai-glass-song-card, .ytm-song-card';
-            document.querySelectorAll(selector).forEach(card => {
+            const now = Date.now();
+            if (!_songCardsCache || now - _songCardsCacheTime > 3000) {
+                _songCardsCache = document.querySelectorAll('.ra-card, .song-card, .dash-song-card, .ai-glass-song-card, .ytm-song-card');
+                _songCardsCacheTime = now;
+            }
+            _songCardsCache.forEach(card => {
                 const songId = card.dataset?.songId || card.dataset?.id;
                 if (songId && songId === currentTrackId) newActiveCard = card;
             });
@@ -728,13 +737,13 @@ const GlobalPlayer = (() => {
 
         if (_lastActiveCard && _lastActiveCard !== newActiveCard) {
             _lastActiveCard.classList.remove('playing-song');
-            const thumb = _lastActiveCard.querySelector('.song-thumbnail, .dash-song-art, .ytm-song-art');
+            const thumb = _lastActiveCard.querySelector('.song-thumbnail, .ra-card-art, .dash-song-art, .ytm-song-art');
             if (thumb) thumb.classList.remove('playing-indicator');
         }
         if (newActiveCard) {
             if (!newActiveCard.classList.contains('playing-song')) {
                 newActiveCard.classList.add('playing-song');
-                const thumb = newActiveCard.querySelector('.song-thumbnail, .dash-song-art, .ytm-song-art');
+                const thumb = newActiveCard.querySelector('.song-thumbnail, .ra-card-art, .dash-song-art, .ytm-song-art');
                 if (thumb) thumb.classList.add('playing-indicator');
             }
         }
@@ -743,7 +752,12 @@ const GlobalPlayer = (() => {
         // --- Station card: only update previous + new active card ---
         let newActiveStation = null;
         if (playing && currentStationName) {
-            document.querySelectorAll('.station-card, .station-grid-card, .slide-card, .premium-radio-card').forEach(card => {
+            const now = Date.now();
+            if (!_stationCardsCache || now - _stationCardsCacheTime > 3000) {
+                _stationCardsCache = document.querySelectorAll('.station-card, .station-grid-card, .slide-card, .premium-radio-card');
+                _stationCardsCacheTime = now;
+            }
+            _stationCardsCache.forEach(card => {
                 const cardName = card.querySelector('h3, h4')?.textContent || '';
                 if (cardName && cardName === currentStationName) newActiveStation = card;
             });
@@ -1020,8 +1034,11 @@ const GlobalPlayer = (() => {
         canvas.height = canvas.offsetHeight * window.devicePixelRatio;
         ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         function draw() {
-            if (document.hidden) { waveformRAF = requestAnimationFrame(draw); return; }
-            if (!isExpanded) { ctx.clearRect(0, 0, canvas.width, canvas.height); waveformRAF = requestAnimationFrame(draw); return; }
+            if (document.hidden || !isExpanded) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                waveformRAF = requestAnimationFrame(draw);
+                return;
+            }
             const freqData = (typeof PlayerEngine !== 'undefined' && PlayerEngine.getFrequencyData) ? PlayerEngine.getFrequencyData() : null;
             const w = canvas.offsetWidth;
             const h = canvas.offsetHeight;
@@ -1047,20 +1064,32 @@ const GlobalPlayer = (() => {
 
     function stopVisualizer() { if (waveformRAF) cancelAnimationFrame(waveformRAF); }
 
+    // Cached DOM references for EQ bars — avoid querying DOM every animation frame
+    let _eqBarsCache = null;
+    let _eqBarsCacheTime = 0;
+    function getEqBars() {
+        const now = Date.now();
+        if (!_eqBarsCache || now - _eqBarsCacheTime > 2000) {
+            _eqBarsCache = document.querySelectorAll('.gp-mini-eq span, .gp-exp-eq span');
+            _eqBarsCacheTime = now;
+        }
+        return _eqBarsCache;
+    }
+
     function startEqAnimation() {
         if (eqRAF) cancelAnimationFrame(eqRAF);
         eqRAF = null;
         if (!state.isPlaying) {
-            document.querySelectorAll('.gp-mini-eq span, .gp-exp-eq span').forEach(bar => { bar.style.height = '3px'; });
+            getEqBars().forEach(bar => { bar.style.height = '3px'; });
             return;
         }
         function animate() {
             if (!state.isPlaying || document.hidden) {
-                document.querySelectorAll('.gp-mini-eq span, .gp-exp-eq span').forEach(bar => { bar.style.height = '3px'; });
+                getEqBars().forEach(bar => { bar.style.height = '3px'; });
                 eqRAF = null;
                 return;
             }
-            document.querySelectorAll('.gp-mini-eq span, .gp-exp-eq span').forEach((bar) => {
+            getEqBars().forEach((bar) => {
                 bar.style.height = (4 + Math.random() * 14) + 'px';
             });
             eqRAF = requestAnimationFrame(animate);
@@ -1077,10 +1106,7 @@ const GlobalPlayer = (() => {
         function draw() {
             if (document.hidden) { _lyricsRAF = requestAnimationFrame(draw); return; }
             ctx.clearRect(0, 0, 80, 32);
-            if (!state.isPlaying) {
-                _lyricsRAF = null;
-                return;
-            }
+            if (!state.isPlaying) { _lyricsRAF = null; return; }
             const freqData = (typeof PlayerEngine !== 'undefined' && PlayerEngine.getFrequencyData) ? PlayerEngine.getFrequencyData() : null;
             if (!freqData) { _lyricsRAF = requestAnimationFrame(draw); return; }
             const bars = 16;
