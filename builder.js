@@ -1329,6 +1329,23 @@ function savePublishState() {
     }
 }
 
+function applySavedSettingsToWebsite() {
+    try {
+        const settings = DataStore.getSiteSettings();
+        if (settings && settings.title) {
+            document.title = settings.title;
+        }
+        const themeColor = settings.themeColor;
+        if (themeColor) {
+            let meta = document.querySelector('meta[name="theme-color"]');
+            if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.appendChild(meta); }
+            meta.content = themeColor;
+        }
+    } catch (e) {
+        console.warn('applySavedSettingsToWebsite:', e);
+    }
+}
+
 async function syncToLiveWebsite() {
     try {
         localStorage.setItem('tamilAIStream_lastSyncedAt', new Date().toISOString());
@@ -1378,7 +1395,9 @@ async function syncToLiveWebsite() {
         });
 
         // Method 3: Direct website update - apply settings immediately
-        applySavedSettingsToWebsite();
+        if (typeof applySavedSettingsToWebsite === 'function') {
+            applySavedSettingsToWebsite();
+        }
 
         // Method 4: BroadcastChannel for cross-tab instant messaging
         try {
