@@ -463,8 +463,8 @@ DOM.loginForm?.addEventListener('submit', async function(e) {
         const userData = { name: user.name, email: user.email, photoURL: user.photoURL || '', uid: user.uid };
         Auth.createSession(userData, rememberMe, false);
         
-        // If logging in with admin credentials, also set adminSession for builder access
-        if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
+        const isAdmin = (email === DEMO_EMAIL && password === DEMO_PASSWORD);
+        if (isAdmin) {
             localStorage.setItem('adminSession', JSON.stringify({
                 username: DEMO_EMAIL,
                 email: DEMO_EMAIL,
@@ -477,13 +477,13 @@ DOM.loginForm?.addEventListener('submit', async function(e) {
         DOM.loginBtn.classList.remove('loading');
         DOM.loginBtn.disabled = false;
         
-        DOM.successTitle.textContent = 'Welcome back!';
-        DOM.successMessage.textContent = 'Redirecting to your dashboard...';
+        DOM.successTitle.textContent = isAdmin ? 'Welcome Admin!' : 'Welcome back!';
+        DOM.successMessage.textContent = isAdmin ? 'Loading your Command Center...' : 'Redirecting to your dashboard...';
         DOM.successOverlay.classList.add('visible');
         
-        showToast('Login successful! Welcome back.', 'success');
+        showToast(isAdmin ? 'Admin login successful! Opening Command Center.' : 'Login successful! Welcome back.', 'success');
         
-        setTimeout(() => redirectToHome(), 1500);
+        setTimeout(() => isAdmin ? (window.location.href = 'dashboard.html') : redirectToHome(), 1500);
         
     } catch (error) {
         DOM.loginBtn.classList.remove('loading');
@@ -879,12 +879,11 @@ async function quickDemoLogin() {
         }
         
         DOM.successTitle.textContent = 'Welcome Admin!';
-        DOM.successMessage.textContent = 'Redirecting to your dashboard...';
+        DOM.successMessage.textContent = 'Loading your Command Center...';
         DOM.successOverlay.classList.add('visible');
         
-        // Navigate to builder (not home) so admin can immediately access builder
         setTimeout(() => {
-            window.location.href = 'builder.html?auto=1';
+            window.location.href = 'dashboard.html';
         }, 1500);
         
     } catch (error) {
@@ -947,10 +946,10 @@ async function openBuilderFromLogin() {
             console.warn('Unable to sync website session:', e);
         }
 
-        showToast('Opening Website Builder...', 'success');
+        showToast('Opening Command Center...', 'success');
 
         setTimeout(() => {
-            window.location.href = 'builder.html?auto=1';
+            window.location.href = 'dashboard.html';
         }, 600);
     } catch (error) {
         btn.innerHTML = originalHTML;

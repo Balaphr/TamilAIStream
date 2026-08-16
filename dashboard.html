@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tamil AI Stream</title>
-    <meta name="description" content="Tamil AI Stream Dashboard - Your personalized AI-powered Tamil radio experience with live FM stations and curated music.">
+    <title>TamilAI.Command Center</title>
+    <meta name="description" content="TamilAI Stream Command Center - AI-powered admin dashboard for managing your Tamil radio platform.">
     <meta name="theme-color" content="#000000">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,99 +32,452 @@
     </div>
 
     <!-- Premium Top Bar -->
-    <header class="dash-topbar">
-        <div class="dash-brand">
-            <svg width="30" height="30" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-                <circle cx="20" cy="20" r="18" fill="url(#dashNavGrad)"/>
+    <header class="cc-topbar">
+        <div class="cc-brand">
+            <svg width="32" height="32" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+                <circle cx="20" cy="20" r="18" fill="url(#ccNavGrad)"/>
                 <path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/>
                 <defs>
-                    <linearGradient id="dashNavGrad" x1="0" y1="0" x2="40" y2="40">
+                    <linearGradient id="ccNavGrad" x1="0" y1="0" x2="40" y2="40">
                         <stop stop-color="#34d399"/>
                         <stop offset="1" stop-color="#10b981"/>
                     </linearGradient>
                 </defs>
             </svg>
-            <div class="dash-brand-text">
-                <div class="dash-brand-title">TamilAI<span class="dash-brand-dot">.</span>Stream</div>
-                <span class="dash-subbrand">Dashboard</span>
+            <div class="cc-brand-text">
+                <div class="cc-brand-title">TamilAI<span class="cc-brand-dot">.</span>Command</div>
+                <span class="cc-subbrand">Center</span>
             </div>
         </div>
-        <div class="dash-topbar-actions">
-            <button type="button" class="dash-btn dash-btn-ghost" id="dashFullPlayer" title="Open the full player">
-                <i class="fas fa-headphones"></i>
-                <span class="dash-full-player-label">Full Player</span>
+        <nav class="cc-nav" id="ccNav">
+            <button type="button" class="cc-nav-btn active" data-panel="overview"><i class="fas fa-grid-2"></i> Overview</button>
+            <button type="button" class="cc-nav-btn" data-panel="ai"><i class="fas fa-wand-magic-sparkles"></i> AI Tools</button>
+            <button type="button" class="cc-nav-btn" data-panel="live"><i class="fas fa-signal"></i> Live Data</button>
+            <button type="button" class="cc-nav-btn" data-panel="assistant"><i class="fas fa-robot"></i> AI Assistant</button>
+        </nav>
+        <div class="cc-topbar-actions">
+            <button type="button" class="cc-btn cc-btn-ghost" id="ccOpenBuilder" title="Open Website Builder">
+                <i class="fas fa-hammer"></i>
+                <span class="cc-action-label">Builder</span>
             </button>
-            <button type="button" class="dash-btn dash-btn-danger" id="dashLogout" title="Logout">
+            <button type="button" class="cc-btn cc-btn-ghost" id="ccFullPlayer" title="Open the full player">
+                <i class="fas fa-headphones"></i>
+                <span class="cc-action-label">Player</span>
+            </button>
+            <button type="button" class="cc-btn cc-btn-danger" id="ccLogout" title="Logout">
                 <i class="fas fa-right-from-bracket"></i>
             </button>
         </div>
     </header>
 
-    <main class="dash-main">
-        <!-- Hero -->
-        <section class="dash-hero" id="dashHero" aria-label="Welcome to TamilAI.Stream">
-            <div class="dash-hero-orb dash-hero-orb-1"></div>
-            <div class="dash-hero-orb dash-hero-orb-2"></div>
-            <div class="dash-hero-orb dash-hero-orb-3"></div>
-            <div class="dash-hero-inner">
-                <div class="dash-hero-eyebrow">
-                    <span class="dash-hero-live-dot"></span>
-                    <span id="dashLiveLabel">AI Radio · Live Now</span>
+    <main class="cc-main">
+        <!-- ===== OVERVIEW PANEL ===== -->
+        <div class="cc-panel active" id="panelOverview">
+            <!-- Hero -->
+            <section class="cc-hero" id="ccHero">
+                <div class="cc-hero-orb cc-hero-orb-1"></div>
+                <div class="cc-hero-orb cc-hero-orb-2"></div>
+                <div class="cc-hero-orb cc-hero-orb-3"></div>
+                <div class="cc-hero-inner">
+                    <div class="cc-hero-eyebrow">
+                        <span class="cc-hero-live-dot"></span>
+                        <span id="ccLiveLabel">AI Command Center</span>
+                    </div>
+                    <h1 class="cc-hero-title">Welcome back, <em id="ccUserName">Admin</em></h1>
+                    <p class="cc-hero-sub">Your AI-powered command center for TamilAI.Stream. Monitor, manage, and optimize your entire platform from one place.</p>
+                    <div class="cc-hero-actions">
+                        <button type="button" class="cc-btn cc-btn-primary" id="ccStartListening">
+                            <i class="fas fa-play"></i> Start Listening
+                        </button>
+                        <button type="button" class="cc-btn cc-btn-ghost" id="ccOpenRadio">
+                            <i class="fas fa-radio"></i> Radio
+                        </button>
+                        <button type="button" class="cc-btn cc-btn-ghost" id="ccGoLive">
+                            <i class="fas fa-signal"></i> Live Monitor
+                        </button>
+                    </div>
                 </div>
-                <h1 class="dash-hero-title">Welcome back, <em id="dashUserName">friend</em></h1>
-                <p class="dash-hero-sub">Your AI-curated Tamil radio is ready. Jump back into a live station, or explore the latest music curated for you — all in one place on TamilAI.Stream.</p>
-                <div class="dash-hero-actions">
-                    <button type="button" class="dash-btn dash-btn-primary" id="dashStartListening">
-                        <i class="fas fa-play"></i> Start Listening
-                    </button>
-                    <button type="button" class="dash-btn dash-btn-ghost" id="dashOpenRadio">
-                        <i class="fas fa-radio"></i> Radio
-                    </button>
-                    <button type="button" class="dash-btn dash-btn-ghost" id="dashExplore">
-                        <i class="fas fa-compass"></i> Explore All
-                    </button>
-                </div>
-                <div class="premium-hero-stats dash-hero-stats">
-                    <span class="premium-hero-stat"><b id="dashStationCount">0</b><label>Live Stations</label></span>
-                    <span class="premium-hero-stat"><b id="dashSongCount">0</b><label>Songs</label></span>
-                    <span class="premium-hero-stat"><b id="dashLiveStat">●</b><label>FM</label></span>
-                </div>
-            </div>
-        </section>
-<!-- Live Radio -->
-        <section class="dash-section" data-premium-reveal>
-            <div class="dash-section-header">
-                <div class="dash-section-heading">
-                    <span class="dash-section-kicker">Radio</span>
-                    <h2 class="dash-section-title"><i class="fas fa-radio"></i> Live Radio</h2>
-                </div>
-                <span class="dash-section-count" id="dashRadioCount"></span>
-            </div>
-            <div class="dash-chips" id="dashRadioFilters"></div>
-            <div class="premium-radio-grid" id="dashRadioGrid"></div>
-            <div class="dash-empty" id="dashRadioEmpty" style="display:none;">
-                <i class="fas fa-radio"></i>
-                <p>Stations are on the air soon. Add stations from the Website Builder.</p>
-            </div>
-        </section>
+            </section>
 
-        <!-- Continue Listening / Songs -->
-        <section class="dash-section" data-premium-reveal>
-            <div class="dash-section-header">
-                <div class="dash-section-heading">
-                    <span class="dash-section-kicker">Music</span>
-                    <h2 class="dash-section-title"><i class="fas fa-compact-disc"></i> Continue Listening</h2>
+            <!-- Animated Stats Grid -->
+            <section class="cc-stats-grid" id="ccStatsGrid">
+                <div class="cc-stat-card cc-stat-primary" data-stat="songs">
+                    <div class="cc-stat-icon"><i class="fas fa-music"></i></div>
+                    <div class="cc-stat-body">
+                        <div class="cc-stat-value" id="ccStatSongs">0</div>
+                        <div class="cc-stat-label">Total Songs</div>
+                    </div>
+                    <div class="cc-stat-trend" id="ccStatSongsTrend"><i class="fas fa-arrow-up"></i> <span>0</span></div>
+                    <div class="cc-stat-sparkline" id="ccSparkSongs"></div>
                 </div>
-            </div>
-            <div class="dash-song-grid" id="dashSongGrid"></div>
-            <div class="dash-empty" id="dashSongEmpty" style="display:none;">
-                <i class="fas fa-music"></i>
-                <p>New music drops soon. Check back in a bit.</p>
-            </div>
-            <div class="dash-loading" id="dashSongLoading">
-                <i class="fas fa-circle-notch fa-spin"></i> Loading your music...
-            </div>
-        </section>
+                <div class="cc-stat-card cc-stat-accent" data-stat="stations">
+                    <div class="cc-stat-icon"><i class="fas fa-radio"></i></div>
+                    <div class="cc-stat-body">
+                        <div class="cc-stat-value" id="ccStatStations">0</div>
+                        <div class="cc-stat-label">Live Stations</div>
+                    </div>
+                    <div class="cc-stat-trend" id="ccStatStationsTrend"><i class="fas fa-signal"></i> <span>Active</span></div>
+                    <div class="cc-stat-sparkline" id="ccSparkStations"></div>
+                </div>
+                <div class="cc-stat-card cc-stat-warm" data-stat="users">
+                    <div class="cc-stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="cc-stat-body">
+                        <div class="cc-stat-value" id="ccStatUsers">0</div>
+                        <div class="cc-stat-label">Registered Users</div>
+                    </div>
+                    <div class="cc-stat-trend" id="ccStatUsersTrend"><i class="fas fa-user-plus"></i> <span>0</span></div>
+                    <div class="cc-stat-sparkline" id="ccSparkUsers"></div>
+                </div>
+                <div class="cc-stat-card cc-stat-cool" data-stat="playing">
+                    <div class="cc-stat-icon"><i class="fas fa-headphones"></i></div>
+                    <div class="cc-stat-body">
+                        <div class="cc-stat-value" id="ccStatPlaying">0</div>
+                        <div class="cc-stat-label">Currently Playing</div>
+                    </div>
+                    <div class="cc-stat-trend" id="ccStatPlayingTrend"><i class="fas fa-circle"></i> <span>Live</span></div>
+                    <div class="cc-stat-sparkline" id="ccSparkPlaying"></div>
+                </div>
+                <div class="cc-stat-card cc-stat-purple" data-stat="storage">
+                    <div class="cc-stat-icon"><i class="fas fa-cloud"></i></div>
+                    <div class="cc-stat-body">
+                        <div class="cc-stat-value" id="ccStatStorage">0 MB</div>
+                        <div class="cc-stat-label">R2 Storage Used</div>
+                    </div>
+                    <div class="cc-stat-trend" id="ccStatStorageTrend"><i class="fas fa-check"></i> <span>Healthy</span></div>
+                    <div class="cc-stat-sparkline" id="ccSparkStorage"></div>
+                </div>
+                <div class="cc-stat-card cc-stat-emerald" data-stat="collections">
+                    <div class="cc-stat-icon"><i class="fas fa-layer-group"></i></div>
+                    <div class="cc-stat-body">
+                        <div class="cc-stat-value" id="ccStatCollections">0</div>
+                        <div class="cc-stat-label">Music Collections</div>
+                    </div>
+                    <div class="cc-stat-trend" id="ccStatCollectionsTrend"><i class="fas fa-layer-group"></i> <span>Curated</span></div>
+                    <div class="cc-stat-sparkline" id="ccSparkCollections"></div>
+                </div>
+            </section>
+
+            <!-- AI Automation Panels -->
+            <section class="cc-section" data-premium-reveal>
+                <div class="cc-section-header">
+                    <div class="cc-section-heading">
+                        <span class="cc-section-kicker">AI Automation</span>
+                        <h2 class="cc-section-title"><i class="fas fa-wand-magic-sparkles"></i> AI-Powered Insights</h2>
+                    </div>
+                </div>
+                <div class="cc-ai-grid" id="ccAIGrid">
+                    <div class="cc-ai-card" id="ccAIHealth">
+                        <div class="cc-ai-card-header">
+                            <div class="cc-ai-card-icon cc-ai-icon-health"><i class="fas fa-heart-pulse"></i></div>
+                            <div class="cc-ai-card-badge cc-badge-good">Healthy</div>
+                        </div>
+                        <h3 class="cc-ai-card-title">Website Health</h3>
+                        <p class="cc-ai-card-desc">AI monitoring your platform's health in real-time</p>
+                        <div class="cc-ai-card-metrics" id="ccHealthMetrics"></div>
+                    </div>
+                    <div class="cc-ai-card" id="ccAIPerf">
+                        <div class="cc-ai-card-header">
+                            <div class="cc-ai-card-icon cc-ai-icon-perf"><i class="fas fa-gauge-high"></i></div>
+                            <div class="cc-ai-card-badge cc-badge-good">Optimal</div>
+                        </div>
+                        <h3 class="cc-ai-card-title">Performance Monitor</h3>
+                        <p class="cc-ai-card-desc">Load times, audio latency, and rendering metrics</p>
+                        <div class="cc-ai-card-metrics" id="ccPerfMetrics"></div>
+                    </div>
+                    <div class="cc-ai-card" id="ccAIContent">
+                        <div class="cc-ai-card-header">
+                            <div class="cc-ai-card-icon cc-ai-icon-content"><i class="fas fa-pen-fancy"></i></div>
+                            <div class="cc-ai-card-badge cc-badge-info">Analyzing</div>
+                        </div>
+                        <h3 class="cc-ai-card-title">Content Assistant</h3>
+                        <p class="cc-ai-card-desc">AI analysis of your content library health</p>
+                        <div class="cc-ai-card-metrics" id="ccContentMetrics"></div>
+                    </div>
+                    <div class="cc-ai-card" id="ccAIMeta">
+                        <div class="cc-ai-card-header">
+                            <div class="cc-ai-card-icon cc-ai-icon-meta"><i class="fas fa-tag"></i></div>
+                            <div class="cc-ai-card-badge cc-badge-warn">3 Issues</div>
+                        </div>
+                        <h3 class="cc-ai-card-title">Metadata Generator</h3>
+                        <p class="cc-ai-card-desc">AI detects missing or incomplete song metadata</p>
+                        <div class="cc-ai-card-metrics" id="ccMetaMetrics"></div>
+                    </div>
+                    <div class="cc-ai-card" id="ccAIReco">
+                        <div class="cc-ai-card-header">
+                            <div class="cc-ai-card-icon cc-ai-icon-reco"><i class="fas fa-lightbulb"></i></div>
+                            <div class="cc-ai-card-badge cc-badge-good">Ready</div>
+                        </div>
+                        <h3 class="cc-ai-card-title">Recommendation Engine</h3>
+                        <p class="cc-ai-card-desc">AI-powered song recommendation insights</p>
+                        <div class="cc-ai-card-metrics" id="ccRecoMetrics"></div>
+                    </div>
+                    <div class="cc-ai-card" id="ccAIError">
+                        <div class="cc-ai-card-header">
+                            <div class="cc-ai-card-icon cc-ai-icon-error"><i class="fas fa-bug"></i></div>
+                            <div class="cc-ai-card-badge cc-badge-good">Clear</div>
+                        </div>
+                        <h3 class="cc-ai-card-title">Error Detection</h3>
+                        <p class="cc-ai-card-desc">AI scans for broken links, missing files, and issues</p>
+                        <div class="cc-ai-card-metrics" id="ccErrorMetrics"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Live Data & System Status -->
+            <section class="cc-section" data-premium-reveal>
+                <div class="cc-section-header">
+                    <div class="cc-section-heading">
+                        <span class="cc-section-kicker">Live</span>
+                        <h2 class="cc-section-title"><i class="fas fa-signal"></i> Live System Status</h2>
+                    </div>
+                    <span class="cc-section-count" id="ccLiveCount"></span>
+                </div>
+                <div class="cc-live-grid">
+                    <!-- R2 Status -->
+                    <div class="cc-live-card" id="ccR2Status">
+                        <div class="cc-live-card-header">
+                            <i class="fas fa-cloud"></i>
+                            <h4>Cloudflare R2</h4>
+                            <span class="cc-status-dot cc-status-ok"></span>
+                        </div>
+                        <div class="cc-live-card-body" id="ccR2Body">
+                            <div class="cc-live-row"><span>Connection</span><span id="ccR2Conn">Checking...</span></div>
+                            <div class="cc-live-row"><span>Files Stored</span><span id="ccR2Files">0</span></div>
+                            <div class="cc-live-row"><span>Last Sync</span><span id="ccR2Sync">Never</span></div>
+                            <div class="cc-live-row"><span>Manifest</span><span id="ccR2Manifest">Checking...</span></div>
+                        </div>
+                    </div>
+                    <!-- Builder Status -->
+                    <div class="cc-live-card" id="ccBuilderStatus">
+                        <div class="cc-live-card-header">
+                            <i class="fas fa-hammer"></i>
+                            <h4>Website Builder</h4>
+                            <span class="cc-status-dot cc-status-ok"></span>
+                        </div>
+                        <div class="cc-live-card-body" id="ccBuilderBody">
+                            <div class="cc-live-row"><span>Status</span><span id="ccBuilderState">Ready</span></div>
+                            <div class="cc-live-row"><span>Sections</span><span id="ccBuilderSections">0</span></div>
+                            <div class="cc-live-row"><span>Images</span><span id="ccBuilderImages">0</span></div>
+                            <div class="cc-live-row"><span>Last Publish</span><span id="ccBuilderPublish">Never</span></div>
+                        </div>
+                    </div>
+                    <!-- Website Health -->
+                    <div class="cc-live-card" id="ccWebHealth">
+                        <div class="cc-live-card-header">
+                            <i class="fas fa-globe"></i>
+                            <h4>Website Health</h4>
+                            <span class="cc-status-dot cc-status-ok"></span>
+                        </div>
+                        <div class="cc-live-card-body">
+                            <div class="cc-live-row"><span>Domain</span><span>tamilai.stream</span></div>
+                            <div class="cc-live-row"><span>SSL</span><span id="ccSSLStatus">Valid</span></div>
+                            <div class="cc-live-row"><span>PWA</span><span id="ccPWAStatus">Active</span></div>
+                            <div class="cc-live-row"><span>Service Worker</span><span id="ccSWStatus">Running</span></div>
+                        </div>
+                    </div>
+                    <!-- System Alerts -->
+                    <div class="cc-live-card" id="ccAlerts">
+                        <div class="cc-live-card-header">
+                            <i class="fas fa-bell"></i>
+                            <h4>System Alerts</h4>
+                            <span class="cc-alert-count" id="ccAlertCount">0</span>
+                        </div>
+                        <div class="cc-live-card-body cc-alerts-body" id="ccAlertsBody">
+                            <div class="cc-alert-empty">No alerts - all systems operational</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recently Added / Trending / Activity -->
+            <section class="cc-section" data-premium-reveal>
+                <div class="cc-section-header">
+                    <div class="cc-section-heading">
+                        <span class="cc-section-kicker">Content</span>
+                        <h2 class="cc-section-title"><i class="fas fa-fire"></i> Content Overview</h2>
+                    </div>
+                </div>
+                <div class="cc-content-grid">
+                    <!-- Recently Added -->
+                    <div class="cc-content-card">
+                        <div class="cc-content-card-header">
+                            <h4><i class="fas fa-clock"></i> Recently Added</h4>
+                        </div>
+                        <div class="cc-content-list" id="ccRecentSongs"></div>
+                    </div>
+                    <!-- Trending -->
+                    <div class="cc-content-card">
+                        <div class="cc-content-card-header">
+                            <h4><i class="fas fa-fire"></i> Trending Songs</h4>
+                        </div>
+                        <div class="cc-content-list" id="ccTrendingSongs"></div>
+                    </div>
+                    <!-- Recent Admin Actions -->
+                    <div class="cc-content-card">
+                        <div class="cc-content-card-header">
+                            <h4><i class="fas fa-user-shield"></i> Recent Admin Actions</h4>
+                        </div>
+                        <div class="cc-content-list" id="ccAdminActions"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Radio Grid -->
+            <section class="cc-section" data-premium-reveal>
+                <div class="cc-section-header">
+                    <div class="cc-section-heading">
+                        <span class="cc-section-kicker">Radio</span>
+                        <h2 class="cc-section-title"><i class="fas fa-radio"></i> Live Radio Stations</h2>
+                    </div>
+                    <span class="cc-section-count" id="ccRadioCount"></span>
+                </div>
+                <div class="cc-chips" id="ccRadioFilters"></div>
+                <div class="premium-radio-grid" id="ccRadioGrid"></div>
+                <div class="cc-empty" id="ccRadioEmpty" style="display:none;">
+                    <i class="fas fa-radio"></i>
+                    <p>Stations are on the air soon. Add stations from the Website Builder.</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===== AI TOOLS PANEL ===== -->
+        <div class="cc-panel" id="panelAI">
+            <section class="cc-section">
+                <div class="cc-section-header">
+                    <div class="cc-section-heading">
+                        <span class="cc-section-kicker">Tools</span>
+                        <h2 class="cc-section-title"><i class="fas fa-wand-magic-sparkles"></i> AI Command Tools</h2>
+                    </div>
+                </div>
+                <div class="cc-ai-tools-grid" id="ccAIToolsGrid">
+                    <div class="cc-ai-tool-card" data-tool="health">
+                        <div class="cc-ai-tool-icon"><i class="fas fa-heart-pulse"></i></div>
+                        <h3>AI Website Health</h3>
+                        <p>Scan your platform for broken links, missing assets, and configuration issues</p>
+                        <button type="button" class="cc-btn cc-btn-primary cc-ai-run-btn" data-action="health"><i class="fas fa-play"></i> Run Health Check</button>
+                        <div class="cc-ai-tool-result" id="ccToolHealth"></div>
+                    </div>
+                    <div class="cc-ai-tool-card" data-tool="performance">
+                        <div class="cc-ai-tool-icon"><i class="fas fa-gauge-high"></i></div>
+                        <h3>AI Performance Monitor</h3>
+                        <p>Analyze load times, audio streaming quality, and rendering performance</p>
+                        <button type="button" class="cc-btn cc-btn-primary cc-ai-run-btn" data-action="performance"><i class="fas fa-play"></i> Analyze Performance</button>
+                        <div class="cc-ai-tool-result" id="ccToolPerformance"></div>
+                    </div>
+                    <div class="cc-ai-tool-card" data-tool="content">
+                        <div class="cc-ai-tool-icon"><i class="fas fa-pen-fancy"></i></div>
+                        <h3>AI Content Assistant</h3>
+                        <p>Get recommendations for improving your content library and organization</p>
+                        <button type="button" class="cc-btn cc-btn-primary cc-ai-run-btn" data-action="content"><i class="fas fa-play"></i> Analyze Content</button>
+                        <div class="cc-ai-tool-result" id="ccToolContent"></div>
+                    </div>
+                    <div class="cc-ai-tool-card" data-tool="metadata">
+                        <div class="cc-ai-tool-icon"><i class="fas fa-tag"></i></div>
+                        <h3>AI Metadata Generator</h3>
+                        <p>Auto-fill missing song metadata, detect duplicates, and suggest improvements</p>
+                        <button type="button" class="cc-btn cc-btn-primary cc-ai-run-btn" data-action="metadata"><i class="fas fa-play"></i> Scan Metadata</button>
+                        <div class="cc-ai-tool-result" id="ccToolMetadata"></div>
+                    </div>
+                    <div class="cc-ai-tool-card" data-tool="reco">
+                        <div class="cc-ai-tool-icon"><i class="fas fa-lightbulb"></i></div>
+                        <h3>AI Recommendation Insights</h3>
+                        <p>Analyze listening patterns and optimize your recommendation engine</p>
+                        <button type="button" class="cc-btn cc-btn-primary cc-ai-run-btn" data-action="reco"><i class="fas fa-play"></i> Analyze Recommendations</button>
+                        <div class="cc-ai-tool-result" id="ccToolReco"></div>
+                    </div>
+                    <div class="cc-ai-tool-card" data-tool="activity">
+                        <div class="cc-ai-tool-icon"><i class="fas fa-chart-line"></i></div>
+                        <h3>AI User Activity Analysis</h3>
+                        <p>Understand user behavior, popular content, and engagement patterns</p>
+                        <button type="button" class="cc-btn cc-btn-primary cc-ai-run-btn" data-action="activity"><i class="fas fa-play"></i> Analyze Activity</button>
+                        <div class="cc-ai-tool-result" id="ccToolActivity"></div>
+                    </div>
+                    <div class="cc-ai-tool-card" data-tool="errors">
+                        <div class="cc-ai-tool-icon"><i class="fas fa-bug"></i></div>
+                        <h3>AI Error Detection</h3>
+                        <p>Find broken features, missing files, and potential issues before users do</p>
+                        <button type="button" class="cc-btn cc-btn-primary cc-ai-run-btn" data-action="errors"><i class="fas fa-play"></i> Scan for Errors</button>
+                        <div class="cc-ai-tool-result" id="ccToolErrors"></div>
+                    </div>
+                    <div class="cc-ai-tool-card" data-tool="builder">
+                        <div class="cc-ai-tool-icon"><i class="fas fa-hammer"></i></div>
+                        <h3>AI Builder Assistant</h3>
+                        <p>Get suggestions for improving your website layout, sections, and design</p>
+                        <button type="button" class="cc-btn cc-btn-primary cc-ai-run-btn" data-action="builder"><i class="fas fa-play"></i> Analyze Builder</button>
+                        <div class="cc-ai-tool-result" id="ccToolBuilder"></div>
+                    </div>
+                    <div class="cc-ai-tool-card" data-tool="publish">
+                        <div class="cc-ai-tool-icon"><i class="fas fa-rocket"></i></div>
+                        <h3>AI Publishing Assistant</h3>
+                        <p>Pre-publish validation, SEO checks, and content quality analysis</p>
+                        <button type="button" class="cc-btn cc-btn-primary cc-ai-run-btn" data-action="publish"><i class="fas fa-play"></i> Run Publish Check</button>
+                        <div class="cc-ai-tool-result" id="ccToolPublish"></div>
+                    </div>
+                    <div class="cc-ai-tool-card" data-tool="growth">
+                        <div class="cc-ai-tool-icon"><i class="fas fa-rocket"></i></div>
+                        <h3>AI Growth Suggestions</h3>
+                        <p>Data-driven suggestions to grow your audience and improve engagement</p>
+                        <button type="button" class="cc-btn cc-btn-primary cc-ai-run-btn" data-action="growth"><i class="fas fa-play"></i> Get Growth Insights</button>
+                        <div class="cc-ai-tool-result" id="ccToolGrowth"></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===== LIVE DATA PANEL ===== -->
+        <div class="cc-panel" id="panelLive">
+            <section class="cc-section">
+                <div class="cc-section-header">
+                    <div class="cc-section-heading">
+                        <span class="cc-section-kicker">Monitor</span>
+                        <h2 class="cc-section-title"><i class="fas fa-signal"></i> Real-Time Data Feed</h2>
+                    </div>
+                    <button type="button" class="cc-btn cc-btn-ghost" id="ccRefreshLive"><i class="fas fa-arrows-rotate"></i> Refresh</button>
+                </div>
+                <div class="cc-live-feed" id="ccLiveFeed">
+                    <div class="cc-live-feed-item cc-feed-system">
+                        <span class="cc-feed-time">System</span>
+                        <span class="cc-feed-msg">Live monitoring initialized. Waiting for events...</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===== AI ASSISTANT PANEL ===== -->
+        <div class="cc-panel" id="panelAssistant">
+            <section class="cc-section">
+                <div class="cc-section-header">
+                    <div class="cc-section-heading">
+                        <span class="cc-section-kicker">Chat</span>
+                        <h2 class="cc-section-title"><i class="fas fa-robot"></i> AI Assistant</h2>
+                    </div>
+                </div>
+                <div class="cc-assistant-container">
+                    <div class="cc-assistant-suggestions" id="ccAssistantSuggestions">
+                        <button type="button" class="cc-assistant-suggestion" data-q="Why is my website slow?"><i class="fas fa-gauge"></i> Why is my website slow?</button>
+                        <button type="button" class="cc-assistant-suggestion" data-q="Which songs are trending?"><i class="fas fa-fire"></i> Which songs are trending?</button>
+                        <button type="button" class="cc-assistant-suggestion" data-q="Check R2 synchronization"><i class="fas fa-cloud"></i> Check R2 synchronization</button>
+                        <button type="button" class="cc-assistant-suggestion" data-q="Find broken features"><i class="fas fa-bug"></i> Find broken features</button>
+                        <button type="button" class="cc-assistant-suggestion" data-q="Analyze today's activity"><i class="fas fa-chart-line"></i> Analyze today's activity</button>
+                        <button type="button" class="cc-assistant-suggestion" data-q="What should I improve?"><i class="fas fa-lightbulb"></i> What should I improve?</button>
+                    </div>
+                    <div class="cc-assistant-chat" id="ccAssistantChat">
+                        <div class="cc-chat-message cc-chat-bot">
+                            <div class="cc-chat-avatar"><i class="fas fa-robot"></i></div>
+                            <div class="cc-chat-bubble">
+                                <p>Hello Admin! I'm your AI Command Center assistant. I can analyze your platform, check system health, review content, and provide actionable insights. Ask me anything about your TamilAI.Stream platform.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cc-assistant-input-area">
+                        <div class="cc-assistant-input-wrap">
+                            <input type="text" id="ccAssistantInput" class="cc-assistant-input" placeholder="Ask me anything about your platform..." autocomplete="off">
+                            <button type="button" class="cc-btn cc-btn-primary cc-assistant-send" id="ccAssistantSend"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     </main>
 
     <script src="firebase-config.js"></script>
