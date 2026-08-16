@@ -2578,3 +2578,48 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     .visit-website-btn span { display: none; }
     .visit-website-btn { padding: 6px 10px !important; }
 }
+
+/* Player Settings Tabs */
+.mp-settings-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    overflow-x: auto;
+}
+.mp-tab {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.mp-tab:hover { background: rgba(255, 255, 255, 0.05); color: #d1d5db; }
+.mp-tab.active {
+    background: linear-gradient(135deg, #34d399, #3b82f6);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(52, 211, 153, 0.3);
+}
+.mp-settings-panel { display: none; }
+.mp-settings-panel.active { display: block; }
+.content-card-desc {
+    color: #9ca3af;
+    font-size: 13px;
+    margin: -8px 0 16px 0;
+    line-height: 1.5;
+}
+@media (max-width: 768px) {
+    .mp-settings-tabs { flex-wrap: nowrap; overflow-x: auto; }
+    .mp-tab { padding: 8px 14px; font-size: 12px; }
+}

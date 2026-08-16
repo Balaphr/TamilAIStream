@@ -1,0 +1,266 @@
+/* ============================================================
+   Site 360 - Visual Website Editor
+   Two-panel workspace: canvas (left) + settings (right)
+   ============================================================ */
+
+/* ---------- Toolbar ---------- */
+.s360-toolbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    flex-wrap: wrap; padding: 16px 20px; margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+}
+.s360-toolbar-left, .s360-toolbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.s360-status { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); font-weight: 600; padding: 4px 10px; background: rgba(52, 211, 153, 0.1); border-radius: 8px; }
+.s360-search-wrap {
+    display: flex; align-items: center; gap: 8px; padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px; min-width: 200px;
+}
+.s360-search-wrap i { color: rgba(255, 255, 255, 0.4); font-size: 0.8rem; }
+.s360-search-wrap input {
+    background: none; border: none; outline: none; color: #fff; font-size: 0.85rem;
+    font-family: inherit; width: 100%;
+}
+.s360-search-wrap input::placeholder { color: rgba(255, 255, 255, 0.35); }
+
+/* ---------- Main Layout: Canvas + Settings ---------- */
+.s360-layout {
+    display: grid; grid-template-columns: 1fr 380px; gap: 0;
+    min-height: 520px; border-radius: 14px; overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* ---------- Canvas (Left Panel) ---------- */
+.s360-canvas {
+    overflow-y: auto; padding: 20px;
+    max-height: 600px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.s360-canvas::-webkit-scrollbar { width: 6px; }
+.s360-canvas::-webkit-scrollbar-track { background: transparent; }
+.s360-canvas::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+/* Canvas Sections */
+.s360-canvas-section { margin-bottom: 24px; }
+.s360-canvas-section-header {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    font-size: 0.78rem; font-weight: 700; color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 12px;
+}
+.s360-canvas-section-header i { color: #34d399; font-size: 0.8rem; }
+.s360-canvas-section-count {
+    margin-left: auto; font-size: 0.7rem; font-weight: 600;
+    padding: 2px 8px; border-radius: 10px;
+    background: rgba(52, 211, 153, 0.12); color: #34d399;
+}
+
+/* Canvas Grid */
+.s360-canvas-section-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+/* Canvas Cards */
+.s360-canvas-card {
+    position: relative; border-radius: 12px; overflow: hidden;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer; transition: all 0.2s ease;
+}
+.s360-canvas-card:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+.s360-canvas-card.selected {
+    border-color: #34d399;
+    background: rgba(52, 211, 153, 0.08);
+    box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.25), 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+.s360-canvas-card.selected::after {
+    content: ''; position: absolute; inset: 0; border-radius: 12px;
+    border: 2px solid rgba(52, 211, 153, 0.5); pointer-events: none;
+}
+
+/* Card Thumbnail */
+.s360-canvas-card-thumb {
+    width: 100%; aspect-ratio: 16 / 9; overflow: hidden;
+    background: rgba(0, 0, 0, 0.25); display: flex; align-items: center; justify-content: center;
+}
+.s360-canvas-card-thumb img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.s360-canvas-card-icon {
+    font-size: 1.8rem; color: rgba(255, 255, 255, 0.2);
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%;
+}
+
+/* Card Info */
+.s360-canvas-card-info { padding: 10px 12px; }
+.s360-canvas-card-label {
+    font-size: 0.82rem; font-weight: 600; color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 3px;
+}
+.s360-canvas-card-cat {
+    font-size: 0.7rem; color: rgba(255, 255, 255, 0.4);
+    display: flex; align-items: center; gap: 5px;
+}
+.s360-canvas-card-cat i { font-size: 0.65rem; }
+
+/* Selected Check */
+.s360-canvas-card-check {
+    position: absolute; top: 8px; right: 8px; width: 24px; height: 24px;
+    border-radius: 50%; background: #34d399; color: #04120c;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700;
+    box-shadow: 0 2px 8px rgba(52, 211, 153, 0.4);
+}
+
+/* ---------- Settings Panel (Right) ---------- */
+.s360-settings-panel {
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex; flex-direction: column; overflow: hidden;
+}
+.s360-settings-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+.s360-settings-title {
+    font-size: 0.9rem; font-weight: 700; color: #fff;
+    display: flex; align-items: center; gap: 8px;
+}
+.s360-settings-title i { color: #34d399; }
+.s360-settings-badge {
+    font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; padding: 3px 8px; border-radius: 6px;
+    background: rgba(167, 139, 250, 0.15); color: #a78bfa;
+}
+.s360-settings-fields {
+    flex: 1; overflow-y: auto; padding: 16px 18px;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.s360-settings-fields::-webkit-scrollbar { width: 6px; }
+.s360-settings-fields::-webkit-scrollbar-track { background: transparent; }
+.s360-settings-fields::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+.s360-settings-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; color: rgba(255, 255, 255, 0.3); padding: 40px 20px; text-align: center;
+}
+.s360-settings-empty i { font-size: 2.5rem; color: #34d399; margin-bottom: 16px; opacity: 0.5; }
+.s360-settings-empty p { margin: 0; font-size: 0.88rem; }
+
+/* Settings Groups */
+.s360-settings-group { margin-bottom: 14px; }
+.s360-settings-label {
+    display: block; font-size: 0.75rem; font-weight: 600; color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 5px;
+}
+.s360-settings-label .s360-readonly { font-weight: 400; color: rgba(255, 255, 255, 0.3); font-size: 0.7rem; }
+
+/* ---------- Form Controls ---------- */
+.s360-ctrl {
+    width: 100%; padding: 8px 10px; border-radius: 8px; font-family: inherit;
+    font-size: 0.85rem; color: #fff; outline: none;
+    background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: border-color 0.2s ease; box-sizing: border-box;
+}
+.s360-ctrl:focus { border-color: rgba(52, 211, 153, 0.5); }
+.s360-ctrl:read-only { opacity: 0.5; cursor: not-allowed; }
+.s360-ctrl-textarea { resize: vertical; min-height: 60px; }
+select.s360-ctrl { cursor: pointer; appearance: auto; }
+select.s360-ctrl option { background: #1a1f2e; color: #fff; }
+
+/* Color */
+.s360-ctrl-color { display: flex; align-items: center; gap: 8px; }
+.s360-ctrl-color input[type="color"] { width: 40px; height: 34px; padding: 2px; cursor: pointer; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: none; }
+.s360-ctrl-color-hex { font-size: 0.78rem; color: rgba(255, 255, 255, 0.5); font-family: monospace; }
+
+/* Toggle */
+.s360-ctrl-toggle {
+    position: relative; display: inline-block; width: 40px; height: 22px; cursor: pointer;
+}
+.s360-ctrl-toggle input { opacity: 0; width: 0; height: 0; }
+.s360-ctrl-toggle-slider {
+    position: absolute; inset: 0; background: rgba(255, 255, 255, 0.15);
+    border-radius: 22px; transition: background 0.3s ease;
+}
+.s360-ctrl-toggle-slider::before {
+    content: ''; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px;
+    border-radius: 50%; background: #fff; transition: transform 0.3s ease;
+}
+.s360-ctrl-toggle input:checked + .s360-ctrl-toggle-slider { background: #34d399; }
+.s360-ctrl-toggle input:checked + .s360-ctrl-toggle-slider::before { transform: translateX(18px); }
+
+/* Range */
+.s360-ctrl-range { display: flex; align-items: center; gap: 10px; }
+.s360-ctrl-range input[type="range"] { flex: 1; accent-color: #34d399; }
+.s360-ctrl-range-val { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); min-width: 30px; text-align: right; }
+
+/* Image */
+.s360-ctrl-image { display: flex; flex-direction: column; gap: 6px; }
+.s360-ctrl-image .s360-ctrl { flex: 1; }
+.s360-img-pick-btn {
+    appearance: none; border: none; cursor: pointer; padding: 6px 10px;
+    border-radius: 6px; font-size: 0.8rem; color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1); transition: all 0.2s ease;
+    align-self: flex-start;
+}
+.s360-img-pick-btn:hover { background: rgba(56, 189, 248, 0.2); }
+.s360-ctrl-img-preview { width: 100%; max-height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+
+/* Icon */
+.s360-ctrl-icon { display: flex; align-items: center; gap: 8px; }
+.s360-ctrl-icon .s360-ctrl { flex: 1; }
+.s360-ctrl-icon-preview {
+    width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.06); border-radius: 6px; color: #34d399; font-size: 0.9rem;
+    border: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;
+}
+
+/* ---------- Actions Bar ---------- */
+.s360-actions-bar {
+    display: flex; gap: 8px; padding: 12px 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0; flex-wrap: wrap;
+}
+.s360-actions-bar .builder-btn { font-size: 0.78rem; padding: 6px 12px; }
+
+/* ---------- Toast ---------- */
+.s360-toast {
+    position: fixed; left: 50%; bottom: 100px; z-index: 10000;
+    transform: translate(-50%, 16px); padding: 10px 20px;
+    border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+    background: linear-gradient(135deg, #34d399, #10b981); color: #04120c;
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.s360-toast.show { opacity: 1; transform: translate(-50%, 0); }
+.s360-toast-error { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1024px) {
+    .s360-layout { grid-template-columns: 1fr 300px; }
+    .s360-settings-panel { border-left: 1px solid rgba(255,255,255,0.08); }
+    .s360-canvas { max-height: 500px; }
+}
+@media (max-width: 768px) {
+    .s360-layout { grid-template-columns: 1fr 280px; }
+    .s360-canvas-section-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+@media (max-width: 640px) {
+    .s360-layout { grid-template-columns: 1fr; }
+    .s360-settings-panel { border-left: none; border-top: 1px solid rgba(255,255,255,0.08); max-height: 400px; }
+    .s360-toolbar { flex-direction: column; align-items: stretch; }
+    .s360-canvas-section-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}

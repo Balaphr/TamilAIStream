@@ -3953,6 +3953,7 @@ function renderAllDynamicContent() {
         loadSongs(true).then(songs => {
             renderTickerItems(songs);
             renderRecentlyAdded(songs);
+            renderUpcomingReleases();
             _isRenderingAll = false;
         });
     });
@@ -4035,6 +4036,7 @@ function refreshLiveContent() {
             _isRenderingAll = false;
             _homeSectionHashes.personalized = ''; // clear hash cache for Made For You
             _homeSectionHashes.recentlyAdded = ''; // clear hash cache for Recently Added
+            _homeSectionHashes.upcomingReleases = ''; // clear hash cache for Upcoming Releases
             _homeSectionHashes.trending = ''; // clear hash cache for Trending
             _homeSectionHashes.aiRecommended = ''; // clear hash cache for AI Recommended
             _homeSectionHashes.albums = ''; // clear hash cache for Albums
@@ -4051,6 +4053,9 @@ function setupRealtimeSync() {
         if (!e.key) return;
         if (e.key === 'tamilAIStream_advertisements') {
             renderAdBanners();
+        }
+        if (e.key === 'tamilAIStream_upcomingReleases') {
+            renderUpcomingReleases();
         }
         if (['tamilAIStream_songs', 'tamilAIStream_stations', 'tamilAIStream_featured',
             'tamilAIStream_trending', 'tamilAIStream_artistHits', 'tamilAIStream_categories',
@@ -4392,6 +4397,187 @@ function renderRecentlyAdded(songs) {
         });
     });
 }
+
+// ============================================
+// Upcoming Releases - Premium Flipkart-style Carousel
+// ============================================
+(function() {
+    let _urIndex = 0;
+    let _urTimer = null;
+    let _urAutoMs = 35000;
+    let _urReleases = [];
+    let _urPauseAuto = false;
+
+    function renderUpcomingReleases() {
+        const track = document.getElementById('urCarouselTrack');
+        const viewport = document.getElementById('urCarouselViewport');
+        const dotsWrap = document.getElementById('urCarouselDots');
+        if (!track || !viewport || !dotsWrap) return;
+
+        _urReleases = (DataStore.getUpcomingReleases() || [])
+            .filter(r => r.enabled !== false)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        const hash = _urReleases.map(r => r.id + (r.title || '') + (r.image || '') + (r.order || 0)).join(',');
+        if (!_hasSectionChanged('upcomingReleases', hash)) return;
+
+        if (_urReleases.length === 0) {
+            const section = document.querySelector('.upcoming-releases-section');
+            if (section) section.style.display = 'none';
+            return;
+        }
+        const sectionEl = document.querySelector('.upcoming-releases-section');
+        if (sectionEl) sectionEl.style.display = '';
+
+        track.innerHTML = _urReleases.map((r, i) => {
+            const imgHtml = r.image
+                ? `<img src="${r.image}" alt="${r.title || 'Release'}" loading="${i === 0 ? 'eager' : 'lazy'}" draggable="false" onerror="this.parentElement.innerHTML='<div class=\\'ur-slide-placeholder\\'><i class=\\'fas fa-music\\'></i></div>'">`
+                : `<div class="ur-slide-placeholder"><i class="fas fa-music"></i></div>`;
+            return `<div class="ur-slide" data-ur-index="${i}">
+                <div class="ur-slide-image">${imgHtml}</div>
+                ${r.title ? `<div class="ur-slide-overlay"><h3 class="ur-slide-title">${r.title}</h3>${r.subtitle ? `<p class="ur-slide-subtitle">${r.subtitle}</p>` : ''}</div>` : ''}
+            </div>`;
+        }).join('');
+
+        dotsWrap.innerHTML = _urReleases.map((_, i) =>
+            `<button class="ur-dot ${i === 0 ? 'active' : ''}" data-ur-dot="${i}" aria-label="Go to slide ${i + 1}"></button>`
+        ).join('');
+
+        _urIndex = 0;
+        _urSetTransform(track, 0);
+        _urUpdateDots(dotsWrap, 0);
+        _urBindControls(viewport, track, dotsWrap);
+        _urResetAuto(track, dotsWrap);
+    }
+
+    function _urSetTransform(track, idx) {
+        if (!track) return;
+        track.style.transition = 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)';
+        track.style.transform = `translateX(-${idx * 100}%)`;
+    }
+
+    function _urUpdateDots(dotsWrap, idx) {
+        if (!dotsWrap) return;
+        dotsWrap.querySelectorAll('.ur-dot').forEach((d, i) => {
+            d.classList.toggle('active', i === idx);
+        });
+    }
+
+    function _urGoTo(idx, track, dotsWrap, smooth) {
+        if (!_urReleases.length) return;
+        if (idx < 0) idx = _urReleases.length - 1;
+        if (idx >= _urReleases.length) idx = 0;
+        _urIndex = idx;
+        if (track) {
+            track.style.transition = smooth === false ? 'none' : 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)';
+            track.style.transform = `translateX(-${_urIndex * 100}%)`;
+        }
+        _urUpdateDots(dotsWrap, _urIndex);
+    }
+
+    function _urNext(track, dotsWrap) {
+        _urGoTo(_urIndex + 1, track, dotsWrap);
+    }
+
+    function _urResetAuto(track, dotsWrap) {
+        clearInterval(_urTimer);
+        if (_urPauseAuto) return;
+        _urTimer = setInterval(() => _urNext(track, dotsWrap), _urAutoMs);
+    }
+
+    function _urBindControls(viewport, track, dotsWrap) {
+        const prevBtn = document.querySelector('.ur-prev');
+        const nextBtn = document.querySelector('.ur-next');
+        if (prevBtn) {
+            prevBtn.onclick = (e) => { e.preventDefault(); _urGoTo(_urIndex - 1, track, dotsWrap); _urResetAuto(track, dotsWrap); };
+        }
+        if (nextBtn) {
+            nextBtn.onclick = (e) => { e.preventDefault(); _urGoTo(_urIndex + 1, track, dotsWrap); _urResetAuto(track, dotsWrap); };
+        }
+        if (dotsWrap) {
+            dotsWrap.onclick = (e) => {
+                const dot = e.target.closest('.ur-dot');
+                if (!dot) return;
+                _urGoTo(parseInt(dot.dataset.urDot) || 0, track, dotsWrap);
+                _urResetAuto(track, dotsWrap);
+            };
+        }
+
+        // Touch/swipe support
+        let touchStartX = 0, touchDeltaX = 0, swiping = false;
+        viewport.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchDeltaX = 0;
+            swiping = true;
+            if (track) track.style.transition = 'none';
+        }, { passive: true });
+        viewport.addEventListener('touchmove', (e) => {
+            if (!swiping) return;
+            touchDeltaX = e.touches[0].clientX - touchStartX;
+        }, { passive: true });
+        viewport.addEventListener('touchend', () => {
+            if (!swiping) return;
+            swiping = false;
+            if (Math.abs(touchDeltaX) > 50) {
+                _urGoTo(touchDeltaX > 0 ? _urIndex - 1 : _urIndex + 1, track, dotsWrap);
+            } else {
+                if (track) {
+                    track.style.transition = 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)';
+                    track.style.transform = `translateX(-${_urIndex * 100}%)`;
+                }
+            }
+            _urResetAuto(track, dotsWrap);
+        }, { passive: true });
+
+        // Mouse drag support
+        let mouseDown = false, mouseStartX = 0, mouseDelta = 0;
+        viewport.addEventListener('mousedown', (e) => {
+            if (e.target.closest('button')) return;
+            mouseDown = true; mouseStartX = e.clientX; mouseDelta = 0;
+            viewport.style.cursor = 'grabbing';
+            if (track) track.style.transition = 'none';
+        });
+        viewport.addEventListener('mousemove', (e) => {
+            if (!mouseDown) return;
+            mouseDelta = e.clientX - mouseStartX;
+        });
+        viewport.addEventListener('mouseup', () => {
+            if (!mouseDown) return;
+            mouseDown = false;
+            viewport.style.cursor = '';
+            if (Math.abs(mouseDelta) > 50) {
+                _urGoTo(mouseDelta > 0 ? _urIndex - 1 : _urIndex + 1, track, dotsWrap);
+            } else {
+                if (track) {
+                    track.style.transition = 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)';
+                    track.style.transform = `translateX(-${_urIndex * 100}%)`;
+                }
+            }
+            _urResetAuto(track, dotsWrap);
+        });
+        viewport.addEventListener('mouseleave', () => {
+            if (mouseDown) {
+                mouseDown = false;
+                viewport.style.cursor = '';
+                if (Math.abs(mouseDelta) > 50) {
+                    _urGoTo(mouseDelta > 0 ? _urIndex - 1 : _urIndex + 1, track, dotsWrap);
+                } else {
+                    if (track) {
+                        track.style.transition = 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)';
+                        track.style.transform = `translateX(-${_urIndex * 100}%)`;
+                    }
+                }
+                _urResetAuto(track, dotsWrap);
+            }
+        });
+
+        // Pause auto on hover
+        viewport.addEventListener('mouseenter', () => { _urPauseAuto = true; clearInterval(_urTimer); });
+        viewport.addEventListener('mouseleave', () => { _urPauseAuto = false; _urResetAuto(track, dotsWrap); });
+    }
+
+    window.renderUpcomingReleases = renderUpcomingReleases;
+})();
 
 function initRecentlyAdded() {
     const viewport = document.getElementById('recentlyAddedViewport');

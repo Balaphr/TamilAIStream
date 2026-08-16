@@ -440,11 +440,13 @@ function navigateTo(page) {
         'navigation': 'navigationPage',
         'sections': 'sectionsPage',
         'ads': 'adsPage',
+        'upcomingReleases': 'upcomingReleasesPage',
         'visualeditor': 'visualeditorPage',
         'miniplayersettings': 'miniplayersettingsPage',
         'preview': 'previewPage',
         'analytics': 'analyticsPage',
-        'musiccollections': 'musicCollectionsPage'
+        'musiccollections': 'musicCollectionsPage',
+        'site360': 'site360Page'
     };
 
     const pageId = pageMap[page];
@@ -481,10 +483,12 @@ function navigateTo(page) {
     if (page === 'navigation') loadNavigation();
     if (page === 'sections') loadSectionsOrder();
     if (page === 'ads') loadAdsTable();
+    if (page === 'upcomingReleases') loadUpcomingReleasesTable();
     if (page === 'visualeditor') initVisualEditor();
-    if (page === 'miniplayersettings') loadMiniPlayerSettings();
+    if (page === 'miniplayersettings') loadPlayerSettings();
     if (page === 'preview') updatePreview();
     if (page === 'analytics') { loadAnalyticsData(); initAnalyticsTabs(); }
+    if (page === 'site360' && typeof Site360 !== 'undefined') Site360.init();
 }
 
 // ============================================
@@ -1494,7 +1498,8 @@ async function syncToLiveWebsite() {
             'tamilAIStream_moviesCollections',
             'tamilAIStream_yearlyCollections',
             'tamilAIStream_latestCollections',
-            'tamilAIStream_musicCollections'
+            'tamilAIStream_musicCollections',
+            'tamilAIStream_upcomingReleases'
         ];
 
         keysToSync.forEach(key => {
@@ -5378,6 +5383,188 @@ function toggleAd(adId) {
 }
 
 // ============================================
+// Upcoming Releases Management
+// ============================================
+function loadUpcomingReleasesTable() {
+    const releases = DataStore.getUpcomingReleases();
+    const tbody = document.getElementById('upcomingReleasesTableBody');
+    const emptyState = document.getElementById('upcomingReleasesEmptyState');
+    if (!tbody) return;
+
+    if (!releases.length) {
+        tbody.innerHTML = '';
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+    }
+    if (emptyState) emptyState.style.display = 'none';
+
+    tbody.innerHTML = releases.sort((a, b) => (a.order || 0) - (b.order || 0)).map(r => `
+        <tr>
+            <td><div style="width:80px;height:45px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,0.05);">
+                ${r.image ? `<img src="${r.image}" alt="" style="width:100%;height:100%;object-fit:cover;">` :
+                '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#555;"><i class="fas fa-image"></i></div>'}
+            </div></td>
+            <td><strong>${r.title || 'Untitled'}</strong></td>
+            <td style="color:rgba(255,255,255,0.6);font-size:13px;">${r.subtitle || '—'}</td>
+            <td><span class="builder-badge info">${r.order || 0}</span></td>
+            <td><span class="builder-badge ${r.enabled !== false ? 'success' : 'warning'}">${r.enabled !== false ? 'Enabled' : 'Disabled'}</span></td>
+            <td>
+                <div style="display:flex;gap:6px;">
+                    <button class="builder-btn small" onclick="openUpcomingReleaseModal('${r.id}')" title="Edit"><i class="fas fa-pen"></i></button>
+                    <button class="builder-btn small" onclick="toggleUpcomingRelease('${r.id}')" title="Toggle">${r.enabled !== false ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>'}</button>
+                    <button class="builder-btn small" onclick="moveUpcomingRelease('${r.id}', -1)" title="Move Up"><i class="fas fa-arrow-up"></i></button>
+                    <button class="builder-btn small" onclick="moveUpcomingRelease('${r.id}', 1)" title="Move Down"><i class="fas fa-arrow-down"></i></button>
+                    <button class="builder-btn small danger" onclick="deleteUpcomingRelease('${r.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+function openUpcomingReleaseModal(editId) {
+    const overlay = document.getElementById('upcomingReleaseModalOverlay');
+    const titleEl = document.getElementById('upcomingReleaseModalTitle');
+    const form = document.getElementById('upcomingReleaseForm');
+
+    if (editId) {
+        const releases = DataStore.getUpcomingReleases();
+        const r = releases.find(x => x.id === editId);
+        if (!r) return;
+        titleEl.textContent = 'Edit Upcoming Release';
+        document.getElementById('urEditId').value = r.id;
+        document.getElementById('urTitle').value = r.title || '';
+        document.getElementById('urSubtitle').value = r.subtitle || '';
+        document.getElementById('urImageUrl').value = r.image || '';
+        document.getElementById('urOrder').value = r.order || 0;
+        document.getElementById('urEnabled').value = r.enabled !== false ? 'true' : 'false';
+        const preview = document.getElementById('urImagePreview');
+        if (r.image) { preview.style.display = 'block'; preview.querySelector('img').src = r.image; }
+        else { preview.style.display = 'none'; }
+    } else {
+        titleEl.textContent = 'Add Upcoming Release';
+        form.reset();
+        document.getElementById('urEditId').value = '';
+        document.getElementById('urOrder').value = (DataStore.getUpcomingReleases().length);
+        document.getElementById('urImagePreview').style.display = 'none';
+    }
+    overlay.style.display = 'flex';
+}
+
+function closeUpcomingReleaseModal() {
+    document.getElementById('upcomingReleaseModalOverlay').style.display = 'none';
+}
+
+async function saveUpcomingRelease(event) {
+    event.preventDefault();
+    const editId = document.getElementById('urEditId').value;
+    const title = document.getElementById('urTitle').value.trim();
+    const subtitle = document.getElementById('urSubtitle').value.trim();
+    const imageUrlInput = document.getElementById('urImageUrl').value.trim();
+    const imageFile = document.getElementById('urImageFile').files[0];
+    const order = parseInt(document.getElementById('urOrder').value) || 0;
+    const enabled = document.getElementById('urEnabled').value === 'true';
+
+    if (!title) { showToast('Title is required', 'warning'); return; }
+
+    let imageUrl = imageUrlInput;
+
+    if (imageFile) {
+        try {
+            const result = await R2Uploader.uploadImage(imageFile, 'tamil-ai-stream/releases', (pct) => {
+                console.log('Upload progress:', pct + '%');
+            });
+            if (result && result.url) {
+                imageUrl = result.url;
+            }
+        } catch (err) {
+            console.error('Upload failed:', err);
+            showToast('Image upload failed', 'error');
+            return;
+        }
+    }
+
+    if (!imageUrl) { showToast('Please provide a poster image', 'warning'); return; }
+
+    const now = new Date().toISOString();
+    let releases = DataStore.getUpcomingReleases();
+
+    if (editId) {
+        const r = releases.find(x => x.id === editId);
+        if (r) { Object.assign(r, { title, subtitle, imageUrl, image: imageUrl, order, enabled, updatedAt: now }); }
+    } else {
+        releases.push({
+            id: 'ur_' + Date.now(),
+            title, subtitle, image: imageUrl, order, enabled,
+            createdAt: now, updatedAt: now
+        });
+    }
+
+    DataStore.setUpcomingReleases(releases);
+    closeUpcomingReleaseModal();
+    loadUpcomingReleasesTable();
+    showToast(editId ? 'Release updated' : 'Release added', 'success');
+    syncToLiveWebsite();
+}
+
+function deleteUpcomingRelease(id) {
+    if (!confirm('Delete this release?')) return;
+    let releases = DataStore.getUpcomingReleases();
+    releases = releases.filter(r => r.id !== id);
+    DataStore.setUpcomingReleases(releases);
+    loadUpcomingReleasesTable();
+    showToast('Release deleted', 'success');
+    syncToLiveWebsite();
+}
+
+function toggleUpcomingRelease(id) {
+    const releases = DataStore.getUpcomingReleases();
+    const r = releases.find(x => x.id === id);
+    if (r) {
+        r.enabled = r.enabled === false ? true : false;
+        r.updatedAt = new Date().toISOString();
+        DataStore.setUpcomingReleases(releases);
+        loadUpcomingReleasesTable();
+        showToast(r.enabled ? 'Release enabled' : 'Release disabled', 'info');
+        syncToLiveWebsite();
+    }
+}
+
+function moveUpcomingRelease(id, dir) {
+    const releases = DataStore.getUpcomingReleases();
+    const sorted = releases.sort((a, b) => (a.order || 0) - (b.order || 0));
+    const idx = sorted.findIndex(r => r.id === id);
+    if (idx < 0) return;
+    const swapIdx = idx + dir;
+    if (swapIdx < 0 || swapIdx >= sorted.length) return;
+    const tmp = sorted[idx].order;
+    sorted[idx].order = sorted[swapIdx].order;
+    sorted[swapIdx].order = tmp;
+    DataStore.setUpcomingReleases(sorted);
+    loadUpcomingReleasesTable();
+    showToast('Order updated', 'info');
+    syncToLiveWebsite();
+}
+
+// Image preview for Upcoming Releases modal
+document.addEventListener('DOMContentLoaded', function() {
+    const urImageFile = document.getElementById('urImageFile');
+    if (urImageFile) {
+        urImageFile.addEventListener('change', function() {
+            const file = this.files[0];
+            const preview = document.getElementById('urImagePreview');
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => { preview.style.display = 'block'; preview.querySelector('img').src = e.target.result; };
+                reader.readAsDataURL(file);
+            } else {
+                const url = document.getElementById('urImageUrl').value.trim();
+                if (url) { preview.style.display = 'block'; preview.querySelector('img').src = url; }
+                else { preview.style.display = 'none'; }
+            }
+        });
+    }
+});
+
+// ============================================
 // Site Settings Management
 // ============================================
 function loadSettings() {
@@ -6753,95 +6940,391 @@ function veRgbToHex(rgb) {
 }
 
 // ============================================
-// Mini Player Settings
+// Player Settings (Bottom Nav + Mini Player + Full-Screen)
 // ============================================
-const MINI_PLAYER_DEFAULTS = {
-    width: 320, height: 500, borderRadius: 16, bgColor: '#1a1a2e', bgOpacity: 95,
-    blur: 20, glass: true, shadow: 'medium', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
-    showArt: true, artSize: 80, artRadius: 50, vinylSpin: true,
-    titleSize: 14, titleWeight: '600', titleColor: '#ffffff', artistSize: 12, artistColor: '#b3b3b3', textAlign: 'center',
-    showPlay: true, showPrev: true, showNext: true, showShuffle: false, showRepeat: false,
-    showProgress: true, showVolume: false, showFav: false, showQueue: false, showShare: false, showAI: false,
-    btnSize: 32, btnColor: '#ffffff', btnHover: '#1db954', playBtnSize: 48,
-    progressH: 4, progressColor: '#1db954', progressBg: 'rgba(255,255,255,0.2)', showThumb: true, thumbSize: 10,
-    position: 'bottom-center', draggable: true, autoMinimize: false, showOnPlay: true, zIndex: 1000, animation: 'slide-up',
-    miniWidth: 200, miniHeight: 56, miniRadius: 28, miniBg: '#1a1a2e', miniShowArt: true, miniShowPlay: true, miniShowExpand: true
+const PLAYER_DEFAULTS = {
+    bn: {
+        visible: true, height: 64, showWithPlayer: true, playerOffset: 18,
+        bgColor: '#0c0f1e', bgOpacity: 92, blur: 24,
+        borderColor: '#ffffff', borderWidth: 1, borderOpacity: 10,
+        iconSize: 26, iconColor: '#8b8fa3', activeColor: '#34d399',
+        labelSize: 10, labelColor: '#8b8fa3', activeLabelColor: '#34d399',
+        indicator: 'pill', indicatorColor: 'rgba(52,211,153,0.15)',
+        showMobile: true, showTablet: true, showDesktop: false, safeArea: 0
+    },
+    mp: {
+        visible: true, position: 'bottom-center', maxWidth: 720, bottomOffset: 18, sideMargin: 12, zIndex: 1800,
+        bgColor: '#0c0f1e', bgOpacity: 88, blur: 32, borderRadius: 18,
+        borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1, shadow: 'medium',
+        showArt: true, artSize: 46, artRadius: 10, showEq: true,
+        titleSize: 13.4, titleWeight: '600', titleColor: '#ffffff',
+        artistSize: 11.2, artistColor: '#b3b3b3', showTime: true,
+        showPlay: true, showPrev: true, showNext: true, showFav: true, showExpand: true, showWave: true,
+        btnSize: 44, btnColor: '#ffffff', playBtnColor: '#34d399',
+        showProgress: true, progressH: 6, progressColor: '#34d399', progressBg: 'rgba(255,255,255,0.15)',
+        showThumb: true, thumbSize: 10, expandHover: true,
+        showOnPlay: true, autoHide: 0, animation: 'slide-up', showNowPlaying: true,
+        mobileArtSize: 38, mobileBtnSize: 38, mobileHideWave: true, mobileCompact: true
+    },
+    fs: {
+        bgColor: '#0a0c18', bgOpacity: 98, blur: 40, glow: true, glowIntensity: 50, animation: 'slide-up',
+        artSize: 320, artRadius: 16, artFloat: true, artGlow: true, aiRing: true, particles: true, visualizer: true,
+        titleSize: 22, titleWeight: '700', titleColor: '#ffffff',
+        artistSize: 16, artistColor: '#b3b3b3', showMovie: true, showBadge: true, showNowPlaying: true,
+        playBtnSize: 64, playBtnColor: '#34d399', btnSize: 40, btnColor: '#ffffff',
+        showShuffle: true, showRepeat: true,
+        progressH: 6, progressColor: '#34d399', progressBg: 'rgba(255,255,255,0.15)',
+        showThumb: true, thumbSize: 12, showTime: true,
+        showFav: true, showLyrics: true, showQueue: true, showShare: true, showAddPlaylist: true,
+        secBtnSize: 40, secBtnColor: '#ffffff',
+        showVolume: true, volumeWidth: 140, volumeColor: '#34d399', showMute: true,
+        queueBg: 'rgba(20,22,40,0.95)', queueActive: '#34d399',
+        lyricsBg: 'rgba(20,22,40,0.95)', lyricsActive: '#34d399', lyricsSize: 16,
+        showEq: true, eqCount: 20, eqColor: '#34d399', eqWidth: 3, eqGap: 2,
+        showAIBot: true,
+        mobileArtSize: 260, mobilePlayBtn: 56, mobileWave: false, safeArea: 20
+    }
 };
 
-function loadMiniPlayerSettings() {
-    const s = DataStore.getMiniPlayerSettings();
-    const d = { ...MINI_PLAYER_DEFAULTS, ...s };
+function loadPlayerSettings() {
+    const raw = DataStore.getMiniPlayerSettings();
+    const s = raw.playerSettings || raw;
+    const bn = { ...PLAYER_DEFAULTS.bn, ...(s.bn || {}) };
+    const mp = { ...PLAYER_DEFAULTS.mp, ...(s.mp || {}) };
+    const fs = { ...PLAYER_DEFAULTS.fs, ...(s.fs || {}) };
 
-    const fields = {
-        mpWidth: d.width, mpHeight: d.height, mpBorderRadius: d.borderRadius,
-        mpBgColor: d.bgColor, mpBgOpacity: d.bgOpacity, mpBlur: d.blur,
-        mpGlass: String(d.glass), mpShadow: d.shadow, mpBorderColor: d.borderColor, mpBorderWidth: d.borderWidth,
-        mpShowArt: String(d.showArt), mpArtSize: d.artSize, mpArtRadius: d.artRadius, mpVinylSpin: String(d.vinylSpin),
-        mpTitleSize: d.titleSize, mpTitleWeight: d.titleWeight, mpTitleColor: d.titleColor,
-        mpArtistSize: d.artistSize, mpArtistColor: d.artistColor, mpTextAlign: d.textAlign,
-        mpShowPlay: String(d.showPlay), mpShowPrev: String(d.showPrev), mpShowNext: String(d.showNext),
-        mpShowShuffle: String(d.showShuffle), mpShowRepeat: String(d.showRepeat), mpShowProgress: String(d.showProgress),
-        mpShowVolume: String(d.showVolume), mpShowFav: String(d.showFav), mpShowQueue: String(d.showQueue),
-        mpShowShare: String(d.showShare), mpShowAI: String(d.showAI), mpBtnSize: d.btnSize,
-        mpBtnColor: d.btnColor, mpBtnHover: d.btnHover, mpPlayBtnSize: d.playBtnSize,
-        mpProgressH: d.progressH, mpProgressColor: d.progressColor, mpProgressBg: d.progressBg,
-        mpShowThumb: String(d.showThumb), mpThumbSize: d.thumbSize,
-        mpPosition: d.position, mpDraggable: String(d.draggable), mpAutoMinimize: String(d.autoMinimize),
-        mpShowOnPlay: String(d.showOnPlay), mpZIndex: d.zIndex, mpAnimation: d.animation,
-        mpMiniWidth: d.miniWidth, mpMiniHeight: d.miniHeight, mpMiniRadius: d.miniRadius,
-        mpMiniBg: d.miniBg, mpMiniShowArt: String(d.miniShowArt), mpMiniShowPlay: String(d.miniShowPlay),
-        mpMiniShowExpand: String(d.miniShowExpand)
-    };
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = String(val ?? ''); };
+    const b = (v) => String(v);
 
-    Object.entries(fields).forEach(([id, val]) => {
-        const el = document.getElementById(id);
-        if (el) el.value = val ?? '';
-    });
+    // Bottom Nav
+    setVal('bnVisible', b(bn.visible)); setVal('bnHeight', bn.height);
+    setVal('bnShowWithPlayer', b(bn.showWithPlayer)); setVal('bnPlayerOffset', bn.playerOffset);
+    setVal('bnBgColor', bn.bgColor); setVal('bnBgOpacity', bn.bgOpacity); setVal('bnBlur', bn.blur);
+    setVal('bnBorderColor', bn.borderColor); setVal('bnBorderWidth', bn.borderWidth); setVal('bnBorderOpacity', bn.borderOpacity);
+    setVal('bnIconSize', bn.iconSize); setVal('bnIconColor', bn.iconColor); setVal('bnActiveColor', bn.activeColor);
+    setVal('bnLabelSize', bn.labelSize); setVal('bnLabelColor', bn.labelColor); setVal('bnActiveLabelColor', bn.activeLabelColor);
+    setVal('bnIndicator', bn.indicator); setVal('bnIndicatorColor', bn.indicatorColor);
+    setVal('bnShowMobile', b(bn.showMobile)); setVal('bnShowTablet', b(bn.showTablet)); setVal('bnShowDesktop', b(bn.showDesktop));
+    setVal('bnSafeArea', bn.safeArea);
+
+    // Mini Player
+    setVal('mpVisible', b(mp.visible)); setVal('mpPosition', mp.position); setVal('mpMaxWidth', mp.maxWidth);
+    setVal('mpBottomOffset', mp.bottomOffset); setVal('mpSideMargin', mp.sideMargin); setVal('mpZIndex', mp.zIndex);
+    setVal('mpBgColor', mp.bgColor); setVal('mpBgOpacity', mp.bgOpacity); setVal('mpBlur', mp.blur);
+    setVal('mpBorderRadius', mp.borderRadius); setVal('mpBorderColor', mp.borderColor); setVal('mpBorderWidth', mp.borderWidth);
+    setVal('mpShadow', mp.shadow);
+    setVal('mpShowArt', b(mp.showArt)); setVal('mpArtSize', mp.artSize); setVal('mpArtRadius', mp.artRadius); setVal('mpShowEq', b(mp.showEq));
+    setVal('mpTitleSize', mp.titleSize); setVal('mpTitleWeight', mp.titleWeight); setVal('mpTitleColor', mp.titleColor);
+    setVal('mpArtistSize', mp.artistSize); setVal('mpArtistColor', mp.artistColor); setVal('mpShowTime', b(mp.showTime));
+    setVal('mpShowPlay', b(mp.showPlay)); setVal('mpShowPrev', b(mp.showPrev)); setVal('mpShowNext', b(mp.showNext));
+    setVal('mpShowFav', b(mp.showFav)); setVal('mpShowExpand', b(mp.showExpand)); setVal('mpShowWave', b(mp.showWave));
+    setVal('mpBtnSize', mp.btnSize); setVal('mpBtnColor', mp.btnColor); setVal('mpPlayBtnColor', mp.playBtnColor);
+    setVal('mpShowProgress', b(mp.showProgress)); setVal('mpProgressH', mp.progressH); setVal('mpProgressColor', mp.progressColor);
+    setVal('mpProgressBg', mp.progressBg); setVal('mpShowThumb', b(mp.showThumb)); setVal('mpThumbSize', mp.thumbSize);
+    setVal('mpExpandHover', b(mp.expandHover));
+    setVal('mpShowOnPlay', b(mp.showOnPlay)); setVal('mpAutoHide', mp.autoHide); setVal('mpAnimation', mp.animation);
+    setVal('mpShowNowPlaying', b(mp.showNowPlaying));
+    setVal('mpMobileArtSize', mp.mobileArtSize); setVal('mpMobileBtnSize', mp.mobileBtnSize);
+    setVal('mpMobileHideWave', b(mp.mobileHideWave)); setVal('mpMobileCompact', b(mp.mobileCompact));
+
+    // Full-Screen
+    setVal('fsBgColor', fs.bgColor); setVal('fsBgOpacity', fs.bgOpacity); setVal('fsBlur', fs.blur);
+    setVal('fsGlow', b(fs.glow)); setVal('fsGlowIntensity', fs.glowIntensity); setVal('fsAnimation', fs.animation);
+    setVal('fsArtSize', fs.artSize); setVal('fsArtRadius', fs.artRadius); setVal('fsArtFloat', b(fs.artFloat));
+    setVal('fsArtGlow', b(fs.artGlow)); setVal('fsAIRing', b(fs.aiRing)); setVal('fsParticles', b(fs.particles));
+    setVal('fsVisualizer', b(fs.visualizer));
+    setVal('fsTitleSize', fs.titleSize); setVal('fsTitleWeight', fs.titleWeight); setVal('fsTitleColor', fs.titleColor);
+    setVal('fsArtistSize', fs.artistSize); setVal('fsArtistColor', fs.artistColor);
+    setVal('fsShowMovie', b(fs.showMovie)); setVal('fsShowBadge', b(fs.showBadge)); setVal('fsShowNowPlaying', b(fs.showNowPlaying));
+    setVal('fsPlayBtnSize', fs.playBtnSize); setVal('fsPlayBtnColor', fs.playBtnColor);
+    setVal('fsBtnSize', fs.btnSize); setVal('fsBtnColor', fs.btnColor);
+    setVal('fsShowShuffle', b(fs.showShuffle)); setVal('fsShowRepeat', b(fs.showRepeat));
+    setVal('fsProgressH', fs.progressH); setVal('fsProgressColor', fs.progressColor); setVal('fsProgressBg', fs.progressBg);
+    setVal('fsShowThumb', b(fs.showThumb)); setVal('fsThumbSize', fs.thumbSize); setVal('fsShowTime', b(fs.showTime));
+    setVal('fsShowFav', b(fs.showFav)); setVal('fsShowLyrics', b(fs.showLyrics)); setVal('fsShowQueue', b(fs.showQueue));
+    setVal('fsShowShare', b(fs.showShare)); setVal('fsShowAddPlaylist', b(fs.showAddPlaylist));
+    setVal('fsSecBtnSize', fs.secBtnSize); setVal('fsSecBtnColor', fs.secBtnColor);
+    setVal('fsShowVolume', b(fs.showVolume)); setVal('fsVolumeWidth', fs.volumeWidth);
+    setVal('fsVolumeColor', fs.volumeColor); setVal('fsShowMute', b(fs.showMute));
+    setVal('fsQueueBg', fs.queueBg); setVal('fsQueueActive', fs.queueActive);
+    setVal('fsLyricsBg', fs.lyricsBg); setVal('fsLyricsActive', fs.lyricsActive); setVal('fsLyricsSize', fs.lyricsSize);
+    setVal('fsShowEq', b(fs.showEq)); setVal('fsEqCount', fs.eqCount); setVal('fsEqColor', fs.eqColor);
+    setVal('fsEqWidth', fs.eqWidth); setVal('fsEqGap', fs.eqGap); setVal('fsShowAIBot', b(fs.showAIBot));
+    setVal('fsMobileArtSize', fs.mobileArtSize); setVal('fsMobilePlayBtn', fs.mobilePlayBtn);
+    setVal('fsMobileWave', b(fs.mobileWave)); setVal('fsSafeArea', fs.safeArea);
 }
 
-function saveMiniPlayerSettings(e) {
+function savePlayerSettings(e) {
     e.preventDefault();
-    const get = (id) => {
-        const el = document.getElementById(id);
-        return el ? el.value : '';
-    };
-    const getNum = (id) => parseFloat(get(id)) || 0;
-
-    const getBool = (id) => get(id) === 'true';
+    const g = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+    const n = (id) => parseFloat(g(id)) || 0;
+    const b = (id) => g(id) === 'true';
 
     const settings = {
-        width: getNum('mpWidth'), height: getNum('mpHeight'), borderRadius: getNum('mpBorderRadius'),
-        bgColor: get('mpBgColor'), bgOpacity: getNum('mpBgOpacity'), blur: getNum('mpBlur'),
-        glass: getBool('mpGlass'), shadow: get('mpShadow'), borderColor: get('mpBorderColor'), borderWidth: getNum('mpBorderWidth'),
-        showArt: getBool('mpShowArt'), artSize: getNum('mpArtSize'), artRadius: getNum('mpArtRadius'), vinylSpin: getBool('mpVinylSpin'),
-        titleSize: getNum('mpTitleSize'), titleWeight: get('mpTitleWeight'), titleColor: get('mpTitleColor'),
-        artistSize: getNum('mpArtistSize'), artistColor: get('mpArtistColor'), textAlign: get('mpTextAlign'),
-        showPlay: getBool('mpShowPlay'), showPrev: getBool('mpShowPrev'), showNext: getBool('mpShowNext'),
-        showShuffle: getBool('mpShowShuffle'), showRepeat: getBool('mpShowRepeat'), showProgress: getBool('mpShowProgress'),
-        showVolume: getBool('mpShowVolume'), showFav: getBool('mpShowFav'), showQueue: getBool('mpShowQueue'),
-        showShare: getBool('mpShowShare'), showAI: getBool('mpShowAI'), btnSize: getNum('mpBtnSize'),
-        btnColor: get('mpBtnColor'), btnHover: get('mpBtnHover'), playBtnSize: getNum('mpPlayBtnSize'),
-        progressH: getNum('mpProgressH'), progressColor: get('mpProgressColor'), progressBg: get('mpProgressBg'),
-        showThumb: getBool('mpShowThumb'), thumbSize: getNum('mpThumbSize'),
-        position: get('mpPosition'), draggable: getBool('mpDraggable'), autoMinimize: getBool('mpAutoMinimize'),
-        showOnPlay: getBool('mpShowOnPlay'), zIndex: getNum('mpZIndex'), animation: get('mpAnimation'),
-        miniWidth: getNum('mpMiniWidth'), miniHeight: getNum('mpMiniHeight'), miniRadius: getNum('mpMiniRadius'),
-        miniBg: get('mpMiniBg'), miniShowArt: getBool('mpMiniShowArt'), miniShowPlay: getBool('mpMiniShowPlay'),
-        miniShowExpand: getBool('mpMiniShowExpand')
+        bn: {
+            visible: b('bnVisible'), height: n('bnHeight'), showWithPlayer: b('bnShowWithPlayer'), playerOffset: n('bnPlayerOffset'),
+            bgColor: g('bnBgColor'), bgOpacity: n('bnBgOpacity'), blur: n('bnBlur'),
+            borderColor: g('bnBorderColor'), borderWidth: n('bnBorderWidth'), borderOpacity: n('bnBorderOpacity'),
+            iconSize: n('bnIconSize'), iconColor: g('bnIconColor'), activeColor: g('bnActiveColor'),
+            labelSize: n('bnLabelSize'), labelColor: g('bnLabelColor'), activeLabelColor: g('bnActiveLabelColor'),
+            indicator: g('bnIndicator'), indicatorColor: g('bnIndicatorColor'),
+            showMobile: b('bnShowMobile'), showTablet: b('bnShowTablet'), showDesktop: b('bnShowDesktop'), safeArea: n('bnSafeArea')
+        },
+        mp: {
+            visible: b('mpVisible'), position: g('mpPosition'), maxWidth: n('mpMaxWidth'), bottomOffset: n('mpBottomOffset'),
+            sideMargin: n('mpSideMargin'), zIndex: n('mpZIndex'),
+            bgColor: g('mpBgColor'), bgOpacity: n('mpBgOpacity'), blur: n('mpBlur'), borderRadius: n('mpBorderRadius'),
+            borderColor: g('mpBorderColor'), borderWidth: n('mpBorderWidth'), shadow: g('mpShadow'),
+            showArt: b('mpShowArt'), artSize: n('mpArtSize'), artRadius: n('mpArtRadius'), showEq: b('mpShowEq'),
+            titleSize: n('mpTitleSize'), titleWeight: g('mpTitleWeight'), titleColor: g('mpTitleColor'),
+            artistSize: n('mpArtistSize'), artistColor: g('mpArtistColor'), showTime: b('mpShowTime'),
+            showPlay: b('mpShowPlay'), showPrev: b('mpShowPrev'), showNext: b('mpShowNext'),
+            showFav: b('mpShowFav'), showExpand: b('mpShowExpand'), showWave: b('mpShowWave'),
+            btnSize: n('mpBtnSize'), btnColor: g('mpBtnColor'), playBtnColor: g('mpPlayBtnColor'),
+            showProgress: b('mpShowProgress'), progressH: n('mpProgressH'), progressColor: g('mpProgressColor'),
+            progressBg: g('mpProgressBg'), showThumb: b('mpShowThumb'), thumbSize: n('mpThumbSize'), expandHover: b('mpExpandHover'),
+            showOnPlay: b('mpShowOnPlay'), autoHide: n('mpAutoHide'), animation: g('mpAnimation'), showNowPlaying: b('mpShowNowPlaying'),
+            mobileArtSize: n('mpMobileArtSize'), mobileBtnSize: n('mpMobileBtnSize'),
+            mobileHideWave: b('mpMobileHideWave'), mobileCompact: b('mpMobileCompact')
+        },
+        fs: {
+            bgColor: g('fsBgColor'), bgOpacity: n('fsBgOpacity'), blur: n('fsBlur'), glow: b('fsGlow'),
+            glowIntensity: n('fsGlowIntensity'), animation: g('fsAnimation'),
+            artSize: n('fsArtSize'), artRadius: n('fsArtRadius'), artFloat: b('fsArtFloat'),
+            artGlow: b('fsArtGlow'), aiRing: b('fsAIRing'), particles: b('fsParticles'), visualizer: b('fsVisualizer'),
+            titleSize: n('fsTitleSize'), titleWeight: g('fsTitleWeight'), titleColor: g('fsTitleColor'),
+            artistSize: n('fsArtistSize'), artistColor: g('fsArtistColor'),
+            showMovie: b('fsShowMovie'), showBadge: b('fsShowBadge'), showNowPlaying: b('fsShowNowPlaying'),
+            playBtnSize: n('fsPlayBtnSize'), playBtnColor: g('fsPlayBtnColor'),
+            btnSize: n('fsBtnSize'), btnColor: g('fsBtnColor'), showShuffle: b('fsShowShuffle'), showRepeat: b('fsShowRepeat'),
+            progressH: n('fsProgressH'), progressColor: g('fsProgressColor'), progressBg: g('fsProgressBg'),
+            showThumb: b('fsShowThumb'), thumbSize: n('fsThumbSize'), showTime: b('fsShowTime'),
+            showFav: b('fsShowFav'), showLyrics: b('fsShowLyrics'), showQueue: b('fsShowQueue'),
+            showShare: b('fsShowShare'), showAddPlaylist: b('fsShowAddPlaylist'),
+            secBtnSize: n('fsSecBtnSize'), secBtnColor: g('fsSecBtnColor'),
+            showVolume: b('fsShowVolume'), volumeWidth: n('fsVolumeWidth'), volumeColor: g('fsVolumeColor'), showMute: b('fsShowMute'),
+            queueBg: g('fsQueueBg'), queueActive: g('fsQueueActive'),
+            lyricsBg: g('fsLyricsBg'), lyricsActive: g('fsLyricsActive'), lyricsSize: n('fsLyricsSize'),
+            showEq: b('fsShowEq'), eqCount: n('fsEqCount'), eqColor: g('fsEqColor'),
+            eqWidth: n('fsEqWidth'), eqGap: n('fsEqGap'), showAIBot: b('fsShowAIBot'),
+            mobileArtSize: n('fsMobileArtSize'), mobilePlayBtn: n('fsMobilePlayBtn'),
+            mobileWave: b('fsMobileWave'), safeArea: n('fsSafeArea')
+        }
     };
 
-    DataStore.setMiniPlayerSettings(settings);
-    showToast('Mini Player settings saved!', 'success');
+    const raw = DataStore.getMiniPlayerSettings();
+    raw.playerSettings = settings;
+    DataStore.setMiniPlayerSettings(raw);
+    applyPlayerSettings(settings);
+    showToast('Player settings saved & applied!', 'success');
     syncToLiveWebsite();
     return false;
 }
 
-function resetMiniPlayerSettings() {
-    if (!confirm('Reset all Mini Player settings to defaults?')) return;
-    DataStore.setMiniPlayerSettings(MINI_PLAYER_DEFAULTS);
-    loadMiniPlayerSettings();
-    showToast('Mini Player settings reset to defaults', 'success');
+function resetPlayerSettings() {
+    if (!confirm('Reset all player settings to defaults?')) return;
+    const raw = DataStore.getMiniPlayerSettings();
+    raw.playerSettings = PLAYER_DEFAULTS;
+    DataStore.setMiniPlayerSettings(raw);
+    loadPlayerSettings();
+    applyPlayerSettings(PLAYER_DEFAULTS);
+    showToast('Player settings reset to defaults', 'success');
 }
+
+function previewPlayerSettings() {
+    const g = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+    const n = (id) => parseFloat(g(id)) || 0;
+    const b = (id) => g(id) === 'true';
+    const preview = {
+        bn: { visible: b('bnVisible'), height: n('bnHeight'), showWithPlayer: b('bnShowWithPlayer'), playerOffset: n('bnPlayerOffset'), bgColor: g('bnBgColor'), bgOpacity: n('bnBgOpacity'), blur: n('bnBlur'), borderColor: g('bnBorderColor'), borderWidth: n('bnBorderWidth'), borderOpacity: n('bnBorderOpacity'), iconSize: n('bnIconSize'), iconColor: g('bnIconColor'), activeColor: g('bnActiveColor'), labelSize: n('bnLabelSize'), labelColor: g('bnLabelColor'), activeLabelColor: g('bnActiveLabelColor'), indicator: g('bnIndicator'), indicatorColor: g('bnIndicatorColor'), showMobile: b('bnShowMobile'), showTablet: b('bnShowTablet'), showDesktop: b('bnShowDesktop'), safeArea: n('bnSafeArea') },
+        mp: { visible: b('mpVisible'), position: g('mpPosition'), maxWidth: n('mpMaxWidth'), bottomOffset: n('mpBottomOffset'), sideMargin: n('mpSideMargin'), zIndex: n('mpZIndex'), bgColor: g('mpBgColor'), bgOpacity: n('mpBgOpacity'), blur: n('mpBlur'), borderRadius: n('mpBorderRadius'), borderColor: g('mpBorderColor'), borderWidth: n('mpBorderWidth'), shadow: g('mpShadow'), showArt: b('mpShowArt'), artSize: n('mpArtSize'), artRadius: n('mpArtRadius'), showEq: b('mpShowEq'), titleSize: n('mpTitleSize'), titleWeight: g('mpTitleWeight'), titleColor: g('mpTitleColor'), artistSize: n('mpArtistSize'), artistColor: g('mpArtistColor'), showTime: b('mpShowTime'), showPlay: b('mpShowPlay'), showPrev: b('mpShowPrev'), showNext: b('mpShowNext'), showFav: b('mpShowFav'), showExpand: b('mpShowExpand'), showWave: b('mpShowWave'), btnSize: n('mpBtnSize'), btnColor: g('mpBtnColor'), playBtnColor: g('mpPlayBtnColor'), showProgress: b('mpShowProgress'), progressH: n('mpProgressH'), progressColor: g('mpProgressColor'), progressBg: g('mpProgressBg'), showThumb: b('mpShowThumb'), thumbSize: n('mpThumbSize'), expandHover: b('mpExpandHover'), showOnPlay: b('mpShowOnPlay'), autoHide: n('mpAutoHide'), animation: g('mpAnimation'), showNowPlaying: b('mpShowNowPlaying'), mobileArtSize: n('mpMobileArtSize'), mobileBtnSize: n('mpMobileBtnSize'), mobileHideWave: b('mpMobileHideWave'), mobileCompact: b('mpMobileCompact') },
+        fs: { bgColor: g('fsBgColor'), bgOpacity: n('fsBgOpacity'), blur: n('fsBlur'), glow: b('fsGlow'), glowIntensity: n('fsGlowIntensity'), animation: g('fsAnimation'), artSize: n('fsArtSize'), artRadius: n('fsArtRadius'), artFloat: b('fsArtFloat'), artGlow: b('fsArtGlow'), aiRing: b('fsAIRing'), particles: b('fsParticles'), visualizer: b('fsVisualizer'), titleSize: n('fsTitleSize'), titleWeight: g('fsTitleWeight'), titleColor: g('fsTitleColor'), artistSize: n('fsArtistSize'), artistColor: g('fsArtistColor'), showMovie: b('fsShowMovie'), showBadge: b('fsShowBadge'), showNowPlaying: b('fsShowNowPlaying'), playBtnSize: n('fsPlayBtnSize'), playBtnColor: g('fsPlayBtnColor'), btnSize: n('fsBtnSize'), btnColor: g('fsBtnColor'), showShuffle: b('fsShowShuffle'), showRepeat: b('fsShowRepeat'), progressH: n('fsProgressH'), progressColor: g('fsProgressColor'), progressBg: g('fsProgressBg'), showThumb: b('fsShowThumb'), thumbSize: n('fsThumbSize'), showTime: b('fsShowTime'), showFav: b('fsShowFav'), showLyrics: b('fsShowLyrics'), showQueue: b('fsShowQueue'), showShare: b('fsShowShare'), showAddPlaylist: b('fsShowAddPlaylist'), secBtnSize: n('fsSecBtnSize'), secBtnColor: g('fsSecBtnColor'), showVolume: b('fsShowVolume'), volumeWidth: n('fsVolumeWidth'), volumeColor: g('fsVolumeColor'), showMute: b('fsShowMute'), queueBg: g('fsQueueBg'), queueActive: g('fsQueueActive'), lyricsBg: g('fsLyricsBg'), lyricsActive: g('fsLyricsActive'), lyricsSize: n('fsLyricsSize'), showEq: b('fsShowEq'), eqCount: n('fsEqCount'), eqColor: g('fsEqColor'), eqWidth: n('fsEqWidth'), eqGap: n('fsEqGap'), showAIBot: b('fsShowAIBot'), mobileArtSize: n('fsMobileArtSize'), mobilePlayBtn: n('fsMobilePlayBtn'), mobileWave: b('fsMobileWave'), safeArea: n('fsSafeArea') }
+    };
+    applyPlayerSettings(preview);
+    showToast('Preview applied — open live site to see changes', 'info');
+}
+
+function applyPlayerSettings(s) {
+    if (!s) return;
+    const bn = s.bn || PLAYER_DEFAULTS.bn;
+    const mp = s.mp || PLAYER_DEFAULTS.mp;
+    const fs = s.fs || PLAYER_DEFAULTS.fs;
+    const root = document.documentElement;
+
+    // Bottom Nav CSS Variables
+    root.style.setProperty('--bn-visible', bn.visible ? 'flex' : 'none');
+    root.style.setProperty('--bn-height', bn.height + 'px');
+    root.style.setProperty('--bn-offset-with-player', bn.showWithPlayer ? bn.playerOffset + 'px' : '0px');
+    root.style.setProperty('--bn-bg', bn.bgColor);
+    root.style.setProperty('--bn-bg-opacity', bn.bgOpacity / 100);
+    root.style.setProperty('--bn-blur', bn.blur + 'px');
+    root.style.setProperty('--bn-border-color', bn.borderColor);
+    root.style.setProperty('--bn-border-width', bn.borderWidth + 'px');
+    root.style.setProperty('--bn-border-opacity', bn.borderOpacity / 100);
+    root.style.setProperty('--bn-icon-size', bn.iconSize + 'px');
+    root.style.setProperty('--bn-icon-color', bn.iconColor);
+    root.style.setProperty('--bn-active-color', bn.activeColor);
+    root.style.setProperty('--bn-label-size', bn.labelSize + 'px');
+    root.style.setProperty('--bn-label-color', bn.labelColor);
+    root.style.setProperty('--bn-active-label-color', bn.activeLabelColor);
+    root.style.setProperty('--bn-indicator', bn.indicator);
+    root.style.setProperty('--bn-indicator-color', bn.indicatorColor);
+    root.style.setProperty('--bn-show-mobile', bn.showMobile ? 'flex' : 'none');
+    root.style.setProperty('--bn-show-tablet', bn.showTablet ? 'flex' : 'none');
+    root.style.setProperty('--bn-show-desktop', bn.showDesktop ? 'flex' : 'none');
+    root.style.setProperty('--bn-safe-area', bn.safeArea + 'px');
+
+    // Mini Player CSS Variables
+    root.style.setProperty('--gp-mini-visible', mp.visible ? 'flex' : 'none');
+    root.style.setProperty('--gp-mini-bottom', mp.bottomOffset + 'px');
+    root.style.setProperty('--gp-mini-max-w', mp.maxWidth + 'px');
+    root.style.setProperty('--gp-mini-margin', '0 auto');
+    root.style.setProperty('--gp-mini-z', mp.zIndex);
+    root.style.setProperty('--gp-mini-bg', `rgba(${hexToRgb(mp.bgColor)},${mp.bgOpacity / 100})`);
+    root.style.setProperty('--gp-mini-blur', mp.blur + 'px');
+    root.style.setProperty('--gp-mini-radius', mp.borderRadius + 'px');
+    root.style.setProperty('--gp-mini-border', `${mp.borderWidth}px solid ${mp.borderColor}`);
+    root.style.setProperty('--gp-mini-art-size', mp.artSize + 'px');
+    root.style.setProperty('--gp-mini-art-radius', mp.artRadius + 'px');
+    root.style.setProperty('--gp-mini-title-size', mp.titleSize + 'px');
+    root.style.setProperty('--gp-mini-title-weight', mp.titleWeight);
+    root.style.setProperty('--gp-mini-title-color', mp.titleColor);
+    root.style.setProperty('--gp-mini-artist-size', mp.artistSize + 'px');
+    root.style.setProperty('--gp-mini-artist-color', mp.artistColor);
+    root.style.setProperty('--gp-mini-btn-size', mp.btnSize + 'px');
+    root.style.setProperty('--gp-mini-btn-color', mp.btnColor);
+    root.style.setProperty('--gp-mini-play-color', mp.playBtnColor);
+    root.style.setProperty('--gp-mini-progress-h', mp.progressH + 'px');
+    root.style.setProperty('--gp-mini-progress-color', mp.progressColor);
+    root.style.setProperty('--gp-mini-progress-bg', mp.progressBg);
+    root.style.setProperty('--gp-mini-thumb-size', mp.thumbSize + 'px');
+    root.style.setProperty('--gp-mini-shadow', mp.shadow);
+
+    // Show/hide elements via CSS classes
+    root.style.setProperty('--gp-mini-show-art', mp.showArt ? 'flex' : 'none');
+    root.style.setProperty('--gp-mini-show-eq', mp.showEq ? 'flex' : 'none');
+    root.style.setProperty('--gp-mini-show-time', mp.showTime ? 'flex' : 'none');
+    root.style.setProperty('--gp-mini-show-prev', mp.showPrev ? 'flex' : 'none');
+    root.style.setProperty('--gp-mini-show-next', mp.showNext ? 'flex' : 'none');
+    root.style.setProperty('--gp-mini-show-fav', mp.showFav ? 'flex' : 'none');
+    root.style.setProperty('--gp-mini-show-expand', mp.showExpand ? 'flex' : 'none');
+    root.style.setProperty('--gp-mini-show-wave', mp.showWave ? 'flex' : 'none');
+    root.style.setProperty('--gp-mini-show-progress', mp.showProgress ? 'block' : 'none');
+    root.style.setProperty('--gp-mini-show-np', mp.showNowPlaying ? 'flex' : 'none');
+
+    // Full-Screen Player CSS Variables
+    root.style.setProperty('--gp-fs-bg', `rgba(${hexToRgb(fs.bgColor)},${fs.bgOpacity / 100})`);
+    root.style.setProperty('--gp-fs-blur', fs.blur + 'px');
+    root.style.setProperty('--gp-fs-glow', fs.glow ? '1' : '0');
+    root.style.setProperty('--gp-fs-glow-intensity', fs.glowIntensity / 100);
+    root.style.setProperty('--gp-fs-art-size', fs.artSize + 'px');
+    root.style.setProperty('--gp-fs-art-radius', fs.artRadius + 'px');
+    root.style.setProperty('--gp-fs-art-float', fs.artFloat ? 'floating 6s ease-in-out infinite' : 'none');
+    root.style.setProperty('--gp-fs-art-glow', fs.artGlow ? '1' : '0');
+    root.style.setProperty('--gp-fs-ai-ring', fs.aiRing ? '1' : '0');
+    root.style.setProperty('--gp-fs-particles', fs.particles ? '1' : '0');
+    root.style.setProperty('--gp-fs-visualizer', fs.visualizer ? '1' : '0');
+    root.style.setProperty('--gp-fs-title-size', fs.titleSize + 'px');
+    root.style.setProperty('--gp-fs-title-weight', fs.titleWeight);
+    root.style.setProperty('--gp-fs-title-color', fs.titleColor);
+    root.style.setProperty('--gp-fs-artist-size', fs.artistSize + 'px');
+    root.style.setProperty('--gp-fs-artist-color', fs.artistColor);
+    root.style.setProperty('--gp-fs-play-size', fs.playBtnSize + 'px');
+    root.style.setProperty('--gp-fs-play-color', fs.playBtnColor);
+    root.style.setProperty('--gp-fs-btn-size', fs.btnSize + 'px');
+    root.style.setProperty('--gp-fs-btn-color', fs.btnColor);
+    root.style.setProperty('--gp-fs-progress-h', fs.progressH + 'px');
+    root.style.setProperty('--gp-fs-progress-color', fs.progressColor);
+    root.style.setProperty('--gp-fs-progress-bg', fs.progressBg);
+    root.style.setProperty('--gp-fs-thumb-size', fs.thumbSize + 'px');
+    root.style.setProperty('--gp-fs-sec-btn-size', fs.secBtnSize + 'px');
+    root.style.setProperty('--gp-fs-sec-btn-color', fs.secBtnColor);
+    root.style.setProperty('--gp-fs-volume-w', fs.volumeWidth + 'px');
+    root.style.setProperty('--gp-fs-volume-color', fs.volumeColor);
+    root.style.setProperty('--gp-fs-queue-bg', fs.queueBg);
+    root.style.setProperty('--gp-fs-queue-active', fs.queueActive);
+    root.style.setProperty('--gp-fs-lyrics-bg', fs.lyricsBg);
+    root.style.setProperty('--gp-fs-lyrics-active', fs.lyricsActive);
+    root.style.setProperty('--gp-fs-lyrics-size', fs.lyricsSize + 'px');
+    root.style.setProperty('--gp-fs-eq-count', fs.eqCount);
+    root.style.setProperty('--gp-fs-eq-color', fs.eqColor);
+    root.style.setProperty('--gp-fs-eq-width', fs.eqWidth + 'px');
+    root.style.setProperty('--gp-fs-eq-gap', fs.eqGap + 'px');
+    root.style.setProperty('--gp-fs-safe-area', fs.safeArea + 'px');
+
+    // Show/hide FS elements
+    root.style.setProperty('--gp-fs-show-movie', fs.showMovie ? 'block' : 'none');
+    root.style.setProperty('--gp-fs-show-badge', fs.showBadge ? 'inline-flex' : 'none');
+    root.style.setProperty('--gp-fs-show-np-badge', fs.showNowPlaying ? 'inline-flex' : 'none');
+    root.style.setProperty('--gp-fs-show-shuffle', fs.showShuffle ? 'flex' : 'none');
+    root.style.setProperty('--gp-fs-show-repeat', fs.showRepeat ? 'flex' : 'none');
+    root.style.setProperty('--gp-fs-show-thumb', fs.showThumb ? 'block' : 'none');
+    root.style.setProperty('--gp-fs-show-time', fs.showTime ? 'flex' : 'none');
+    root.style.setProperty('--gp-fs-show-fav', fs.showFav ? 'flex' : 'none');
+    root.style.setProperty('--gp-fs-show-lyrics', fs.showLyrics ? 'flex' : 'none');
+    root.style.setProperty('--gp-fs-show-queue', fs.showQueue ? 'flex' : 'none');
+    root.style.setProperty('--gp-fs-show-share', fs.showShare ? 'flex' : 'none');
+    root.style.setProperty('--gp-fs-show-add-playlist', fs.showAddPlaylist ? 'flex' : 'none');
+    root.style.setProperty('--gp-fs-show-volume', fs.showVolume ? 'flex' : 'none');
+    root.style.setProperty('--gp-fs-show-mute', fs.showMute ? 'flex' : 'none');
+    root.style.setProperty('--gp-fs-show-eq', fs.showEq ? 'flex' : 'none');
+    root.style.setProperty('--gp-fs-show-ai-bot', fs.showAIBot ? 'flex' : 'none');
+
+    // Apply directly to GlobalPlayer elements if they exist
+    const mini = document.getElementById('gp-mini');
+    if (mini) {
+        if (!mp.visible) mini.style.display = 'none'; else mini.style.display = '';
+        mini.style.maxWidth = mp.maxWidth + 'px';
+        mini.style.bottom = mp.bottomOffset + 'px';
+        mini.style.borderRadius = mp.borderRadius + 'px';
+        mini.style.zIndex = mp.zIndex;
+        mini.style.background = `rgba(${hexToRgb(mp.bgColor)},${mp.bgOpacity / 100})`;
+        mini.style.backdropFilter = mp.blur > 0 ? `blur(${mp.blur}px)` : '';
+        mini.style.border = `${mp.borderWidth}px solid ${mp.borderColor}`;
+    }
+
+    const fsEl = document.getElementById('gp-expanded');
+    if (fsEl) {
+        fsEl.style.background = `rgba(${hexToRgb(fs.bgColor)},${fs.bgOpacity / 100})`;
+        fsEl.style.backdropFilter = fs.blur > 0 ? `blur(${fs.blur}px)` : '';
+    }
+
+    // Apply to Bottom Nav
+    const bnEl = document.querySelector('.tamilai-bottom-nav');
+    if (bnEl) {
+        bnEl.style.display = bn.visible ? '' : 'none';
+        bnEl.style.height = bn.height + 'px';
+        bnEl.style.background = `rgba(${hexToRgb(bn.bgColor)},${bn.bgOpacity / 100})`;
+        bnEl.style.backdropFilter = bn.blur > 0 ? `blur(${bn.blur}px)` : '';
+    }
+
+    // Store for live site consumption
+    try { localStorage.setItem('tamilAIStream_playerCSSVars', JSON.stringify({ bn, mp, fs })); } catch (e) { }
+}
+
+function hexToRgb(hex) {
+    if (!hex) return '12,15,30';
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    const r = parseInt(hex.substring(0, 2), 16) || 0;
+    const g = parseInt(hex.substring(2, 4), 16) || 0;
+    const b = parseInt(hex.substring(4, 6), 16) || 0;
+    return `${r},${g},${b}`;
+}
+
+// Player Settings Tab Switching
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.mp-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.mp-tab').forEach(function(t) { t.classList.remove('active'); });
+            document.querySelectorAll('.mp-settings-panel').forEach(function(p) { p.classList.remove('active'); });
+            this.classList.add('active');
+            var panelId = 'mp' + this.dataset.mptab.charAt(0).toUpperCase() + this.dataset.mptab.slice(1);
+            var panel = document.getElementById(panelId);
+            if (panel) panel.classList.add('active');
+        });
+    });
+});
 
 // Export functions for global access
 if (typeof window !== 'undefined') {
@@ -6893,9 +7376,10 @@ if (typeof window !== 'undefined') {
     window.veEditSectionHTML = veEditSectionHTML;
     window.veDeleteSection = veDeleteSection;
     window.handleSectionAction = handleSectionAction;
-    window.loadMiniPlayerSettings = loadMiniPlayerSettings;
-    window.saveMiniPlayerSettings = saveMiniPlayerSettings;
-    window.resetMiniPlayerSettings = resetMiniPlayerSettings;
+    window.loadPlayerSettings = loadPlayerSettings;
+    window.savePlayerSettings = savePlayerSettings;
+    window.resetPlayerSettings = resetPlayerSettings;
+    window.previewPlayerSettings = previewPlayerSettings;
     window.syncR2Songs = syncR2Songs;
     window.restoreAllR2Songs = restoreAllR2Songs;
     window.loadAllSongs = loadAllSongs;

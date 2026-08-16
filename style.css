@@ -2392,3 +2392,207 @@ body.builder-preview .ytm-ai-chat {
     display: block;
     height: 0;
 }
+
+/* ============================================
+   Upcoming Releases - Premium Carousel
+   ============================================ */
+.upcoming-releases-section {
+    position: relative;
+}
+
+.upcoming-releases-section .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ur-carousel-nav {
+    display: flex;
+    gap: 8px;
+}
+
+.ur-nav-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.ur-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: scale(1.08);
+}
+
+.ur-carousel-viewport {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 18px;
+    aspect-ratio: 16 / 6;
+    max-height: 340px;
+    margin-top: 12px;
+    cursor: grab;
+}
+
+.ur-carousel-viewport:active {
+    cursor: grabbing;
+}
+
+.ur-carousel-track {
+    display: flex;
+    height: 100%;
+    will-change: transform;
+}
+
+.ur-slide {
+    min-width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.ur-slide-image {
+    width: 100%;
+    height: 100%;
+}
+
+.ur-slide-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.ur-slide-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(124, 58, 237, 0.1));
+    color: rgba(167, 139, 250, 0.5);
+    font-size: 3rem;
+}
+
+.ur-slide-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 28px 28px 22px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.3) 60%, transparent 100%);
+    pointer-events: none;
+}
+
+.ur-slide-title {
+    margin: 0 0 4px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+}
+
+.ur-slide-subtitle {
+    margin: 0;
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.75);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Dots */
+.ur-carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.ur-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.3s ease;
+}
+
+.ur-dot:hover {
+    background: rgba(255, 255, 255, 0.45);
+    transform: scale(1.25);
+}
+
+.ur-dot.active {
+    background: #a78bfa;
+    width: 22px;
+    border-radius: 4px;
+    box-shadow: 0 0 8px rgba(167, 139, 250, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ur-carousel-viewport {
+        aspect-ratio: 16 / 7;
+        border-radius: 14px;
+    }
+    .ur-slide-overlay {
+        padding: 20px 18px 16px;
+    }
+    .ur-slide-title {
+        font-size: 1.1rem;
+    }
+    .ur-slide-subtitle {
+        font-size: 0.8rem;
+    }
+    .ur-nav-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .ur-carousel-viewport {
+        aspect-ratio: 16 / 8;
+        border-radius: 12px;
+    }
+    .ur-slide-overlay {
+        padding: 16px 14px 12px;
+    }
+    .ur-slide-title {
+        font-size: 0.95rem;
+    }
+    .ur-carousel-nav {
+        display: none;
+    }
+    .ur-carousel-dots {
+        margin-top: 10px;
+        gap: 6px;
+    }
+    .ur-dot {
+        width: 6px;
+        height: 6px;
+    }
+    .ur-dot.active {
+        width: 18px;
+    }
+}
