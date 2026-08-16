@@ -519,22 +519,33 @@ async function loadDashboardStats() {
 // ============================================
 async function loadAllSongs() {
     try {
+        // Show loading state
+        const tableBody = document.getElementById('allSongsTable');
+        const contentTableBody = document.getElementById('contentSongsTable');
+        if (tableBody) tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-secondary);"><i class="fas fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading songs…</td></tr>';
+        if (contentTableBody) contentTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-secondary);"><i class="fas fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading songs…</td></tr>';
+
         // Auto-discover songs already uploaded to Cloudflare R2 and merge them
         // into the library (idempotent — never duplicates existing entries).
         if (typeof ContentSync !== 'undefined' && typeof ContentSync.discoverR2Songs === 'function') {
-            try { await ContentSync.discoverR2Songs(); } catch (e) { console.warn('R2 song discovery failed:', e); }
+            try {
+                await ContentSync.discoverR2Songs((pct, phase, status) => {
+                    // Show R2 scan progress in the table while loading
+                    if (status && tableBody) {
+                        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-secondary);"><i class="fas fa-circle-notch fa-spin" style="margin-right:8px;"></i>' + status + '</td></tr>';
+                    }
+                });
+            } catch (e) { console.warn('R2 song discovery failed:', e); }
         }
 
         const songs = DataStore.getSongs();
-        songs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        songs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
         previewSongList = songs;
 
-        const tableBody = document.getElementById('allSongsTable');
-        if (tableBody) tableBody.innerHTML = songs.map(song => createSongRow(song)).join('');
+        if (tableBody) tableBody.innerHTML = songs.length ? songs.map(song => createSongRow(song)).join('') : '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-secondary);">No songs yet. Add a song or sync from R2.</td></tr>';
 
-        const contentTableBody = document.getElementById('contentSongsTable');
-        if (contentTableBody) contentTableBody.innerHTML = songs.map(song => createSongRow(song)).join('');
+        if (contentTableBody) contentTableBody.innerHTML = songs.length ? songs.map(song => createSongRow(song)).join('') : '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-secondary);">No songs yet. Add a song or sync from R2.</td></tr>';
 
         const totalCount = document.getElementById('totalSongsCount');
         if (totalCount) totalCount.textContent = songs.length;
@@ -552,27 +563,44 @@ async function syncR2Songs() {
     buttons.forEach(btn => {
         originals.set(btn, btn.innerHTML);
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Syncing...';
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Scanning R2…';
     });
 
     try {
         if (typeof ContentSync === 'undefined' || typeof ContentSync.discoverR2Songs !== 'function') {
-            showToast('R2 sync is unavailable on this build', 'error');
+            showToast('R2 sync is unavailable — ContentSync not loaded', 'error');
             return;
         }
-        const result = await ContentSync.discoverR2Songs();
+
+        // Use AIUploadOverlay for visual progress during sync
+        AIUploadOverlay.show();
+        AIUploadOverlay.update(5, 'Starting', 'Connecting to Cloudflare R2…');
+
+        const result = await ContentSync.discoverR2Songs((pct, phase, status) => {
+            if (pct !== null && pct !== undefined) {
+                AIUploadOverlay.update(pct, phase || 'Syncing', status || 'Scanning R2…');
+            } else if (status) {
+                AIUploadOverlay.update(null, null, status);
+            }
+        });
+
+        AIUploadOverlay.update(95, 'Updating', 'Reloading song list…');
         await loadAllSongs();
-        showToast(
-            result.added > 0
-                ? result.added + ' song(s) detected in Cloudflare R2 and added to Content'
-                : 'Already in sync — ' + result.total + ' song(s) available',
-            result.added > 0 ? 'success' : 'info'
-        );
+
+        if (result.added > 0) {
+            AIUploadOverlay.success(result.added + ' song(s) imported from R2');
+            showToast(result.added + ' song(s) detected in Cloudflare R2 and added to Content', 'success');
+        } else {
+            AIUploadOverlay.success('Already in sync — ' + result.total + ' song(s)');
+            showToast('Already in sync — ' + result.total + ' song(s) available', 'info');
+        }
+
         // Push the merged library to the live site + R2 manifest.
-        if (typeof syncToLiveWebsite === 'function') syncToLiveWebsite();
-        addActivity('R2 Sync', 'Synchronized song library with Cloudflare R2');
+        if (typeof syncToLiveWebsite === 'function') await syncToLiveWebsite();
+        addActivity('R2 Sync', 'Synchronized song library with Cloudflare R2 (' + result.total + ' songs, ' + (result.scanned || 0) + ' scanned)');
     } catch (e) {
         console.error('R2 sync error:', e);
+        AIUploadOverlay.error('Sync failed: ' + e.message);
         showToast('R2 sync failed: ' + e.message, 'error');
     } finally {
         buttons.forEach(btn => {
@@ -644,37 +672,42 @@ async function saveSong(e) {
     };
 
     try {
-        AIUploadOverlay.update(2, 'Preparing', 'Starting upload…');
+        AIUploadOverlay.show();
+        AIUploadOverlay.update(2, 'Preparing', 'Validating song data…');
         showToast('Saving song...', 'info');
 
         const albumFile = document.getElementById('albumImage').files[0];
         if (albumFile) {
-            AIUploadOverlay.update(3, 'Album cover', 'Uploading album cover…');
+            const albumSizeMB = (albumFile.size / (1024 * 1024)).toFixed(1);
+            AIUploadOverlay.update(3, 'Album cover', 'Uploading ' + albumFile.name + ' (' + albumSizeMB + ' MB)…');
             try {
                 const albumResult = await R2Uploader.uploadImage(albumFile, 'tamil-ai-stream/albums', (pct) => {
-                    AIUploadOverlay.update(3 + pct * 0.3, 'Album cover', 'Uploading album cover… ' + pct + '%');
+                    AIUploadOverlay.update(3 + pct * 0.3, 'Album cover', 'Uploading cover… ' + pct + '% (' + albumSizeMB + ' MB)');
                 });
                 songData.albumCover = albumResult.url;
                 songData.albumPublicId = albumResult.publicId;
+                AIUploadOverlay.update(33, 'Album cover', 'Cover uploaded successfully');
             } catch (err) {
                 console.warn('Album upload failed:', err);
                 showToast('Album cover upload failed: ' + err.message, 'error');
-                AIUploadOverlay.hide();
+                AIUploadOverlay.update(33, 'Album cover', 'Cover upload failed — continuing without cover');
             }
         }
 
         const audioFile = document.getElementById('audioFile').files[0];
         if (audioFile) {
-            AIUploadOverlay.update(35, 'Audio', 'Checking audio file…');
+            const audioSizeMB = (audioFile.size / (1024 * 1024)).toFixed(1);
+            AIUploadOverlay.update(35, 'Audio', 'Uploading ' + audioFile.name + ' (' + audioSizeMB + ' MB)…');
             try {
                 const audioResult = await R2Uploader.uploadAudio(audioFile, 'tamil-ai-stream/audio', (pct) => {
-                    AIUploadOverlay.update(35 + pct * 0.6, 'Audio', 'Uploading audio… ' + pct + '%');
+                    AIUploadOverlay.update(35 + pct * 0.6, 'Audio', 'Uploading audio… ' + pct + '% (' + audioSizeMB + ' MB)');
                 });
                 songData.audioUrl = audioResult.url;
                 songData.audioPublicId = audioResult.publicId;
                 songData.audioFormat = audioResult.format;
                 songData.audioSize = audioResult.bytes;
                 songData.audioFileName = audioFile.name;
+                AIUploadOverlay.update(95, 'Audio', 'Audio uploaded successfully');
             } catch (err) {
                 console.error('Audio upload error:', err);
                 AIUploadOverlay.error('Audio upload failed: ' + err.message);
@@ -683,8 +716,7 @@ async function saveSong(e) {
             }
         }
 
-        AIUploadOverlay.update(97, 'Publishing', 'Saving to live website…');
-        showToast('Saving to database...', 'info');
+        AIUploadOverlay.update(96, 'Saving', 'Saving to database…');
 
         const songs = DataStore.getSongs();
 
@@ -737,11 +769,13 @@ async function saveSong(e) {
 
         DataStore.setSongs(songs);
 
-        AIUploadOverlay.success('Song published to Tamil AI Stream!');
-        showToast('Song saved successfully!', 'success');
+        AIUploadOverlay.update(98, 'Publishing', 'Syncing to live website…');
+        await syncToLiveWebsite();
+
+        AIUploadOverlay.success('Song saved and published!');
+        showToast('Song saved and published to live website!', 'success');
         resetSongForm();
         loadAllSongs();
-        syncToLiveWebsite();
         addActivity('Song Added', 'Added "' + songData.title + '"');
     } catch (error) {
         console.error('Error saving song:', error);
@@ -790,7 +824,7 @@ async function deleteSong(songId) {
         DataStore.setSongs(filtered);
         showToast('Song deleted successfully!', 'success');
         loadAllSongs();
-        syncToLiveWebsite();
+        await syncToLiveWebsite();
         addActivity('Song Deleted', 'Removed a song from the library');
     } catch (error) {
         console.error('Error deleting song:', error);
@@ -990,10 +1024,10 @@ async function saveQuickSong(e) {
         const songs = DataStore.getSongs();
         songs.push(songData);
         DataStore.setSongs(songs);
-        showToast('Song added successfully!', 'success');
         closeAddSongModal();
+        await syncToLiveWebsite();
         loadAllSongs();
-        syncToLiveWebsite();
+        showToast('Song added and published!', 'success');
         addActivity('Quick Add', 'Added "' + songData.title + '" via quick add');
     } catch (error) {
         console.error('Error adding song:', error);
@@ -1361,6 +1395,13 @@ async function syncToLiveWebsite() {
         // Method 2: Dispatch storage events for cross-tab sync
         // Sync all builder settings to trigger website updates
         const keysToSync = [
+            'tamilAIStream_songs',
+            'tamilAIStream_stations',
+            'tamilAIStream_categories',
+            'tamilAIStream_featured',
+            'tamilAIStream_trending',
+            'tamilAIStream_artistHits',
+            'tamilAIStream_quotes',
             'tamilAIStream_siteSettings',
             'tamilAIStream_navigation',
             'tamilAIStream_sectionsOrder',
@@ -1371,7 +1412,11 @@ async function syncToLiveWebsite() {
             'tamilAIStream_moods',
             'tamilAIStream_aiRadio',
             'tamilAIStream_notifications',
-            'tamilAIStream_images'
+            'tamilAIStream_images',
+            'tamilAIStream_moviesCollections',
+            'tamilAIStream_yearlyCollections',
+            'tamilAIStream_latestCollections',
+            'tamilAIStream_musicCollections'
         ];
 
         keysToSync.forEach(key => {

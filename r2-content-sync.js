@@ -279,20 +279,37 @@
     }
 
     async function loadRemoteContent() {
-        const response = await fetch('/api/manifest', { cache: 'no-store' });
-        if (!response.ok) {
-            throw new Error(`Manifest fetch failed with status ${response.status}`);
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+        try {
+            const response = await fetch('/api/manifest', {
+                cache: 'no-store',
+                signal: controller.signal
+            });
+            if (!response.ok) {
+                throw new Error(`Manifest fetch failed with status ${response.status}`);
+            }
+            return await response.json();
+        } finally {
+            clearTimeout(timer);
         }
-        return await response.json();
     }
 
     async function uploadManifest(payload) {
         try {
-            const response = await fetch('/api/manifest', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 20000);
+            let response;
+            try {
+                response = await fetch('/api/manifest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+            } finally {
+                clearTimeout(timer);
+            }
 
             if (!response.ok) {
                 throw new Error(`Manifest upload failed with status ${response.status}`);
@@ -301,7 +318,11 @@
             const result = await response.json();
             return result.success ? payload.updatedAt : null;
         } catch (error) {
-            console.warn('Content manifest upload failed:', error);
+            if (error.name === 'AbortError') {
+                console.warn('[ContentSync] Manifest upload timed out');
+            } else {
+                console.warn('Content manifest upload failed:', error);
+            }
             return null;
         }
     }
@@ -509,23 +530,43 @@
     }
 
     // List objects in the R2 bucket under a prefix (paginated via cursors).
-    async function listR2Objects(prefix = '', limit = 1000) {
+    // Accepts an optional onProgress(percent, message) callback for UI updates.
+    async function listR2Objects(prefix = '', limit = 1000, onProgress = null) {
         const objects = [];
         try {
             let cursor = undefined;
+            let page = 0;
             do {
+                page++;
+                if (onProgress) onProgress(null, 'Scanning R2' + (prefix ? ' [' + prefix + ']' : '') + ' — page ' + page + '…');
                 const params = new URLSearchParams();
                 if (prefix) params.set('prefix', prefix);
                 params.set('limit', String(limit));
                 if (cursor) params.set('cursor', cursor);
-                const response = await fetch('/api/media/list?' + params.toString(), { cache: 'no-store' });
+
+                // 15-second timeout per page so the UI never hangs
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 15000);
+                let response;
+                try {
+                    response = await fetch('/api/media/list?' + params.toString(), {
+                        cache: 'no-store',
+                        signal: controller.signal
+                    });
+                } finally {
+                    clearTimeout(timer);
+                }
                 if (!response.ok) throw new Error('R2 list failed with status ' + response.status);
                 const data = await response.json();
                 if (Array.isArray(data.objects)) objects.push(...data.objects);
                 cursor = data.truncated && data.cursor ? data.cursor : undefined;
             } while (cursor);
         } catch (e) {
-            console.warn('[ContentSync] R2 list failed:', e);
+            if (e.name === 'AbortError') {
+                console.warn('[ContentSync] R2 list timed out for prefix:', prefix);
+            } else {
+                console.warn('[ContentSync] R2 list failed:', e);
+            }
         }
         return objects;
     }
@@ -537,10 +578,13 @@
      * Detect songs already uploaded to Cloudflare R2 and merge them into the
      * local song library (DataStore + localStorage). Existing songs matched by
      * their R2 key / audio URL are left untouched — no re-upload, no duplicates.
-     * Returns { added, total }.
+     * Accepts an optional onProgress(percent, phase, status) callback.
+     * Returns { added, total, scanned }.
      */
-    async function discoverR2Songs() {
+    async function discoverR2Songs(onProgress = null) {
+        const pct = (val, phase, status) => { if (onProgress) onProgress(val, phase, status); };
         try {
+            pct(5, 'Preparing', 'Reading existing songs…');
             const existing = safeGet(global.DataStore.getSongs?.bind(global.DataStore), []) || [];
             const existingByKey = new Set();
             existing.forEach((s) => {
@@ -555,8 +599,13 @@
             const prefixes = ['audio/', 'songs/', 'music/', 'media/', ''];
             const audioObjects = [];
             const seen = new Set();
-            for (const prefix of prefixes) {
-                const objs = await listR2Objects(prefix, 1000);
+            for (let i = 0; i < prefixes.length; i++) {
+                const prefix = prefixes[i];
+                const pBase = 10 + (i / prefixes.length) * 40;
+                pct(pBase, 'Scanning R2', 'Listing files under "' + (prefix || 'root') + '"…');
+                const objs = await listR2Objects(prefix, 1000, (p, msg) => {
+                    if (msg) pct(null, null, msg);
+                });
                 for (const o of objs) {
                     if (!o || !o.key) continue;
                     if (R2_AUDIO_EXT_RE.test(o.key) && !seen.has(o.key)) {
@@ -564,14 +613,21 @@
                         audioObjects.push(o);
                     }
                 }
+                pct(pBase + 8, 'Scanning R2', 'Found ' + audioObjects.length + ' audio file(s) so far…');
             }
 
-            if (!audioObjects.length) return { added: 0, total: existing.length };
+            if (!audioObjects.length) {
+                pct(100, 'Done', 'No new R2 audio files — ' + existing.length + ' song(s) in library');
+                return { added: 0, total: existing.length, scanned: 0 };
+            }
 
             // Best-effort album cover matching using the leading upload timestamp.
+            pct(55, 'Matching covers', 'Scanning image files for album covers…');
             const imageByTs = new Map();
             for (const prefix of ['albums/', 'images/', 'thumbnails/', '']) {
-                const objs = await listR2Objects(prefix, 1000);
+                const objs = await listR2Objects(prefix, 1000, (p, msg) => {
+                    if (msg) pct(null, null, msg);
+                });
                 for (const o of objs) {
                     if (!o || !o.key || !R2_IMAGE_EXT_RE.test(o.key)) continue;
                     const m = /^(\d{10,})/.exec(o.key.split('/').pop() || '');
@@ -579,8 +635,9 @@
                 }
             }
 
+            pct(65, 'Importing', 'Building song entries from R2 files…');
             const additions = [];
-            audioObjects.forEach((obj) => {
+            audioObjects.forEach((obj, idx) => {
                 const key = obj.key;
                 if (existingByKey.has(key)) return;
                 const url = r2PublicUrl(key);
@@ -615,22 +672,31 @@
                     size: obj.size || 0,
                     format: key.split('.').pop().toLowerCase(),
                 });
+                if (onProgress && idx % 5 === 0) {
+                    pct(65 + Math.round((idx / audioObjects.length) * 25), 'Importing',
+                        'Processing file ' + (idx + 1) + ' of ' + audioObjects.length + '…');
+                }
             });
 
             if (additions.length) {
+                pct(92, 'Saving', 'Saving ' + additions.length + ' song(s) to library…');
                 const merged = additions.concat(existing);
                 if (typeof global.DataStore?.setSongs === 'function') {
                     global.DataStore.setSongs(merged);
                 }
                 writeLocalStorage('tamilAIStream_songs', merged);
+                pct(96, 'Syncing', 'Notifying content listeners…');
                 notifyContentChanged();
             }
 
-            return { added: additions.length, total: existing.length + additions.length };
+            const total = existing.length + additions.length;
+            pct(100, 'Done', additions.length + ' song(s) imported from R2 — ' + total + ' total');
+            return { added: additions.length, total, scanned: audioObjects.length };
         } catch (e) {
             console.warn('[ContentSync] R2 song discovery failed:', e);
+            pct(100, 'Error', 'R2 discovery failed: ' + (e.message || e));
             const current = safeGet(global.DataStore.getSongs?.bind(global.DataStore), []);
-            return { added: 0, total: Array.isArray(current) ? current.length : 0 };
+            return { added: 0, total: Array.isArray(current) ? current.length : 0, scanned: 0 };
         }
     }
 
