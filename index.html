@@ -455,6 +455,15 @@
                     <button class="home-cat-btn" data-cat="ai" onclick="filterHomeCategory('ai')"><i class="fas fa-robot"></i> AI Music</button>
                 </div>
 
+                <!-- PWA Home Header -->
+                <div class="pwa-home-header" id="pwaHomeHeader">
+                    <div class="pwa-home-header-inner">
+                        <div class="pwa-home-welcome">Welcome to <span class="accent">Tamil AI Stream</span></div>
+                        <div class="pwa-home-datetime" id="pwaHomeDateTime"></div>
+                        <div class="pwa-home-quote" id="pwaHomeQuote"></div>
+                    </div>
+                </div>
+
                 <!-- Recently Added Songs -->
                 <section class="section recently-added-section" data-section="recently-added" data-premium-reveal>
                     <div class="section-header">
@@ -470,19 +479,19 @@
                     <div class="section-header">
                         <h2 class="section-title" data-kicker="For You"><i class="fas fa-heart" style="color:#f43f5e;margin-right:8px;"></i>Made For You</h2>
                     </div>
-                    <div class="stations-track" id="personalizedTrack"></div>
+                    <div class="ra-track-viewport">
+                        <div class="ra-track" id="personalizedTrack"></div>
+                    </div>
                 </section>
 
                 <!-- Trending Songs -->
                 <section class="section trending-section" data-section="trending" id="trendingScroll" data-premium-reveal>
                     <div class="section-header">
                         <h2 class="section-title" data-kicker="Trending"><i class="fas fa-fire" style="color:#f97316;margin-right:8px;"></i>Trending Songs</h2>
-                        <div class="slider-controls">
-                            <button class="slider-btn scroll-left" aria-label="Scroll left"><i class="fas fa-chevron-left"></i></button>
-                            <button class="slider-btn scroll-right" aria-label="Scroll right"><i class="fas fa-chevron-right"></i></button>
-                        </div>
                     </div>
-                    <div class="stations-track"></div>
+                    <div class="ra-track-viewport">
+                        <div class="ra-track"></div>
+                    </div>
                 </section>
 
                 <!-- Latest Releases -->

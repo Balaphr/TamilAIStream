@@ -5426,8 +5426,338 @@ body.home-active .ytm-page-home {
     }
 }
 
+/* ============================================
+   PWA HOME HEADER
+   ============================================ */
+.pwa-home-header {
+    padding: 20px 24px 16px;
+    position: relative;
+}
 
+.pwa-home-header-inner {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 18px;
+    padding: 20px 24px;
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    position: relative;
+    overflow: hidden;
+}
 
+.pwa-home-header-inner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(59, 130, 246, 0.04) 50%, rgba(168, 85, 247, 0.03) 100%);
+    pointer-events: none;
+}
 
+.pwa-home-welcome {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+    position: relative;
+    z-index: 1;
+}
+
+.pwa-home-welcome .accent {
+    background: linear-gradient(135deg, #34d399, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.pwa-home-datetime {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.pwa-home-quote {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.55);
+    font-style: italic;
+    line-height: 1.5;
+    position: relative;
+    z-index: 1;
+    padding-left: 12px;
+    border-left: 2px solid rgba(16, 185, 129, 0.3);
+    transition: opacity 0.5s ease;
+}
+
+.pwa-home-quote .tamil {
+    font-style: normal;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+@media (max-width: 640px) {
+    .pwa-home-header { padding: 16px 12px 12px; }
+    .pwa-home-header-inner { padding: 16px; border-radius: 14px; }
+    .pwa-home-welcome { font-size: 16px; }
+    .pwa-home-quote { font-size: 12px; }
+}
+
+/* ============================================
+   UNIFIED CARD DESIGN — All PWA Home Sections
+   Uses the Recently Added card as the reference.
+   ============================================ */
+
+/* Track container for unified cards (replaces stations-track for song sections) */
+.ra-track {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    padding: 4px 0 8px;
+    cursor: grab;
+    overscroll-behavior-x: contain;
+    touch-action: pan-y;
+}
+.ra-track::-webkit-scrollbar { display: none; }
+.ra-track:active { cursor: grabbing; }
+
+/* Edge fade gradients for all horizontal sections */
+.ra-track-viewport {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.ra-track-viewport::before,
+.ra-track-viewport::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50px;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.ra-track-viewport::before {
+    left: 0;
+    background: linear-gradient(90deg, rgba(0,0,0,0.95), transparent);
+}
+
+.ra-track-viewport::after {
+    right: 0;
+    background: linear-gradient(270deg, rgba(0,0,0,0.95), transparent);
+}
+
+/* Unified card — matches Recently Added design exactly */
+.ra-card {
+    flex: 0 0 auto;
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.3),
+        0 1px 4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: pointer;
+    position: relative;
+    scroll-snap-align: start;
+}
+
+.ra-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 1;
+    transition: opacity 0.35s ease;
+    opacity: 0;
+}
+
+.ra-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    border-color: rgba(16, 185, 129, 0.2);
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.45),
+        0 4px 16px rgba(16, 185, 129, 0.1),
+        0 0 0 1px rgba(16, 185, 129, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.ra-card:hover::before { opacity: 1; }
+
+.ra-card-art {
+    width: 100%;
+    aspect-ratio: 1;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0d1f2d 0%, #0a1628 100%);
+}
+
+.ra-card-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.ra-card:hover .ra-card-art img { transform: scale(1.08); }
+
+.ra-card-art-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0d1f2d, #1a1a3e, #0f2b3e);
+    font-size: 40px;
+    color: rgba(255, 255, 255, 0.15);
+}
+
+.ra-card-play-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 2;
+}
+
+.ra-card:hover .ra-card-play-overlay { opacity: 1; }
+
+.ra-card-play-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.9);
+    border: none;
+    color: #fff;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+    transform: scale(0.85);
+}
+
+.ra-card:hover .ra-card-play-btn { transform: scale(1); }
+
+.ra-card-play-btn:hover {
+    background: rgba(16, 185, 129, 1);
+    transform: scale(1.1) !important;
+    box-shadow: 0 6px 24px rgba(16, 185, 129, 0.5);
+}
+
+.ra-card-info {
+    padding: 12px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    z-index: 2;
+}
+
+.ra-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.ra-card-artist {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ra-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.ra-card-badge {
+    font-size: 9px;
+    padding: 2px 7px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 20px;
+    color: #34d399;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.ra-card-movie {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.35);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Unified card responsive — matches Recently Added breakpoints */
+@media (hover: hover) and (min-width: 720px) {
+    .ra-card { width: 220px; }
+    .ra-card-art { border-radius: 16px 16px 0 0; }
+}
+
+@media (max-width: 900px) {
+    .ra-card { width: 170px; }
+    .ra-card-play-btn { width: 42px; height: 42px; font-size: 16px; }
+}
+
+@media (max-width: 640px) {
+    .ra-card { width: 155px; }
+    .ra-card-info { padding: 10px 12px 12px; }
+    .ra-card-title { font-size: 12px; }
+    .ra-card-artist { font-size: 10px; }
+    .ra-card-play-btn { width: 38px; height: 38px; font-size: 15px; }
+    .ra-track { gap: 12px; }
+}
+
+@media (max-width: 480px) {
+    .ra-card { width: 140px; }
+    .ra-card-art-placeholder { font-size: 32px; }
+}
+
+/* ============================================
+   Disable marquee auto-scroll on Recently Added
+   ============================================ */
+.recently-added-track {
+    animation: none !important;
+}
+
+.recently-added-viewport::before,
+.recently-added-viewport::after {
+    display: none;
+}
 
 
