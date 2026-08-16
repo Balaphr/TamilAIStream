@@ -558,6 +558,9 @@
                                     <button type="button" class="builder-btn sync-r2-btn" onclick="syncR2Songs()" title="Detect songs already uploaded to Cloudflare R2 and add them to Content">
                                         <i class="fas fa-cloud-download-alt"></i> Sync from R2
                                     </button>
+                                    <button type="button" class="builder-btn restore-r2-btn" onclick="restoreAllR2Songs()" title="Restore all existing R2 songs into Builder with correct metadata" style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(59,130,246,0.08));border:1px solid rgba(139,92,246,0.25);color:#a78bfa;">
+                                        <i class="fas fa-cloud-arrow-down"></i> Restore All from R2
+                                    </button>
                                 </div>
                             </div>
                             <div class="data-table">
@@ -865,6 +868,9 @@
                                         <input type="text" class="form-input" id="contentSongSearch" placeholder="Search songs..." style="width:280px;">
                                         <button type="button" class="builder-btn sync-r2-btn" onclick="syncR2Songs()" title="Detect songs already uploaded to Cloudflare R2 and add them to Content">
                                             <i class="fas fa-cloud-download-alt"></i> Sync from R2
+                                        </button>
+                                        <button type="button" class="builder-btn restore-r2-btn" onclick="restoreAllR2Songs()" title="Restore all existing R2 songs into Builder with correct metadata" style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(59,130,246,0.08));border:1px solid rgba(139,92,246,0.25);color:#a78bfa;">
+                                            <i class="fas fa-cloud-arrow-down"></i> Restore All from R2
                                         </button>
                                         <button type="button" class="builder-btn primary" onclick="navigateTo('songs')" title="Add a new song manually">
                                             <i class="fas fa-plus"></i> Add Song

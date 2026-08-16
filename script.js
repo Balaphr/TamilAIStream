@@ -2688,7 +2688,7 @@ function renderAlbumsDynamic() {
     const hash = songs.map(s => s.id).join(',');
     if (!_hasSectionChanged('albums', hash)) return;
     if (!songs.length) {
-        container.innerHTML = '<div style="padding:20px;color:#888;text-align:center;width:100%;">No albums yet. Add songs from Builder.</div>';
+        container.innerHTML = '<div style="padding:20px;color:rgba(255,255,255,0.4);text-align:center;width:100%;font-size:13px;">No albums yet. Add songs from Builder.</div>';
         return;
     }
     const albumMap = {};
@@ -2699,19 +2699,28 @@ function renderAlbumsDynamic() {
         if (!albumMap[key].cover && (s.albumCover || s.cover)) albumMap[key].cover = s.albumCover || s.cover;
     });
     const albums = Object.values(albumMap).sort((a, b) => b.songs.length - a.songs.length).slice(0, 20);
-    const placeholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='16' fill='%23374151'/%3E%3Ctext x='60' y='68' text-anchor='middle' fill='%239ca3af' font-size='28'%3E🎵%3C/text%3E%3C/svg%3E";
-    container.innerHTML = albums.map(album => `
-        <div class="album-card" onclick="playAlbumSongs('${album.name.replace(/'/g, "\\'")}')">
-            <div class="album-art">
-                <img src="${album.cover || placeholder}" alt="${album.name}" loading="lazy">
-                <div class="album-play-overlay"><i class="fas fa-play"></i></div>
-                <span class="album-count">${album.songs.length}</span>
+    const placeholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='30' fill='%2334d399' opacity='0.3'/%3E%3C/svg%3E";
+    container.innerHTML = albums.map(album => {
+        const coverSrc = album.cover || placeholder;
+        return `
+        <div class="ra-card" onclick="playAlbumSongs('${album.name.replace(/'/g, "\\'")}')">
+            <div class="ra-card-art">
+                <img src="${coverSrc}" alt="${album.name}" loading="lazy" onerror="this.src='${placeholder}'">
+                <div class="ra-card-play-overlay">
+                    <button class="ra-card-play-btn" title="Play ${album.name}">
+                        <i class="fas fa-play" style="margin-left:2px;"></i>
+                    </button>
+                </div>
             </div>
-            <div class="album-info">
-                <span class="album-name" title="${album.name}">${album.name}</span>
+            <div class="ra-card-info">
+                <div class="ra-card-title" title="${album.name}">${album.name}</div>
+                <div class="ra-card-artist">${album.songs.length} song${album.songs.length !== 1 ? 's' : ''}</div>
+                <div class="ra-card-meta">
+                    <span class="ra-card-badge">ALBUM</span>
+                </div>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
 function playAlbumSongs(albumName) {
@@ -3827,6 +3836,58 @@ function _hasSectionChanged(sectionId, data) {
     return true;
 }
 
+// ============================================
+// PWA Home Header — Dynamic Date/Time + Tamil Quote
+// ============================================
+const _tamilQuotes = [
+    { tamil: 'வாழ்க்கை என்பது ஒரு இசை', english: 'Life is music' },
+    { tamil: 'இசை இல்லாத வாழ்க்கை வெறுமை', english: 'Life without music is empty' },
+    { tamil: 'ஒவ்வொரு பாடலும் ஒரு கதை', english: 'Every song tells a story' },
+    { tamil: 'இசை மனதின் மருந்து', english: 'Music is the medicine of the mind' },
+    { tamil: 'தமிழ் இசை என்றும் மாறாது', english: 'Tamil music never fades' },
+    { tamil: 'பாடல்கள் உயிரின் சிறகுகள்', english: 'Songs are the wings of the soul' },
+    { tamil: 'இசை கேள், மனம் மகிழ்', english: 'Listen to music, let the heart rejoice' },
+    { tamil: 'ஒலி என்பது கடவுளின் குரல்', english: 'Sound is the voice of God' },
+    { tamil: 'தமிழ் பாடல்கள் உலகை ஆளும்', english: 'Tamil songs rule the world' },
+    { tamil: 'இசை நேசம், நேசம் இசை', english: 'Music is love, love is music' },
+    { tamil: 'ஒரு பாடல் ஆயிரம் உணர்வுகள்', english: 'One song, a thousand emotions' },
+    { tamil: 'வானம் பாடும் போது, பூமி கேக்கும்', english: 'When the sky sings, the earth listens' }
+];
+let _currentQuoteIndex = 0;
+let _quoteTimer = null;
+
+function initPWAHomeHeader() {
+    const dtEl = document.getElementById('pwaHomeDateTime');
+    const quoteEl = document.getElementById('pwaHomeQuote');
+    if (!dtEl && !quoteEl) return;
+
+    // Date/time updater — runs every second without full re-render
+    function updateDateTime() {
+        if (!dtEl) return;
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateStr = now.toLocaleDateString('en-US', options);
+        const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        dtEl.textContent = dateStr + '  •  ' + timeStr;
+    }
+
+    function updateQuote() {
+        if (!quoteEl) return;
+        const q = _tamilQuotes[_currentQuoteIndex];
+        quoteEl.style.opacity = '0';
+        setTimeout(() => {
+            quoteEl.innerHTML = '<span class="tamil">' + q.tamil + '</span> — ' + q.english;
+            quoteEl.style.opacity = '1';
+        }, 400);
+        _currentQuoteIndex = (_currentQuoteIndex + 1) % _tamilQuotes.length;
+    }
+
+    updateDateTime();
+    updateQuote();
+    setInterval(updateDateTime, 1000);
+    _quoteTimer = setInterval(updateQuote, 12000);
+}
+
 function renderAllDynamicContent() {
     if (_isRenderingAll) return;
     _isRenderingAll = true;
@@ -3848,6 +3909,8 @@ function renderAllDynamicContent() {
         renderAlbumsDynamic();
         renderPersonalizedMusic();
         renderAIRecommendedSection();
+        initHorizontalDragScroll();
+        initPWAHomeHeader();
 
         loadSongs(true).then(songs => {
             renderTickerItems(songs);
@@ -4315,6 +4378,60 @@ function initRecentlyAdded() {
 }
 
 // ============================================
+// Horizontal Drag-to-Scroll for ra-track sections
+// ============================================
+let _dragScrollInitialized = false;
+function initHorizontalDragScroll() {
+    if (_dragScrollInitialized) return;
+    _dragScrollInitialized = true;
+    document.querySelectorAll('.ra-track-viewport').forEach(viewport => {
+        const track = viewport.querySelector('.ra-track');
+        if (!track) return;
+        let isDragging = false;
+        let startX = 0;
+        let scrollLeft = 0;
+
+        viewport.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.pageX - viewport.offsetLeft;
+            scrollLeft = viewport.scrollLeft;
+            viewport.style.cursor = 'grabbing';
+            viewport.style.userSelect = 'none';
+        });
+        viewport.addEventListener('mouseleave', () => {
+            isDragging = false;
+            viewport.style.cursor = '';
+            viewport.style.userSelect = '';
+        });
+        viewport.addEventListener('mouseup', () => {
+            isDragging = false;
+            viewport.style.cursor = '';
+            viewport.style.userSelect = '';
+        });
+        viewport.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const x = e.pageX - viewport.offsetLeft;
+            const walk = (x - startX) * 1.5;
+            viewport.scrollLeft = scrollLeft - walk;
+        });
+
+        // Touch drag-to-scroll
+        let touchStartX = 0;
+        let touchScrollLeft = 0;
+        viewport.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].pageX;
+            touchScrollLeft = viewport.scrollLeft;
+        }, { passive: true });
+        viewport.addEventListener('touchmove', (e) => {
+            const x = e.touches[0].pageX;
+            const walk = (touchStartX - x) * 1.2;
+            viewport.scrollLeft = touchScrollLeft + walk;
+        }, { passive: true });
+    });
+}
+
+// ============================================
 // Export functions for playlist page
 // ============================================
 if (typeof window !== 'undefined') {
@@ -4356,31 +4473,38 @@ function renderSongTrack(container, songs, limit) {
     if (!container) return;
     const items = (songs || []).slice(0, limit || 10);
     if (!items.length) {
-        container.innerHTML = '<div class="station-card"><div class="station-info"><h3>No songs yet</h3></div></div>';
+        container.innerHTML = '<div style="padding:20px;color:rgba(255,255,255,0.4);text-align:center;width:100%;font-size:13px;">No songs yet</div>';
         return;
     }
     const placeholder = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='30' fill='%2334d399' opacity='0.3'/%3E%3C/svg%3E";
     const itemsArr = items;
-    container.innerHTML = items.map((song, index) => `
-        <div class="song-card" data-song-id="${song.id}" style="animation-delay: ${index * 0.05}s">
-            <div class="song-card-header">
-                <div class="song-thumbnail">
-                    <img src="${song.albumCover || song.cover || placeholder}" alt="${song.title || 'Song'}" loading="lazy">
-                    <div class="song-eq-bars"><span></span><span></span><span></span><span></span></div>
-                    <div class="song-play-overlay"><i class="fas fa-play"></i></div>
-                </div>
-                <div class="song-info">
-                    <div class="song-title" title="${song.title || 'Untitled'}">${song.title || 'Untitled'}</div>
-                    <div class="song-artist" title="${song.artist || 'Unknown Artist'}">${song.artist || 'Unknown Artist'}</div>
-                    <div class="song-movie" title="${song.movie || 'Single'}">${song.movie || 'Single'}</div>
+    container.innerHTML = items.map((song, index) => {
+        const artwork = song.albumCover || song.cover || placeholder;
+        return `
+        <div class="ra-card" data-song-id="${song.id}">
+            <div class="ra-card-art">
+                <img src="${artwork}" alt="${song.title || 'Song'}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'ra-card-art-placeholder\\'><i class=\\'fas fa-music\\'></i></div>'">
+                <div class="ra-card-play-overlay">
+                    <button class="ra-card-play-btn" data-song-id="${song.id}" title="Play ${song.title || 'Song'}">
+                        <i class="fas fa-play" style="margin-left:2px;"></i>
+                    </button>
                 </div>
             </div>
-        </div>
-    `).join('');
+            <div class="ra-card-info">
+                <div class="ra-card-title" title="${song.title || 'Untitled'}">${song.title || 'Untitled'}</div>
+                <div class="ra-card-artist" title="${song.artist || 'Unknown Artist'}">${song.artist || 'Unknown Artist'}</div>
+                <div class="ra-card-meta">
+                    <span class="ra-card-badge">PLAY</span>
+                    ${song.movie ? '<span class="ra-card-movie" title="' + song.movie + '">' + song.movie + '</span>' : ''}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
 
-    container.querySelectorAll('.song-card').forEach(card => {
-        card.addEventListener('click', function(e) {
-            if (e.target.closest('.song-play-overlay')) return; // handled below
+    container.querySelectorAll('.ra-card-play-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
             const songId = this.dataset.songId;
             const song = itemsArr.find(s => s.id === songId);
             if (song) {
@@ -4389,11 +4513,10 @@ function renderSongTrack(container, songs, limit) {
             }
         });
     });
-    container.querySelectorAll('.song-play-overlay').forEach(ov => {
-        ov.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const card = this.closest('.song-card');
-            const songId = card ? card.dataset.songId : null;
+    container.querySelectorAll('.ra-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (e.target.closest('.ra-card-play-btn')) return;
+            const songId = this.dataset.songId;
             const song = itemsArr.find(s => s.id === songId);
             if (song) {
                 playSong(song, itemsArr);
@@ -4404,7 +4527,7 @@ function renderSongTrack(container, songs, limit) {
 }
 
 function renderTrendingDynamic() {
-    const container = document.querySelector('#trendingScroll .stations-track');
+    const container = document.querySelector('#trendingScroll .ra-track') || document.querySelector('#trendingScroll .stations-track');
     if (!container) return;
     let songs = [];
     try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
@@ -4414,7 +4537,7 @@ function renderTrendingDynamic() {
 }
 
 function renderAIRecommendedDynamic() {
-    const container = document.querySelector('[data-section="ai-recommended"] .stations-track');
+    const container = document.querySelector('[data-section="ai-recommended"] .ra-track') || document.querySelector('[data-section="ai-recommended"] .stations-track');
     if (!container) return;
     let songs = [];
     try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
@@ -4761,3 +4884,95 @@ function showWhyThisSong(track) {
     if (reasons.length === 0) reasons.push('based on your listening pattern');
     if (typeof showToast === 'function') showToast('Why this song: ' + reasons.join(', '), 'info');
 }
+
+// ============================================
+// PWA Background / Resume Fix
+// Prevents unresponsiveness after minimizing and reopening the PWA.
+// Preserves: scroll position, login session, playback state, event listeners.
+// ============================================
+(function initPWABackgroundResume() {
+    if (typeof window === 'undefined') return;
+    let _savedScrollY = 0;
+    let _resumeListenersAttached = false;
+
+    function onVisibilityChange() {
+        if (document.hidden) {
+            // Going to background — save state
+            _savedScrollY = window.scrollY || window.pageYOffset;
+            try { sessionStorage.setItem('tamilAI_scrollY', String(_savedScrollY)); } catch(e) {}
+        } else {
+            // Coming back from background — restore state
+            restoreFromBackground();
+        }
+    }
+
+    function restoreFromBackground() {
+        // 1. Restore scroll position
+        try {
+            const saved = sessionStorage.getItem('tamilAI_scrollY');
+            if (saved) {
+                const pos = parseInt(saved, 10);
+                if (pos > 0) window.scrollTo(0, pos);
+            }
+        } catch(e) {}
+
+        // 2. Restore audio player state — ensure the global audio element
+        //    is still connected and playing if it was before backgrounding
+        try {
+            if (typeof audioPlayer !== 'undefined' && audioPlayer && audioPlayer.src && !audioPlayer.paused) {
+                // Audio is still playing, no action needed
+            } else if (typeof audioPlayer !== 'undefined' && audioPlayer && audioPlayer.src && audioPlayer.paused) {
+                // Audio exists but is paused — leave it paused, user can resume
+            }
+        } catch(e) {}
+
+        // 3. Re-attach any lost event listeners (only once per background cycle)
+        if (!_resumeListenersAttached) {
+            _resumeListenersAttached = true;
+            // Re-initialize touch handlers for horizontal scroll sections
+            try { initHorizontalDragScroll(); } catch(e) {}
+            // Re-initialize recently added touch handlers
+            try { initRecentlyAdded(); } catch(e) {}
+            // Small delay to allow DOM to settle
+            setTimeout(() => { _resumeListenersAttached = false; }, 1000);
+        }
+
+        // 4. Force a lightweight UI sync (no full re-render, no audio reset)
+        try {
+            if (typeof updatePlayPauseButton === 'function') {
+                const playing = typeof audioPlayer !== 'undefined' && audioPlayer && !audioPlayer.paused;
+                updatePlayPauseButton(playing);
+            }
+        } catch(e) {}
+
+        // 5. Re-sync mini player UI if available
+        try {
+            if (typeof YTMusic !== 'undefined' && typeof YTMusic.updateMiniPlayerUI === 'function') {
+                YTMusic.updateMiniPlayerUI();
+            }
+        } catch(e) {}
+
+        // 6. Re-sync global player UI if available
+        try {
+            if (typeof GlobalPlayer !== 'undefined' && typeof GlobalPlayer.updateTrackUI === 'function') {
+                GlobalPlayer.updateTrackUI();
+            }
+        } catch(e) {}
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    // Also handle pageshow event for mobile PWA resume
+    window.addEventListener('pageshow', (e) => {
+        if (e.persisted) {
+            restoreFromBackground();
+        }
+    });
+
+    // Handle focus event for PWA mode
+    window.addEventListener('focus', () => {
+        if (!document.hidden) {
+            restoreFromBackground();
+        }
+    });
+})();

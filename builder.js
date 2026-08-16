@@ -525,19 +525,6 @@ async function loadAllSongs() {
         if (tableBody) tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-secondary);"><i class="fas fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading songs…</td></tr>';
         if (contentTableBody) contentTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-secondary);"><i class="fas fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading songs…</td></tr>';
 
-        // Auto-discover songs already uploaded to Cloudflare R2 and merge them
-        // into the library (idempotent — never duplicates existing entries).
-        if (typeof ContentSync !== 'undefined' && typeof ContentSync.discoverR2Songs === 'function') {
-            try {
-                await ContentSync.discoverR2Songs((pct, phase, status) => {
-                    // Show R2 scan progress in the table while loading
-                    if (status && tableBody) {
-                        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-secondary);"><i class="fas fa-circle-notch fa-spin" style="margin-right:8px;"></i>' + status + '</td></tr>';
-                    }
-                });
-            } catch (e) { console.warn('R2 song discovery failed:', e); }
-        }
-
         const songs = DataStore.getSongs();
         songs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
@@ -572,17 +559,19 @@ async function syncR2Songs() {
             return;
         }
 
-        // Use AIUploadOverlay for visual progress during sync
         AIUploadOverlay.show();
         AIUploadOverlay.update(5, 'Starting', 'Connecting to Cloudflare R2…');
 
-        const result = await ContentSync.discoverR2Songs((pct, phase, status) => {
-            if (pct !== null && pct !== undefined) {
-                AIUploadOverlay.update(pct, phase || 'Syncing', status || 'Scanning R2…');
-            } else if (status) {
-                AIUploadOverlay.update(null, null, status);
-            }
-        });
+        const result = await Promise.race([
+            ContentSync.discoverR2Songs((pct, phase, status) => {
+                if (pct !== null && pct !== undefined) {
+                    AIUploadOverlay.update(pct, phase || 'Syncing', status || 'Scanning R2…');
+                } else if (status) {
+                    AIUploadOverlay.update(null, null, status);
+                }
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('R2 sync timed out after 120 seconds')), 120000))
+        ]);
 
         AIUploadOverlay.update(95, 'Updating', 'Reloading song list…');
         await loadAllSongs();
@@ -595,13 +584,102 @@ async function syncR2Songs() {
             showToast('Already in sync — ' + result.total + ' song(s) available', 'info');
         }
 
-        // Push the merged library to the live site + R2 manifest.
         if (typeof syncToLiveWebsite === 'function') await syncToLiveWebsite();
         addActivity('R2 Sync', 'Synchronized song library with Cloudflare R2 (' + result.total + ' songs, ' + (result.scanned || 0) + ' scanned)');
     } catch (e) {
         console.error('R2 sync error:', e);
-        AIUploadOverlay.error('Sync failed: ' + e.message);
+        try { AIUploadOverlay.error('Sync failed: ' + e.message); } catch (_) {}
         showToast('R2 sync failed: ' + e.message, 'error');
+    } finally {
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            if (originals.has(btn)) btn.innerHTML = originals.get(btn);
+        });
+    }
+}
+
+// Restore ALL existing R2 songs into the Builder + database.
+// Unlike syncR2Songs which only discovers new files, this forces a full
+// re-scan and restores every R2 audio file with correct metadata.
+async function restoreAllR2Songs() {
+    const buttons = document.querySelectorAll('.restore-r2-btn');
+    const originals = new Map();
+    buttons.forEach(btn => {
+        originals.set(btn, btn.innerHTML);
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Restoring…';
+    });
+
+    try {
+        if (typeof ContentSync === 'undefined' || typeof ContentSync.discoverR2Songs !== 'function') {
+            showToast('R2 restore is unavailable — ContentSync not loaded', 'error');
+            return;
+        }
+
+        AIUploadOverlay.show();
+        AIUploadOverlay.update(3, 'Preparing', 'Scanning all R2 audio files for full restore…');
+
+        const result = await Promise.race([
+            ContentSync.discoverR2Songs((pct, phase, status) => {
+                if (pct !== null && pct !== undefined) {
+                    AIUploadOverlay.update(pct, phase || 'Restoring', status || 'Scanning R2…');
+                } else if (status) {
+                    AIUploadOverlay.update(null, null, status);
+                }
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('R2 restore timed out after 120 seconds')), 120000))
+        ]);
+
+        AIUploadOverlay.update(92, 'Verifying', 'Checking audio URLs and metadata…');
+
+        // Verify all songs have correct audio URLs and metadata
+        const songs = DataStore.getSongs() || [];
+        let fixedCount = 0;
+        const updatedSongs = songs.map(song => {
+            if (!song) return song;
+            const updates = {};
+            // Ensure audioUrl is set correctly from r2Key
+            if (song.r2Key && (!song.audioUrl || song.audioUrl === '')) {
+                updates.audioUrl = '/api/media/' + encodeURIComponent(song.r2Key).replace(/%2F/g, '/');
+            }
+            // Ensure src is set
+            if (song.r2Key && (!song.src || song.src === '')) {
+                updates.src = updates.audioUrl || ('/api/media/' + encodeURIComponent(song.r2Key).replace(/%2F/g, '/'));
+            }
+            // Ensure status is published
+            if (!song.status || song.status === 'draft') {
+                updates.status = 'published';
+            }
+            // Ensure source is marked as r2
+            if (!song.source) {
+                updates.source = 'r2';
+            }
+            if (Object.keys(updates).length > 0) {
+                fixedCount++;
+                return { ...song, ...updates };
+            }
+            return song;
+        });
+
+        if (fixedCount > 0) {
+            DataStore.setSongs(updatedSongs);
+            localStorage.setItem('tamilAIStream_songs', JSON.stringify(updatedSongs));
+        }
+
+        AIUploadOverlay.update(96, 'Syncing', 'Updating song list and live website…');
+        await loadAllSongs();
+
+        const total = result ? result.total : updatedSongs.length;
+        const added = result ? result.added : 0;
+        AIUploadOverlay.success('Restored ' + total + ' song(s) from R2 (' + added + ' new, ' + fixedCount + ' metadata fixed)');
+        showToast(total + ' song(s) restored from R2 — ' + added + ' newly added', 'success');
+
+        if (typeof syncToLiveWebsite === 'function') await syncToLiveWebsite();
+        addActivity('R2 Restore', 'Full restore of ' + total + ' song(s) from Cloudflare R2');
+    } catch (e) {
+        console.error('R2 restore error:', e);
+        try { AIUploadOverlay.error('Restore failed: ' + e.message); } catch (_) {}
+        showToast('R2 restore failed: ' + e.message, 'error');
     } finally {
         buttons.forEach(btn => {
             btn.disabled = false;
@@ -6819,6 +6897,7 @@ if (typeof window !== 'undefined') {
     window.saveMiniPlayerSettings = saveMiniPlayerSettings;
     window.resetMiniPlayerSettings = resetMiniPlayerSettings;
     window.syncR2Songs = syncR2Songs;
+    window.restoreAllR2Songs = restoreAllR2Songs;
     window.loadAllSongs = loadAllSongs;
     if (typeof initV2Enhancements === 'function') window.initV2Enhancements = initV2Enhancements;
     if (typeof showVEToast === 'function') window.showVEToast = showVEToast;
