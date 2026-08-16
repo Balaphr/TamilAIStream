@@ -257,7 +257,8 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
    ============================================ */
 .stations-scroll { overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 8px; }
 .stations-scroll::-webkit-scrollbar { display: none; }
-.stations-track { display: flex; gap: 16px; min-width: max-content; padding: 4px 0; }
+.stations-track { display: flex; gap: 16px; min-width: max-content; padding: 4px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; touch-action: pan-y; }
+.stations-track::-webkit-scrollbar { display: none; }
 
 .station-card {
     width: 180px; background: var(--bg-glass); border: 1px solid var(--border-glass);
@@ -2177,7 +2178,7 @@ body.builder-preview .ytm-ai-chat {
    ============================================ */
 .ytm-page-home .stations-track,
 .ytm-page-home .carousel-track {
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }

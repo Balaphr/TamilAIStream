@@ -447,7 +447,9 @@ body {
     .tamil-hits-grid,
     .glass-carousel,
     .ai-stations-row,
-    .ai-artists-row {
+    .ai-artists-row,
+    .stations-track,
+    .carousel-track {
         /* Let the page scroll vertically while these scroll horizontally */
         touch-action: auto;
     }

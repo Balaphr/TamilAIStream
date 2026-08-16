@@ -123,6 +123,12 @@ body {
 .hero-ad-card {
     contain: layout style paint;
 }
+/* Cards inside horizontal scroll tracks — relax paint containment so
+   touch gestures propagate correctly to the parent scroll container */
+.stations-track .song-card,
+.carousel-track .song-card {
+    contain: layout style;
+}
 
 .premium-sidebar {
     contain: layout style;
@@ -181,7 +187,6 @@ body {
    7. TOUCH OPTIMIZATIONS — Mobile/Tablet
    ============================================ */
 @media (pointer: coarse) {
-    .song-card,
     .station-card,
     .radio-card,
     .collection-card,
@@ -195,6 +200,12 @@ body {
         min-height: 44px;
         min-width: 44px;
         touch-action: manipulation;
+    }
+    /* song-card must NOT use manipulation — it lives inside horizontal
+       scroll tracks and native touch-scroll needs to propagate */
+    .stations-track .song-card,
+    .carousel-track .song-card {
+        touch-action: auto;
     }
 }
 

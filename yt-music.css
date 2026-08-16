@@ -3151,6 +3151,7 @@
     position: relative;
     padding: 8px 0;
     cursor: grab;
+    touch-action: pan-y;
 }
 
 .recently-added-viewport:active {
