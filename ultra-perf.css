@@ -383,6 +383,43 @@ canvas,
 }
 
 /* ============================================
+   16b. HIGH REFRESH RATE — 120Hz / 144Hz
+   Tighter transition timings & reduced motion
+   on devices that support higher frame rates
+   ============================================ */
+@media (update: fast) {
+    .song-card,
+    .station-card,
+    .radio-card,
+    .collection-card,
+    .movie-card,
+    .artist-hit-card,
+    .tamil-hit-card {
+        transition-duration: 0.12s;
+    }
+
+    .gp-mini {
+        transition-duration: 0.2s;
+    }
+
+    .gp-expanded {
+        transition-duration: 0.25s;
+    }
+
+    .premium-sidebar {
+        transition-duration: 0.25s;
+    }
+}
+
+/* Reduce GPU overdraw on 120Hz+ panels — paint less often */
+@media (update: fast) and (min-width: 1025px) {
+    .ytm-page .section:nth-child(n+5) {
+        content-visibility: auto;
+        contain-intrinsic-size: 0 280px;
+    }
+}
+
+/* ============================================
    17. LAZY LOADING — IntersectionObserver-ready
    ============================================ */
 .lazy-section {

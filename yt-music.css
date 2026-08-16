@@ -3184,22 +3184,9 @@
 .recently-added-track {
     display: flex;
     gap: 16px;
-    animation: recentlyAddedMarquee 40s linear infinite;
     width: max-content;
     will-change: transform;
-}
-
-.recently-added-viewport:hover .recently-added-track {
-    animation-play-state: paused;
-}
-
-.recently-added-viewport.touching .recently-added-track {
-    animation-play-state: paused;
-}
-
-@keyframes recentlyAddedMarquee {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+    transform: translateZ(0);
 }
 
 /* Song Card */
@@ -5755,15 +5742,46 @@ body.home-active .ytm-page-home {
 }
 
 /* ============================================
-   Disable marquee auto-scroll on Recently Added
+   Recently Added Marquee — Smooth L→R auto-scroll
+   Only affects .recently-added-track (NOT other sections)
    ============================================ */
 .recently-added-track {
-    animation: none !important;
+    animation: recentlyAddedMarquee 45s linear infinite;
+    will-change: transform;
+    transform: translateZ(0);
 }
 
+/* GPU-accelerated animation for high-refresh-rate panels */
+@supports (animation-timeline: scroll()) {
+    .recently-added-track {
+        animation-timing-function: linear;
+    }
+}
+
+.recently-added-viewport:hover .recently-added-track {
+    animation-play-state: paused;
+}
+
+.recently-added-viewport.touching .recently-added-track {
+    animation-play-state: paused;
+}
+
+@keyframes recentlyAddedMarquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* Edge fade gradients — visible during animation */
 .recently-added-viewport::before,
 .recently-added-viewport::after {
-    display: none;
+    display: block;
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .recently-added-track {
+        animation: none !important;
+    }
 }
 
 

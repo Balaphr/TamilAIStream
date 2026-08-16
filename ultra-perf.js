@@ -1,12 +1,40 @@
 /* ============================================================
    ULTRA PERF JS — Performance Helpers
    Passive listeners, RAF optimization, debounce, throttle
+   120Hz/144Hz refresh-rate detection, RAF batching, idle scheduling
    ============================================================ */
 'use strict';
 
 window.UltraPerf = (function() {
     const doc = document;
     const win = window;
+
+    // ---- Refresh-rate detection (120Hz / 144Hz / etc.) ----
+    let _displayHz = 60;
+    let _rafBudgetMs = 16.67; // ms per frame budget at 60Hz
+    try {
+        // Try matchMedia query for high refresh rate
+        const mq120 = win.matchMedia('(min-resolution: 120dpi) and (update: fast)');
+        if (mq120.matches) { _displayHz = 120; _rafBudgetMs = 8.33; }
+        // Measure actual frame budget via double-rAF timing
+        let _frames = [];
+        function _measureFrame(ts) {
+            _frames.push(ts);
+            if (_frames.length < 21) { requestAnimationFrame(_measureFrame); return; }
+            let sum = 0;
+            for (let i = 1; i < _frames.length; i++) sum += _frames[i] - _frames[i - 1];
+            const avgMs = sum / (_frames.length - 1);
+            if (avgMs > 0) {
+                _displayHz = Math.round(1000 / avgMs);
+                _rafBudgetMs = avgMs;
+            }
+            _frames = null; // release
+        }
+        requestAnimationFrame(_measureFrame);
+    } catch (e) {}
+
+    function getDisplayHz() { return _displayHz; }
+    function getFrameBudgetMs() { return _rafBudgetMs; }
 
     // Check if tab is visible
     function isTabVisible() {
@@ -27,7 +55,6 @@ window.UltraPerf = (function() {
     function addPassive(el, event, handler, options) {
         if (options === undefined) options = {};
         if (_passiveSupported && options.passive === undefined) {
-            // scroll/touchmove/touchstart default to passive
             if (['scroll', 'touchstart', 'touchmove', 'wheel'].indexOf(event) !== -1) {
                 options.passive = true;
             }
@@ -35,6 +62,12 @@ window.UltraPerf = (function() {
         el.addEventListener(event, handler, options);
         return function() { el.removeEventListener(event, handler, options); };
     }
+
+    // ---- requestIdleCallback polyfill ----
+    const _ric = win.requestIdleCallback || function(cb) { return setTimeout(cb, 1); };
+    const _cic = win.cancelIdleCallback || function(id) { clearTimeout(id); };
+    function runIdle(fn, timeout) { return _ric(fn, { timeout: timeout || 50 }); }
+    function cancelIdle(id) { _cic(id); }
 
     // RAF that pauses when tab hidden
     function createVisibleRAF(callback) {
@@ -64,6 +97,27 @@ window.UltraPerf = (function() {
             },
             isRunning: function() { return running; }
         };
+    }
+
+    // ---- RAF Batcher — merge many callbacks into a single frame ----
+    const _batchQueue = [];
+    let _batchScheduled = false;
+
+    function scheduleBatch() {
+        if (_batchScheduled) return;
+        _batchScheduled = true;
+        requestAnimationFrame(function flushBatch() {
+            _batchScheduled = false;
+            const q = _batchQueue.splice(0, _batchQueue.length);
+            for (let i = 0; i < q.length; i++) {
+                try { q[i](); } catch (e) {}
+            }
+        });
+    }
+
+    function rafBatch(fn) {
+        _batchQueue.push(fn);
+        scheduleBatch();
     }
 
     // Debounce
@@ -198,7 +252,6 @@ window.UltraPerf = (function() {
 
     // Reduce layout thrashing — batch DOM reads then writes
     function batchDOM(callback) {
-        // Read phase
         const reads = [];
         const writes = [];
 
@@ -206,9 +259,7 @@ window.UltraPerf = (function() {
             read: function(fn) { reads.push(fn); return api; },
             write: function(fn) { writes.push(fn); return api; },
             execute: function() {
-                // Execute all reads first
                 const readResults = reads.map(function(fn) { return fn(); });
-                // Then all writes
                 writes.forEach(function(fn, i) { fn(readResults[i]); });
                 return readResults;
             }
@@ -233,6 +284,11 @@ window.UltraPerf = (function() {
         lazyLoadImages: lazyLoadImages,
         preloadImage: preloadImage,
         preloadCSS: preloadCSS,
-        batchDOM: batchDOM
+        batchDOM: batchDOM,
+        getDisplayHz: getDisplayHz,
+        getFrameBudgetMs: getFrameBudgetMs,
+        runIdle: runIdle,
+        cancelIdle: cancelIdle,
+        rafBatch: rafBatch
     };
 })();

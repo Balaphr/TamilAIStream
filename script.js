@@ -88,12 +88,17 @@ class ParticleSystem {
         this.neuralNodes = [];
         this.mouse = { x: null, y: null, radius: 200 };
         this.time = 0;
+        this._rafId = null;
+        this._resizeHandler = null;
+        this._moveHandler = null;
+        this._leaveHandler = null;
+        this._bound = [];
         this.init();
     }
     init() { this.resize(); this.createParticles(); this.createNeuralNodes(); this.bindEvents(); this.animate(); }
     resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
     createParticles() {
-        const count = Math.min(Math.floor((this.canvas.width * this.canvas.height) / 8000), 120);
+        const count = Math.min(Math.floor((this.canvas.width * this.canvas.height) / 8000), 80);
         this.particles = [];
         for (let i = 0; i < count; i++) {
             this.particles.push({
@@ -109,13 +114,12 @@ class ParticleSystem {
                 hue: Math.random() > 0.5 ? 160 : 220,
                 saturation: Math.random() * 40 + 60,
                 lightness: Math.random() * 30 + 50,
-                glassIntensity: Math.random() * 0.5 + 0.3,
-                trail: []
+                glassIntensity: Math.random() * 0.5 + 0.3
             });
         }
     }
     createNeuralNodes() {
-        const count = Math.min(Math.floor((this.canvas.width * this.canvas.height) / 15000), 20);
+        const count = Math.min(Math.floor((this.canvas.width * this.canvas.height) / 15000), 12);
         this.neuralNodes = [];
         for (let i = 0; i < count; i++) {
             this.neuralNodes.push({
@@ -141,9 +145,20 @@ class ParticleSystem {
         });
     }
     bindEvents() {
-        window.addEventListener('resize', () => { this.resize(); this.createParticles(); this.createNeuralNodes(); }, { passive: true });
-        document.addEventListener('mousemove', (e) => { this.mouse.x = e.clientX; this.mouse.y = e.clientY; }, { passive: true });
-        document.addEventListener('mouseleave', () => { this.mouse.x = null; this.mouse.y = null; });
+        this._resizeHandler = () => { this.resize(); this.createParticles(); this.createNeuralNodes(); };
+        this._moveHandler = (e) => { this.mouse.x = e.clientX; this.mouse.y = e.clientY; };
+        this._leaveHandler = () => { this.mouse.x = null; this.mouse.y = null; };
+        window.addEventListener('resize', this._resizeHandler, { passive: true });
+        document.addEventListener('mousemove', this._moveHandler, { passive: true });
+        document.addEventListener('mouseleave', this._leaveHandler);
+    }
+    destroy() {
+        if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
+        if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
+        if (this._moveHandler) document.removeEventListener('mousemove', this._moveHandler);
+        if (this._leaveHandler) document.removeEventListener('mouseleave', this._leaveHandler);
+        this.particles = [];
+        this.neuralNodes = [];
     }
     drawGlassParticle(p) {
         const gradient = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
@@ -234,7 +249,7 @@ class ParticleSystem {
             node.connections.forEach(conn => this.drawNeuralConnection(node, conn));
             this.drawNeuralNode(node);
         });
-        if (!document.hidden) requestAnimationFrame(() => this.animate());
+        if (!document.hidden) this._rafId = requestAnimationFrame(() => this.animate());
     }
 }
 
@@ -453,7 +468,6 @@ const ProgressSync = (() => {
             const dur = ap.duration || 0;
             if (dur > 0 && isFinite(dur)) {
                 const pct = (cur / dur) * 100;
-                // Only notify if progress actually changed (avoid wasted frames)
                 if (Math.abs(pct - _lastPercent) > 0.001) {
                     _lastPercent = pct;
                     for (let i = 0; i < _callbacks.length; i++) {
@@ -487,6 +501,11 @@ const ProgressSync = (() => {
         _callbacks = _callbacks.filter(cb => cb !== fn);
     }
 
+    function destroy() {
+        stop();
+        _callbacks = [];
+    }
+
     function syncAll() {
         const ap = window.audioPlayer;
         if (ap) {
@@ -502,7 +521,7 @@ const ProgressSync = (() => {
         }
     }
 
-    return { start, stop, register, unregister, syncAll };
+    return { start, stop, register, unregister, syncAll, destroy };
 })();
 
 function initAudioPlayer() {
@@ -2737,23 +2756,42 @@ window.playAlbumSongs = playAlbumSongs;
 // ============================================
 // Personalized Music / Made For You
 // ============================================
+let _personalizedLastHash = '';
 function renderPersonalizedMusic() {
     const container = document.getElementById('personalizedTrack');
     if (!container) return;
     let songs = [];
     try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch (e) {}
+
     // Use liked songs + recently played for personalization
     let liked = [];
     try { liked = JSON.parse(localStorage.getItem('ytm_likedSongs') || '[]'); } catch (e) {}
-    let personalized = songs.filter(s => liked.includes(s.id));
+
+    // Also check the R2-synced key as a fallback
+    if (!liked.length) {
+        try { liked = JSON.parse(localStorage.getItem('tamilAIStream_likedSongs') || '[]'); } catch (e) {}
+    }
+
+    let personalized = [];
+    if (liked.length && songs.length) {
+        // Get liked songs that are also published
+        personalized = songs.filter(s => liked.includes(s.id));
+    }
+
     if (personalized.length < 5) {
-        // Fallback: random published songs
-        personalized = songs.slice().sort(() => Math.random() - 0.5).slice(0, 10);
+        // Fallback: prioritize songs not yet played, then random
+        let history = [];
+        try { history = JSON.parse(localStorage.getItem('ytm_history') || '[]'); } catch (e) {}
+        const playedIds = new Set(history.map(h => h && h.id).filter(Boolean));
+        const unplayed = songs.filter(s => !playedIds.has(s.id));
+        const pool = unplayed.length >= 5 ? unplayed : songs;
+        personalized = pool.slice().sort(() => Math.random() - 0.5).slice(0, 10);
     } else {
         personalized = personalized.slice(0, 10);
     }
-    const hash = personalized.map(s => s.id).join(',');
-    if (!_hasSectionChanged('personalized', hash)) return;
+
+    // Always re-render — the hash check caused stale data after R2 sync
+    // because liked songs change asynchronously via content sync.
     if (!personalized.length) {
         container.innerHTML = '<div style="padding:20px;color:#888;text-align:center;width:100%;">Like some songs to get personalized recommendations!</div>';
         return;
@@ -3992,7 +4030,16 @@ function refreshLiveContent() {
     };
 
     if (typeof ContentSync !== 'undefined' && typeof ContentSync.bootstrapSharedContent === 'function') {
-        ContentSync.bootstrapSharedContent().then(render).catch(render);
+        ContentSync.bootstrapSharedContent().then(function() {
+            // After R2 sync, force re-render all sections including personalized
+            _isRenderingAll = false;
+            _homeSectionHashes.personalized = ''; // clear hash cache for Made For You
+            _homeSectionHashes.recentlyAdded = ''; // clear hash cache for Recently Added
+            _homeSectionHashes.trending = ''; // clear hash cache for Trending
+            _homeSectionHashes.aiRecommended = ''; // clear hash cache for AI Recommended
+            _homeSectionHashes.albums = ''; // clear hash cache for Albums
+            render();
+        }).catch(render);
     } else {
         render();
     }
@@ -4082,6 +4129,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Render all dynamic content from DataStore
     renderAllDynamicContent();
+    
+    // Pull latest content from R2 (Cloudflare) and re-render.
+    // This ensures "Made For You", "Recently Added", and all other sections
+    // show the latest published content from the Builder, not stale localStorage.
+    if (typeof ContentSync !== 'undefined' && typeof ContentSync.bootstrapSharedContent === 'function') {
+        ContentSync.bootstrapSharedContent().then(function() {
+            _isRenderingAll = false;
+            // Clear hash caches so all sections re-render with fresh data
+            Object.keys(_homeSectionHashes).forEach(function(k) { _homeSectionHashes[k] = ''; });
+            renderAllDynamicContent();
+        }).catch(function() {
+            // R2 unavailable — local data is already rendered, no action needed
+        });
+    }
     
     // Analytics: track page view
     if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.trackPageView(window.location.pathname);
@@ -4342,38 +4403,26 @@ function initRecentlyAdded() {
 
     // Desktop: hover pauses marquee (handled via CSS :hover)
     // But also support JS for reliability
-    viewport.addEventListener('mouseenter', () => {
-        viewport.classList.add('hovering');
-    });
-    viewport.addEventListener('mouseleave', () => {
-        viewport.classList.remove('hovering');
-        viewport.classList.remove('touching');
-    });
+    viewport.addEventListener('mouseenter', function() {
+        this.classList.add('hovering');
+    }, { passive: true });
+    viewport.addEventListener('mouseleave', function() {
+        this.classList.remove('hovering');
+        this.classList.remove('touching');
+    }, { passive: true });
 
     // Mobile: touch swipe pauses marquee, allows manual scroll
-    let touchStartX = 0;
-    let touchScrollLeft = 0;
     let isTouching = false;
 
-    viewport.addEventListener('touchstart', (e) => {
+    viewport.addEventListener('touchstart', function() {
         isTouching = true;
-        touchStartX = e.touches[0].clientX;
-        viewport.classList.add('touching');
+        this.classList.add('touching');
     }, { passive: true });
 
-    viewport.addEventListener('touchmove', (e) => {
-        if (!isTouching) return;
-        const x = e.touches[0].clientX;
-        const diff = touchStartX - x;
-        // Allow natural scroll, marquee is paused via CSS
-    }, { passive: true });
-
-    viewport.addEventListener('touchend', () => {
+    viewport.addEventListener('touchend', function() {
         isTouching = false;
-        // Small delay before resuming marquee
-        setTimeout(() => {
-            viewport.classList.remove('touching');
-        }, 800);
+        const vp = this;
+        setTimeout(function() { vp.classList.remove('touching'); }, 800);
     }, { passive: true });
 }
 
@@ -4381,34 +4430,38 @@ function initRecentlyAdded() {
 // Horizontal Drag-to-Scroll for ra-track sections
 // ============================================
 let _dragScrollInitialized = false;
+let _dragScrollObserver = null;
 function initHorizontalDragScroll() {
     if (_dragScrollInitialized) return;
     _dragScrollInitialized = true;
-    document.querySelectorAll('.ra-track-viewport').forEach(viewport => {
+
+    function attachDragScroll(viewport) {
+        if (viewport._dragAttached) return;
+        viewport._dragAttached = true;
         const track = viewport.querySelector('.ra-track');
         if (!track) return;
         let isDragging = false;
         let startX = 0;
         let scrollLeft = 0;
 
-        viewport.addEventListener('mousedown', (e) => {
+        viewport.addEventListener('mousedown', function(e) {
             isDragging = true;
             startX = e.pageX - viewport.offsetLeft;
             scrollLeft = viewport.scrollLeft;
             viewport.style.cursor = 'grabbing';
             viewport.style.userSelect = 'none';
         });
-        viewport.addEventListener('mouseleave', () => {
+        viewport.addEventListener('mouseleave', function() {
             isDragging = false;
             viewport.style.cursor = '';
             viewport.style.userSelect = '';
         });
-        viewport.addEventListener('mouseup', () => {
+        viewport.addEventListener('mouseup', function() {
             isDragging = false;
             viewport.style.cursor = '';
             viewport.style.userSelect = '';
         });
-        viewport.addEventListener('mousemove', (e) => {
+        viewport.addEventListener('mousemove', function(e) {
             if (!isDragging) return;
             e.preventDefault();
             const x = e.pageX - viewport.offsetLeft;
@@ -4419,16 +4472,38 @@ function initHorizontalDragScroll() {
         // Touch drag-to-scroll
         let touchStartX = 0;
         let touchScrollLeft = 0;
-        viewport.addEventListener('touchstart', (e) => {
+        viewport.addEventListener('touchstart', function(e) {
             touchStartX = e.touches[0].pageX;
             touchScrollLeft = viewport.scrollLeft;
         }, { passive: true });
-        viewport.addEventListener('touchmove', (e) => {
+        viewport.addEventListener('touchmove', function(e) {
             const x = e.touches[0].pageX;
             const walk = (touchStartX - x) * 1.2;
             viewport.scrollLeft = touchScrollLeft + walk;
         }, { passive: true });
-    });
+    }
+
+    document.querySelectorAll('.ra-track-viewport').forEach(attachDragScroll);
+
+    // Use MutationObserver to catch dynamically added viewports
+    if (!_dragScrollObserver) {
+        _dragScrollObserver = new MutationObserver(function(mutations) {
+            for (let i = 0; i < mutations.length; i++) {
+                const added = mutations[i].addedNodes;
+                for (let j = 0; j < added.length; j++) {
+                    const node = added[j];
+                    if (node.nodeType === 1) {
+                        if (node.classList && node.classList.contains('ra-track-viewport')) {
+                            attachDragScroll(node);
+                        }
+                        const children = node.querySelectorAll ? node.querySelectorAll('.ra-track-viewport') : [];
+                        children.forEach(attachDragScroll);
+                    }
+                }
+            }
+        });
+        _dragScrollObserver.observe(document.body, { childList: true, subtree: true });
+    }
 }
 
 // ============================================

@@ -49,10 +49,21 @@ const GlobalPlayer = (() => {
         initBroadcastChannel();
         restoreStateFromStorage();
         updateBodyPadding();
-        const watcher = setInterval(() => {
-            if (window.audioPlayer && !window.audioPlayer._gpHooked) hookAudioPlayer();
-        }, 1000);
-        setTimeout(() => clearInterval(watcher), 30000);
+        // Hook audio player once it's available — use a short-lived observer
+        // instead of a 30s setInterval
+        if (window.audioPlayer && !window.audioPlayer._gpHooked) {
+            hookAudioPlayer();
+        } else {
+            let attempts = 0;
+            const hookWatcher = setInterval(function() {
+                attempts++;
+                if (window.audioPlayer && !window.audioPlayer._gpHooked) {
+                    hookAudioPlayer();
+                    clearInterval(hookWatcher);
+                }
+                if (attempts >= 10) clearInterval(hookWatcher);
+            }, 500);
+        }
         window.addEventListener('storage', onStorageChange);
     }
 
