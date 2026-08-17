@@ -2339,6 +2339,8 @@ function initBuilder() {
 
     // Settings form
     document.getElementById('settingsForm')?.addEventListener('submit', saveSettings);
+    // Live Tamil News settings form (shares saveSettings — both persist via siteSettings)
+    document.getElementById('newsSettingsForm')?.addEventListener('submit', saveSettings);
 
     // Station search
     document.getElementById('stationSearch')?.addEventListener('input', (e) => {
@@ -5577,6 +5579,11 @@ function loadSettings() {
     document.getElementById('settingsOgDescription').value = settings.ogDescription || '';
     document.getElementById('settingsThemeColor').value = settings.themeColor || '#000000';
     document.getElementById('settingsFooterText').value = settings.footerText || '';
+    const newsSettings = settings.newsSettings || {};
+    const autoDeleteEl = document.getElementById('newsAutoDelete');
+    if (autoDeleteEl) autoDeleteEl.checked = newsSettings.autoDelete !== false;
+    const retentionEl = document.getElementById('newsRetentionHours');
+    if (retentionEl) retentionEl.value = newsSettings.retentionHours || 24;
 }
 
 function saveSettings(e) {
@@ -5591,6 +5598,15 @@ function saveSettings(e) {
         themeColor: document.getElementById('settingsThemeColor').value,
         footerText: document.getElementById('settingsFooterText').value.trim()
     };
+    const autoDeleteEl = document.getElementById('newsAutoDelete');
+    const retentionEl = document.getElementById('newsRetentionHours');
+    if (autoDeleteEl || retentionEl) {
+        const retentionHours = parseInt(retentionEl ? retentionEl.value : '24', 10);
+        settings.newsSettings = {
+            autoDelete: autoDeleteEl ? autoDeleteEl.checked : true,
+            retentionHours: (retentionHours > 0) ? retentionHours : 24
+        };
+    }
     DataStore.setSiteSettings(settings);
     showToast('Settings saved!', 'success');
     syncToLiveWebsite();

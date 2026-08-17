@@ -323,61 +323,164 @@ window.AIHome = (() => {
     }
 
     /* ---------------- Live Tamil News ---------------- */
+    // Loads the latest Tamil news from the worker /api/news endpoint (which
+    // pulls from the RCC Tamil RSS feed, filters to Tamil-only content, dedupes
+    // and applies the retention window from Site Settings). Clicking a card
+    // opens an in-app detail view (never an external URL). The list auto-
+    // refreshes in place so the audio player is never disturbed.
+    let newsItems = [];
+    let newsTimer = null;
+    let newsLoading = false;
+    let newsLastLoaded = 0;
+
+    function timeAgo(iso) {
+        if (!iso) return '';
+        try {
+            const diff = Date.now() - new Date(iso).getTime();
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return Math.floor(diff / 60000) + ' min ago';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + ' hr ago';
+            return Math.floor(diff / 86400000) + 'd ago';
+        } catch (e) { return ''; }
+    }
+
+    function newsDetailOpen(id) {
+        const item = (newsItems || []).find(n => String(n.id) === String(id));
+        if (!item) return;
+        try {
+            const wrap = document.createElement('div');
+            wrap.className = 'ai-news-detail';
+            wrap.id = 'aiNewsDetail';
+            wrap.setAttribute('role', 'dialog');
+            wrap.setAttribute('aria-modal', 'true');
+            const pubTime = item.publishedAt ? new Date(item.publishedAt) : null;
+            const timeText = pubTime ? pubTime.toLocaleString('ta-IN', {
+                day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            }) : '';
+            wrap.innerHTML =
+                '<div class="ai-news-detail-overlay"></div>' +
+                '<div class="ai-news-detail-panel">' +
+                '<button class="ai-news-detail-back" type="button"><i class="fa-solid fa-arrow-left"></i> Back</button>' +
+                (item.image ? '<div class="ai-news-detail-img"><img src="' + escapeHtml(item.image) + '" alt="" loading="lazy"></div>' : '') +
+                '<div class="ai-news-detail-body">' +
+                '<h3 class="ai-news-detail-title">' + escapeHtml(item.title) + '</h3>' +
+                '<div class="ai-news-detail-meta">' +
+                (timeText ? '<span class="ai-news-detail-time"><i class="fa-regular fa-clock"></i> ' + escapeHtml(timeText) + '</span>' : '') +
+                '<span class="ai-news-detail-source"><i class="fa-solid fa-newspaper"></i> ' + escapeHtml(item.source || '') + '</span>' +
+                '</div>' +
+                '<div class="ai-news-detail-content">' + escapeHtml(item.content || '') + '</div>' +
+                '</div></div>';
+            document.body.appendChild(wrap);
+            document.body.classList.add('ai-news-detail-open');
+            requestAnimationFrame(() => wrap.classList.add('open'));
+            const close = (ev) => {
+                if (ev && ev.target.closest('.ai-news-detail-back')) {
+                    wrap.classList.remove('open');
+                    setTimeout(() => { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); document.body.classList.remove('ai-news-detail-open'); }, 220);
+                    return;
+                }
+                if (ev && ev.target.classList.contains('ai-news-detail-overlay')) {
+                    wrap.classList.remove('open');
+                    setTimeout(() => { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); document.body.classList.remove('ai-news-detail-open'); }, 220);
+                }
+            };
+            wrap.querySelector('.ai-news-detail-back').addEventListener('click', close);
+            wrap.querySelector('.ai-news-detail-overlay').addEventListener('click', close);
+            document.addEventListener('keydown', function esc(e) {
+                if (e.key === 'Escape') {
+                    document.removeEventListener('keydown', esc);
+                    close();
+                }
+            });
+        } catch (e) { /* ignore */ }
+    }
+
+    function renderNewsList() {
+        const list = $('aiNewsList');
+        if (!list) return;
+        if (!newsItems.length) {
+            if (!newsLoading) list.innerHTML = emptyHTML('fa-solid fa-newspaper', 'Loading Tamil news…',
+                'Fetching the latest headlines from the Tamil news feed.');
+            return;
+        }
+        const now = Date.now();
+        const visible = newsItems.slice(0, 6);
+        list.innerHTML = visible.map((n) => {
+            const pub = n.publishedAt ? new Date(n.publishedAt).getTime() : 0;
+            const isFresh = !isNaN(pub) && (now - pub) < 6 * 3600000;
+            return '<div class="ai-news-card" role="button" tabindex="0" data-news-id="' + escapeHtml(String(n.id)) + '">' +
+                '<div class="ai-news-img">' +
+                (n.image ? '<img src="' + escapeHtml(n.image) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-newspaper"></i>') +
+                (isFresh ? '<span class="ai-news-live"><span class="ai-live-dot" style="box-shadow:none;animation:none;width:5px;height:5px;"></span>NEW</span>' : '') +
+                '</div>' +
+                '<div class="ai-news-info">' +
+                '<div class="ai-news-headline">' + escapeHtml(n.title) + '</div>' +
+                '<div class="ai-news-meta">' +
+                '<span class="ai-news-cat">' + escapeHtml(n.source || 'Tamil News') + '</span>' +
+                (n.publishedAt ? '<span>' + timeAgo(n.publishedAt) + '</span>' : '') +
+                '</div></div></div>';
+        }).join('');
+        list.querySelectorAll('.ai-news-card').forEach(card => {
+            const open = () => newsDetailOpen(card.dataset.newsId);
+            card.addEventListener('click', open);
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+            });
+        });
+    }
+
+    async function loadNews() {
+        const list = $('aiNewsList');
+        if (!list) return;
+        if (newsLoading) return;
+        // Avoid hammering the endpoint when refreshHome fires repeatedly.
+        const nowMs = Date.now();
+        if (newsItems.length && (nowMs - newsLastLoaded) < 30000) return;
+        newsLoading = true;
+        try {
+            const resp = await fetch('/api/news', { cache: 'no-store' });
+            if (!resp.ok) throw new Error('news fetch failed ' + resp.status);
+            const data = await resp.json();
+            if (data && Array.isArray(data.items)) {
+                newsItems = data.items;
+                newsLastLoaded = Date.now();
+                renderNewsList();
+            }
+        } catch (e) {
+            // Keep whatever we rendered last time (or cached). Only show an
+            // error state if we've never successfully loaded anything.
+            if (!newsItems.length) {
+                list.innerHTML = emptyHTML('fa-solid fa-newspaper', 'News is temporarily unavailable',
+                    'Please check your connection and try again shortly.');
+            }
+        } finally {
+            newsLoading = false;
+        }
+    }
+
+    let newsVisibilityBound = false;
+    function startNewsAutoRefresh() {
+        if (newsTimer) clearInterval(newsTimer);
+        newsTimer = setInterval(() => { loadNews(); }, 300000);
+        if (!newsVisibilityBound) {
+            newsVisibilityBound = true;
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) loadNews();
+            });
+        }
+    }
+
     function renderLiveNews() {
         const list = $('aiNewsList');
         if (!list) return;
-        const newsStations = activeStations().filter(s =>
-            String(s.genre || '').toLowerCase().indexOf('news') !== -1
-        );
-        const items = newsStations.length ? newsStations : activeStations().slice(0, 4);
-        if (!items.length) {
-            list.innerHTML = emptyHTML('fa-solid fa-newspaper', 'No news channels yet',
-                'Add live news FM channels from the Website Builder and they will appear here.');
-            return;
+        if (!newsItems.length) {
+            list.innerHTML = emptyHTML('fa-solid fa-newspaper', 'Loading Tamil news…',
+                'Fetching the latest headlines from the Tamil news feed.');
+        } else {
+            renderNewsList();
         }
-        list.innerHTML = items.slice(0, 4).map((s, i) => {
-            const name = (s.name || 'Live News').slice(0, 44);
-            const thumb = stationThumb(s);
-            const cat = (s.genre || 'News').trim();
-            const city = s.city || 'Tamil Nadu';
-            return '<div class="ai-news-card" role="button" tabindex="0">' +
-                '<div class="ai-news-img" style="background:' + stationColor(s, i) + ';">' +
-                (thumb ? '<img src="' + escapeHtml(thumb) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-newspaper"></i>') +
-                '<span class="ai-news-live"><span class="ai-live-dot" style="box-shadow:none;animation:none;width:5px;height:5px;"></span>LIVE</span>' +
-                (i === 0 ? '<span class="ai-news-breaking">BREAKING</span>' : '') +
-                '</div>' +
-                '<div class="ai-news-info">' +
-                '<div class="ai-news-headline">' + escapeHtml(name) + ' — Live</div>' +
-                '<div class="ai-news-meta"><span class="ai-news-cat">' + escapeHtml(cat) + '</span>' +
-                '<span><i class="fa-solid fa-location-dot"></i> ' + escapeHtml(city) + '</span>' +
-                '<span>Just now</span></div>' +
-                '</div></div>';
-        }).join('');
-        newsStations.slice(0, 4).forEach((s, i) => {
-            const card = list.children[i];
-            if (card) card.dataset.station = s.name;
-        });
-        const allStations = activeStations();
-        list.querySelectorAll('.ai-news-card').forEach(card => {
-            const playStation = (name) => {
-                if (!name) return;
-                setTimeout(() => {
-                    if (typeof window.playStation === 'function') window.playStation(name);
-                }, 60);
-            };
-            card.addEventListener('click', () => {
-                let target = null;
-                try { target = allStations.find(s => (card.dataset.station && s.name) === card.dataset.station); } catch (e) { /* ignore */ }
-                if (target) playStation(target.name);
-                else if (card.dataset.station) playStation(card.dataset.station);
-            });
-            card.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    if (card.dataset.station) playStation(card.dataset.station);
-                }
-            });
-        });
+        loadNews();
+        startNewsAutoRefresh();
     }
 
     function emptyHtml(icon, title, text) { return emptyHTML(icon, title, text); }

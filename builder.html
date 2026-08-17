@@ -1199,6 +1199,28 @@
                                         <input type="text" class="form-input" id="settingsFooterText" placeholder="© 2024 Tamil AI Stream">
                                     </div>
                                 </div>
+                            </form>
+                        </div>
+
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">Live Tamil News</h2>
+                            </div>
+                            <form id="newsSettingsForm" class="song-form">
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label class="form-label">
+                                            <input type="checkbox" id="newsAutoDelete" class="builder-checkbox">
+                                            Auto-delete expired news
+                                        </label>
+                                        <p class="form-hint">Remove Tamil news articles that are older than the retention period below. Leave enabled to keep the Live Tamil News section fresh and clutter-free.</p>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Retention Period (hours)</label>
+                                        <input type="number" class="form-input" id="newsRetentionHours" min="1" max="720" step="1" value="24" placeholder="24">
+                                        <p class="form-hint">How long (in hours) a news article stays visible before it is auto-removed. Default is 24 hours.</p>
+                                    </div>
+                                </div>
                                 <div class="form-actions">
                                     <button type="submit" class="builder-btn primary">
                                         <i class="fas fa-save"></i> Save Settings

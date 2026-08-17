@@ -74,6 +74,9 @@ export default {
       if (url.pathname === '/api/manifest' && request.method === 'POST') {
         return handleManifestPost(request, env);
       }
+      if (url.pathname === '/api/news' && request.method === 'GET') {
+        return handleNewsGet(request, env);
+      }
       if (url.pathname === '/api/media/list' && request.method === 'GET') {
         return handleMediaList(url, env);
       }
@@ -395,6 +398,223 @@ async function handleSW(env) {
     });
   } catch (e) {
     return new Response('SW load error', { status: 500 });
+  }
+}
+
+/* ---------------- Live Tamil News (/api/news) ---------------- */
+
+const NEWS_FEED_URL = 'https://feeds.bbci.co.uk/tamil/rss.xml';
+const NEWS_SOURCE_NAME = 'BBC News தமிழ்';
+const NEWS_CACHE_KEY = 'rcc-news-cache.json';
+const NEWS_CACHE_TTL_MS = 10 * 60 * 1000; // re-fetch the RSS feed at most every 10 min
+const DEFAULT_RETENTION_HOURS = 24;
+
+// Tamil unicode block range used for the language filter.
+function tamilCharCount(text) {
+  if (!text) return 0;
+  let count = 0;
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    if (code >= 0x0b80 && code <= 0x0bff) count++;
+  }
+  return count;
+}
+
+// Reject non-Tamil / mixed-language / unrelated headlines. The RSS source is
+// Tamil-only, but we keep a hard guard so a bad item can never sneak through.
+function isTamilHeadline(title) {
+  const trimmed = (title || '').trim();
+  if (!trimmed) return false;
+  const tamil = tamilCharCount(trimmed);
+  const latin = (trimmed.match(/[a-zA-Z]/g) || []).length;
+  return tamil >= 3 && tamil > latin;
+}
+
+function decodeEntities(text) {
+  return (text || '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)));
+}
+
+function stripTags(text) {
+  return decodeEntities((text || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim());
+}
+
+function stripCdata(text) {
+  return (text || '').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1');
+}
+
+// Regex-based RSS parser (Workers have no DOMParser).
+function parseRssItems(xml) {
+  const items = [];
+  const itemRe = /<item>([\s\S]*?)<\/item>/gi;
+  let match;
+  while ((match = itemRe.exec(xml)) !== null) {
+    const block = match[1];
+
+    const titleMatch = /<title>([\s\S]*?)<\/title>/i.exec(block);
+    const descMatch = /<description>([\s\S]*?)<\/description>/i.exec(block);
+    const linkMatch = /<link>([\s\S]*?)<\/link>/i.exec(block);
+    const guidMatch = /<guid[^>]*>([\s\S]*?)<\/guid>/i.exec(block);
+    const pubMatch = /<pubDate>([\s\S]*?)<\/pubDate>/i.exec(block);
+    const thumbMatch = /<media:thumbnail[^>]*url="([^"]+)"/i.exec(block) || /<enclosure[^>]*url="([^"]+)"[^>]*type="image/i.exec(block);
+
+    const title = stripTags(stripCdata(titleMatch ? titleMatch[1] : ''));
+    if (!title) continue;
+    if (!isTamilHeadline(title)) continue;
+
+    const content = stripTags(stripCdata(descMatch ? descMatch[1] : ''));
+    const link = stripCdata(linkMatch ? linkMatch[1] : '').trim();
+    const guid = stripCdata(guidMatch ? guidMatch[1] : '').trim() || link;
+    const pubDateStr = stripCdata(pubMatch ? pubMatch[1] : '').trim();
+    const publishedAt = pubDateStr ? new Date(pubDateStr).toISOString() : null;
+    const image = thumbMatch ? thumbMatch[1] : '';
+
+    items.push({
+      id: guid,
+      title,
+      content,
+      image,
+      publishedAt,
+      source: NEWS_SOURCE_NAME,
+    });
+  }
+
+  // Dedupe by normalized title / guid.
+  const seen = new Set();
+  const unique = [];
+  for (const item of items) {
+    const key = (item.id || item.title || '').trim().toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(item);
+  }
+
+  // Newest first; null dates go to the end.
+  unique.sort((a, b) => {
+    const ta = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+    const tb = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+    return tb - ta;
+  });
+
+  return unique;
+}
+
+async function fetchNewsFeed(env) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  try {
+    const resp = await fetch(NEWS_FEED_URL, {
+      headers: { 'User-Agent': 'TamilAIStream-NewsBot/1.0 (+https://tamilai.stream)' },
+      signal: controller.signal,
+    });
+    if (!resp.ok) throw new Error('RSS fetch failed with status ' + resp.status);
+    const xml = await resp.text();
+    const items = parseRssItems(xml);
+    const fetchedAt = new Date().toISOString();
+    const payload = JSON.stringify({ fetchedAt, items });
+    if (env.MEDIA_BUCKET) {
+      try {
+        await env.MEDIA_BUCKET.put(NEWS_CACHE_KEY, payload, {
+          httpMetadata: { contentType: 'application/json' },
+        });
+      } catch (_) { /* cache write is best-effort */ }
+    }
+    return { fetchedAt, items };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function readNewsSettings(env) {
+  const settings = { autoDelete: true, retentionHours: DEFAULT_RETENTION_HOURS };
+  try {
+    if (env.MEDIA_BUCKET) {
+      const obj = await env.MEDIA_BUCKET.get('content-manifest.json');
+      if (obj) {
+        const manifest = JSON.parse(await obj.text());
+        const site = manifest.data && manifest.data.siteSettings;
+        if (site && site.newsSettings) {
+          if (typeof site.newsSettings.autoDelete === 'boolean') {
+            settings.autoDelete = site.newsSettings.autoDelete;
+          }
+          const hours = parseInt(site.newsSettings.retentionHours, 10);
+          if (hours && hours > 0) settings.retentionHours = hours;
+        }
+      }
+    }
+  } catch (_) { /* fall back to defaults */ }
+  return settings;
+}
+
+// GET /api/news
+// Returns the latest Tamil news from the RCC source (BBC Tamil RSS). Items are
+// filtered to Tamil-only, deduped, and capped by the retention window configured
+// in the Builder Site Settings (default: auto-delete after 24 hours). Results
+// are cached in R2 for NEWS_CACHE_TTL_MS so we don't hammer the upstream feed.
+async function handleNewsGet(request, env) {
+  try {
+    let cached = null;
+    if (env.MEDIA_BUCKET) {
+      try {
+        const obj = await env.MEDIA_BUCKET.get(NEWS_CACHE_KEY);
+        if (obj) cached = JSON.parse(await obj.text());
+      } catch (_) { /* ignore cache read errors */ }
+    }
+
+    const cacheFresh = cached && cached.fetchedAt && (Date.now() - new Date(cached.fetchedAt).getTime()) < NEWS_CACHE_TTL_MS;
+
+    let items = [];
+    let fetchedAt;
+    if (cacheFresh && Array.isArray(cached.items)) {
+      items = cached.items;
+      fetchedAt = cached.fetchedAt;
+    } else {
+      try {
+        const fresh = await fetchNewsFeed(env);
+        items = fresh.items;
+        fetchedAt = fresh.fetchedAt;
+      } catch (e) {
+        // Upstream feed failed; serve stale cache if we have any, otherwise error.
+        if (cached && Array.isArray(cached.items) && cached.items.length) {
+          items = cached.items;
+          fetchedAt = cached.fetchedAt;
+        } else {
+          return json({ error: 'News feed unavailable', detail: e.message }, 502);
+        }
+      }
+    }
+
+    const settings = await readNewsSettings(env);
+
+    let result = items;
+    if (settings.autoDelete) {
+      const cutoff = Date.now() - settings.retentionHours * 3600 * 1000;
+      result = items.filter((item) => {
+        if (!item.publishedAt) return false;
+        const t = new Date(item.publishedAt).getTime();
+        return !isNaN(t) && t >= cutoff;
+      });
+    }
+
+    return json({
+      source: NEWS_SOURCE_NAME,
+      fetchedAt,
+      retention: settings,
+      count: result.length,
+      items: result.slice(0, 40),
+    });
+  } catch (e) {
+    return json({ error: e.message }, 500);
   }
 }
 
