@@ -3374,6 +3374,7 @@ let _heroWeatherInterval = null;
 let _heroGreetingInterval = null;
 let _heroQuoteInterval = null;
 let _heroUpdatersStarted = false;
+let _greetingQuotePicked = '';
 
 function _heroWmoToIcon(code) {
     if (code === 0) return 'fa-sun';
@@ -3435,6 +3436,26 @@ function _heroQuotePool() {
     return pool.length >= 2 ? pool : fallbacks;
 }
 
+// Pick a quote once and keep it stable — the greeting must not auto-rotate.
+function _heroPickQuote() {
+    if (_greetingQuotePicked) return _greetingQuotePicked;
+    const pool = _heroQuotePool();
+    _greetingQuotePicked = pool[Math.floor(Math.random() * pool.length)];
+    return _greetingQuotePicked;
+}
+
+// Live date/time line that updates in place (no re-render).
+function _heroSetDateTime() {
+    const el = document.getElementById('greetingDateTime');
+    if (!el) return;
+    try {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+        const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        el.textContent = dateStr + '  •  ' + timeStr;
+    } catch (e) { /* ignore */ }
+}
+
 // Rotate the quote in place with a subtle 3D swap — no re-render.
 function _heroRotateQuote() {
     const qEl = document.getElementById('greetingQuoteText');
@@ -3487,7 +3508,9 @@ function _heroStartUpdaters() {
         }
     }, 60000);
     _heroWeatherInterval = setInterval(updateHeroWeather, 15 * 60 * 1000);
-    _heroQuoteInterval = setInterval(_heroRotateQuote, 30000);
+    // Live date/time updates in place every minute — the quote is NOT rotated
+    // (stable per the "no auto-change" requirement).
+    setInterval(_heroSetDateTime, 60000);
 }
 
 // Greeting Section - Premium Glass Hero Bar
@@ -3550,6 +3573,7 @@ function renderGreetingSection() {
                             <span class="greeting-label greeting-greeting" id="greetingText"></span>
                             <span class="greeting-weather-icon" id="greetingWeather" title=""><i class="fas fa-moon"></i></span>
                         </div>
+                        <span class="greeting-datetime" id="greetingDateTime"></span>
                     </div>
                     <h1 class="greeting-title" id="greetingTitle"><span class="hero-hash">#</span> Good ${_heroGetTimeOfDay()}${welcomeName}</h1>
                     <p class="greeting-subtitle">Discover the best of Tamil music, powered by AI</p>
@@ -3564,9 +3588,9 @@ function renderGreetingSection() {
     _heroSetGreeting();
     const qEl = document.getElementById('greetingQuoteText');
     if (qEl) {
-        const pool = _heroQuotePool();
-        qEl.textContent = pool[Math.floor(Math.random() * pool.length)];
+        qEl.textContent = _heroPickQuote();
     }
+    _heroSetDateTime();
 
     // Live weather (time-based instantly, upgrades to real data if allowed)
     updateHeroWeather();

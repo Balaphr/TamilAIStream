@@ -37,6 +37,7 @@ function copyVanillaScripts() {
     name: 'copy-vanilla-scripts',
     closeBundle() {
       const vanillaJS = [
+        'ultra-perf.js',
         'auth.js',
         'data-store.js', 'firebase-init.js', 'firebase-config.js',
         'r2-config.js', 'r2-upload.js', 'r2-content-sync.js',

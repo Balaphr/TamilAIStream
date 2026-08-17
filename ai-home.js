@@ -445,30 +445,43 @@ window.AIHome = (() => {
     }
 
     /* ---------------- AI Recommendations ---------------- */
+    // Cache the AI picks by content signature. Re-renders (e.g. storage-sync
+    // or playback state events) must NOT reshuffle the section — it only
+    // changes when the underlying library actually changes (admin publish).
+    let _aiRecCacheSig = '';
+    let _aiRecCache = null;
     function getAIRecSongs() {
         const all = publishedSongs();
         if (!all.length) return [];
+        const sig = all.map(s => String(s.id || '') + '|' + String(s.audioUrl || s.streamUrl || '')).join('#');
+        if (_aiRecCache && _aiRecCacheSig === sig) return _aiRecCache;
+        let picks = null;
         try {
             if (window.ListeningHistory && ListeningHistory.getAIPicks) {
-                const picks = ListeningHistory.getAIPicks() || [];
-                if (picks.length) return picks.slice(0, 6);
+                const aiPicks = ListeningHistory.getAIPicks() || [];
+                if (aiPicks.length) picks = aiPicks.slice(0, 6);
             }
         } catch (e) { /* ignore */ }
-        const played = new Set();
-        try {
-            const hist = (window.ListeningHistory && ListeningHistory.getRecentlyPlayed) ? ListeningHistory.getRecentlyPlayed() : [];
-            (hist || []).forEach(h => played.add(String(h.id)));
-        } catch (e) { /* ignore */ }
-        const fresh = all.filter(s => !played.has(String(s.id)));
-        const pool = fresh.length ? fresh : all;
-        return pool.slice().sort(() => Math.random() - 0.5).slice(0, 6);
+        if (!picks) {
+            const played = new Set();
+            try {
+                const hist = (window.ListeningHistory && ListeningHistory.getRecentlyPlayed) ? ListeningHistory.getRecentlyPlayed() : [];
+                (hist || []).forEach(h => played.add(String(h.id)));
+            } catch (e) { /* ignore */ }
+            const fresh = all.filter(s => !played.has(String(s.id)));
+            const pool = fresh.length ? fresh : all;
+            picks = pool.slice().sort(() => Math.random() - 0.5).slice(0, 6);
+        }
+        _aiRecCacheSig = sig;
+        _aiRecCache = picks;
+        return picks;
     }
 
     function renderAIRecommendations() {
         const wrap = $('aiRecSongs');
         const greet = $('aiRecGreeting');
         if (greet) {
-            greet.innerHTML = '<small>AI Curated For You</small>' + escapeHtml(greeting()) + '! <span style="display:inline-block;">👋</span>';
+            greet.innerHTML = '<small>AI Curated For You</small>';
         }
         if (!wrap) return;
         const songs = getAIRecSongs();
@@ -797,6 +810,9 @@ window.AIHome = (() => {
     /* ---------------- Refresh + init ---------------- */
     function refreshHome() {
         stopHeroTimer();
+        // Greeting hero bar sits at the top of Home. Idempotent — builds once,
+        // then only updates greeting/date/quote text in place.
+        if (typeof renderGreetingSection === 'function') renderGreetingSection();
         renderMusicHero();
         renderTrendingPlaylists();
         renderLiveFm();
@@ -813,8 +829,24 @@ window.AIHome = (() => {
         window.addEventListener('storage-sync', refresh);
         window.addEventListener('premium-sections-sync', refresh);
         window.addEventListener('tamilAIStream-content-synced', refresh);
+        // Only re-render when actual shared CONTENT changed. Playback state
+        // (tamilAIStream_player_state) is written continuously while a song
+        // plays and must NOT cause the Home sections to re-render/reshuffle.
+        const contentKeys = [
+            'tamilAIStream_songs', 'tamilAIStream_stations',
+            'tamilAIStream_categories', 'tamilAIStream_featured',
+            'tamilAIStream_trending', 'tamilAIStream_artistHits',
+            'tamilAIStream_quotes', 'tamilAIStream_siteSettings',
+            'tamilAIStream_images', 'tamilAIStream_moviesCollections',
+            'tamilAIStream_yearlyCollections', 'tamilAIStream_latestCollections',
+            'tamilAIStream_musicCollections', 'tamilAIStream_advertisements',
+            'tamilAIStream_moods', 'tamilAIStream_aiRadio',
+            'tamilAIStream_splash', 'tamilAIStream_playerPrefs',
+            'tamilAIStream_navigation', 'tamilAIStream_sectionsOrder',
+            'tamilAIStream_miniPlayerSettings'
+        ];
         window.addEventListener('storage', (e) => {
-            if (e.key && (e.key.indexOf('tamilAIStream') !== -1 || e.key.indexOf('ytm_') !== -1)) refresh();
+            if (e.key && contentKeys.indexOf(e.key) !== -1) refresh();
         });
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) setTimeout(syncFmPlaying, 200);

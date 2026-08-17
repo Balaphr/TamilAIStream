@@ -78,7 +78,7 @@ export default {
         return handleMediaList(url, env);
       }
       if (url.pathname.startsWith('/api/media/')) {
-        return handleMediaGet(url, env);
+        return handleMediaGet(url, request, env);
       }
 
       // Analytics API endpoints
@@ -241,20 +241,80 @@ async function handleManifestPost(request, env) {
   }
 }
 
-async function handleMediaGet(url, env) {
+async function handleMediaGet(url, request, env) {
   const key = decodeURIComponent(url.pathname.replace('/api/media/', ''));
   if (!key) return new Response('Missing key', { status: 400 });
   try {
     if (!env.MEDIA_BUCKET) return new Response('R2 not configured', { status: 500 });
-    const obj = await env.MEDIA_BUCKET.get(key);
-    if (!obj) return new Response('Not found', { status: 404 });
+
+    // Parse a single Range header (e.g. "bytes=0-1023", "bytes=1024-",
+    // "bytes=-512"). Audio players rely on 206 Partial Content responses for
+    // seeking and reliable streaming on iOS/Safari.
+    let range = null;
+    const rangeHeader = request.headers.get('range');
+    if (rangeHeader) {
+      const match = /^bytes=(\d*)-(\d*)$/i.exec(rangeHeader.trim());
+      if (match && (match[1] !== '' || match[2] !== '')) {
+        range = { start: match[1] === '' ? null : parseInt(match[1], 10), end: match[2] === '' ? null : parseInt(match[2], 10) };
+      }
+    }
+
+    // First fetch without a range to get size for suffix/open-ended requests,
+    // unless a precise range was given (then do a single ranged read).
+    const headObj = await env.MEDIA_BUCKET.head(key);
+    if (!headObj) return new Response('Not found', { status: 404 });
+    const total = Number(headObj.size) || 0;
+
     const headers = new Headers();
-    obj.writeHttpMetadata(headers);
+    headObj.writeHttpMetadata(headers);
+    headers.set('Accept-Ranges', 'bytes');
     headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     headers.set('CDN-Cache-Control', 'no-store');
     headers.set('Surrogate-Control', 'no-cache');
     headers.set('Access-Control-Allow-Origin', '*');
-    return new Response(obj.body, { status: 200, headers });
+
+    if (!range) {
+      const obj = await env.MEDIA_BUCKET.get(key);
+      if (!obj) return new Response('Not found', { status: 404 });
+      headers.set('Content-Length', String(total));
+      return new Response(obj.body, { status: 200, headers });
+    }
+
+    let start = range.start;
+    let end = range.end;
+    if (start === null && end === null) {
+      // Empty "bytes=-" is invalid; treat as full body.
+      const obj = await env.MEDIA_BUCKET.get(key);
+      if (!obj) return new Response('Not found', { status: 404 });
+      headers.set('Content-Length', String(total));
+      return new Response(obj.body, { status: 200, headers });
+    }
+    if (start === null) {
+      // Suffix range: last `end` bytes.
+      if (end <= 0) {
+        headers.set('Content-Range', `bytes */${total}`);
+        return new Response(null, { status: 416, headers });
+      }
+      start = Math.max(total - end, 0);
+      end = total - 1;
+    } else if (end === null) {
+      end = total - 1;
+    }
+    if (start < 0 || start >= total || start > end) {
+      headers.set('Content-Range', `bytes */${total}`);
+      return new Response(null, { status: 416, headers });
+    }
+    if (end >= total) end = total - 1;
+    if (start > end) {
+      headers.set('Content-Range', `bytes */${total}`);
+      return new Response(null, { status: 416, headers });
+    }
+
+    const obj = await env.MEDIA_BUCKET.get(key, { range: { offset: start, length: end - start + 1 } });
+    if (!obj) return new Response('Not found', { status: 404 });
+    headers.set('Content-Range', `bytes ${start}-${end}/${total}`);
+    headers.set('Content-Length', String(end - start + 1));
+    return new Response(obj.body, { status: 206, headers });
   } catch (e) {
     return new Response('Error: ' + e.message, { status: 500 });
   }

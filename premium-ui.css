@@ -934,6 +934,23 @@ html.builder-preview #premiumKebabMenu {
     animation: heroFadeUp 0.7s var(--premium-ease) both 0.05s;
 }
 
+/* live date/time line — updates in place, never re-renders */
+.ytm-page-home .greeting-datetime {
+    font-size: 0.84rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    color: rgba(255, 255, 255, 0.72);
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35);
+    white-space: nowrap;
+    animation: heroFadeUp 0.7s var(--premium-ease) both 0.1s;
+}
+
+@media (max-width: 560px) {
+    .ytm-page-home .greeting-datetime { white-space: normal; text-align: right; font-size: 0.74rem; }
+}
+
+body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62); }
+
 .ytm-page-home .greeting-weather-icon {
     display: inline-flex;
     align-items: center;
