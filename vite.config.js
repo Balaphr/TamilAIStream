@@ -12,7 +12,7 @@ const vanillaFiles = [
   'ai-music-assistant.js', 'ai-autofill.js', 'ai-automation.js',
   'ai-command-bot.js', 'ai-publish-check.js',
   'yt-music.js', 'script.js', 'mini-audio-player.js',
-  'global-player.js', 'listening-history.js',
+  'global-player.js', 'listening-history.js', 'ai-home.js',
   'premium-landing.js',
   'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
   'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
@@ -46,7 +46,7 @@ function copyVanillaScripts() {
         'ai-music-assistant.js', 'ai-autofill.js', 'ai-automation.js',
         'ai-command-bot.js', 'ai-publish-check.js',
         'yt-music.js', 'script.js', 'mini-audio-player.js',
-        'global-player.js', 'listening-history.js',
+        'global-player.js', 'listening-history.js', 'ai-home.js',
         'premium-landing.js',
         'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
@@ -135,7 +135,7 @@ export default defineConfig({
     exclude: [
       'premium-landing.js', 'script.js', 'yt-music.js', 'global-player.js',
       'premium-effects.js', 'player-engine.js', 'r2-content-sync.js',
-      'pwa.js', 'ai-music-assistant.js', 'listening-history.js',
+      'pwa.js', 'ai-music-assistant.js', 'listening-history.js', 'ai-home.js',
       'builder.js', 'admin.js', 'login.js', 'profile.js', 'dashboard.js'
     ]
   }

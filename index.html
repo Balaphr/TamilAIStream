@@ -254,8 +254,54 @@
 
     <div class="noise-overlay"></div>
 
+    <!-- AI Glassmorphism Ambient Background -->
+    <div class="ai-app-glow"></div>
+
     <!-- YouTube Music-like App Container -->
     <div class="ytm-app">
+
+        <!-- AI Premium Left Sidebar -->
+        <aside class="ai-sidebar" aria-label="Main navigation">
+            <div class="ai-sidebar-inner">
+                <a class="ai-sidebar-logo" id="aiSidebarLogo" href="#" aria-label="Tamil AI Stream Home">
+                    <div class="ai-sidebar-logo-icon">
+                        <svg viewBox="0 0 40 40" fill="none">
+                            <path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/>
+                        </svg>
+                    </div>
+                    <div class="ai-sidebar-logo-text">
+                        <span>TAMIL</span>
+                        <span>AI STREAM</span>
+                    </div>
+                </a>
+                <nav class="ai-sidebar-nav">
+                    <div class="ai-sidebar-label">Menu</div>
+                    <button class="ai-sidebar-item active" data-ai-page="home"><i class="fas fa-house"></i><span>Home</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="explore"><i class="fas fa-compass"></i><span>Explore</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="music"><i class="fas fa-music"></i><span>Music</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="live-fm"><i class="fas fa-tower-broadcast"></i><span>Live FM</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="news"><i class="fas fa-newspaper"></i><span>News</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="assistant"><i class="fas fa-robot"></i><span>AI Assistant</span></button>
+                    <div class="ai-sidebar-divider"></div>
+                    <div class="ai-sidebar-label">Library</div>
+                    <button class="ai-sidebar-item" data-ai-page="library"><i class="fas fa-book-open"></i><span>Library</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="liked"><i class="fas fa-heart"></i><span>Liked Songs</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="playlists"><i class="fas fa-list"></i><span>Playlists</span></button>
+                </nav>
+                <div class="ai-sidebar-divider"></div>
+                <div class="ai-sidebar-premium">
+                    <div class="ai-premium-icon">👑</div>
+                    <div class="ai-premium-title">Go Premium</div>
+                    <div class="ai-premium-desc">Ad-free experience<br>Exclusive Content</div>
+                    <button class="ai-premium-btn" id="aiUpgradeBtn">Upgrade Now</button>
+                </div>
+                <div class="ai-sidebar-dark">
+                    <span><i class="fas fa-moon"></i> Dark Mode</span>
+                    <button class="ai-dark-toggle" id="aiDarkToggle" aria-label="Toggle dark mode"><span class="ai-dark-knob"></span></button>
+                </div>
+                <div class="ai-sidebar-footer">© Tamil AI Stream<br>All rights reserved</div>
+            </div>
+        </aside>
 
         <!-- Main Content Area -->
         <div class="ytm-main-content">
@@ -321,6 +367,34 @@
                                 <i class="fas fa-wand-magic-sparkles premium-search-ai-icon"></i>
                                 <input type="text" class="premium-topnav-search-input" id="ytmSearchInput" placeholder="Search songs, artists, lyrics, movies..." autocomplete="off">
                                 <button class="premium-topnav-search-clear" id="ytmSearchClear"><i class="fas fa-times"></i></button>
+                                <span class="ai-kbd">Ctrl /</span>
+                            </div>
+                        </div>
+                        <!-- AI Header Actions: Install / Notifications / User -->
+                        <div class="ai-header-actions">
+                            <button class="ai-hdr-btn ai-install-btn" id="aiInstallBtn" style="display:none;" title="Install App">
+                                <i class="fas fa-download"></i><span>Install App</span>
+                            </button>
+                            <button class="ai-hdr-btn ai-notif-btn" id="aiNotifBtn" title="Notifications" aria-label="Notifications">
+                                <i class="fas fa-bell"></i>
+                                <span class="ai-notif-dot"></span>
+                                <div class="ai-notif-panel" id="aiNotifPanel"></div>
+                            </button>
+                            <div class="ai-user-chip" id="aiUserChip" tabindex="0">
+                                <div class="ai-user-avatar" id="aiUserAvatar">G</div>
+                                <div class="ai-user-meta">
+                                    <div class="ai-user-name" id="aiUserName">Hi, Guest</div>
+                                    <div class="ai-user-plan" id="aiUserPlan"><i class="fa-solid fa-crown"></i> Free</div>
+                                </div>
+                                <i class="fa-solid fa-chevron-down ai-user-caret"></i>
+                                <div class="ai-user-menu" id="aiUserMenu">
+                                    <button data-ai-menu="profile"><i class="fas fa-user"></i> Profile</button>
+                                    <button data-ai-menu="dashboard"><i class="fas fa-chart-line"></i> Music Dashboard</button>
+                                    <button data-ai-menu="settings"><i class="fas fa-gear"></i> Settings</button>
+                                    <button data-ai-menu="builder" id="aiMenuBuilder" style="display:none;"><i class="fas fa-tools"></i> Website Builder</button>
+                                    <div class="ai-user-menu-sep"></div>
+                                    <button data-ai-menu="logout" class="ai-menu-danger"><i class="fas fa-right-from-bracket"></i> Logout</button>
+                                </div>
                             </div>
                         </div>
                         <nav class="premium-topnav-right-cluster" aria-label="Account navigation">
@@ -437,156 +511,84 @@
             <!-- ============ PAGE: HOME ============ -->
             <div class="ytm-page ytm-page-home active" id="page-home">
 
-                <!-- Hero Advertisement -->
-                <section class="section hero-ad-section" data-section="hero-ad">
-                    <div class="hero-ad-container" id="heroAdContainer"></div>
-                </section>
+                <!-- AI Premium Home -->
+                <div class="ai-home">
 
-                <!-- Category Navigation -->
-                <div class="home-categories" id="homeCategories">
-                    <button class="home-cat-btn active" data-cat="all" onclick="filterHomeCategory('all')"><i class="fas fa-fire"></i> All</button>
-                    <button class="home-cat-btn" data-cat="songs" onclick="filterHomeCategory('songs')"><i class="fas fa-music"></i> Songs</button>
-                    <button class="home-cat-btn" data-cat="albums" onclick="filterHomeCategory('albums')"><i class="fas fa-compact-disc"></i> Albums</button>
-                    <button class="home-cat-btn" data-cat="artists" onclick="filterHomeCategory('artists')"><i class="fas fa-users"></i> Artists</button>
-                    <button class="home-cat-btn" data-cat="movies" onclick="filterHomeCategory('movies')"><i class="fas fa-film"></i> Movies</button>
-                    <button class="home-cat-btn" data-cat="collections" onclick="filterHomeCategory('collections')"><i class="fas fa-layer-group"></i> Collections</button>
-                    <button class="home-cat-btn" data-cat="musiccollections" onclick="filterHomeCategory('musiccollections')"><i class="fas fa-folder-tree"></i> Music Collections</button>
-                    <button class="home-cat-btn" data-cat="radio" onclick="filterHomeCategory('radio')"><i class="fas fa-radio"></i> Radio</button>
-                    <button class="home-cat-btn" data-cat="ai" onclick="filterHomeCategory('ai')"><i class="fas fa-robot"></i> AI Music</button>
+                    <!-- Row 1: Music Hero + Trending Playlists -->
+                    <div class="ai-home-row ai-home-row-hero">
+                        <section class="ai-panel ai-music-hero" data-section="ai-music-hero">
+                            <div class="ai-sec-head">
+                                <h2 class="ai-sec-title"><i class="fas fa-music"></i> Music</h2>
+                            </div>
+                            <div class="ai-hero-art-wrap">
+                                <div class="ai-hero-wave"></div>
+                                <div class="ai-hero-art" id="aiHeroBackdrop"></div>
+                                <div class="ai-hero-art-ring"></div>
+                            </div>
+                            <div class="ai-hero-body">
+                                <div class="ai-hero-eyebrow">TAMIL AI STREAM</div>
+                                <h2 class="ai-hero-title" id="aiHeroTitle" data-static="1">Tamil Music</h2>
+                                <p class="ai-hero-sub">தமிழின் புதிய டிஜிட்டல் அனுபவம்</p>
+                                <button class="ai-play-now" id="aiHeroPlayBtn"><i class="fas fa-play"></i> Play Now</button>
+                                <div class="ai-hero-dots" id="aiHeroDotsWrap"></div>
+                            </div>
+                        </section>
+
+                        <section class="ai-panel ai-trending" data-section="ai-trending">
+                            <div class="ai-sec-head">
+                                <h2 class="ai-sec-title"><i class="fas fa-fire"></i> Trending Playlists</h2>
+                                <button class="ai-see-all" data-ai-seeall="playlists">See All</button>
+                            </div>
+                            <div class="ai-card-row" id="aiTrendingPlaylists"></div>
+                        </section>
+                    </div>
+
+                    <!-- Row 2: Live FM + Live News -->
+                    <div class="ai-home-row">
+                        <section class="ai-panel ai-live-fm" data-section="ai-live-fm">
+                            <div class="ai-sec-head">
+                                <h2 class="ai-sec-title"><span class="ai-live-dot"></span> Live FM Stations</h2>
+                                <button class="ai-see-all" data-ai-seeall="live-fm">See All</button>
+                            </div>
+                            <div class="ai-fm-grid" id="aiLiveFmGrid"></div>
+                        </section>
+
+                        <section class="ai-panel ai-live-news" data-section="ai-live-news">
+                            <div class="ai-sec-head">
+                                <h2 class="ai-sec-title"><span class="ai-live-dot"></span> Live Tamil News</h2>
+                                <button class="ai-see-all" data-ai-seeall="news">See All</button>
+                            </div>
+                            <div class="ai-news-list" id="aiNewsList"></div>
+                        </section>
+                    </div>
+
+                    <!-- Row 3: Recently Played + AI Recommendations -->
+                    <div class="ai-home-row">
+                        <section class="ai-panel ai-recently" data-section="ai-recently">
+                            <div class="ai-sec-head">
+                                <h2 class="ai-sec-title"><i class="fas fa-clock-rotate-left"></i> Recently Played</h2>
+                                <button class="ai-see-all" data-ai-seeall="history">See All</button>
+                            </div>
+                            <div class="ai-recent-row" id="aiRecentlyPlayed"></div>
+                        </section>
+
+                        <section class="ai-panel ai-ai-rec" data-section="ai-ai-rec">
+                            <div class="ai-sec-head">
+                                <h2 class="ai-sec-title"><i class="fas fa-wand-magic-sparkles"></i> AI Recommendations</h2>
+                                <button class="ai-see-all" data-ai-seeall="explore">See All</button>
+                            </div>
+                            <div class="ai-rec-inner">
+                                <div class="ai-rec-intro">
+                                    <div class="ai-rec-greeting" id="aiRecGreeting"></div>
+                                    <p>Discover songs curated just for you by our AI engine.</p>
+                                    <button class="ai-discover-btn" id="aiDiscoverBtn"><i class="fas fa-wand-magic-sparkles"></i> Discover with AI</button>
+                                </div>
+                                <div class="ai-rec-songs" id="aiRecSongs"></div>
+                            </div>
+                        </section>
+                    </div>
+
                 </div>
-
-                <!-- PWA Home Header -->
-                <div class="pwa-home-header" id="pwaHomeHeader">
-                    <div class="pwa-home-header-inner">
-                        <div class="pwa-home-welcome">Welcome to <span class="accent">Tamil AI Stream</span></div>
-                        <div class="pwa-home-datetime" id="pwaHomeDateTime"></div>
-                        <div class="pwa-home-quote" id="pwaHomeQuote"></div>
-                    </div>
-                </div>
-
-                <!-- Upcoming Releases Carousel -->
-                <section class="section upcoming-releases-section" data-section="upcoming-releases" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Coming Soon"><i class="fas fa-rocket" style="color:#a78bfa;margin-right:8px;"></i>Upcoming Releases</h2>
-                        <div class="ur-carousel-nav">
-                            <button class="ur-nav-btn ur-prev" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
-                            <button class="ur-nav-btn ur-next" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
-                        </div>
-                    </div>
-                    <div class="ur-carousel-viewport" id="urCarouselViewport">
-                        <div class="ur-carousel-track" id="urCarouselTrack"></div>
-                    </div>
-                    <div class="ur-carousel-dots" id="urCarouselDots"></div>
-                </section>
-
-                <!-- Recently Added Songs -->
-                <section class="section recently-added-section" data-section="recently-added" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Fresh"><i class="fas fa-clock-rotate-left" style="color:var(--emerald-400);margin-right:8px;"></i>Recently Added</h2>
-                    </div>
-                    <div class="recently-added-viewport" id="recentlyAddedViewport">
-                        <div class="recently-added-track" id="recentlyAddedTrack"></div>
-                    </div>
-                </section>
-
-                <!-- Personalized Music / Made For You -->
-                <section class="section personalized-section" data-section="personalized" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="For You"><i class="fas fa-heart" style="color:#f43f5e;margin-right:8px;"></i>Made For You</h2>
-                    </div>
-                    <div class="ra-track-viewport">
-                        <div class="ra-track" id="personalizedTrack"></div>
-                    </div>
-                </section>
-
-                <!-- Trending Songs -->
-                <section class="section trending-section" data-section="trending" id="trendingScroll" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Trending"><i class="fas fa-fire" style="color:#f97316;margin-right:8px;"></i>Trending Songs</h2>
-                    </div>
-                    <div class="ra-track-viewport">
-                        <div class="ra-track"></div>
-                    </div>
-                </section>
-
-                <!-- Latest Releases -->
-                <section class="section latest-collection-section" data-section="latest-collection" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="New"><i class="fas fa-bolt" style="color:#ec4899;margin-right:8px;"></i>Latest Releases</h2>
-                    </div>
-                    <div class="carousel-container">
-                        <button class="carousel-btn carousel-prev" onclick="scrollCarousel(this, -1)"><i class="fas fa-chevron-left"></i></button>
-                        <div class="carousel-track" id="latestCollectionTrack"></div>
-                        <button class="carousel-btn carousel-next" onclick="scrollCarousel(this, 1)"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </section>
-
-                <!-- AI Recommended -->
-                <section class="section ai-recommended-section" data-section="ai-recommended" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="AI"><i class="fas fa-robot" style="color:#8b5cf6;margin-right:8px;"></i>AI Recommended</h2>
-                    </div>
-                    <div class="ra-track-viewport">
-                        <div class="ra-track" id="aiRecommendedTrack"></div>
-                    </div>
-                </section>
-
-                <!-- Albums -->
-                <section class="section albums-section" data-section="albums" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Albums"><i class="fas fa-compact-disc" style="color:#a855f7;margin-right:8px;"></i>Albums</h2>
-                    </div>
-                    <div class="ra-track-viewport">
-                        <div class="ra-track" id="albumsTrack"></div>
-                    </div>
-                </section>
-
-                <!-- Artist Hits -->
-                <section class="section tamil-hits-section" data-section="tamil-hits" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Artists"><i class="fas fa-users" style="color:#22d3ee;margin-right:8px;"></i>Artist Hits</h2>
-                        <button class="see-all-btn" onclick="document.querySelector('[data-page=\'artists\']').click()">See All</button>
-                    </div>
-                    <div class="tamil-hits-grid" id="tamilHitsGrid"></div>
-                </section>
-
-                <!-- Movie Collections -->
-                <section class="section movies-collection-section" data-section="movies-collection" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Movies"><i class="fas fa-film" style="color:#f59e0b;margin-right:8px;"></i>Movie Collections</h2>
-                        <button class="see-all-btn movie-sidebar-toggle" onclick="toggleMovieSidebar()" title="Browse Movies"><i class="fas fa-chevron-right"></i> Browse</button>
-                    </div>
-                    <div class="carousel-container">
-                        <button class="carousel-btn carousel-prev" onclick="scrollCarousel(this, -1)"><i class="fas fa-chevron-left"></i></button>
-                        <div class="carousel-track" id="moviesCollectionTrack"></div>
-                        <button class="carousel-btn carousel-next" onclick="scrollCarousel(this, 1)"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </section>
-
-                <!-- Yearly Collections -->
-                <section class="section yearly-collection-section" data-section="yearly-collection" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Years"><i class="fas fa-calendar-days" style="color:#10b981;margin-right:8px;"></i>Yearly Collections</h2>
-                    </div>
-                    <div class="carousel-container">
-                        <button class="carousel-btn carousel-prev" onclick="scrollCarousel(this, -1)"><i class="fas fa-chevron-left"></i></button>
-                        <div class="carousel-track" id="yearlyCollectionTrack"></div>
-                        <button class="carousel-btn carousel-next" onclick="scrollCarousel(this, 1)"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </section>
-
-                <!-- Music Collections -->
-                <section class="section music-collection-section" data-section="music-collection" data-premium-reveal>
-                    <div class="section-header">
-                        <h2 class="section-title" data-kicker="Collections"><i class="fas fa-folder" style="color:#34d399;margin-right:8px;"></i>Music Collections</h2>
-                        <button class="see-all-btn" onclick="toggleMusicCollectionSidebar()" title="Browse Collections"><i class="fas fa-chevron-right"></i> Browse</button>
-                    </div>
-                    <div class="carousel-container">
-                        <button class="carousel-btn carousel-prev" onclick="scrollCarousel(this, -1)"><i class="fas fa-chevron-left"></i></button>
-                        <div class="carousel-track" id="musicCollectionTrack"></div>
-                        <button class="carousel-btn carousel-next" onclick="scrollCarousel(this, 1)"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </section>
 
             </div><!-- /page-home -->
 
@@ -1025,8 +1027,8 @@
     <script defer src="yt-music.js"></script>
     <script defer src="analytics-tracker.js"></script>
     <script defer src="script.js"></script>
-
     <script defer src="listening-history.js"></script>
+    <script defer src="ai-home.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             PlayerEngine.init();

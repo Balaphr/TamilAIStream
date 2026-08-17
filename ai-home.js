@@ -1,0 +1,849 @@
+'use strict';
+/* ============================================================
+   AIHome — Reference-Based Premium Home Page
+   Renders all new Home sections from EXISTING production data
+   (DataStore / ListeningHistory / PlaylistManager / AI systems)
+   and wires the sidebar, header and full-width bottom player.
+   Never replaces the audio engine — it drives the same
+   window.playSong / window.playStation / PlayerEngine path.
+   ============================================================ */
+window.AIHome = (() => {
+
+    const $ = (id) => document.getElementById(id);
+
+    /* ---------------- helpers ---------------- */
+    function escapeHtml(str) {
+        return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+    function publishedSongs() {
+        try {
+            return (window.DataStore ? (DataStore.getSongs() || []) : []).filter(s => s && s.status === 'published');
+        } catch (e) { return []; }
+    }
+    function activeStations() {
+        try {
+            return (window.DataStore ? (DataStore.getStations() || []) : []).filter(s => s && s.status === 'active');
+        } catch (e) { return []; }
+    }
+    function artOf(item) {
+        return item.thumbnail || item.albumCover || item.cover || item.image || '';
+    }
+    function stationThumb(s) { return s.thumbnail || s.cover || s.image || ''; }
+    function stationColor(s, i) {
+        if (s && s.gradient) return s.gradient;
+        const grads = [
+            'linear-gradient(135deg,#312e81,#1e1b4b)',
+            'linear-gradient(135deg,#0f3b2e,#064e3b)',
+            'linear-gradient(135deg,#7c2d12,#431407)',
+            'linear-gradient(135deg,#1e3a5f,#0d1f3c)',
+            'linear-gradient(135deg,#3b0a47,#1e0a33)',
+            'linear-gradient(135deg,#3b2f0f,#1c1505)'
+        ];
+        return grads[(i || 0) % grads.length];
+    }
+    function durationText(d) {
+        if (d == null || d === '') return '';
+        if (typeof d === 'number') {
+            const m = Math.floor(d / 60), s = Math.floor(d % 60);
+            return m + ':' + String(s).padStart(2, '0');
+        }
+        const str = String(d);
+        if (/^\d+$/.test(str)) {
+            const n = parseInt(str, 10);
+            const m = Math.floor(n / 60), s = Math.floor(n % 60);
+            return m + ':' + String(s).padStart(2, '0');
+        }
+        return str;
+    }
+    function firstWordName() {
+        try {
+            const u = window.Auth && Auth.currentUser ? Auth.currentUser() : null;
+            if (u && u.name) return u.name.split(' ')[0];
+            if (u && u.displayName) return u.displayName.split(' ')[0];
+        } catch (e) { /* ignore */ }
+        return 'Guest';
+    }
+    function greeting() {
+        const h = new Date().getHours();
+        if (h < 12) return 'Good Morning';
+        if (h < 17) return 'Good Afternoon';
+        return 'Good Evening';
+    }
+    function isGuestUser() {
+        try {
+            const u = Auth.currentUser ? Auth.currentUser() : null;
+            return !u || !!u.isGuest;
+        } catch (e) { return true; }
+    }
+    const ART_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23101533'/%3E%3Ccircle cx='100' cy='100' r='62' fill='%2322d3ee' opacity='0.16'/%3E%3Cpath d='M84 78 L84 130 L128 104 Z' fill='%2322d3ee' opacity='0.45'/%3E%3C/svg%3E";
+
+    function emptyHTML(icon, title, text) {
+        return '<div class="ai-empty"><i class="' + icon + '"></i>' +
+            '<div class="ai-empty-title">' + title + '</div>' +
+            (text ? '<div class="ai-empty-text">' + text + '</div>' : '') + '</div>';
+    }
+
+    function showToastSafe(msg, type) {
+        try { if (typeof window.showToast === 'function') window.showToast(msg, type || 'info'); } catch (e) { /* ignore */ }
+    }
+
+    /* ---------------- Music Hero ---------------- */
+    let heroSlides = [];
+    let heroIdx = 0;
+    let heroTimer = null;
+
+    function stationColorFallback() {
+        return 'radial-gradient(circle at 50% 40%, rgba(34,211,238,0.28) 0%, rgba(99,102,241,0.16) 40%, rgba(10,15,34,0.9) 75%)';
+    }
+
+    function renderMusicHero() {
+        const body = $('aiHeroBackdrop');
+        const dots = $('aiHeroDotsWrap');
+        if (!body) return;
+        const songs = publishedSongs();
+        heroSlides = songs.length ? songs.slice(0, 5) : [];
+        if (!heroSlides.length) {
+            body.style.background = stationColorFallback();
+            body.innerHTML = '<i class="fa-solid fa-music"></i>';
+            return;
+        }
+        dots.innerHTML = heroSlides.map((_, i) =>
+            '<button class="ai-hero-dot' + (i === 0 ? ' active' : '') + '" data-i="' + i + '" aria-label="Slide ' + (i + 1) + '"></button>'
+        ).join('');
+        dots.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => { showHeroSlide(parseInt(btn.dataset.i, 10)); restartHeroTimer(); });
+        });
+        applyHeroSlide(0);
+        startHeroTimer();
+    }
+
+    function applyHeroSlide(idx) {
+        if (!heroSlides.length) return;
+        heroIdx = (idx + heroSlides.length) % heroSlides.length;
+        const song = heroSlides[heroIdx];
+        const art = artOf(song) || ART_PLACEHOLDER;
+        const body = $('aiHeroBackdrop');
+        if (body) {
+            body.style.background = art ? 'url("' + art + '") center/cover no-repeat' : stationColorFallback();
+            body.innerHTML = art ? '<img src="' + art + '" alt="" loading="lazy">' : '<i class="fa-solid fa-music"></i>';
+        }
+        const titleEl = $('aiHeroTitle');
+        if (titleEl && !titleEl.dataset.static) titleEl.textContent = song.title || 'Tamil Music';
+        const dots = $('aiHeroDotsWrap');
+        if (dots) Array.from(dots.children).forEach((d, i) => d.classList.toggle('active', i === heroIdx));
+    }
+
+    function startHeroTimer() {
+        stopHeroTimer();
+        if (heroSlides.length < 2) return;
+        heroTimer = setInterval(() => applyHeroSlide(heroIdx + 1), 5500);
+    }
+    function stopHeroTimer() { if (heroTimer) { clearInterval(heroTimer); heroTimer = null; } }
+    function restartHeroTimer() { startHeroTimer(); }
+
+    function showHeroSlide(idx) { applyHeroSlide(idx); }
+
+    /* ---------------- Trending Playlists ---------------- */
+    function collectPlaylists() {
+        const merged = [];
+        const seen = {};
+        function push(p) {
+            if (!p || !p.id || seen[p.id]) return;
+            seen[p.id] = 1;
+            merged.push(p);
+        }
+        try { (DataStore.getPlaylists() || []).forEach(push); } catch (e) { /* ignore */ }
+        try {
+            if (window.PlaylistManager) {
+                if (typeof PlaylistManager.getPlaylists === 'function') PlaylistManager.getPlaylists().forEach(push);
+                if (typeof PlaylistManager.getAIPlaylists === 'function') PlaylistManager.getAIPlaylists().forEach(push);
+            }
+        } catch (e) { /* ignore */ }
+        return merged;
+    }
+
+    function resolvePlaylistSongs(playlist) {
+        const items = playlist.songs || playlist.songIds || [];
+        if (items.some(s => s && (s.audioUrl || s.streamUrl))) return items.filter(s => s);
+        const all = publishedSongs();
+        const ids = items.map(s => (s && s.songId) || s || '');
+        const found = all.filter(s => ids.indexOf(s.id || s.songId) !== -1);
+        return found.length ? found : all.slice(0, 12);
+    }
+
+    function bindHeroPlay() {
+        const btn = $('aiHeroPlayBtn');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            const songs = publishedSongs();
+            if (!songs.length) { showToastSafe('No songs available yet', 'info'); return; }
+            const start = Math.min(heroIdx, songs.length - 1);
+            if (typeof window.playSong === 'function') window.playSong(songs[start], songs);
+            else showToastSafe('Ready to play: ' + songs[start].title, 'info');
+        });
+    }
+
+    function renderTrendingPlaylists() {
+        const row = $('aiTrendingPlaylists');
+        if (!row) return;
+        let playlists = collectPlaylists();
+        if (!playlists.length) playlists = buildDerivedPlaylists();
+        if (!playlists.length) {
+            row.innerHTML = emptyHTML('fa-solid fa-list', 'No playlists yet',
+                'Create playlists from the Library and your trending mixes will appear here.');
+            return;
+        }
+        row.innerHTML = playlists.slice(0, 10).map((p, i) => {
+            const songs = resolvePlaylistSongs(p);
+            const cover = p.thumbnail || p.cover || p.image || artOf(songs[0]) || '';
+            const count = songs.length;
+            const name = (p.name || p.title || 'Playlist').slice(0, 34);
+            const grad = p.gradient || stationColor(p, i);
+            return '<div class="ai-playlist-card" data-pl="' + i + '">' +
+                '<div class="ai-playlist-art" style="background:' + grad + ';' +
+                (cover ? 'background-image:url(\'' + cover + '\');background-size:cover;background-position:center;' : '') + '">' +
+                (cover ? '<img src="' + escapeHtml(cover) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-compact-disc ai-pa-icon"></i>') +
+                '<button class="ai-play-btn" data-pl="' + i + '" aria-label="Play ' + escapeHtml(name) + '"><i class="fa-solid fa-play" style="margin-left:2px;"></i></button>' +
+                '</div><div class="ai-playlist-info">' +
+                '<div class="ai-playlist-name" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</div>' +
+                '<div class="ai-playlist-count">' + count + ' songs</div></div></div>';
+        }).join('');
+        row.querySelectorAll('.ai-playlist-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                const idx = parseInt(card.dataset.pl, 10);
+                const p = playlists[idx];
+                if (!p) return;
+                const songs = resolvePlaylistSongs(p);
+                if (!songs.length) { showToastSafe('Playlist "' + (p.name || '') + '" has no playable songs yet', 'info'); return; }
+                if (typeof window.playSong === 'function') window.playSong(songs[0], songs);
+                e.preventDefault();
+            });
+        });
+    }
+
+    function buildDerivedPlaylists() {
+        const songs = publishedSongs();
+        if (!songs.length) return [];
+        const groups = {};
+        songs.forEach(s => {
+            const g = (s.genre || s.mood || '').trim();
+            const key = g || 'Tamil Hits';
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(s);
+        });
+        const grads = ['linear-gradient(135deg,#312e81,#1e1b4b)', 'linear-gradient(135deg,#0f3b2e,#064e3b)',
+            'linear-gradient(135deg,#7c2d12,#431407)', 'linear-gradient(135deg,#1e3a5f,#0d1f3c)', 'linear-gradient(135deg,#3b0a47,#1e0a33)'];
+        return Object.keys(groups).map((name, i) => ({
+            id: 'derived_' + i, name: name.slice(0, 34),
+            songs: groups[name], thumbnail: artOf(groups[name][0]), gradient: grads[i % grads.length]
+        }));
+    }
+
+    /* ---------------- Live FM Stations ---------------- */
+    function renderLiveFm() {
+        const grid = $('aiLiveFmGrid');
+        if (!grid) return;
+        const stations = activeStations().slice(0, 6);
+        if (!stations.length) {
+            grid.innerHTML = emptyHTML('fa-solid fa-tower-broadcast', 'No stations yet',
+                'Add your FM stations from the Website Builder and they will appear live here.');
+            return;
+        }
+        grid.innerHTML = stations.map((s, i) => {
+            const name = (s.name || 'FM Station').slice(0, 26);
+            const freq = s.freq ? s.freq + ' FM' : 'FM';
+            const lc = s.city || 'Chennai';
+            const listeners = s.listeners || 0;
+            const lText = listeners >= 1000 ? (listeners / 1000).toFixed(1) + 'K' : String(listeners);
+            const thumb = stationThumb(s);
+            return '<div class="ai-fm-card" data-station="' + escapeHtml(name) + '">' +
+                '<div class="ai-fm-art" style="background:' + stationColor(s, i) + ';">' +
+                '<span class="ai-fm-live-badge"><span class="ai-live-dot" style="box-shadow:none;animation:none;"></span>LIVE</span>' +
+                (thumb ? '<img src="' + escapeHtml(thumb) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-tower-broadcast"></i>') +
+                '</div>' +
+                '<div class="ai-fm-info">' +
+                '<div class="ai-fm-name">' + escapeHtml(name) + '</div>' +
+                '<div class="ai-fm-meta"><span class="ai-fm-freq">' + escapeHtml(freq) + '</span><span>' + escapeHtml(lc) + '</span></div>' +
+                '<div class="ai-fm-wave"><span></span><span></span><span></span><span></span><span></span></div>' +
+                '</div>' +
+                '<button class="ai-fm-play-btn" aria-label="Play ' + escapeHtml(name) + '"><i class="fa-solid fa-play" style="margin-left:2px;"></i></button>' +
+                '</div>';
+        }).join('');
+        grid.querySelectorAll('.ai-fm-card').forEach(card => {
+            const btn = card.querySelector('.ai-fm-play-btn');
+            if (btn) btn.addEventListener('click', e => e.stopPropagation());
+            card.addEventListener('click', () => {
+                const name = card.dataset.station;
+                if (!name) return;
+                if (typeof window.toggleStationFromCard === 'function') {
+                    window.toggleStationFromCard(card, name);
+                } else if (typeof window.playStation === 'function') {
+                    window.playStation(name);
+                }
+                setTimeout(syncFmPlaying, 120);
+            });
+        });
+        syncFmPlaying();
+    }
+
+    function syncFmPlaying() {
+        const cards = document.querySelectorAll('.ai-fm-card');
+        if (!cards.length) return;
+        let playing = false, cur = '';
+        try {
+            playing = window.isStreamPlaying === true;
+            if (!playing && typeof isStreamPlaying !== 'undefined') playing = isStreamPlaying === true;
+            cur = String(window.currentStation || (typeof currentStation !== 'undefined' ? currentStation : '') || '');
+        } catch (e) { /* ignore */ }
+        cur = cur.toLowerCase();
+        cards.forEach(card => {
+            const name = (card.dataset.station || '').toLowerCase();
+            const active = playing && cur && name &&
+                (cur.indexOf(name) !== -1 || name.indexOf(cur) !== -1);
+            card.classList.toggle('active-station', !!active);
+            card.classList.toggle('playing-station', !!active);
+            const wave = card.querySelector('.ai-fm-wave');
+            if (wave) wave.classList.toggle('static', !active);
+            const icon = card.querySelector('.ai-fm-play-btn i');
+            if (icon) icon.className = active ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+        });
+    }
+    function bindPlaybackHooks() {
+        document.addEventListener('play', (e) => {
+            if (e.target === window.audioPlayer) setTimeout(syncFmPlaying, 80);
+        }, true);
+        document.addEventListener('pause', (e) => {
+            if (e.target === window.audioPlayer) setTimeout(syncFmPlaying, 80);
+        }, true);
+        window.addEventListener('ytm:playTrack', () => setTimeout(syncFmPlaying, 100));
+        window.addEventListener('ytm:pauseTrack', () => setTimeout(syncFmPlaying, 100));
+        window.addEventListener('ytm:resumeTrack', () => setTimeout(syncFmPlaying, 100));
+    }
+
+    /* ---------------- Live Tamil News ---------------- */
+    function renderLiveNews() {
+        const list = $('aiNewsList');
+        if (!list) return;
+        const newsStations = activeStations().filter(s =>
+            String(s.genre || '').toLowerCase().indexOf('news') !== -1
+        );
+        const items = newsStations.length ? newsStations : activeStations().slice(0, 4);
+        if (!items.length) {
+            list.innerHTML = emptyHTML('fa-solid fa-newspaper', 'No news channels yet',
+                'Add live news FM channels from the Website Builder and they will appear here.');
+            return;
+        }
+        list.innerHTML = items.slice(0, 4).map((s, i) => {
+            const name = (s.name || 'Live News').slice(0, 44);
+            const thumb = stationThumb(s);
+            const cat = (s.genre || 'News').trim();
+            const city = s.city || 'Tamil Nadu';
+            return '<div class="ai-news-card" role="button" tabindex="0">' +
+                '<div class="ai-news-img" style="background:' + stationColor(s, i) + ';">' +
+                (thumb ? '<img src="' + escapeHtml(thumb) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-newspaper"></i>') +
+                '<span class="ai-news-live"><span class="ai-live-dot" style="box-shadow:none;animation:none;width:5px;height:5px;"></span>LIVE</span>' +
+                (i === 0 ? '<span class="ai-news-breaking">BREAKING</span>' : '') +
+                '</div>' +
+                '<div class="ai-news-info">' +
+                '<div class="ai-news-headline">' + escapeHtml(name) + ' — Live</div>' +
+                '<div class="ai-news-meta"><span class="ai-news-cat">' + escapeHtml(cat) + '</span>' +
+                '<span><i class="fa-solid fa-location-dot"></i> ' + escapeHtml(city) + '</span>' +
+                '<span>Just now</span></div>' +
+                '</div></div>';
+        }).join('');
+        newsStations.slice(0, 4).forEach((s, i) => {
+            const card = list.children[i];
+            if (card) card.dataset.station = s.name;
+        });
+        const allStations = activeStations();
+        list.querySelectorAll('.ai-news-card').forEach(card => {
+            const playStation = (name) => {
+                if (!name) return;
+                setTimeout(() => {
+                    if (typeof window.playStation === 'function') window.playStation(name);
+                }, 60);
+            };
+            card.addEventListener('click', () => {
+                let target = null;
+                try { target = allStations.find(s => (card.dataset.station && s.name) === card.dataset.station); } catch (e) { /* ignore */ }
+                if (target) playStation(target.name);
+                else if (card.dataset.station) playStation(card.dataset.station);
+            });
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (card.dataset.station) playStation(card.dataset.station);
+                }
+            });
+        });
+    }
+
+    function emptyHtml(icon, title, text) { return emptyHTML(icon, title, text); }
+
+    /* ---------------- Recently Played ---------------- */
+    function getRecentlyPlayedSongs() {
+        let history = [];
+        try {
+            if (window.ListeningHistory && ListeningHistory.getRecentlyPlayed) {
+                history = ListeningHistory.getRecentlyPlayed() || [];
+            } else if (window.DataStore) {
+                history = DataStore.getHistory() || [];
+            }
+        } catch (e) { /* ignore */ }
+        const all = publishedSongs();
+        const out = [];
+        (history || []).forEach(h => {
+            if (!h) return;
+            const match = all.find(s => String(s.id) === String(h.id) || String(s.songId) === String(h.id));
+            if (match && match.audioUrl) out.push(match);
+            else if (h.audioUrl) out.push(h);
+            else if (h.streamUrl) out.push(h);
+        });
+        return out.slice(0, 12);
+    }
+
+    function songCardHTML(song, i) {
+        const title = (song.title || song.name || 'Untitled').slice(0, 34);
+        const artist = (song.artist || song.singer || 'Unknown Artist').slice(0, 30);
+        const art = artOf(song) || ART_PLACEHOLDER;
+        const dur = durationText(song.duration);
+        return '<div class="ai-song-card" data-idx="' + i + '">' +
+            '<div class="ai-song-art">' + (artOf(song) ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+            '<i class="fa-solid fa-music"></i></div>' +
+            '<div class="ai-song-body"><div class="ai-song-title" title="' + escapeHtml(title) + '">' + escapeHtml(title) + '</div>' +
+            '<div class="ai-song-artist">' + escapeHtml(artist) + '</div>' +
+            (dur ? '<div class="ai-song-dur"><i class="fa-regular fa-clock"></i>' + dur + '</div>' : '') +
+            '</div></div>';
+    }
+
+    function renderRecentlyPlayed() {
+        const row = $('aiRecentlyPlayed');
+        if (!row) return;
+        const items = getRecentlyPlayedSongs();
+        if (!items.length) {
+            row.innerHTML = emptyHTML('fa-solid fa-clock-rotate-left', 'No listening history yet',
+                'Start playing songs and your recently played tracks will show up here.');
+            return;
+        }
+        row.innerHTML = items.slice(0, 12).map((s, i) => songCardHTML(s, i)).join('');
+        row.querySelectorAll('.ai-song-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const i = parseInt(card.dataset.idx, 10);
+                const song = items[i];
+                if (!song) return;
+                if (song.streamUrl && !song.audioUrl && typeof window.playStation === 'function') {
+                    window.playStation(song.title || song.name || '');
+                } else if (song.audioUrl && typeof window.playSong === 'function') {
+                    window.playSong(song, items);
+                } else {
+                    showToastSafe('This track has no audio attached yet', 'info');
+                }
+            });
+        });
+    }
+
+    /* ---------------- AI Recommendations ---------------- */
+    function getAIRecSongs() {
+        const all = publishedSongs();
+        if (!all.length) return [];
+        try {
+            if (window.ListeningHistory && ListeningHistory.getAIPicks) {
+                const picks = ListeningHistory.getAIPicks() || [];
+                if (picks.length) return picks.slice(0, 6);
+            }
+        } catch (e) { /* ignore */ }
+        const played = new Set();
+        try {
+            const hist = (window.ListeningHistory && ListeningHistory.getRecentlyPlayed) ? ListeningHistory.getRecentlyPlayed() : [];
+            (hist || []).forEach(h => played.add(String(h.id)));
+        } catch (e) { /* ignore */ }
+        const fresh = all.filter(s => !played.has(String(s.id)));
+        const pool = fresh.length ? fresh : all;
+        return pool.slice().sort(() => Math.random() - 0.5).slice(0, 6);
+    }
+
+    function renderAIRecommendations() {
+        const wrap = $('aiRecSongs');
+        const greet = $('aiRecGreeting');
+        if (greet) {
+            greet.innerHTML = '<small>AI Curated For You</small>' + escapeHtml(greeting()) + '! <span style="display:inline-block;">👋</span>';
+        }
+        if (!wrap) return;
+        const songs = getAIRecSongs();
+        if (!songs.length) {
+            wrap.innerHTML = emptyHTML('fa-solid fa-wand-magic-sparkles', 'AI needs more music',
+                'Add more songs so the AI can build your personal recommendations.');
+            return;
+        }
+        wrap.innerHTML = songs.slice(0, 6).map((s, i) => {
+            const title = (s.title || s.name || 'Untitled').slice(0, 30);
+            const artist = (s.artist || s.singer || 'Unknown').slice(0, 28);
+            const art = artOf(s) || ART_PLACEHOLDER;
+            return '<div class="ai-rec-song" data-idx="' + i + '">' +
+                '<div class="ai-rec-song-art">' + (artOf(s) ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+                '<i class="fa-solid fa-music"></i></div>' +
+                '<div class="ai-rec-song-info">' +
+                '<div class="ai-rec-song-title">' + escapeHtml(title) + '</div>' +
+                '<div class="ai-rec-song-artist">' + escapeHtml(artist) + '</div></div>' +
+                '<button class="ai-play-btn force-show" aria-label="Play ' + escapeHtml(title) + '"><i class="fa-solid fa-play"></i></button>' +
+                '</div>';
+        }).join('');
+        wrap.querySelectorAll('.ai-rec-song').forEach(card => {
+            card.addEventListener('click', () => {
+                const i = parseInt(card.dataset.idx, 10);
+                const song = songs[i];
+                if (song && typeof window.playSong === 'function') window.playSong(song, songs);
+            });
+        });
+    }
+
+    function bindDiscoverAI() {
+        const btn = $('aiDiscoverBtn');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            if (window.AIFeatures && typeof AIFeatures.openAICreator === 'function') {
+                AIFeatures.openAICreator();
+            } else if (window.AIMusicAssistant && typeof AIMusicAssistant.generateAIPlaylist === 'function') {
+                try { AIMusicAssistant.generateAIPlaylist({}); } catch (e) { /* ignore */ }
+            } else {
+                showToastSafe('AI playlist builder is loading…', 'info');
+            }
+        });
+    }
+
+    /* ---------------- Sidebar ---------------- */
+    const PAGE_TO_AI = { home: 'home', explore: 'explore', library: 'library', liked: 'liked', playlists: 'playlists', radio: 'live-fm', stations: 'live-fm', history: 'history' };
+    const AI_TO_PAGE = { 'home': 'home', 'explore': 'explore', 'music': 'explore', 'live-fm': 'radio', 'news': 'radio', 'library': 'library', 'liked': 'liked', 'playlists': 'playlists' };
+
+    function bindSidebar() {
+        const items = document.querySelectorAll('.ai-sidebar-item[data-ai-page]');
+        items.forEach(item => {
+            item.addEventListener('click', () => {
+                const target = item.dataset.aiPage;
+                if (target === 'assistant') {
+                    if (typeof YTMusic !== 'undefined' && YTMusic.toggleAssistant) YTMusic.toggleAssistant();
+                    else if (document.getElementById('ytmAiPanel')) document.getElementById('ytmAiPanel').classList.toggle('open');
+                    return;
+                }
+                const page = AI_TO_PAGE[target];
+                if (page && typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {
+                    YTMusic.navigateTo(page);
+                    requestAnimationFrame(() => { try { window.scrollTo({ top: 0 }); } catch (e) { /* ignore */ } });
+                } else if (target === 'news' && typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {
+                    YTMusic.navigateTo('radio');
+                }
+                setSidebarActive(target);
+            });
+        });
+        const logo = $('aiSidebarLogo') || document.querySelector('.ai-sidebar-logo');
+        if (logo) logo.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) YTMusic.navigateTo('home');
+        });
+        // premium upgrade
+        const up = $('aiPremiumBtn') || $('aiUpgradeBtn');
+        if (up) up.addEventListener('click', () => {
+            try { window.location.href = 'profile.html'; } catch (e) { /* ignore */ }
+        });
+    }
+
+    function setSidebarActive(aiPage) {
+        document.querySelectorAll('.ai-sidebar-item[data-ai-page]').forEach(item => {
+            const act = item.dataset.aiPage === aiPage;
+            item.classList.toggle('active', act);
+        });
+    }
+
+    /* ---------------- See All buttons ---------------- */
+    function bindSeeAll() {
+        document.querySelectorAll('.ai-see-all[data-ai-seeall]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.aiSeeall;
+                const page = AI_TO_PAGE[target] || target;
+                if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {
+                    YTMusic.navigateTo(page);
+                    requestAnimationFrame(() => { try { window.scrollTo({ top: 0 }); } catch (e) { /* ignore */ } });
+                }
+            });
+        });
+    }
+
+    function syncSidebar(page) {
+        const aiPage = PAGE_TO_AI[page] || (page === 'home' ? 'home' : null);
+        if (aiPage) setSidebarActive(aiPage);
+    }
+
+    function hookNavigation() {
+        try {
+            if (typeof YTMusic === 'undefined' || !YTMusic.navigateTo) return;
+            const orig = YTMusic.navigateTo.bind(YTMusic);
+            YTMusic.navigateTo = function (page, opts) {
+                const res = orig(page, opts);
+                syncSidebar(page);
+                if (page === 'home') setTimeout(refreshHome, 250);
+                return res;
+            };
+        } catch (e) { /* ignore */ }
+    }
+
+    /* ---------------- Dark mode toggle ---------------- */
+    function bindDarkToggle() {
+        const toggle = $('aiDarkToggle');
+        if (!toggle) return;
+        let light = false;
+        try { light = localStorage.getItem('ai_theme_light') === '1'; } catch (e) { /* ignore */ }
+        const apply = (on) => { document.body.classList.toggle('ai-light', on); };
+        apply(light);
+        toggle.addEventListener('click', () => {
+            light = !light;
+            apply(light);
+            try { localStorage.setItem('ai_theme_light', light ? '1' : '0'); } catch (e) { /* ignore */ }
+        });
+    }
+
+    /* ---------------- Header user ---------------- */
+    function bindHeaderUser() {
+        const chip = $('aiUserChip');
+        const menu = $('aiUserMenu');
+        if (chip && menu) {
+            chip.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const open = chip.classList.toggle('open');
+                document.querySelectorAll('.ai-user-chip.open').forEach(c => { if (c !== chip) c.classList.remove('open'); });
+                document.querySelectorAll('.ai-notif-btn.open').forEach(b => b.classList.remove('open'));
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.ai-user-chip')) chip.classList.remove('open');
+            });
+        }
+        document.querySelectorAll('[data-ai-menu]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.aiMenu;
+                if (action === 'profile') { window.location.href = 'profile.html'; }
+                else if (action === 'settings') { if (typeof YTMusic !== 'undefined' && YTMusic.toggleSettingsPanel) YTMusic.toggleSettingsPanel(); }
+                else if (action === 'dashboard') { if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) YTMusic.navigateTo('dashboard'); }
+                else if (action === 'builder') {
+                    const sess = (typeof Auth !== 'undefined' && Auth.currentUser) ? Auth.currentUser() : null;
+                    const isAdmin = !!sess || (localStorage.getItem('adminSession') ? true : false);
+                    if (isAdmin) window.location.href = 'builder.html';
+                    else window.location.href = 'admin-login.html';
+                }
+                else if (action === 'logout') { if (typeof window.logout === 'function') window.logout(); else if (typeof Auth !== 'undefined' && Auth.logout) Auth.logout(); }
+                if (chip) chip.classList.remove('open');
+            });
+        });
+        renderHeaderUser();
+    }
+
+    function renderHeaderUser() {
+        let user = null;
+        try { if (window.Auth && Auth.currentUser) user = Auth.currentUser(); } catch (e) { /* ignore */ }
+        const nameEl = $('aiUserName');
+        const planEl = $('aiUserPlan');
+        const avatarEl = $('aiUserAvatar');
+        const name = (user && (user.name || user.displayName)) || 'Guest';
+        const initials = name.charAt(0).toUpperCase();
+        if (nameEl) nameEl.textContent = 'Hi, ' + name.split(' ')[0];
+        if (planEl) {
+            const premium = !!(user && (user.premium || user.plan === 'premium'));
+            planEl.innerHTML = (premium ? '<i class="fa-solid fa-crown"></i> Premium' : '<i class="fa-solid fa-crown" style="color:rgba(255,255,255,0.4);"></i> Free');
+        }
+        if (avatarEl) {
+            const photo = (user && user.photoURL) || '';
+            if (photo) avatarEl.innerHTML = '<img src="' + escapeHtml(photo) + '" alt="' + escapeHtml(name) + '">';
+            else avatarEl.textContent = initials;
+        }
+        // Admin → show builder in menu
+        let isAdmin = false;
+        try { isAdmin = !!(user && (user.role === 'admin' || user.isAdmin)); } catch (e) { /* ignore */ }
+        const builtBtn = document.getElementById('aiMenuBuilder');
+        if (builtBtn) builtBtn.style.display = isAdmin ? '' : 'none';
+    }
+
+    /* ---------------- Notifications + Install ---------------- */
+    let beforeInstallPrompt = null;
+    function bindNotifications() {
+        const btn = $('aiNotifBtn');
+        const panel = $('aiNotifPanel');
+        if (btn && panel) {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                panel.classList.toggle('open');
+                btn.classList.toggle('open', panel.classList.contains('open'));
+                const chip = $('aiUserChip');
+                if (chip) chip.classList.remove('open');
+            });
+            document.addEventListener('click', (e) => {
+                if (btn && !e.target.closest('#aiNotifBtn') && !e.target.closest('#aiNotifPanel')) {
+                    panel.classList.remove('open');
+                    btn.classList.remove('open');
+                }
+            });
+        }
+        if (panel) {
+            let notifications = [];
+            try { notifications = (DataStore.getNotifications && DataStore.getNotifications()) || []; } catch (e) { /* ignore */ }
+            const items = notifications.filter(n => n).slice(0, 4);
+            panel.innerHTML = '<div class="ai-notif-head"><i class="fa-solid fa-bell"></i> Notifications</div>' +
+                (items.length ? items.map(n => {
+                    const t = n.title || n.message || 'Update';
+                    const body = n.message && n.message !== t ? n.message : '';
+                    const ic = (n.icon || 'fa-circle-info').replace('fa-', 'fa-solid fa-');
+                    return '<div class="ai-notif-item"><div class="ai-notif-item-icon"><i class="' + ic + '"></i></div>' +
+                        '<div><div class="ai-notif-item-title">' + escapeHtml(t) + '</div>' +
+                        (body ? '<div class="ai-notif-item-time">' + escapeHtml(body) + '</div>' : '') +
+                        '<div class="ai-notif-item-time">' + (n.time ? escapeHtml(n.time) : 'Now') + '</div></div></div>';
+                }).join('') : '<div class="ai-notif-empty">No notifications yet.<br>You are all caught up! 🎉</div>');
+        }
+    }
+
+    function bindInstall() {
+        const btn = $('aiInstallBtn');
+        if (!btn) return;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            beforeInstallPrompt = e;
+            btn.style.display = '';
+        });
+        const isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+        if (isStandalone) { btn.style.display = 'none'; return; }
+        btn.addEventListener('click', async () => {
+            if (beforeInstallPrompt) {
+                beforeInstallPrompt.prompt();
+                try { const r = await beforeInstallPrompt.userChoice; if (r.outcome === 'accepted') showToastSafe('App installed! 🎉', 'success'); } catch (e) { /* ignore */ }
+                beforeInstallPrompt = null;
+            } else {
+                showToastSafe('Bookmark this page or use your browser menu to install the app', 'info');
+            }
+        });
+    }
+
+    /* ---------------- Search shortcut (Ctrl+/) ---------------- */
+    function bindSearchShortcut() {
+        const input = $('ytmSearchInput');
+        document.addEventListener('keydown', (e) => {
+            const mod = (e.ctrlKey || e.metaKey) && (e.key === '/' || e.code === 'Slash');
+            if (!mod) return;
+            const tag = (e.target.tagName || '').toLowerCase();
+            if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+            e.preventDefault();
+            if (input) {
+                input.focus();
+                try { input.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (err) { /* ignore */ }
+            } else {
+                if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) YTMusic.navigateTo('search');
+            }
+        });
+    }
+
+    /* ---------------- Bottom player enhancement ---------------- */
+    function enhancePlayer() {
+        let attempts = 0;
+        const timer = setInterval(() => {
+            const mini = document.getElementById('gp-mini');
+            if (mini) {
+                clearInterval(timer);
+                injectPlayerExtras(mini);
+            } else if (++attempts > 20) { clearInterval(timer); }
+        }, 250);
+    }
+
+    function injectPlayerExtras(mini) {
+        if (mini.querySelector('.ai-gp-extra')) return;
+        const right = mini.querySelector('.gp-mini-right');
+        if (!right) return;
+        const extra = document.createElement('div');
+        extra.className = 'ai-gp-extra';
+        extra.innerHTML =
+            '<div class="ai-gp-vol-wrap">' +
+            '<button class="gp-btn ai-gp-vol-btn" id="aiGpVolBtn" title="Volume"><i class="fa-solid fa-volume-high"></i></button>' +
+            '<div class="ai-gp-vol-slider"><input type="range" min="0" max="100" value="80" id="aiGpVolRange" aria-label="Volume"></div>' +
+            '</div>' +
+            '<button class="gp-btn ai-gp-queue-btn" id="aiGpQueueBtn" title="Queue"><i class="fa-solid fa-bars-staggered"></i><span class="ai-gp-queue-badge"></span></button>';
+        right.appendChild(extra);
+
+        const range = document.getElementById('aiGpVolRange');
+        if (range) {
+            const sync = () => {
+                let v = 0.8;
+                try {
+                    if (window.PlayerEngine && PlayerEngine.volume !== undefined) v = PlayerEngine.volume;
+                    else if (window.audioPlayer && window.audioPlayer.volume !== undefined) v = window.audioPlayer.volume;
+                } catch (e) { /* ignore */ }
+                range.value = Math.round(v * 100);
+            };
+            sync();
+            range.addEventListener('input', () => {
+                const v = parseInt(range.value, 10) / 100;
+                try { if (window.PlayerEngine && PlayerEngine.setVolume) PlayerEngine.setVolume(v); } catch (e) { /* ignore */ }
+                try { if (window.audioPlayer) window.audioPlayer.volume = v; } catch (e) { /* ignore */ }
+                try { if (typeof window.setPlaybackVolume === 'function') window.setPlaybackVolume(v); } catch (e) { /* ignore */ }
+            });
+            document.addEventListener('volumechange', sync, true);
+        }
+
+        const qBtn = document.getElementById('aiGpQueueBtn');
+        if (qBtn) qBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            try {
+                if (window.GlobalPlayer && GlobalPlayer.toggleQueue) GlobalPlayer.toggleQueue();
+                else if (typeof YTMusic !== 'undefined' && YTMusic.toggleQueuePanel) YTMusic.toggleQueuePanel();
+            } catch (err) { /* ignore */ }
+        });
+    }
+
+    /* ---------------- Refresh + init ---------------- */
+    function refreshHome() {
+        stopHeroTimer();
+        renderMusicHero();
+        renderTrendingPlaylists();
+        renderLiveFm();
+        renderLiveNews();
+        renderRecentlyPlayed();
+        renderAIRecommendations();
+        bindHeroPlay();
+        bindDiscoverAI();
+        syncFmPlaying();
+    }
+
+    function bindDataSync() {
+        const refresh = () => setTimeout(refreshHome, 300);
+        window.addEventListener('storage-sync', refresh);
+        window.addEventListener('premium-sections-sync', refresh);
+        window.addEventListener('tamilAIStream-content-synced', refresh);
+        window.addEventListener('storage', (e) => {
+            if (e.key && (e.key.indexOf('tamilAIStream') !== -1 || e.key.indexOf('ytm_') !== -1)) refresh();
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) setTimeout(syncFmPlaying, 200);
+        });
+    }
+
+    function init() {
+        refreshHome();
+        bindHeroPlay();
+        bindDiscoverAI();
+        bindSidebar();
+        bindSeeAll();
+        bindDarkToggle();
+        bindHeaderUser();
+        bindNotifications();
+        bindInstall();
+        bindSearchShortcut();
+        bindPlaybackHooks();
+        hookNavigation();
+        bindDataSync();
+        enhancePlayer();
+        if (typeof YTMusic !== 'undefined') syncSidebar(YTMusic.currentPage || 'home');
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    return { init, refreshHome, renderLiveFm, syncFmPlaying };
+})();
