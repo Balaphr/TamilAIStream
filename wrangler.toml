@@ -15,3 +15,6 @@ not_found_handling = "none"
 [[r2_buckets]]
 binding = "MEDIA_BUCKET"
 bucket_name = "tamil-ai-stream-media"
+
+[triggers]
+crons = ["0 */2 * * *"]

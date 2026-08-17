@@ -441,6 +441,7 @@ function navigateTo(page) {
         'sections': 'sectionsPage',
         'ads': 'adsPage',
         'upcomingReleases': 'upcomingReleasesPage',
+        'news': 'newsPage',
         'visualeditor': 'visualeditorPage',
         'miniplayersettings': 'miniplayersettingsPage',
         'preview': 'previewPage',
@@ -484,6 +485,7 @@ function navigateTo(page) {
     if (page === 'sections') loadSectionsOrder();
     if (page === 'ads') loadAdsTable();
     if (page === 'upcomingReleases') loadUpcomingReleasesTable();
+    if (page === 'news') loadNewsTable();
     if (page === 'visualeditor') initVisualEditor();
     if (page === 'miniplayersettings') loadPlayerSettings();
     if (page === 'preview') updatePreview();
@@ -2341,6 +2343,8 @@ function initBuilder() {
     document.getElementById('settingsForm')?.addEventListener('submit', saveSettings);
     // Live Tamil News settings form (shares saveSettings — both persist via siteSettings)
     document.getElementById('newsSettingsForm')?.addEventListener('submit', saveSettings);
+    // Brand Identity form (shares saveSettings — persists logo/favicon via siteSettings)
+    document.getElementById('brandSettingsForm')?.addEventListener('submit', saveSettings);
 
     // Station search
     document.getElementById('stationSearch')?.addEventListener('input', (e) => {
@@ -5567,6 +5571,454 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
+// Live Tamil News Management
+// ============================================
+function getNewsRetentionHours() {
+    const settings = DataStore.getSiteSettings();
+    const ns = (settings && settings.newsSettings) || {};
+    return ns.retentionHours > 0 ? ns.retentionHours : 24;
+}
+
+function getNewsAutoDelete() {
+    const settings = DataStore.getSiteSettings();
+    const ns = (settings && settings.newsSettings) || {};
+    return ns.autoDelete !== false;
+}
+
+function loadNewsTable() {
+    const news = DataStore.getNews();
+    const tbody = document.getElementById('newsTableBody');
+    const emptyState = document.getElementById('newsEmptyState');
+    if (!tbody) return;
+
+    const active = news.filter(n => n.status !== 'trashed');
+    const trashed = news.filter(n => n.status === 'trashed');
+
+    if (!active.length) {
+        tbody.innerHTML = '';
+        if (emptyState) emptyState.style.display = 'block';
+    } else {
+        if (emptyState) emptyState.style.display = 'none';
+        tbody.innerHTML = active.map(n => `
+            <tr>
+                <td><div style="width:80px;height:45px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,0.05);">
+                    ${n.image ? `<img src="${n.image}" alt="" style="width:100%;height:100%;object-fit:cover;">` :
+                    '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#555;"><i class="fas fa-image"></i></div>'}
+                </div></td>
+                <td style="max-width:320px;"><strong>${n.title || 'Untitled'}</strong>
+                    <div style="color:rgba(255,255,255,0.4);font-size:12px;margin-top:2px;">${n.publishedAt ? new Date(n.publishedAt).toLocaleString() : '—'}</div>
+                </td>
+                <td>${n.tnPriority ? '<span class="builder-badge" style="background:rgba(139,92,246,0.2);color:#a78bfa;">TN</span>' : '<span style="color:#555;">—</span>'}</td>
+                <td>${n.highlighted ? '<span class="builder-badge" style="background:rgba(34,197,94,0.2);color:#4ade80;">NEW</span>' : '<span style="color:#555;">—</span>'}</td>
+                <td><span class="builder-badge ${n.published ? 'success' : 'warning'}">${n.published ? 'Published' : 'Draft'}</span></td>
+                <td><span class="builder-badge info">${n.source === 'rcc' ? 'RCC' : 'Manual'}</span></td>
+                <td>
+                    <div style="display:flex;gap:6px;">
+                        <button class="builder-btn small" onclick="openNewsModal('${n.id}')" title="Edit"><i class="fas fa-pen"></i></button>
+                        <button class="builder-btn small" onclick="toggleNewsPublish('${n.id}')" title="Publish/Unpublish">${n.published ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>'}</button>
+                        <button class="builder-btn small" onclick="toggleNewsTn('${n.id}')" title="Toggle Tamil Nadu priority">${n.tnPriority ? '<i class="fas fa-map-marker-alt" style="color:#a78bfa;"></i>' : '<i class="fas fa-map-marker-alt"></i>'}</button>
+                        <button class="builder-btn small" onclick="toggleNewsHighlight('${n.id}')" title="Toggle NEW highlight">${n.highlighted ? '<i class="fas fa-star" style="color:#fbbf24;"></i>' : '<i class="fas fa-star"></i>'}</button>
+                        <button class="builder-btn small" onclick="moveNews('${n.id}', -1)" title="Move Up"><i class="fas fa-arrow-up"></i></button>
+                        <button class="builder-btn small" onclick="moveNews('${n.id}', 1)" title="Move Down"><i class="fas fa-arrow-down"></i></button>
+                        <button class="builder-btn small danger" onclick="trashNews('${n.id}')" title="Move to Trash"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`).join('');
+    }
+
+    loadNewsTrashTable(trashed);
+}
+
+function loadNewsTrashTable(trashed) {
+    const tbody = document.getElementById('newsTrashTableBody');
+    const emptyState = document.getElementById('newsTrashEmptyState');
+    const countEl = document.getElementById('newsTrashCount');
+    if (!tbody) return;
+    const trash = trashed || DataStore.getNews().filter(n => n.status === 'trashed');
+    if (countEl) countEl.textContent = trash.length;
+
+    if (!trash.length) {
+        tbody.innerHTML = '';
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+    }
+    if (emptyState) emptyState.style.display = 'none';
+    tbody.innerHTML = trash.map(n => `
+        <tr>
+            <td><div style="width:80px;height:45px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,0.05);">
+                ${n.image ? `<img src="${n.image}" alt="" style="width:100%;height:100%;object-fit:cover;">` :
+                '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#555;"><i class="fas fa-image"></i></div>'}
+            </div></td>
+            <td style="max-width:320px;"><strong>${n.title || 'Untitled'}</strong>
+                <div style="color:rgba(255,255,255,0.4);font-size:12px;margin-top:2px;">${n.trashedAt ? 'Trashed ' + new Date(n.trashedAt).toLocaleString() : 'Trashed by AI News Bot'}</div>
+            </td>
+            <td><span class="builder-badge warning">${n.expired ? 'Expired' : 'Trashed'}</span></td>
+            <td>
+                <div style="display:flex;gap:6px;">
+                    <button class="builder-btn small" onclick="restoreNews('${n.id}')" title="Restore"><i class="fas fa-undo"></i></button>
+                    <button class="builder-btn small danger" onclick="permanentDeleteNews('${n.id}')" title="Delete forever"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+function openNewsModal(editId) {
+    const overlay = document.getElementById('newsModalOverlay');
+    const titleEl = document.getElementById('newsModalTitle');
+    const form = document.getElementById('newsForm');
+
+    if (editId) {
+        const news = DataStore.getNews();
+        const n = news.find(x => x.id === editId);
+        if (!n) return;
+        titleEl.textContent = 'Edit News';
+        document.getElementById('newsEditId').value = n.id;
+        document.getElementById('newsTitle').value = n.title || '';
+        document.getElementById('newsContent').value = n.content || '';
+        document.getElementById('newsImageUrl').value = n.image || '';
+        document.getElementById('newsStatus').value = n.published ? 'published' : 'draft';
+        document.getElementById('newsTnPriority').checked = !!n.tnPriority;
+        document.getElementById('newsHighlighted').checked = !!n.highlighted;
+        const preview = document.getElementById('newsImagePreview');
+        if (n.image) { preview.style.display = 'block'; preview.querySelector('img').src = n.image; }
+        else { preview.style.display = 'none'; }
+        const dt = document.getElementById('newsPublishedAt');
+        if (n.publishedAt) {
+            const d = new Date(n.publishedAt);
+            const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            dt.value = local;
+        } else { dt.value = ''; }
+    } else {
+        titleEl.textContent = 'Add News';
+        form.reset();
+        document.getElementById('newsEditId').value = '';
+        document.getElementById('newsTnPriority').checked = true;
+        document.getElementById('newsPublishedAt').value = '';
+        document.getElementById('newsImagePreview').style.display = 'none';
+    }
+    overlay.style.display = 'flex';
+}
+
+function closeNewsModal() {
+    document.getElementById('newsModalOverlay').style.display = 'none';
+}
+
+async function saveNews(event) {
+    event.preventDefault();
+    const editId = document.getElementById('newsEditId').value;
+    const title = document.getElementById('newsTitle').value.trim();
+    const content = document.getElementById('newsContent').value.trim();
+    const imageUrlInput = document.getElementById('newsImageUrl').value.trim();
+    const imageFile = document.getElementById('newsImageFile').files[0];
+    const published = document.getElementById('newsStatus').value === 'published';
+    const tnPriority = document.getElementById('newsTnPriority').checked;
+    const highlighted = document.getElementById('newsHighlighted').checked;
+    const dtVal = document.getElementById('newsPublishedAt').value;
+
+    if (!title) { showToast('Headline is required', 'warning'); return; }
+    if (!content) { showToast('News content is required', 'warning'); return; }
+
+    let imageUrl = imageUrlInput;
+    if (imageFile) {
+        try {
+            const result = await R2Uploader.uploadImage(imageFile, 'tamil-ai-stream/news', (pct) => {
+                console.log('Upload progress:', pct + '%');
+            });
+            if (result && result.url) imageUrl = result.url;
+        } catch (err) {
+            console.error('Upload failed:', err);
+            showToast('Image upload failed', 'error');
+            return;
+        }
+    }
+
+    const now = new Date().toISOString();
+    let publishedAt = now;
+    if (dtVal) publishedAt = new Date(dtVal).toISOString();
+    let news = DataStore.getNews();
+
+    if (editId) {
+        const n = news.find(x => x.id === editId);
+        if (n) {
+            Object.assign(n, {
+                title, content, image: imageUrl, published,
+                tnPriority, highlighted, publishedAt, updatedAt: now
+            });
+        }
+    } else {
+        const order = news.filter(x => x.status !== 'trashed').length;
+        news.push({
+            id: 'news_' + Date.now(),
+            title, content, image: imageUrl || '', published,
+            tnPriority, highlighted, publishedAt, order,
+            source: 'manual', status: 'active',
+            createdAt: now, updatedAt: now
+        });
+    }
+
+    DataStore.setNews(news);
+    closeNewsModal();
+    loadNewsTable();
+    showToast(editId ? 'News updated' : 'News added', 'success');
+    syncToLiveWebsite();
+}
+
+function toggleNewsPublish(id) {
+    const news = DataStore.getNews();
+    const n = news.find(x => x.id === id);
+    if (n) {
+        n.published = !n.published;
+        n.updatedAt = new Date().toISOString();
+        DataStore.setNews(news);
+        loadNewsTable();
+        showToast(n.published ? 'News published' : 'News unpublished', 'info');
+        syncToLiveWebsite();
+    }
+}
+
+function toggleNewsTn(id) {
+    const news = DataStore.getNews();
+    const n = news.find(x => x.id === id);
+    if (n) {
+        n.tnPriority = !n.tnPriority;
+        n.updatedAt = new Date().toISOString();
+        DataStore.setNews(news);
+        loadNewsTable();
+        showToast(n.tnPriority ? 'Tamil Nadu priority ON' : 'Tamil Nadu priority OFF', 'info');
+        syncToLiveWebsite();
+    }
+}
+
+function toggleNewsHighlight(id) {
+    const news = DataStore.getNews();
+    const n = news.find(x => x.id === id);
+    if (n) {
+        n.highlighted = !n.highlighted;
+        n.updatedAt = new Date().toISOString();
+        DataStore.setNews(news);
+        loadNewsTable();
+        showToast(n.highlighted ? 'Highlighted as NEW' : 'Highlight removed', 'info');
+        syncToLiveWebsite();
+    }
+}
+
+function moveNews(id, dir) {
+    const news = DataStore.getNews().filter(n => n.status !== 'trashed').sort((a, b) => (a.order || 0) - (b.order || 0));
+    const idx = news.findIndex(n => n.id === id);
+    if (idx < 0) return;
+    const swapIdx = idx + dir;
+    if (swapIdx < 0 || swapIdx >= news.length) return;
+    const tmp = news[idx].order;
+    news[idx].order = news[swapIdx].order;
+    news[swapIdx].order = tmp;
+    const all = DataStore.getNews();
+    news.forEach(moved => {
+        const target = all.find(x => x.id === moved.id);
+        if (target) target.order = moved.order;
+    });
+    DataStore.setNews(all);
+    loadNewsTable();
+    showToast('Order updated', 'info');
+    syncToLiveWebsite();
+}
+
+function trashNews(id) {
+    if (!confirm('Move this news to the Trash?')) return;
+    const news = DataStore.getNews();
+    const n = news.find(x => x.id === id);
+    if (n) {
+        n.status = 'trashed';
+        n.trashedAt = new Date().toISOString();
+        DataStore.setNews(news);
+        loadNewsTable();
+        showToast('Moved to Trash', 'success');
+        syncToLiveWebsite();
+    }
+}
+
+function restoreNews(id) {
+    const news = DataStore.getNews();
+    const n = news.find(x => x.id === id);
+    if (n) {
+        n.status = 'active';
+        n.expired = false;
+        delete n.trashedAt;
+        DataStore.setNews(news);
+        loadNewsTable();
+        showToast('News restored', 'success');
+        syncToLiveWebsite();
+    }
+}
+
+function permanentDeleteNews(id) {
+    if (!confirm('Permanently delete this news item? This cannot be undone.')) return;
+    DataStore.setNews(DataStore.getNews().filter(n => n.id !== id));
+    loadNewsTable();
+    showToast('News permanently deleted', 'success');
+    syncToLiveWebsite();
+}
+
+async function syncRCCNews() {
+    const btn = document.getElementById('newsSyncBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...'; }
+    try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 20000);
+        let res;
+        try {
+            res = await fetch('/api/news', { cache: 'no-store', signal: controller.signal });
+        } finally { clearTimeout(timer); }
+        if (!res.ok) throw new Error('Sync failed: ' + res.status);
+        const data = await res.json();
+        const items = (data && data.items) || [];
+        if (!items.length) { showToast('No news found from RCC', 'warning'); return; }
+
+        let news = DataStore.getNews();
+        const byTitle = new Map(news.map(n => [n.title.toLowerCase(), n]));
+        let added = 0;
+        items.forEach(item => {
+            const key = (item.title || '').toLowerCase();
+            if (byTitle.has(key)) {
+                const existing = byTitle.get(key);
+                if (!existing.content || item.content) existing.content = item.content || existing.content;
+                if (!existing.image && item.image) existing.image = item.image;
+                if (!existing.tnPriority && item.priority === 'tamil-nadu') existing.tnPriority = true;
+                existing.updatedAt = new Date().toISOString();
+            } else {
+                news.push({
+                    id: 'news_' + Date.now() + '_' + added,
+                    title: item.title || '',
+                    content: item.content || '',
+                    image: item.image || '',
+                    publishedAt: item.publishedAt ? new Date(item.publishedAt).toISOString() : new Date().toISOString(),
+                    published: true,
+                    tnPriority: item.priority === 'tamil-nadu',
+                    highlighted: false,
+                    order: 0,
+                    source: 'rcc',
+                    status: 'active',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                });
+                added++;
+            }
+        });
+
+        DataStore.setNews(news);
+        loadNewsTable();
+        showToast(`Synced ${items.length} news items from RCC (${added} new)`, 'success');
+        syncToLiveWebsite();
+    } catch (err) {
+        console.error('RCC sync failed:', err);
+        showToast('RCC sync failed: ' + err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync"></i> Sync from RCC'; }
+    }
+}
+
+function runNewsAICheck() {
+    const settings = DataStore.getSiteSettings();
+    const ns = (settings && settings.newsSettings) || {};
+    const autoDelete = ns.autoDelete !== false;
+    const retentionHours = ns.retentionHours > 0 ? ns.retentionHours : 24;
+    const news = DataStore.getNews();
+    const now = Date.now();
+    let moved = 0;
+
+    news.forEach(n => {
+        if (n.status !== 'trashed' && n.published && autoDelete && n.publishedAt) {
+            const ageMs = now - new Date(n.publishedAt).getTime();
+            if (ageMs > retentionHours * 3600000) {
+                n.status = 'trashed';
+                n.expired = true;
+                n.trashedAt = new Date().toISOString();
+                moved++;
+            }
+        }
+    });
+
+    if (moved > 0) {
+        DataStore.setNews(news);
+        loadNewsTable();
+        showToast(`AI News Bot moved ${moved} expired item${moved > 1 ? 's' : ''} to Trash`, 'success');
+        syncToLiveWebsite();
+    } else {
+        showToast('AI News Bot checked all news — nothing expired', 'info');
+    }
+
+    const lastEl = document.getElementById('newsAILastCheck');
+    if (lastEl) lastEl.textContent = 'Last checked: ' + new Date().toLocaleTimeString();
+}
+
+// Auto-run AI News Bot every 2 hours while Builder is open
+(function startNewsAIBot() {
+    const runBot = () => {
+        try {
+            if (typeof DataStore !== 'undefined' && DataStore && DataStore.getNews) {
+                const settings = DataStore.getSiteSettings();
+                const ns = (settings && settings.newsSettings) || {};
+                const autoDelete = ns.autoDelete !== false;
+                if (autoDelete) runNewsAICheck();
+            }
+        } catch (e) { /* ignore */ }
+    };
+    setInterval(runBot, 2 * 60 * 60 * 1000);
+})();
+
+// Image preview for News modal
+document.addEventListener('DOMContentLoaded', function() {
+    const newsImageFile = document.getElementById('newsImageFile');
+    if (newsImageFile) {
+        newsImageFile.addEventListener('change', function() {
+            const file = this.files[0];
+            const preview = document.getElementById('newsImagePreview');
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => { preview.style.display = 'block'; preview.querySelector('img').src = e.target.result; };
+                reader.readAsDataURL(file);
+            } else {
+                const url = document.getElementById('newsImageUrl').value.trim();
+                if (url) { preview.style.display = 'block'; preview.querySelector('img').src = url; }
+                else { preview.style.display = 'none'; }
+            }
+        });
+    }
+
+    // Brand logo upload + preview
+    const brandLogoFile = document.getElementById('brandLogoFile');
+    if (brandLogoFile) {
+        brandLogoFile.addEventListener('change', async function() {
+            const file = this.files[0];
+            if (!file) return;
+            try {
+                const result = await R2Uploader.uploadImage(file, 'tamil-ai-stream/brand', (pct) => {
+                    console.log('Brand logo upload progress:', pct + '%');
+                });
+                if (result && result.url) {
+                    document.getElementById('settingsBrandLogo').value = result.url;
+                    const preview = document.getElementById('settingsBrandLogoPreview');
+                    if (preview) { preview.style.display = 'block'; preview.querySelector('img').src = result.url; }
+                    showToast('Logo uploaded! Click Save Brand to apply.', 'success');
+                }
+            } catch (err) {
+                console.error('Brand logo upload failed:', err);
+                showToast('Logo upload failed: ' + err.message, 'error');
+            }
+        });
+    }
+    const settingsBrandLogo = document.getElementById('settingsBrandLogo');
+    if (settingsBrandLogo) {
+        settingsBrandLogo.addEventListener('input', function() {
+            const preview = document.getElementById('settingsBrandLogoPreview');
+            if (preview) {
+                if (this.value.trim()) { preview.style.display = 'block'; preview.querySelector('img').src = this.value.trim(); }
+                else { preview.style.display = 'none'; }
+            }
+        });
+    }
+});
+
+// ============================================
 // Site Settings Management
 // ============================================
 function loadSettings() {
@@ -5579,11 +6031,28 @@ function loadSettings() {
     document.getElementById('settingsOgDescription').value = settings.ogDescription || '';
     document.getElementById('settingsThemeColor').value = settings.themeColor || '#000000';
     document.getElementById('settingsFooterText').value = settings.footerText || '';
+    const brandLogoEl = document.getElementById('settingsBrandLogo');
+    if (brandLogoEl) brandLogoEl.value = settings.logo || '';
+    const faviconEl = document.getElementById('settingsFavicon');
+    if (faviconEl) faviconEl.value = settings.favicon || '';
+    const brandPreview = document.getElementById('settingsBrandLogoPreview');
+    if (brandPreview) {
+        if (settings.logo) { brandPreview.style.display = 'block'; brandPreview.querySelector('img').src = settings.logo; }
+        else { brandPreview.style.display = 'none'; }
+    }
     const newsSettings = settings.newsSettings || {};
     const autoDeleteEl = document.getElementById('newsAutoDelete');
     if (autoDeleteEl) autoDeleteEl.checked = newsSettings.autoDelete !== false;
     const retentionEl = document.getElementById('newsRetentionHours');
     if (retentionEl) retentionEl.value = newsSettings.retentionHours || 24;
+    const tnEl = document.getElementById('newsTnPriority');
+    if (tnEl) tnEl.checked = newsSettings.tamilNaduPriority !== false;
+    const playerEl = document.getElementById('newsShowPlayer');
+    if (playerEl) playerEl.checked = newsSettings.showPlayerOnDetail !== false;
+    const maxEl = document.getElementById('newsMaxItems');
+    if (maxEl) maxEl.value = newsSettings.maxItems || 6;
+    const hlEl = document.getElementById('newsHighlightHours');
+    if (hlEl) hlEl.value = newsSettings.highlightHours || 6;
 }
 
 function saveSettings(e) {
@@ -5598,13 +6067,27 @@ function saveSettings(e) {
         themeColor: document.getElementById('settingsThemeColor').value,
         footerText: document.getElementById('settingsFooterText').value.trim()
     };
+    const brandLogoEl = document.getElementById('settingsBrandLogo');
+    const faviconEl = document.getElementById('settingsFavicon');
+    if (brandLogoEl) settings.logo = brandLogoEl.value.trim();
+    if (faviconEl) settings.favicon = faviconEl.value.trim();
     const autoDeleteEl = document.getElementById('newsAutoDelete');
     const retentionEl = document.getElementById('newsRetentionHours');
-    if (autoDeleteEl || retentionEl) {
+    const tnEl = document.getElementById('newsTnPriority');
+    const playerEl = document.getElementById('newsShowPlayer');
+    const maxEl = document.getElementById('newsMaxItems');
+    const hlEl = document.getElementById('newsHighlightHours');
+    if (autoDeleteEl || retentionEl || tnEl || playerEl || maxEl || hlEl) {
         const retentionHours = parseInt(retentionEl ? retentionEl.value : '24', 10);
+        const maxItems = parseInt(maxEl ? maxEl.value : '6', 10);
+        const highlightHours = parseInt(hlEl ? hlEl.value : '6', 10);
         settings.newsSettings = {
             autoDelete: autoDeleteEl ? autoDeleteEl.checked : true,
-            retentionHours: (retentionHours > 0) ? retentionHours : 24
+            retentionHours: (retentionHours > 0) ? retentionHours : 24,
+            tamilNaduPriority: tnEl ? tnEl.checked : true,
+            showPlayerOnDetail: playerEl ? playerEl.checked : true,
+            maxItems: (maxItems > 0) ? maxItems : 6,
+            highlightHours: (highlightHours > 0) ? highlightHours : 6
         };
     }
     DataStore.setSiteSettings(settings);

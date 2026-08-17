@@ -324,14 +324,30 @@ window.AIHome = (() => {
 
     /* ---------------- Live Tamil News ---------------- */
     // Loads the latest Tamil news from the worker /api/news endpoint (which
-    // pulls from the RCC Tamil RSS feed, filters to Tamil-only content, dedupes
-    // and applies the retention window from Site Settings). Clicking a card
-    // opens an in-app detail view (never an external URL). The list auto-
-    // refreshes in place so the audio player is never disturbed.
+    // pulls from the RCC Tamil RSS feed, filters to Tamil-only content, dedupes,
+    // prioritizes Tamil Nadu news first and applies the retention window from
+    // Site Settings). Clicking a card opens an in-app detail view (never an
+    // external URL) with the thumbnail shown prominently at the top. The list
+    // auto-refreshes in place so the audio player is never disturbed.
     let newsItems = [];
     let newsTimer = null;
     let newsLoading = false;
     let newsLastLoaded = 0;
+
+    // News display config lives in Builder Site Settings (tamilAIStream_siteSettings.newsSettings).
+    function newsDisplayConfig() {
+        const cfg = { maxItems: 6, highlightHours: 6, showPlayerOnDetail: true };
+        try {
+            if (window.DataStore) {
+                const s = DataStore.getSiteSettings() || {};
+                const ns = s.newsSettings || {};
+                if (ns.maxItems && ns.maxItems > 0) cfg.maxItems = Math.min(ns.maxItems, 40);
+                if (ns.highlightHours && ns.highlightHours > 0) cfg.highlightHours = ns.highlightHours;
+                if (typeof ns.showPlayerOnDetail === 'boolean') cfg.showPlayerOnDetail = ns.showPlayerOnDetail;
+            }
+        } catch (e) { /* ignore */ }
+        return cfg;
+    }
 
     function timeAgo(iso) {
         if (!iso) return '';
@@ -344,6 +360,9 @@ window.AIHome = (() => {
         } catch (e) { return ''; }
     }
 
+    // Tamil Nadu priority flag comes from the worker (priority:'tamil-nadu').
+    function isTnNews(n) { return n && (n.priority === 'tamil-nadu' || n.tamilNadu === true); }
+
     function newsDetailOpen(id) {
         const item = (newsItems || []).find(n => String(n.id) === String(id));
         if (!item) return;
@@ -355,18 +374,24 @@ window.AIHome = (() => {
             wrap.setAttribute('aria-modal', 'true');
             const pubTime = item.publishedAt ? new Date(item.publishedAt) : null;
             const timeText = pubTime ? pubTime.toLocaleString('ta-IN', {
-                day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
             }) : '';
+            const cfg = newsDisplayConfig();
+            if (cfg.showPlayerOnDetail) {
+                wrap.classList.add('keep-player');
+                document.body.classList.add('ai-news-player-visible');
+            }
+            const tnBadge = isTnNews(item) ? '<span class="ai-news-detail-tn"><i class="fa-solid fa-location-dot"></i> Tamil Nadu</span>' : '';
             wrap.innerHTML =
                 '<div class="ai-news-detail-overlay"></div>' +
                 '<div class="ai-news-detail-panel">' +
                 '<button class="ai-news-detail-back" type="button"><i class="fa-solid fa-arrow-left"></i> Back</button>' +
                 (item.image ? '<div class="ai-news-detail-img"><img src="' + escapeHtml(item.image) + '" alt="" loading="lazy"></div>' : '') +
                 '<div class="ai-news-detail-body">' +
+                (tnBadge ? '<div class="ai-news-detail-flags">' + tnBadge + '</div>' : '') +
                 '<h3 class="ai-news-detail-title">' + escapeHtml(item.title) + '</h3>' +
                 '<div class="ai-news-detail-meta">' +
                 (timeText ? '<span class="ai-news-detail-time"><i class="fa-regular fa-clock"></i> ' + escapeHtml(timeText) + '</span>' : '') +
-                '<span class="ai-news-detail-source"><i class="fa-solid fa-newspaper"></i> ' + escapeHtml(item.source || '') + '</span>' +
                 '</div>' +
                 '<div class="ai-news-detail-content">' + escapeHtml(item.content || '') + '</div>' +
                 '</div></div>';
@@ -376,12 +401,12 @@ window.AIHome = (() => {
             const close = (ev) => {
                 if (ev && ev.target.closest('.ai-news-detail-back')) {
                     wrap.classList.remove('open');
-                    setTimeout(() => { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); document.body.classList.remove('ai-news-detail-open'); }, 220);
+                    setTimeout(() => { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); document.body.classList.remove('ai-news-detail-open'); document.body.classList.remove('ai-news-player-visible'); }, 220);
                     return;
                 }
                 if (ev && ev.target.classList.contains('ai-news-detail-overlay')) {
                     wrap.classList.remove('open');
-                    setTimeout(() => { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); document.body.classList.remove('ai-news-detail-open'); }, 220);
+                    setTimeout(() => { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); document.body.classList.remove('ai-news-detail-open'); document.body.classList.remove('ai-news-player-visible'); }, 220);
                 }
             };
             wrap.querySelector('.ai-news-detail-back').addEventListener('click', close);
@@ -403,20 +428,23 @@ window.AIHome = (() => {
                 'Fetching the latest headlines from the Tamil news feed.');
             return;
         }
+        const cfg = newsDisplayConfig();
         const now = Date.now();
-        const visible = newsItems.slice(0, 6);
+        const visible = newsItems.slice(0, cfg.maxItems);
         list.innerHTML = visible.map((n) => {
             const pub = n.publishedAt ? new Date(n.publishedAt).getTime() : 0;
-            const isFresh = !isNaN(pub) && (now - pub) < 6 * 3600000;
-            return '<div class="ai-news-card" role="button" tabindex="0" data-news-id="' + escapeHtml(String(n.id)) + '">' +
+            const isFresh = !isNaN(pub) && (now - pub) < cfg.highlightHours * 3600000;
+            const isHighlighted = !!n.highlighted || isFresh;
+            const tn = isTnNews(n);
+            return '<div class="ai-news-card' + (tn ? ' ai-news-card-tn' : '') + '" role="button" tabindex="0" data-news-id="' + escapeHtml(String(n.id)) + '">' +
                 '<div class="ai-news-img">' +
                 (n.image ? '<img src="' + escapeHtml(n.image) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-newspaper"></i>') +
-                (isFresh ? '<span class="ai-news-live"><span class="ai-live-dot" style="box-shadow:none;animation:none;width:5px;height:5px;"></span>NEW</span>' : '') +
+                (isHighlighted ? '<span class="ai-news-live"><span class="ai-live-dot" style="box-shadow:none;animation:none;width:5px;height:5px;"></span>NEW</span>' : '') +
+                (tn ? '<span class="ai-news-tn-badge">TAMIL NADU</span>' : '') +
                 '</div>' +
                 '<div class="ai-news-info">' +
                 '<div class="ai-news-headline">' + escapeHtml(n.title) + '</div>' +
                 '<div class="ai-news-meta">' +
-                '<span class="ai-news-cat">' + escapeHtml(n.source || 'Tamil News') + '</span>' +
                 (n.publishedAt ? '<span>' + timeAgo(n.publishedAt) + '</span>' : '') +
                 '</div></div></div>';
         }).join('');

@@ -84,7 +84,8 @@
                 likedSongs: safeGet(global.DataStore.getLikedSongs?.bind(global.DataStore), []),
                 history: safeGet(global.DataStore.getHistory?.bind(global.DataStore), []),
                 queue: safeGet(global.DataStore.getQueue?.bind(global.DataStore), []),
-                settings: safeGet(global.DataStore.getYTSettings?.bind(global.DataStore), {})
+                settings: safeGet(global.DataStore.getYTSettings?.bind(global.DataStore), {}),
+                news: safeGet(global.DataStore.getNews?.bind(global.DataStore), [])
             };
             return payload;
         }
@@ -113,6 +114,7 @@
             navigation: readLocalStorage('tamilAIStream_navigation', {}),
             sectionsOrder: readLocalStorage('tamilAIStream_sectionsOrder', []),
             miniPlayerSettings: readLocalStorage('tamilAIStream_miniPlayerSettings', {}),
+            news: readLocalStorage('tamilAIStream_news', []),
             playlists: readLocalStorage('ytm_playlists', []),
             likedSongs: readLocalStorage('ytm_likedSongs', []),
             history: readLocalStorage('ytm_history', []),
@@ -138,7 +140,7 @@
         const localTime = localPayload?.updatedAt ? new Date(localPayload.updatedAt).getTime() : 0;
         const remoteTime = remotePayload?.updatedAt ? new Date(remotePayload.updatedAt).getTime() : 0;
 
-        const sharedKeys = ['songs', 'stations', 'categories', 'featured', 'trending', 'artistHits', 'quotes', 'siteSettings', 'layout', 'images', 'moods', 'aiRadio', 'notifications', 'splash', 'playerPrefs', 'navigation', 'sectionsOrder', 'miniPlayerSettings', 'moviesCollections', 'yearlyCollections', 'latestCollections', 'musicCollections', 'advertisements'];
+        const sharedKeys = ['songs', 'stations', 'categories', 'featured', 'trending', 'artistHits', 'quotes', 'siteSettings', 'layout', 'images', 'moods', 'aiRadio', 'notifications', 'splash', 'playerPrefs', 'navigation', 'sectionsOrder', 'miniPlayerSettings', 'moviesCollections', 'yearlyCollections', 'latestCollections', 'musicCollections', 'advertisements', 'news'];
         const userKeys = ['likedSongs', 'playlists', 'history', 'queue', 'settings'];
 
         keys.forEach((key) => {
@@ -238,7 +240,8 @@
                 setLikedSongs: data.likedSongs || [],
                 setHistory: data.history || [],
                 setQueue: data.queue || [],
-                setYTSettings: data.settings || {}
+                setYTSettings: data.settings || {},
+                setNews: data.news || []
             };
             Object.entries(setters).forEach(([method, value]) => {
                 if (typeof global.DataStore[method] === 'function') {
@@ -275,6 +278,7 @@
         writeLocalStorage('ytm_history', data.history || []);
         writeLocalStorage('ytm_queue', data.queue || []);
         writeLocalStorage('ytm_settings', data.settings || {});
+        writeLocalStorage('tamilAIStream_news', data.news || []);
         writeLocalStorage('tamilAIStream_lastSyncedAt', payload?.updatedAt || new Date().toISOString());
     }
 

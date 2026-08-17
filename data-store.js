@@ -36,7 +36,8 @@ const DataStore = {
         LATEST_COLLECTIONS: 'tamilAIStream_latestCollections',
         MUSIC_COLLECTIONS: 'tamilAIStream_musicCollections',
         ADVERTISEMENTS: 'tamilAIStream_advertisements',
-        UPCOMING_RELEASES: 'tamilAIStream_upcomingReleases'
+        UPCOMING_RELEASES: 'tamilAIStream_upcomingReleases',
+        NEWS: 'tamilAIStream_news'
     },
 
     get(key) {
@@ -143,6 +144,9 @@ const DataStore = {
 
     getUpcomingReleases() { return this.get(this.KEYS.UPCOMING_RELEASES) || []; },
     setUpcomingReleases(data) { this.set(this.KEYS.UPCOMING_RELEASES, data); },
+
+    getNews() { return this.get(this.KEYS.NEWS) || []; },
+    setNews(data) { this.set(this.KEYS.NEWS, data); },
 
     // Initialize with defaults
 init() {

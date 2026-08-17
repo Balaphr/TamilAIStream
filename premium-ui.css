@@ -1339,7 +1339,13 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
 .ytm-brand-text,
 .greeting-title,
 .nav-brand-text,
-.splash-title {
+.splash-title,
+.premium-topnav-title,
+.cc-brand-title,
+.login-logo h1,
+.builder-nav-logo h1,
+.admin-nav-logo h1,
+.access-gate-logo h1 {
     animation:
         title3DGlow 4s ease-in-out infinite,
         title3DFloat 6s ease-in-out infinite;
@@ -1358,7 +1364,13 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     .ytm-brand-text,
     .greeting-title,
     .nav-brand-text,
-    .splash-title {
+    .splash-title,
+    .premium-topnav-title,
+    .cc-brand-title,
+    .login-logo h1,
+    .builder-nav-logo h1,
+    .admin-nav-logo h1,
+    .access-gate-logo h1 {
         animation: none !important;
     }
 }
@@ -3241,6 +3253,47 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
 }
 .premium-topnav-dot {
     color: #34d399;
+}
+
+/* Centralized brand logo (from Builder Site Settings -> Brand Identity).
+   When a logo is configured, brand-config.js injects an <img> that fills
+   the logo container; default SVG art is replaced at runtime. */
+.premium-topnav-logo img,
+.ai-sidebar-logo-icon img,
+.splash-logo img,
+.cc-brand img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: inherit;
+}
+
+.premium-topnav-logo {
+    perspective: 400px;
+}
+.premium-topnav-logo svg,
+.premium-topnav-logo img {
+    animation: premiumBrand3D 6s ease-in-out infinite;
+}
+@keyframes premiumBrand3D {
+    0%, 100% {
+        transform: perspective(400px) rotateY(0deg) rotateX(0deg);
+    }
+    25% {
+        transform: perspective(400px) rotateY(8deg) rotateX(3deg);
+    }
+    50% {
+        transform: perspective(400px) rotateY(0deg) rotateX(0deg);
+    }
+    75% {
+        transform: perspective(400px) rotateY(-8deg) rotateX(-3deg);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .premium-topnav-logo svg,
+    .premium-topnav-logo img {
+        animation: none !important;
+    }
 }
 
 /* Search bar — AI-enhanced */

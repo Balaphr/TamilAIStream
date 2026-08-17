@@ -1095,6 +1095,23 @@ body.ai-light .ai-dark-knob { left: 21px; }
     background: rgba(34, 211, 238, 0.1);
 }
 
+/* Tamil Nadu priority badge (internal classification, not source branding) */
+.ai-news-tn-badge {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 0.5rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #e0f2fe;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.92), rgba(37, 99, 235, 0.92));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+.ai-news-card-tn { border-color: rgba(56, 189, 248, 0.45); }
+.ai-news-card-tn:hover { border-color: var(--ai-cyan); }
+
 /* In-app news detail view (never an external URL) */
 .ai-news-detail { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 16px; }
 .ai-news-detail-overlay { position: absolute; inset: 0; background: rgba(5, 8, 20, 0.78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); opacity: 0; transition: opacity 0.22s ease; }
@@ -1136,9 +1153,22 @@ body.ai-light .ai-dark-knob { left: 21px; }
 }
 .ai-news-detail-back:hover { background: rgba(34, 211, 238, 0.16); }
 .ai-news-detail-back:active { transform: scale(0.96); }
-.ai-news-detail-img { width: 100%; max-height: 300px; overflow: hidden; margin-top: 12px; }
-.ai-news-detail-img img { width: 100%; height: 100%; max-height: 300px; object-fit: cover; display: block; }
+.ai-news-detail-img { width: 100%; max-height: 360px; overflow: hidden; margin-top: 12px; border-radius: 14px; padding: 0 14px; }
+.ai-news-detail-img img { width: 100%; height: 100%; max-height: 360px; object-fit: cover; display: block; border-radius: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
 .ai-news-detail-body { padding: 18px 22px 26px; }
+.ai-news-detail-flags { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.ai-news-detail-tn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #e0f2fe;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.92), rgba(37, 99, 235, 0.92));
+}
 .ai-news-detail-title {
     font-family: var(--ai-ff);
     font-size: 1.18rem;
@@ -1157,6 +1187,13 @@ body.ai-light .ai-dark-knob { left: 21px; }
     white-space: pre-line;
 }
 body.ai-news-detail-open { overflow: hidden; }
+
+/* Keep the global music player visible above the news detail overlay so its
+   Previous / Play-Pause / Next controls stay reachable while reading news. */
+body.ai-news-player-visible .gp-mini,
+body.ai-news-player-visible .gp-expanded { z-index: 10001; }
+body.ai-news-player-visible .ai-news-detail { padding-bottom: 108px; }
+
 body.ai-light .ai-news-detail-panel { background: linear-gradient(165deg, #ffffff 0%, #f1f5fb 100%); border-color: rgba(15, 23, 42, 0.12); box-shadow: 0 30px 80px rgba(15, 23, 42, 0.3); }
 body.ai-light .ai-news-detail-title { color: #0f172a; }
 body.ai-light .ai-news-detail-content { color: #334155; }
@@ -1166,6 +1203,7 @@ body.ai-light .ai-news-detail-back { background: #fff; color: #0f172a; border-co
     .ai-news-detail-panel { max-width: 100%; max-height: 92vh; border-radius: 18px 18px 0 0; }
     .ai-news-detail-title { font-size: 1.02rem; }
     .ai-news-detail-content { font-size: 0.86rem; }
+    body.ai-news-player-visible .ai-news-detail { padding-bottom: 132px; }
 }
 
 /* ---------- 10. Recently Played ---------- */

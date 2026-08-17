@@ -283,6 +283,9 @@
                             <button class="builder-sidebar-item" data-page="upcomingReleases">
                                 <i class="fas fa-rocket"></i> Upcoming Releases
                             </button>
+                            <button class="builder-sidebar-item" data-page="news">
+                                <i class="fas fa-newspaper"></i> Live Tamil News
+                            </button>
                             <button class="builder-sidebar-item" data-page="musiccollections">
                                 <i class="fas fa-folder-tree"></i> Music Collections
                             </button>
@@ -1204,6 +1207,38 @@
 
                         <div class="content-card">
                             <div class="content-card-header">
+                                <h2 class="content-card-title">Brand Identity</h2>
+                            </div>
+                            <form id="brandSettingsForm" class="song-form">
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Brand Logo (URL)</label>
+                                        <div style="display:flex;gap:10px;align-items:center;">
+                                            <input type="url" class="form-input" id="settingsBrandLogo" placeholder="https://.../logo.png" style="flex:1;">
+                                            <button type="button" class="builder-btn" onclick="document.getElementById('brandLogoFile').click()"><i class="fas fa-upload"></i> Upload</button>
+                                            <input type="file" id="brandLogoFile" accept="image/*" style="display:none;">
+                                        </div>
+                                        <p class="form-hint">This single logo is used across the entire website (header, splash, sidebar, PWA app icon, favicon, Apple touch icon). After Save, click Publish to update it everywhere. Leave empty to use the default brand logo.</p>
+                                        <div id="settingsBrandLogoPreview" style="margin-top:10px;display:none;">
+                                            <img src="" alt="Logo preview" style="width:120px;height:120px;object-fit:contain;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);padding:8px;">
+                                        </div>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Favicon (URL)</label>
+                                        <input type="url" class="form-input" id="settingsFavicon" placeholder="https://.../favicon.png">
+                                        <p class="form-hint">Browser tab icon. Leave empty to use the Brand Logo above.</p>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="builder-btn primary">
+                                        <i class="fas fa-save"></i> Save Brand
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="content-card">
+                            <div class="content-card-header">
                                 <h2 class="content-card-title">Live Tamil News</h2>
                             </div>
                             <form id="newsSettingsForm" class="song-form">
@@ -1219,6 +1254,29 @@
                                         <label class="form-label">Retention Period (hours)</label>
                                         <input type="number" class="form-input" id="newsRetentionHours" min="1" max="720" step="1" value="24" placeholder="24">
                                         <p class="form-hint">How long (in hours) a news article stays visible before it is auto-removed. Default is 24 hours.</p>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">
+                                            <input type="checkbox" id="newsTnPriority" class="builder-checkbox">
+                                            Prioritize Tamil Nadu news
+                                        </label>
+                                        <p class="form-hint">Show important Tamil Nadu news first, followed by important news from other states.</p>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label class="form-label">
+                                            <input type="checkbox" id="newsShowPlayer" class="builder-checkbox">
+                                            Keep music player visible while reading news
+                                        </label>
+                                        <p class="form-hint">Keep the global music player (with Previous / Play-Pause / Next controls) visible above the news detail view.</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">News items to show</label>
+                                        <input type="number" class="form-input" id="newsMaxItems" min="1" max="40" step="1" value="6" placeholder="6">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Highlight window (hours)</label>
+                                        <input type="number" class="form-input" id="newsHighlightHours" min="1" max="72" step="1" value="6" placeholder="6">
+                                        <p class="form-hint">News published within this many hours gets the NEW highlight.</p>
                                     </div>
                                 </div>
                                 <div class="form-actions">
@@ -1593,6 +1651,144 @@
                                     <p>No upcoming releases yet. Click "Add Release" to create one.</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Tamil News Management Page -->
+                    <div class="builder-page" id="newsPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Live Tamil News</h1>
+                            <p class="builder-page-subtitle">Control all Live Tamil News content: sync from RCC, prioritize Tamil Nadu news, edit headlines, publish, order, highlight, set retention and manage the trash bin. The AI News Bot automatically moves expired news to trash every 2 hours.</p>
+                        </div>
+                        <div class="builder-content-card">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-robot" style="margin-right:8px;color:#8b5cf6;"></i>AI News Bot</h3>
+                            </div>
+                            <div class="builder-card-body">
+                                <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+                                    <button class="builder-btn" id="newsAICheckBtn" onclick="runNewsAICheck()"><i class="fas fa-magic"></i> Run AI News Check Now</button>
+                                    <span style="color:#888;font-size:13px;" id="newsAILastCheck">Runs automatically every 2 hours.</span>
+                                    <span class="status-badge active" style="margin-left:auto;">AI Bot: Active</span>
+                                </div>
+                                <p style="margin-top:12px;color:#aaa;font-size:13px;line-height:1.6;">The AI News Bot automatically scans all published news and moves any item older than your retention period into the Trash. You can review, restore, or permanently delete trashed items below.</p>
+                            </div>
+                        </div>
+                        <div class="builder-content-card">
+                            <div class="builder-card-header">
+                                <h3>All News</h3>
+                                <div style="display:flex;gap:8px;">
+                                    <button class="builder-btn" onclick="syncRCCNews()" id="newsSyncBtn"><i class="fas fa-sync"></i> Sync from RCC</button>
+                                    <button class="builder-btn primary" onclick="openNewsModal()"><i class="fas fa-plus"></i> Add News</button>
+                                </div>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="builder-table-wrap">
+                                    <table class="builder-table" id="newsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Thumbnail</th>
+                                                <th>Headline</th>
+                                                <th>TN</th>
+                                                <th>NEW</th>
+                                                <th>Published</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="newsTableBody"></tbody>
+                                    </table>
+                                </div>
+                                <div id="newsEmptyState" style="display:none;text-align:center;padding:40px 20px;color:#888;">
+                                    <i class="fas fa-newspaper" style="font-size:48px;margin-bottom:16px;display:block;color:#555;"></i>
+                                    <p>No news items yet. Click "Sync from RCC" to import the latest Tamil news or "Add News" to create one manually.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="builder-content-card">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-trash" style="margin-right:8px;color:#ef4444;"></i>Trash <span class="status-badge inactive" id="newsTrashCount" style="margin-left:8px;">0</span></h3>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="builder-table-wrap">
+                                    <table class="builder-table" id="newsTrashTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Thumbnail</th>
+                                                <th>Headline</th>
+                                                <th>Trashed</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="newsTrashTableBody"></tbody>
+                                    </table>
+                                </div>
+                                <div id="newsTrashEmptyState" style="display:none;text-align:center;padding:40px 20px;color:#888;">
+                                    <i class="fas fa-trash-alt" style="font-size:48px;margin-bottom:16px;display:block;color:#555;"></i>
+                                    <p>Trash is empty. Expired news moved here by the AI News Bot can be restored or permanently deleted.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add/Edit News Modal -->
+                    <div class="builder-modal-overlay" id="newsModalOverlay" style="display:none;">
+                        <div class="builder-modal" style="max-width:720px;">
+                            <div class="builder-modal-header">
+                                <h3 id="newsModalTitle">Add News</h3>
+                                <button class="builder-modal-close" onclick="closeNewsModal()"><i class="fas fa-times"></i></button>
+                            </div>
+                            <form id="newsForm" onsubmit="return saveNews(event)">
+                                <div class="builder-modal-body">
+                                    <input type="hidden" id="newsEditId" value="">
+                                    <div class="form-grid">
+                                        <div class="form-group" style="grid-column:1/-1;">
+                                            <label class="form-label">Headline</label>
+                                            <input type="text" class="form-input" id="newsTitle" placeholder="e.g. Chennai Metro expansion announced" required>
+                                        </div>
+                                        <div class="form-group" style="grid-column:1/-1;">
+                                            <label class="form-label">Thumbnail Image</label>
+                                            <div style="display:flex;gap:10px;align-items:center;">
+                                                <input type="file" class="form-input" id="newsImageFile" accept="image/*" style="flex:1;">
+                                                <span style="color:#888;font-size:12px;">or</span>
+                                                <input type="text" class="form-input" id="newsImageUrl" placeholder="Image URL" style="flex:1;">
+                                            </div>
+                                            <div id="newsImagePreview" style="margin-top:10px;display:none;">
+                                                <img src="" alt="Preview" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.1);">
+                                            </div>
+                                        </div>
+                                        <div class="form-group" style="grid-column:1/-1;">
+                                            <label class="form-label">News Content</label>
+                                            <textarea class="form-input" id="newsContent" rows="8" placeholder="Full detailed Tamil news content..." required></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Published Date</label>
+                                            <input type="datetime-local" class="form-input" id="newsPublishedAt">
+                                            <p class="form-hint">Leave empty to use current time.</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Status</label>
+                                            <select class="form-input" id="newsStatus">
+                                                <option value="published">Published</option>
+                                                <option value="draft">Draft</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group full-width" style="display:flex;gap:24px;align-items:center;">
+                                            <label class="form-label" style="display:flex;gap:8px;align-items:center;margin:0;">
+                                                <input type="checkbox" id="newsTnPriority" class="builder-checkbox" checked>
+                                                Tamil Nadu priority
+                                            </label>
+                                            <label class="form-label" style="display:flex;gap:8px;align-items:center;margin:0;">
+                                                <input type="checkbox" id="newsHighlighted" class="builder-checkbox">
+                                                Highlight as NEW
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="builder-modal-footer">
+                                    <button type="button" class="builder-btn" onclick="closeNewsModal()">Cancel</button>
+                                    <button type="submit" class="builder-btn primary"><i class="fas fa-save"></i> Save News</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
 
@@ -2557,6 +2753,7 @@
     <script src="analytics.js"></script>
     <script src="builder.js"></script>
     <script src="builder-360.js"></script>
+    <script src="brand-config.js"></script>
 </body>
 </html>
 

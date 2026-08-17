@@ -34,11 +34,37 @@ function getCacheHeaders(pathname) {
   };
 }
 
-function addCacheBuster(body, contentType, pathname) {
+async function addCacheBusterAndBranding(body, contentType, pathname, env) {
   if (contentType && contentType.includes('text/html') && typeof body === 'string') {
     const versionTag = `<!-- bv:${DEPLOY_TIME} -->`;
     const metaTag = `<meta name="app-build-version" content="${DEPLOY_TIME}"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">`;
     let result = body.replace('</head>', `${versionTag}\n${metaTag}\n</head>`);
+
+    // Centralized brand logo: when the Builder has configured a logo/favicon
+    // in siteSettings, rewrite the PWA favicon + apple-touch-icon link tags so
+    // the installed app always follows the published brand (Task 4).
+    if (env && env.MEDIA_BUCKET) {
+      try {
+        const obj = await env.MEDIA_BUCKET.get('content-manifest.json');
+        if (obj) {
+          const manifest = JSON.parse(await obj.text());
+          const site = manifest.data && manifest.data.siteSettings;
+          const logo = site && (site.logo || site.favicon);
+          if (logo) {
+            result = result.replace(/<link[^>]*rel="apple-touch-icon"[^>]*>/gi, (match) => {
+              return match.replace(/href="[^"]*"/, `href="${logo}"`);
+            });
+            result = result.replace(/<link[^>]*rel="icon"[^>]*>/gi, (match) => {
+              return match.replace(/href="[^"]*"/, `href="${logo}"`);
+            });
+          }
+          if (site && site.title) {
+            result = result.replace(/<meta name="apple-mobile-web-app-title" content="[^"]*"/, `<meta name="apple-mobile-web-app-title" content="${site.title}"`);
+          }
+        }
+      } catch (_) { /* branding patch is best-effort */ }
+    }
+
     result = result.replace(/(src|href)="([^"]*?\.(?:js|css|jpg|jpeg|png|webp|gif|svg|ico|woff|woff2|ttf|eot))"/g, (match, attr, path) => {
       if (path.startsWith('http') || path.startsWith('data:')) return match;
       const sep = path.includes('?') ? '&' : '?';
@@ -64,6 +90,9 @@ export default {
       }
       if (url.pathname === '/sw.js') {
         return handleSW(env);
+      }
+      if (url.pathname === '/manifest.webmanifest') {
+        return handleManifestWebmanifest(env);
       }
       if (url.pathname === '/api/upload' && request.method === 'POST') {
         return handleUpload(request, env, url);
@@ -110,16 +139,16 @@ export default {
         const newUrl = new URL(url.origin + newPath);
         const assetReq = new Request(newUrl.toString(), request);
         const resp = await env.ASSETS.fetch(assetReq);
-        if (resp.ok) return wrapResponse(resp, newPath);
+        if (resp.ok) return wrapResponse(resp, newPath, env);
       }
 
       const resp = await env.ASSETS.fetch(request);
       if (resp.status === 404 && !url.pathname.includes('.')) {
         const withHtml = new URL(url.origin + url.pathname + '.html');
         const retry = await env.ASSETS.fetch(new Request(withHtml.toString(), request));
-        if (retry.ok) return wrapResponse(retry, url.pathname + '.html');
+        if (retry.ok) return wrapResponse(retry, url.pathname + '.html', env);
       }
-      return wrapResponse(resp, url.pathname);
+      return wrapResponse(resp, url.pathname, env);
 
     } catch (e) {
       return new Response(JSON.stringify({ error: e.message }), {
@@ -128,9 +157,56 @@ export default {
       });
     }
   },
+
+  // AI News Bot: runs on a cron trigger and automatically moves expired news
+  // items in the Builder manifest into the Trash. This keeps the live news
+  // section fresh without manual cleanup.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runNewsAutoCleanup(env));
+  },
 };
 
-function wrapResponse(resp, pathname) {
+// Move expired published news items into the Trash inside the Builder manifest.
+async function runNewsAutoCleanup(env) {
+  try {
+    if (!env.MEDIA_BUCKET) return;
+    const obj = await env.MEDIA_BUCKET.get('content-manifest.json');
+    if (!obj) return;
+    const manifest = JSON.parse(await obj.text());
+    const data = manifest.data || {};
+    if (!Array.isArray(data.news)) return;
+
+    const site = data.siteSettings || {};
+    const ns = site.newsSettings || {};
+    const autoDelete = ns.autoDelete !== false;
+    if (!autoDelete) return;
+    const retentionHours = parseInt(ns.retentionHours, 10);
+    const cutoff = Date.now() - (retentionHours > 0 ? retentionHours : 24) * 3600 * 1000;
+
+    let moved = 0;
+    const news = data.news.map((n) => {
+      if (n.status !== 'trashed' && n.published && n.publishedAt) {
+        const t = new Date(n.publishedAt).getTime();
+        if (!isNaN(t) && t < cutoff) {
+          moved++;
+          return { ...n, status: 'trashed', expired: true, trashedAt: new Date().toISOString() };
+        }
+      }
+      return n;
+    });
+
+    if (moved > 0) {
+      data.news = news;
+      manifest.data = data;
+      manifest.updatedAt = new Date().toISOString();
+      await env.MEDIA_BUCKET.put('content-manifest.json', JSON.stringify(manifest, null, 2), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
+      });
+    }
+  } catch (_) { /* best-effort */ }
+}
+
+function wrapResponse(resp, pathname, env) {
   const headers = new Headers(resp.headers);
   const cacheHeaders = getCacheHeaders(pathname);
   Object.entries(cacheHeaders).forEach(([k, v]) => headers.set(k, v));
@@ -143,8 +219,8 @@ function wrapResponse(resp, pathname) {
   }
   const contentType = headers.get('Content-Type') || '';
   if (pathname.endsWith('.html') || pathname === '/') {
-    return resp.text().then(body => {
-      const patched = addCacheBuster(body, contentType, pathname);
+    return resp.text().then(async body => {
+      const patched = await addCacheBusterAndBranding(body, contentType, pathname, env);
       headers.delete('Content-Length');
       return new Response(patched, { status: resp.status, headers });
     });
@@ -401,10 +477,82 @@ async function handleSW(env) {
   }
 }
 
+// GET /manifest.webmanifest
+// Serves the PWA manifest dynamically so installed-app branding ALWAYS follows
+// the centralized logo/title configured in the Builder Site Settings. When no
+// logo is configured, the static default icons are used.
+async function handleManifestWebmanifest(env) {
+  try {
+    let name = 'Tamil AI Stream - AI-Powered Tamil Radio';
+    let shortName = 'Tamil AI Stream';
+    let themeColor = '#000000';
+    let logo = null;
+
+    if (env && env.MEDIA_BUCKET) {
+      try {
+        const obj = await env.MEDIA_BUCKET.get('content-manifest.json');
+        if (obj) {
+          const manifest = JSON.parse(await obj.text());
+          const site = manifest.data && manifest.data.siteSettings;
+          if (site) {
+            if (site.title) name = site.title;
+            if (site.ogTitle) shortName = site.ogTitle;
+            if (site.themeColor) themeColor = site.themeColor;
+            logo = site.logo || site.favicon || null;
+          }
+        }
+      } catch (_) { /* fall back to static manifest */ }
+    }
+
+    let manifest = null;
+    try {
+      const staticReq = new Request(new URL('/manifest.webmanifest', 'https://placeholder').toString());
+      const resp = await env.ASSETS.fetch(staticReq);
+      if (resp.ok) manifest = JSON.parse(await resp.text());
+    } catch (_) { /* ignore */ }
+
+    if (!manifest) {
+      manifest = {
+        name, short_name: shortName, start_url: '/', scope: '/',
+        display: 'standalone', theme_color: themeColor,
+        icons: [
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      };
+    } else {
+      manifest.name = name;
+      manifest.short_name = shortName;
+      manifest.theme_color = themeColor;
+      if (logo) {
+        manifest.icons = [
+          { src: logo, sizes: 'any', type: 'image/png', purpose: 'any' },
+          { src: logo, sizes: 'any', type: 'image/png', purpose: 'maskable' },
+        ];
+        if (manifest.shortcuts) {
+          manifest.shortcuts.forEach((s) => { if (s.icons) s.icons = [{ src: logo, sizes: 'any' }]; });
+        }
+      }
+    }
+
+    return new Response(JSON.stringify(manifest, null, 2), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/manifest+json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
+}
+
 /* ---------------- Live Tamil News (/api/news) ---------------- */
 
 const NEWS_FEED_URL = 'https://feeds.bbci.co.uk/tamil/rss.xml';
-const NEWS_SOURCE_NAME = 'BBC News தமிழ்';
 const NEWS_CACHE_KEY = 'rcc-news-cache.json';
 const NEWS_CACHE_TTL_MS = 10 * 60 * 1000; // re-fetch the RSS feed at most every 10 min
 const DEFAULT_RETENTION_HOURS = 24;
@@ -428,6 +576,26 @@ function isTamilHeadline(title) {
   const tamil = tamilCharCount(trimmed);
   const latin = (trimmed.match(/[a-zA-Z]/g) || []).length;
   return tamil >= 3 && tamil > latin;
+}
+
+// Place names / hints that identify Tamil Nadu news. Only used to PRIORITIZE
+// Tamil Nadu items first on the news list — items stay Tamil-only regardless.
+const TAMIL_NADU_KEYWORDS = [
+  'தமிழ்நாடு', 'தமிழகம்', 'தமிழ்நாட்டில்', 'தமிழகத்தில்',
+  'சென்னை', 'மதுரை', 'கோவை', 'கோயம்புத்தூர்', 'சேலம்', 'திருச்சி',
+  'நெல்லை', 'தூத்துக்குடி', 'ராமநாதபுரம்', 'காஞ்சிபுரம்', 'தஞ்சாவூர்',
+  'வேலூர்', 'கன்னியாகுமரி', 'ஈரோடு', 'திண்டுக்கல்', 'கரூர்', 'நாமக்கல்',
+  'திருவண்ணாமலை', 'விழுப்புரம்', 'கடலூர்', 'நாகப்பட்டினம்', 'திருவாரூர்',
+  'புதுக்கோட்டை', 'சிவகங்கை', 'விருதுநகர்', 'தேனி', 'பெரம்பலூர்',
+  'அரியலூர்', 'தென்காசி', 'கிருஷ்ணகிரி', 'தருமபுரி', 'ஆம்பூர்', 'வாணியம்பாடி',
+  'திருப்பூர்', 'பொள்ளாச்சி', 'நாகர்கோவில்', 'உதகை', 'கொடைக்கானல்',
+  'வாழைப்பழம்', 'தமிழக அரசு', 'தமிழ்நாடு அரசு', 'சென்னையில்', 'மதுரையில்',
+];
+
+// Classify an item as Tamil Nadu news (title + content both checked).
+function isTamilNaduItem(item) {
+  const text = (item.title || '') + ' ' + (item.content || '');
+  return TAMIL_NADU_KEYWORDS.some((k) => text.indexOf(k) !== -1);
 }
 
 function decodeEntities(text) {
@@ -485,7 +653,6 @@ function parseRssItems(xml) {
       content,
       image,
       publishedAt,
-      source: NEWS_SOURCE_NAME,
     });
   }
 
@@ -496,11 +663,15 @@ function parseRssItems(xml) {
     const key = (item.id || item.title || '').trim().toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
+    // Tamil Nadu news first, then other Tamil news. Region never leaks as
+    // branding — it is an internal sort priority only.
+    item.tamilNadu = isTamilNaduItem(item);
     unique.push(item);
   }
 
-  // Newest first; null dates go to the end.
+  // TN priority first, then newest-first (null dates go to the end).
   unique.sort((a, b) => {
+    if (a.tamilNadu !== b.tamilNadu) return a.tamilNadu ? -1 : 1;
     const ta = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
     const tb = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
     return tb - ta;
@@ -536,7 +707,13 @@ async function fetchNewsFeed(env) {
 }
 
 async function readNewsSettings(env) {
-  const settings = { autoDelete: true, retentionHours: DEFAULT_RETENTION_HOURS };
+  const settings = {
+    autoDelete: true,
+    retentionHours: DEFAULT_RETENTION_HOURS,
+    tamilNaduPriority: true,
+    maxItems: 40,
+    highlightHours: 6,
+  };
   try {
     if (env.MEDIA_BUCKET) {
       const obj = await env.MEDIA_BUCKET.get('content-manifest.json');
@@ -549,6 +726,13 @@ async function readNewsSettings(env) {
           }
           const hours = parseInt(site.newsSettings.retentionHours, 10);
           if (hours && hours > 0) settings.retentionHours = hours;
+          if (typeof site.newsSettings.tamilNaduPriority === 'boolean') {
+            settings.tamilNaduPriority = site.newsSettings.tamilNaduPriority;
+          }
+          const max = parseInt(site.newsSettings.maxItems, 10);
+          if (max && max > 0) settings.maxItems = max;
+          const hl = parseInt(site.newsSettings.highlightHours, 10);
+          if (hl && hl > 0) settings.highlightHours = hl;
         }
       }
     }
@@ -556,11 +740,38 @@ async function readNewsSettings(env) {
   return settings;
 }
 
+// Load published, non-trashed news items curated by the Builder from the R2
+// manifest, applying the same retention window as the live feed.
+async function readCuratedNews(env, settings) {
+  try {
+    if (!env.MEDIA_BUCKET) return [];
+    const obj = await env.MEDIA_BUCKET.get('content-manifest.json');
+    if (!obj) return [];
+    const manifest = JSON.parse(await obj.text());
+    const data = manifest.data || {};
+    if (!Array.isArray(data.news)) return [];
+
+    const cutoff = Date.now() - (settings && settings.autoDelete !== false ? (settings.retentionHours || 24) * 3600 * 1000 : 0);
+    return data.news.filter((n) => {
+      if (n.status === 'trashed' || !n.published) return false;
+      if (settings && settings.autoDelete !== false) {
+        if (!n.publishedAt) return false;
+        const t = new Date(n.publishedAt).getTime();
+        if (isNaN(t) || t < cutoff) return false;
+      }
+      return true;
+    });
+  } catch (_) { /* ignore manifest read errors */ }
+  return [];
+}
+
 // GET /api/news
-// Returns the latest Tamil news from the RCC source (BBC Tamil RSS). Items are
-// filtered to Tamil-only, deduped, and capped by the retention window configured
-// in the Builder Site Settings (default: auto-delete after 24 hours). Results
-// are cached in R2 for NEWS_CACHE_TTL_MS so we don't hammer the upstream feed.
+// Returns the latest Tamil news from the RCC source. Items are filtered to
+// Tamil-only, deduped, prioritized (Tamil Nadu first when enabled), and capped
+// by the retention window configured in the Builder Site Settings (default:
+// auto-delete after 24 hours). No source branding is exposed — each item only
+// carries Tamil content fields. Results are cached in R2 for NEWS_CACHE_TTL_MS
+// so we don't hammer the upstream feed.
 async function handleNewsGet(request, env) {
   try {
     let cached = null;
@@ -606,12 +817,56 @@ async function handleNewsGet(request, env) {
       });
     }
 
+    // Merge curated news (published, non-trashed items managed in the Builder)
+    // ahead of the live RCC feed. Curated items are deduped against the feed by
+    // normalized title, so a Builder-edited headline never duplicates.
+    const curated = await readCuratedNews(env, settings);
+    if (curated.length) {
+      const curatedTitles = new Set(curated.map((c) => (c.title || '').trim().toLowerCase()));
+      result = curated.concat(result.filter((item) => {
+        return !curatedTitles.has((item.title || '').trim().toLowerCase());
+      }));
+    }
+
+    // TN priority is applied both at parse time and defensively here so the
+    // ordering is stable even for cached payloads produced by an older build.
+    if (settings.tamilNaduPriority) {
+      result = result.slice().sort((a, b) => {
+        const pa = a.tnPriority || a.priority === 'tamil-nadu' || a.tamilNadu;
+        const pb = b.tnPriority || b.priority === 'tamil-nadu' || b.tamilNadu;
+        if (pa !== pb) return pa ? -1 : 1;
+        // Highlighted / admin-ordered curated items float above the feed.
+        if (!!a.highlighted !== !!b.highlighted) return a.highlighted ? -1 : 1;
+        const oa = typeof a.order === 'number' ? a.order : 0;
+        const ob = typeof b.order === 'number' ? b.order : 0;
+        if (oa !== ob) return oa - ob;
+        const ta = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+        const tb = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+        return tb - ta;
+      });
+    }
+
+    // Strip internal-only fields before serving.
+    const clean = result.map((item) => {
+      const priority = item.tnPriority || item.tamilNadu || item.priority === 'tamil-nadu'
+        ? 'tamil-nadu'
+        : 'other';
+      return {
+        id: item.id,
+        title: item.title,
+        content: item.content,
+        image: item.image,
+        publishedAt: item.publishedAt,
+        priority,
+        highlighted: !!item.highlighted,
+      };
+    });
+
     return json({
-      source: NEWS_SOURCE_NAME,
       fetchedAt,
       retention: settings,
-      count: result.length,
-      items: result.slice(0, 40),
+      count: clean.length,
+      items: clean.slice(0, settings.maxItems),
     });
   } catch (e) {
     return json({ error: e.message }, 500);

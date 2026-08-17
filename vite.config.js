@@ -16,7 +16,8 @@ const vanillaFiles = [
   'premium-landing.js',
   'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
   'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
-  'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js'
+  'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js',
+  'brand-config.js'
 ]
 
 function skipVanillaTransform() {
@@ -51,7 +52,8 @@ function copyVanillaScripts() {
         'premium-landing.js',
         'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
-        'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js'
+        'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js',
+        'brand-config.js'
       ]
 
       const vanillaCSS = [
