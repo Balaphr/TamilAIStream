@@ -78,10 +78,9 @@ const AppInit = {
             SearchEngine.init();
         }
         
-        // Premium Effects
+        // Premium Effects (particles removed — static AI background only)
         if (typeof PremiumEffects !== 'undefined') {
             PremiumEffects.init();
-            PremiumEffects.initParticles();
         }
         
         // Player UI

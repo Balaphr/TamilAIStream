@@ -861,15 +861,6 @@ body.gp-visible .tamilai-bottom-nav {
     .vinyl-disc.spinning {
         animation-duration: 8s !important;
     }
-    .ai-hero-wave {
-        animation-duration: 18s !important;
-    }
-    .ai-hero-art {
-        animation: aiArtFloat 10s ease-in-out infinite !important;
-    }
-    .ai-hero-art-ring {
-        animation: aiRing 20s linear infinite !important;
-    }
 }
 
 /* ============================================
@@ -933,4 +924,179 @@ body.gp-visible .tamilai-bottom-nav {
     .home-categories {
         will-change: auto !important;
     }
+}
+
+/* ============================================
+   30. AGGRESSIVE MOBILE / PWA PERFORMANCE
+   ============================================ */
+
+/* Kill ALL non-essential animations on phones to prevent overheating */
+@media (max-width: 768px) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.15s !important;
+    }
+    /* Re-enable essential transitions */
+    .tamilai-nav-item,
+    .ai-playlist-card,
+    .ai-fm-card,
+    .ai-song-card,
+    .ai-rec-song,
+    .ai-news-card,
+    .ai-play-btn,
+    .ai-fm-play-btn,
+    .ai-play-now,
+    .gp-btn,
+    .splash-skip {
+        transition-duration: 0.25s !important;
+    }
+    .tamilai-nav-item:active,
+    .ai-playlist-card:active,
+    .ai-fm-card:active,
+    .ai-song-card:active,
+    .ai-rec-song:active,
+    .ai-news-card:active,
+    .ai-play-btn:active,
+    .ai-fm-play-btn:active,
+    .ai-play-now:active {
+        transition-duration: 0.1s !important;
+    }
+    /* Kill splash animations entirely */
+    .splash-overlay { animation: none !important; }
+    .splash-orb { display: none !important; }
+    .splash-logo { animation: none !important; transform: none !important; }
+    .splash-eq-bar { animation: none !important; }
+    .splash-loading-fill { animation: none !important; width: 100% !important; }
+}
+
+/* PWA standalone: maximum performance mode */
+@media (display-mode: standalone) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.15s !important;
+    }
+    .tamilai-nav-item,
+    .ai-playlist-card,
+    .ai-fm-card,
+    .ai-song-card,
+    .ai-rec-song,
+    .ai-news-card,
+    .ai-play-btn,
+    .ai-fm-play-btn,
+    .ai-play-now,
+    .gp-btn {
+        transition-duration: 0.25s !important;
+    }
+    .tamilai-nav-item:active,
+    .ai-playlist-card:active,
+    .ai-fm-card:active,
+    .ai-song-card:active,
+    .ai-rec-song:active,
+    .ai-news-card:active {
+        transition-duration: 0.1s !important;
+    }
+    /* Remove all glass effects in PWA */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    /* Kill all floating / glowing effects */
+    .ai-hero-art,
+    .ai-hero-art-ring,
+    .ai-hero-wave,
+    .splash-orb,
+    .splash-logo,
+    .splash-eq-bar,
+    .splash-loading-fill {
+        animation: none !important;
+    }
+}
+
+/* ============================================
+   31. SCROLL PERFORMANCE
+   ============================================ */
+/* GPU-accelerate scrollable containers */
+.ytm-main-content,
+.ai-home,
+.ai-card-row,
+.ai-fm-grid,
+.ai-recent-row,
+.ai-rec-songs,
+.ai-news-list,
+.ai-sidebar-inner {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    contain: layout style;
+}
+
+/* Content visibility for off-screen sections — browser skips rendering */
+@media (max-width: 768px) {
+    .ai-panel {
+        content-visibility: auto;
+        contain-intrinsic-size: 0 400px;
+    }
+    .ai-fm-card,
+    .ai-song-card,
+    .ai-rec-song,
+    .ai-news-card {
+        contain: layout style paint;
+    }
+}
+
+/* Lazy image rendering */
+img[loading="lazy"] {
+    content-visibility: auto;
+    contain-intrinsic-size: 200px 200px;
+}
+
+/* ============================================
+   32. PWA BOTTOM NAV — Safe Area Fix
+   ============================================ */
+@media (display-mode: standalone) {
+    .tamilai-bottom-nav {
+        padding-bottom: calc(8px + env(safe-area-inset-bottom, 20px)) !important;
+        bottom: 0 !important;
+    }
+    body.gp-active .tamilai-bottom-nav,
+    body.gp-visible .tamilai-bottom-nav {
+        bottom: 0 !important;
+    }
+    /* Ensure content is never hidden behind nav */
+    .ytm-main-content {
+        padding-bottom: calc(80px + env(safe-area-inset-bottom, 20px)) !important;
+    }
+}
+
+/* ============================================
+   33. FM WAVE ANIMATION — Reduce on mobile
+   ============================================ */
+@media (max-width: 768px) {
+    .ai-fm-wave span {
+        animation: none !important;
+        height: 5px !important;
+    }
+}
+
+/* ============================================
+   34. IMAGE LOADING — Prevent layout shift
+   ============================================ */
+.ai-hero-art,
+.ai-playlist-art,
+.ai-fm-art,
+.ai-song-art,
+.ai-rec-song-art,
+.ai-news-img {
+    background-color: #0d1330;
+    overflow: hidden;
+}
+.ai-hero-art img,
+.ai-playlist-art img,
+.ai-fm-art img,
+.ai-song-art img,
+.ai-rec-song-art img,
+.ai-news-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }

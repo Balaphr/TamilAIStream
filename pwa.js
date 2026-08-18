@@ -40,6 +40,51 @@
     registerSW();
     startPolling();
     listenBroadcastChannel();
+    handlePWAResume();
+  }
+
+  /* ============================================================
+     PWA Resume — instant recovery after minimize
+     ============================================================ */
+  function handlePWAResume() {
+    // When PWA resumes from background, avoid heavy work.
+    // The page is already in memory — just sync state.
+    window.addEventListener('pageshow', function(e) {
+      // If persisted from bfcache, the page is already fully loaded.
+      if (e.persisted) {
+        // Skip all re-init, just sync audio state
+        try {
+          if (window.PlayerEngine && typeof PlayerEngine.syncState === 'function') {
+            PlayerEngine.syncState();
+          }
+        } catch (_) { /* ok */ }
+        return;
+      }
+    });
+
+    // On visibility change back to visible, do minimal sync
+    var _lastHidden = 0;
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) {
+        var now = Date.now();
+        var hiddenDuration = _lastHidden ? (now - _lastHidden) : 0;
+        // If hidden for less than 5 minutes, just sync audio — don't re-render
+        if (hiddenDuration < 300000) {
+          try {
+            if (window.PlayerEngine && typeof PlayerEngine.syncState === 'function') {
+              PlayerEngine.syncState();
+            }
+          } catch (_) { /* ok */ }
+          return;
+        }
+        // If hidden for longer, do a light refresh
+        if (registration) {
+          try { registration.update(); } catch (_) {}
+        }
+      } else {
+        _lastHidden = Date.now();
+      }
+    });
   }
 
   /* ============================================================

@@ -67,7 +67,6 @@
         <div class="splash-orb splash-orb-1"></div>
         <div class="splash-orb splash-orb-2"></div>
         <div class="splash-orb splash-orb-3"></div>
-        <canvas class="splash-particles" id="splashParticles"></canvas>
         <div class="splash-content">
             <div class="splash-logo-wrap">
                 <div class="splash-logo-glow"></div>
@@ -118,58 +117,20 @@
         // First visit: show a brief 600ms splash. Returning visitors (this session): skip instantly.
         var splashSeen = false;
         try { splashSeen = sessionStorage.getItem('tamilai_splash_seen') === '1'; } catch (e) {}
-        const SPLASH_MIN_MS = splashSeen ? 0 : 600;
+        /* PWA standalone: always skip splash for instant resume */
+        var isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+        const SPLASH_MIN_MS = (splashSeen || isStandalone) ? 0 : 600;
         const overlay = document.getElementById('splashOverlay');
         const skipBtn = document.getElementById('splashSkip');
         if (!overlay) return;
 
         let dismissed = false;
 
-        /* ---------- Splash Particles ---------- */
-        (function initSplashParticles() {
-            const c = document.getElementById('splashParticles');
-            if (!c) return;
-            const ctx = c.getContext('2d');
-            let W, H;
-            const dots = [];
-            const COUNT = 40;
-            function resize() { W = c.width = window.innerWidth; H = c.height = window.innerHeight; }
-            resize();
-            window.addEventListener('resize', resize);
-            for (let i = 0; i < COUNT; i++) {
-                dots.push({
-                    x: Math.random() * W,
-                    y: Math.random() * H,
-                    r: Math.random() * 1.5 + 0.5,
-                    dx: (Math.random() - 0.5) * 0.3,
-                    dy: (Math.random() - 0.5) * 0.3,
-                    o: Math.random() * 0.4 + 0.1
-                });
-            }
-            let raf;
-            function draw() {
-                ctx.clearRect(0, 0, W, H);
-                for (const d of dots) {
-                    d.x += d.dx; d.y += d.dy;
-                    if (d.x < 0) d.x = W; if (d.x > W) d.x = 0;
-                    if (d.y < 0) d.y = H; if (d.y > H) d.y = 0;
-                    ctx.beginPath();
-                    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(120,130,255,' + d.o + ')';
-                    ctx.fill();
-                }
-                raf = requestAnimationFrame(draw);
-            }
-            draw();
-            overlay._splashRaf = raf;
-        })();
-
         /* ---------- Dismiss splash ---------- */
         function dismissSplash() {
             if (dismissed) return;
             dismissed = true;
             try { sessionStorage.setItem('tamilai_splash_seen', '1'); } catch (e) {}
-            if (overlay._splashRaf) cancelAnimationFrame(overlay._splashRaf);
 
             overlay.classList.add('splash-hide');
             setTimeout(function() {
@@ -1042,7 +1003,6 @@
             PlayerUI.init();
             GlobalPlayer.init();
             AIMusicAssistant.init();
-            PremiumEffects.initParticles();
         });
     </script>
     <script defer src="premium-landing.js"></script>

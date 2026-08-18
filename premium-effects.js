@@ -1,133 +1,13 @@
 'use strict';
 
 /* ============================================
-   PremiumEffects - Animations, Particles,
-   Skeleton Loading, Ripple, Animations
+   PremiumEffects - Ripple, Skeleton Loading,
+   Dynamic Color Extraction
+   Particles have been removed — the website
+   uses a static premium AI background.
    ============================================ */
 
 const PremiumEffects = (() => {
-    let particlesCanvas = null;
-    let particlesCtx = null;
-    let particles = [];
-    let animationFrame = null;
-    let isActive = true;
-
-    const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-    const PARTICLE_COUNT = isMobile ? 15 : 40;
-    const COLORS = ['rgba(16,185,129,0.3)', 'rgba(59,130,246,0.2)', 'rgba(168,85,247,0.2)', 'rgba(236,72,153,0.15)'];
-
-    /* ---- Particles ---- */
-    let _resizeTimer = null;
-    let _zoomPaused = false;
-    function initParticles(container) {
-        particlesCanvas = document.createElement('canvas');
-        particlesCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0.6;contain:strict;';
-        (container || document.body).appendChild(particlesCanvas);
-        particlesCtx = particlesCanvas.getContext('2d');
-        resizeCanvas();
-        window.addEventListener('resize', () => {
-            clearTimeout(_resizeTimer);
-            _resizeTimer = setTimeout(resizeCanvas, 200);
-        }, { passive: true });
-        for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(createParticle());
-        animateParticles();
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) pauseParticles();
-            else if (!_zoomPaused) resumeParticles();
-        });
-
-        if ('IntersectionObserver' in window) {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (!entry.isIntersecting) pauseParticles();
-                    else if (!document.hidden && !_zoomPaused) resumeParticles();
-                });
-            }, { threshold: 0 });
-            observer.observe(particlesCanvas);
-        }
-
-        // Pause particles during pinch-to-zoom to prevent freeze
-        let _lastTouchCount = 0;
-        let _resumeTimer = null;
-        document.addEventListener('touchstart', (e) => {
-            if (e.touches.length >= 2 && !_zoomPaused) {
-                pauseParticles();
-                _lastTouchCount = e.touches.length;
-            }
-        }, { passive: true });
-        document.addEventListener('touchend', () => {
-            if (_zoomPaused) {
-                clearTimeout(_resumeTimer);
-                _resumeTimer = setTimeout(resumeParticles, 300);
-            }
-        }, { passive: true });
-
-        // Also pause during browser zoom (Ctrl+scroll / Cmd+scroll)
-        let _zoomCheckTimer = null;
-        let _lastZoom = window.devicePixelRatio;
-        document.addEventListener('wheel', (e) => {
-            if (e.ctrlKey || e.metaKey) {
-                if (!_zoomPaused) pauseParticles();
-                clearTimeout(_zoomCheckTimer);
-                _zoomCheckTimer = setTimeout(() => {
-                    _lastZoom = window.devicePixelRatio;
-                    resumeParticles();
-                }, 400);
-            }
-        }, { passive: true });
-    }
-
-    function resizeCanvas() {
-        if (!particlesCanvas) return;
-        particlesCanvas.width = window.innerWidth;
-        particlesCanvas.height = window.innerHeight;
-    }
-
-    function createParticle() {
-        return {
-            x: Math.random() * (particlesCanvas ? particlesCanvas.width : window.innerWidth),
-            y: Math.random() * (particlesCanvas ? particlesCanvas.height : window.innerHeight),
-            size: Math.random() * 3 + 1,
-            speedX: (Math.random() - 0.5) * 0.3,
-            speedY: (Math.random() - 0.5) * 0.3,
-            color: COLORS[Math.floor(Math.random() * COLORS.length)],
-            opacity: Math.random() * 0.5 + 0.1,
-            pulse: Math.random() * Math.PI * 2
-        };
-    }
-
-    function animateParticles() {
-        if (!particlesCtx || !particlesCanvas || !isActive || document.hidden) {
-            if (animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = null; }
-            return;
-        }
-        particlesCtx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
-        particles.forEach(p => {
-            p.x += p.speedX;
-            p.y += p.speedY;
-            p.pulse += 0.01;
-            if (p.x < 0) p.x = particlesCanvas.width;
-            if (p.x > particlesCanvas.width) p.x = 0;
-            if (p.y < 0) p.y = particlesCanvas.height;
-            if (p.y > particlesCanvas.height) p.y = 0;
-            const glow = Math.sin(p.pulse) * 0.3 + 0.7;
-            particlesCtx.beginPath();
-            particlesCtx.arc(p.x, p.y, p.size * glow, 0, Math.PI * 2);
-            particlesCtx.fillStyle = p.color;
-            particlesCtx.fill();
-        });
-        animationFrame = requestAnimationFrame(animateParticles);
-    }
-
-    function pauseParticles() { _zoomPaused = true; isActive = false; if (animationFrame) cancelAnimationFrame(animationFrame); }
-    function resumeParticles() { _zoomPaused = false; isActive = true; animateParticles(); }
-
-    function stopParticles() {
-        isActive = false;
-        if (animationFrame) cancelAnimationFrame(animationFrame);
-        if (particlesCanvas) particlesCanvas.remove();
-    }
 
     /* ---- Ripple Effect ---- */
     function addRipple(element, e) {
@@ -299,7 +179,7 @@ const PremiumEffects = (() => {
     }
 
     return {
-        init, initParticles, stopParticles,
+        init,
         addRipple, showSkeleton, hideSkeleton,
         extractColors
     };

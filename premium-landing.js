@@ -41,60 +41,8 @@ const TamilAIPremium = (function () {
     /* ------------------ hero ------------------ */
     let heroCanvasCtx = null;
     function initHeroParticles() {
-        const canvas = $('premiumHeroCanvas');
-        if (!canvas || isPreview || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        const ctx = canvas.getContext('2d');
-        const DPR = window.devicePixelRatio || 1;
-        let W = 0, H = 0;
-        const notes = [];
-        function resize() {
-            W = canvas.clientWidth; H = canvas.clientHeight;
-            canvas.width = W * DPR; canvas.height = H * DPR;
-            ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-        }
-        resize();
-        window.addEventListener('resize', resize, { passive: true });
-        for (let i = 0; i < 22; i++) {
-            notes.push({
-                x: Math.random() * W,
-                y: Math.random() * H,
-                r: Math.random() * 1.6 + 0.6,
-                dy: Math.random() * 0.35 + 0.08,
-                dx: (Math.random() - 0.5) * 0.2,
-                o: Math.random() * 0.5 + 0.15,
-                phase: Math.random() * Math.PI * 2,
-                hue: Math.random() > 0.6 ? 190 : 160
-            });
-        }
-        let raf;
-        let isVisible = true;
-        function draw(t) {
-            ctx.clearRect(0, 0, W, H);
-            for (const p of notes) {
-                const depth = 1 + Math.sin(t * 0.001 + p.phase);
-                p.y = (p.y - p.dy + H) % H;
-                p.x = (p.x + p.dx + Math.sin(t * 0.0006 + p.phase) * 0.4 + W) % W;
-                const a = p.o * (0.4 + depth * 0.3);
-                const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 6);
-                g.addColorStop(0, `hsla(${p.hue}, 78%, 66%, ${a * 0.6})`);
-                g.addColorStop(1, `hsla(${p.hue}, 78%, 66%, 0)`);
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.r * 6, 0, Math.PI * 2);
-                ctx.fillStyle = g;
-                ctx.fill();
-            }
-            if (isVisible && !document.hidden) raf = requestAnimationFrame(draw);
-        }
-        raf = requestAnimationFrame(draw);
-        TamilAIPremium._heroRaf = raf;
-        // Stop animation when canvas is off-screen to save resources
-        if ('IntersectionObserver' in window) {
-            const heroIo = new IntersectionObserver((entries) => {
-                isVisible = entries.some(e => e.isIntersecting);
-                if (isVisible && !raf) raf = requestAnimationFrame(draw);
-            }, { threshold: 0 });
-            heroIo.observe(canvas);
-        }
+        // Particles removed — static premium AI background is used instead.
+        // This function is kept as a no-op to avoid breaking callers.
     }
 
     function updateHeroStats() {

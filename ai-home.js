@@ -217,8 +217,7 @@ window.AIHome = (() => {
                 if (!p) return;
                 const songs = resolvePlaylistSongs(p);
                 if (!songs.length) { showToastSafe('Playlist "' + (p.name || '') + '" has no playable songs yet', 'info'); return; }
-                if (typeof window.playSong === 'function') window.playSong(songs[0], songs);
-                e.preventDefault();
+                openPlaylistDetail(p, songs);
             });
         });
     }
@@ -239,6 +238,80 @@ window.AIHome = (() => {
             id: 'derived_' + i, name: name.slice(0, 34),
             songs: groups[name], thumbnail: artOf(groups[name][0]), gradient: grads[i % grads.length]
         }));
+    }
+
+    /* ---- Playlist Detail Overlay ---- */
+    function openPlaylistDetail(playlist, songs) {
+        const existing = document.getElementById('aiPlaylistDetail');
+        if (existing) existing.remove();
+        const name = (playlist.name || playlist.title || 'Playlist').slice(0, 40);
+        const cover = playlist.thumbnail || playlist.cover || playlist.image || artOf(songs[0]) || '';
+        const grad = playlist.gradient || 'linear-gradient(135deg,#312e81,#1e1b4b)';
+        const wrap = document.createElement('div');
+        wrap.className = 'ai-playlist-detail';
+        wrap.id = 'aiPlaylistDetail';
+        wrap.setAttribute('role', 'dialog');
+        wrap.setAttribute('aria-modal', 'true');
+        wrap.innerHTML =
+            '<div class="ai-playlist-detail-overlay"></div>' +
+            '<div class="ai-playlist-detail-panel">' +
+            '<div class="ai-pl-detail-header" style="background:' + grad + ';' +
+            (cover ? 'background-image:url(\'' + cover + '\');background-size:cover;background-position:center;' : '') + '">' +
+            '<div class="ai-pl-detail-header-bg"></div>' +
+            '<button class="ai-pl-detail-back" type="button"><i class="fa-solid fa-arrow-left"></i></button>' +
+            '<div class="ai-pl-detail-info">' +
+            '<h3 class="ai-pl-detail-name">' + escapeHtml(name) + '</h3>' +
+            '<div class="ai-pl-detail-meta">' + songs.length + ' songs</div>' +
+            '<button class="ai-pl-detail-play" data-pl-action="play-all"><i class="fa-solid fa-play" style="margin-left:2px;"></i> Play All</button>' +
+            '</div></div>' +
+            '<div class="ai-pl-detail-list">' +
+            songs.map((s, i) => {
+                const title = (s.title || s.name || 'Untitled').slice(0, 38);
+                const artist = (s.artist || s.singer || '').slice(0, 30);
+                const dur = durationText(s.duration);
+                const songArt = artOf(s);
+                return '<div class="ai-pl-detail-song" data-idx="' + i + '">' +
+                    '<div class="ai-pl-ds-num">' + (i + 1) + '</div>' +
+                    '<div class="ai-pl-ds-art">' +
+                    (songArt ? '<img src="' + escapeHtml(songArt) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-music"></i>') +
+                    '</div>' +
+                    '<div class="ai-pl-ds-info">' +
+                    '<div class="ai-pl-ds-title">' + escapeHtml(title) + '</div>' +
+                    '<div class="ai-pl-ds-artist">' + escapeHtml(artist) + '</div>' +
+                    '</div>' +
+                    (dur ? '<div class="ai-pl-ds-dur">' + dur + '</div>' : '') +
+                    '<button class="ai-pl-ds-play" aria-label="Play ' + escapeHtml(title) + '"><i class="fa-solid fa-play"></i></button>' +
+                    '</div>';
+            }).join('') +
+            '</div></div>';
+        document.body.appendChild(wrap);
+        document.body.classList.add('ai-playlist-detail-open');
+        requestAnimationFrame(() => wrap.classList.add('open'));
+
+        /* Play All button */
+        wrap.querySelector('[data-pl-action="play-all"]').addEventListener('click', () => {
+            if (songs.length && typeof window.playSong === 'function') window.playSong(songs[0], songs);
+        });
+
+        /* Individual song clicks */
+        wrap.querySelectorAll('.ai-pl-detail-song').forEach(row => {
+            row.addEventListener('click', () => {
+                const idx = parseInt(row.dataset.idx, 10);
+                const song = songs[idx];
+                if (song && typeof window.playSong === 'function') window.playSong(song, songs);
+            });
+        });
+
+        /* Close handlers */
+        const closeDetail = () => {
+            wrap.classList.remove('open');
+            setTimeout(() => { if (wrap.parentNode) wrap.remove(); document.body.classList.remove('ai-playlist-detail-open'); }, 250);
+        };
+        wrap.querySelector('.ai-pl-detail-back').addEventListener('click', closeDetail);
+        wrap.querySelector('.ai-playlist-detail-overlay').addEventListener('click', closeDetail);
+        document.addEventListener('keydown', function esc(e) {
+            if (e.key === 'Escape') { document.removeEventListener('keydown', esc); closeDetail(); }
+        });
     }
 
     /* ---------------- Live FM Stations ---------------- */
@@ -273,7 +346,17 @@ window.AIHome = (() => {
         }).join('');
         grid.querySelectorAll('.ai-fm-card').forEach(card => {
             const btn = card.querySelector('.ai-fm-play-btn');
-            if (btn) btn.addEventListener('click', e => e.stopPropagation());
+            if (btn) btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const name = card.dataset.station;
+                if (!name) return;
+                if (typeof window.toggleStationFromCard === 'function') {
+                    window.toggleStationFromCard(card, name);
+                } else if (typeof window.playStation === 'function') {
+                    window.playStation(name);
+                }
+                setTimeout(syncFmPlaying, 120);
+            });
             card.addEventListener('click', () => {
                 const name = card.dataset.station;
                 if (!name) return;
