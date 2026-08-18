@@ -393,7 +393,7 @@ const MiniAudioPlayer = (() => {
             showAISuggestion(false);
 
             autoTimer = setInterval(() => {
-                if (isAIActive) {
+                if (isAIActive && !document.hidden) {
                     const st = typeof currentStation !== 'undefined' ? currentStation : currentPlayback?.title;
                     if (st) autoRecommendNextStation(st);
                 }
@@ -574,10 +574,8 @@ const MiniAudioPlayer = (() => {
     function startStationSimulation() {
         clearInterval(stationInterval);
         if (!isAIActive) return;
-        stationInterval = setInterval(() => {
-            const liveBadge = document.getElementById('mapLiveBadge');
-            if (liveBadge) liveBadge.style.display = 'inline-flex';
-        }, 1000);
+        const liveBadge = document.getElementById('mapLiveBadge');
+        if (liveBadge) liveBadge.style.display = 'inline-flex';
     }
 
     /* ============================================

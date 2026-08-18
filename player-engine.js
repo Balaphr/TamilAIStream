@@ -275,13 +275,12 @@ const PlayerEngine = (() => {
 
     function scheduleAutoRecommend() {
         clearTimeout(autoRecommendTimer);
-        if (!state.aiAutomation) return;
-        // Every 5 minutes, if nothing is queued, auto-recommend
+        if (!state.aiAutomation || !state.isPlaying) return;
         autoRecommendTimer = setTimeout(() => {
-            if (state.aiAutomation && state.queue.length <= state.queueIndex + 1) {
+            if (state.aiAutomation && state.isPlaying && state.queue.length <= state.queueIndex + 1) {
                 autoRecommendNext();
             }
-            scheduleAutoRecommend();
+            if (state.aiAutomation && state.isPlaying) scheduleAutoRecommend();
         }, 5 * 60 * 1000);
     }
 
@@ -595,10 +594,29 @@ const PlayerEngine = (() => {
     function getAnalyser() { return analyser; }
     function getState() { return { ...state }; }
 
+    let _saveInterval = null;
+
+    function startSaveInterval() {
+        if (_saveInterval) return;
+        _saveInterval = setInterval(() => {
+            if (state.isPlaying) saveState();
+        }, 30000);
+    }
+
+    function stopSaveInterval() {
+        if (_saveInterval) { clearInterval(_saveInterval); _saveInterval = null; }
+    }
+
     function init() {
         loadState();
         window.addEventListener('beforeunload', saveState);
-        setInterval(saveState, 30000);
+        startSaveInterval();
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                saveState();
+            }
+        });
     }
 
     return {

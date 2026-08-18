@@ -734,3 +734,203 @@ body.gp-visible .tamilai-bottom-nav {
 .ytm-bottom-nav, .bottom-nav {
     display: none !important;
 }
+
+/* ============================================
+   26. MOBILE PERFORMANCE — Reduce GPU/CPU Load
+   ============================================ */
+
+/* Reduce backdrop-filter blur on mobile — major GPU cost */
+@media (max-width: 1024px) {
+    .ai-sidebar,
+    .premium-topnav,
+    .premium-top-nav,
+    .gp-mini,
+    .gp-expanded,
+    .mini-player,
+    .glass-player,
+    .premium-blur,
+    .ai-panel,
+    .ai-fm-card,
+    .ai-playlist-card,
+    .ai-song-card,
+    .ai-rec-song,
+    .ai-news-card,
+    .ai-notif-panel,
+    .ai-user-menu,
+    .ai-news-detail-overlay,
+    .ai-news-detail-panel {
+        backdrop-filter: blur(12px) saturate(140%) !important;
+        -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
+    }
+}
+
+/* Further reduce on phones */
+@media (max-width: 480px) {
+    .ai-sidebar,
+    .premium-topnav,
+    .premium-top-nav,
+    .gp-mini,
+    .gp-expanded,
+    .mini-player,
+    .glass-player,
+    .premium-blur,
+    .ai-panel,
+    .ai-fm-card,
+    .ai-playlist-card,
+    .ai-song-card,
+    .ai-rec-song,
+    .ai-news-card,
+    .ai-notif-panel,
+    .ai-user-menu,
+    .ai-news-detail-overlay,
+    .ai-news-detail-panel,
+    .splash-overlay,
+    .splash-logo {
+        backdrop-filter: blur(6px) saturate(120%) !important;
+        -webkit-backdrop-filter: blur(6px) saturate(120%) !important;
+    }
+}
+
+/* Disable heavy canvas particles on phones */
+@media (max-width: 480px) {
+    .premium-particles-canvas,
+    .hero-particles-canvas,
+    .neural-bg-canvas,
+    .splash-particles {
+        display: none !important;
+    }
+}
+
+/* Reduce floating and pulsing animations on mobile */
+@media (max-width: 768px) {
+    .artwork-float,
+    .gp-art-float,
+    .ambient-glow,
+    .ambient-light::after {
+        animation: none !important;
+    }
+    .vinyl-disc.spinning {
+        animation-duration: 6s !important;
+    }
+    .card-pulse {
+        animation: none !important;
+    }
+    .now-playing-glow::before {
+        animation: none !important;
+    }
+    .glass-player.playing::before {
+        animation: none !important;
+    }
+    .progress-shimmer::before {
+        animation: none !important;
+    }
+    .splash-logo {
+        animation: splashLogoFloat 3s ease-in-out infinite !important;
+    }
+    .splash-orb-1,
+    .splash-orb-2,
+    .splash-orb-3 {
+        animation: none !important;
+    }
+}
+
+/* Disable 3D transforms on splash for mobile */
+@media (max-width: 768px) {
+    .splash-logo-wrap {
+        perspective: none !important;
+    }
+    .splash-logo {
+        animation: splashLogoFloat 3s ease-in-out infinite !important;
+    }
+}
+
+/* ============================================
+   27. PWA LOW-POWER MODE
+   ============================================ */
+/* When running as PWA standalone, reduce effects further */
+@media (display-mode: standalone) {
+    .premium-particles-canvas,
+    .hero-particles-canvas,
+    .neural-bg-canvas {
+        display: none !important;
+    }
+    .ambient-glow,
+    .ambient-light::after {
+        animation: none !important;
+    }
+    .vinyl-disc.spinning {
+        animation-duration: 8s !important;
+    }
+    .ai-hero-wave {
+        animation-duration: 18s !important;
+    }
+    .ai-hero-art {
+        animation: aiArtFloat 10s ease-in-out infinite !important;
+    }
+    .ai-hero-art-ring {
+        animation: aiRing 20s linear infinite !important;
+    }
+}
+
+/* ============================================
+   28. LOW-MOTION ACCESSIBILITY
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    .premium-particles-canvas,
+    .hero-particles-canvas,
+    .neural-bg-canvas,
+    .splash-particles {
+        display: none !important;
+    }
+    .ambient-glow,
+    .ambient-light::after {
+        animation: none !important;
+        opacity: 0 !important;
+    }
+    .vinyl-disc.spinning,
+    .artwork-float,
+    .gp-art-float,
+    .card-pulse,
+    .now-playing-glow::before,
+    .glass-player.playing::before,
+    .progress-shimmer::before {
+        animation: none !important;
+    }
+}
+
+/* ============================================
+   29. REDUCE GPU COMPOSITING LAYERS
+   ============================================ */
+/* Remove excessive will-change on mobile to reduce layer count */
+@media (max-width: 768px) {
+    .song-card,
+    .station-card,
+    .radio-card,
+    .collection-card,
+    .movie-card,
+    .artist-hit-card,
+    .tamil-hit-card,
+    .ad-banner-card,
+    .hero-ad-card {
+        will-change: auto !important;
+        transform: none !important;
+    }
+    img,
+    .premium-radio-art img,
+    .song-thumbnail img,
+    .movie-poster img,
+    .artist-avatar img,
+    .collection-poster img,
+    .hero-ad-image {
+        will-change: auto !important;
+    }
+    canvas {
+        will-change: auto !important;
+    }
+    .stations-track,
+    .carousel-track,
+    .recently-added-track,
+    .home-categories {
+        will-change: auto !important;
+    }
+}

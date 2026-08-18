@@ -2157,9 +2157,13 @@ function initTopHeader() {
     updateDate();
     updateTime();
 
-    // Intervals
-    _topHeaderDateInterval = setInterval(updateDate, 60000);
-    _topHeaderTimeInterval = setInterval(updateTime, 1000);
+    // Intervals — pause when tab hidden
+    _topHeaderDateInterval = setInterval(() => { if (!document.hidden) updateDate(); }, 60000);
+    _topHeaderTimeInterval = setInterval(() => { if (!document.hidden) updateTime(); }, 1000);
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) { updateDate(); updateTime(); }
+    });
 }
 
 // ============================================
@@ -2547,6 +2551,7 @@ function renderHeroAd(container, ads) {
 
     if (_adTimers[0]) clearInterval(_adTimers[0]);
     _adTimers[0] = setInterval(() => {
+        if (document.hidden) return;
         currentIdx = (currentIdx + 1) % ads.length;
         container.innerHTML = buildHeroAdHTML(ads[currentIdx]);
         initAdTiltEffect(container);
@@ -2657,6 +2662,7 @@ function renderAdSlot(container, ads, pos) {
 
     if (_adTimers[pos]) clearInterval(_adTimers[pos]);
     _adTimers[pos] = setInterval(() => {
+        if (document.hidden) return;
         const slides = container.querySelectorAll('.ad-banner-slide');
         if (slides.length) slides[currentIdx].classList.remove('active');
         currentIdx = (currentIdx + 1) % ads.length;
@@ -3501,16 +3507,16 @@ function _heroStartUpdaters() {
     if (_heroUpdatersStarted) return;
     _heroUpdatersStarted = true;
     _heroGreetingInterval = setInterval(() => {
-        _heroSetGreeting();
-        if (!_heroLiveWeather) {
-            const t = _heroTimeWeatherIcon();
-            _heroSetWeather(t.icon, t.label);
+        if (!document.hidden) {
+            _heroSetGreeting();
+            if (!_heroLiveWeather) {
+                const t = _heroTimeWeatherIcon();
+                _heroSetWeather(t.icon, t.label);
+            }
         }
     }, 60000);
-    _heroWeatherInterval = setInterval(updateHeroWeather, 15 * 60 * 1000);
-    // Live date/time updates in place every minute — the quote is NOT rotated
-    // (stable per the "no auto-change" requirement).
-    setInterval(_heroSetDateTime, 60000);
+    _heroWeatherInterval = setInterval(() => { if (!document.hidden) updateHeroWeather(); }, 15 * 60 * 1000);
+    setInterval(() => { if (!document.hidden) _heroSetDateTime(); }, 60000);
 }
 
 // Greeting Section - Premium Glass Hero Bar
@@ -3946,8 +3952,12 @@ function initPWAHomeHeader() {
 
     updateDateTime();
     updateQuote();
-    setInterval(updateDateTime, 1000);
-    _quoteTimer = setInterval(updateQuote, 12000);
+    let _pwaDtInterval = setInterval(() => { if (!document.hidden) updateDateTime(); }, 1000);
+    _quoteTimer = setInterval(() => { if (!document.hidden) updateQuote(); }, 12000);
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) { updateDateTime(); }
+    });
 }
 
 function renderAllDynamicContent() {

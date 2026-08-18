@@ -280,7 +280,7 @@ async function loadRealtimeData() {
     }
 }
 
-function startRealtimeRefresh() { if (!_rtInterval) _rtInterval = setInterval(loadRealtimeData, 10000); }
+function startRealtimeRefresh() { if (!_rtInterval) _rtInterval = setInterval(() => { if (!document.hidden) loadRealtimeData(); }, 10000); }
 function stopRealtimeRefresh() { if (_rtInterval) { clearInterval(_rtInterval); _rtInterval = null; } }
 
 /* ---- Export ---- */

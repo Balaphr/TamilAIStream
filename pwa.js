@@ -80,7 +80,15 @@
      Content-Version Polling  (Builder publish path)
      ============================================================ */
   function startPolling() {
-    pollTimer = setInterval(pollVersion, POLL_INTERVAL);
+    pollTimer = setInterval(() => {
+      if (!document.hidden) pollVersion();
+    }, POLL_INTERVAL);
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && registration) {
+        try { registration.update(); } catch (_) {}
+      }
+    });
   }
 
   async function pollVersion() {

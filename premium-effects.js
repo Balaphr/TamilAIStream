@@ -12,7 +12,8 @@ const PremiumEffects = (() => {
     let animationFrame = null;
     let isActive = true;
 
-    const PARTICLE_COUNT = 40;
+    const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+    const PARTICLE_COUNT = isMobile ? 15 : 40;
     const COLORS = ['rgba(16,185,129,0.3)', 'rgba(59,130,246,0.2)', 'rgba(168,85,247,0.2)', 'rgba(236,72,153,0.15)'];
 
     /* ---- Particles ---- */
@@ -97,7 +98,10 @@ const PremiumEffects = (() => {
     }
 
     function animateParticles() {
-        if (!particlesCtx || !particlesCanvas || !isActive || document.hidden) return;
+        if (!particlesCtx || !particlesCanvas || !isActive || document.hidden) {
+            if (animationFrame) { cancelAnimationFrame(animationFrame); animationFrame = null; }
+            return;
+        }
         particlesCtx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
         particles.forEach(p => {
             p.x += p.speedX;

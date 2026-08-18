@@ -138,7 +138,7 @@ window.AIHome = (() => {
     function startHeroTimer() {
         stopHeroTimer();
         if (heroSlides.length < 2) return;
-        heroTimer = setInterval(() => applyHeroSlide(heroIdx + 1), 5500);
+        heroTimer = setInterval(() => { if (!document.hidden) applyHeroSlide(heroIdx + 1); }, 5500);
     }
     function stopHeroTimer() { if (heroTimer) { clearInterval(heroTimer); heroTimer = null; } }
     function restartHeroTimer() { startHeroTimer(); }

@@ -74,7 +74,7 @@ const AnalyticsTracker = (() => {
 
     function _startAutoFlush() {
         if (_flushTimer) return;
-        _flushTimer = setInterval(_flush, FLUSH_INTERVAL);
+        _flushTimer = setInterval(() => { if (!document.hidden) _flush(); }, FLUSH_INTERVAL);
         window.addEventListener('beforeunload', () => _flush());
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') _flush();

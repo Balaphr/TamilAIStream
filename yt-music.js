@@ -461,6 +461,11 @@ const YTMusic = {
             bars.appendChild(bar);
         }
         const draw = () => {
+            if (document.hidden || !this.isPlaying) {
+                if (this.visualizerFrame) cancelAnimationFrame(this.visualizerFrame);
+                this.visualizerFrame = null;
+                return;
+            }
             const width = canvas.clientWidth;
             const height = canvas.clientHeight;
             ctx.clearRect(0, 0, width, height);

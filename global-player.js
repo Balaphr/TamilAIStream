@@ -1046,8 +1046,7 @@ const GlobalPlayer = (() => {
         ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         function draw() {
             if (document.hidden || !isExpanded) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                waveformRAF = requestAnimationFrame(draw);
+                if (waveformRAF) { cancelAnimationFrame(waveformRAF); waveformRAF = null; }
                 return;
             }
             const freqData = (typeof PlayerEngine !== 'undefined' && PlayerEngine.getFrequencyData) ? PlayerEngine.getFrequencyData() : null;
@@ -1080,7 +1079,7 @@ const GlobalPlayer = (() => {
     let _eqBarsCacheTime = 0;
     function getEqBars() {
         const now = Date.now();
-        if (!_eqBarsCache || now - _eqBarsCacheTime > 2000) {
+        if (!_eqBarsCache || now - _eqBarsCacheTime > 3000) {
             _eqBarsCache = document.querySelectorAll('.gp-mini-eq span, .gp-exp-eq span');
             _eqBarsCacheTime = now;
         }
@@ -1090,19 +1089,24 @@ const GlobalPlayer = (() => {
     function startEqAnimation() {
         if (eqRAF) cancelAnimationFrame(eqRAF);
         eqRAF = null;
-        if (!state.isPlaying) {
+        if (!state.isPlaying || document.hidden) {
             getEqBars().forEach(bar => { bar.style.height = '3px'; });
             return;
         }
-        function animate() {
+        let lastFrame = 0;
+        const FRAME_INTERVAL = 1000 / 15;
+        function animate(ts) {
             if (!state.isPlaying || document.hidden) {
                 getEqBars().forEach(bar => { bar.style.height = '3px'; });
                 eqRAF = null;
                 return;
             }
-            getEqBars().forEach((bar) => {
-                bar.style.height = (4 + Math.random() * 14) + 'px';
-            });
+            if (ts - lastFrame >= FRAME_INTERVAL) {
+                lastFrame = ts;
+                getEqBars().forEach((bar) => {
+                    bar.style.height = (4 + Math.random() * 14) + 'px';
+                });
+            }
             eqRAF = requestAnimationFrame(animate);
         }
         eqRAF = requestAnimationFrame(animate);
@@ -1115,9 +1119,11 @@ const GlobalPlayer = (() => {
         canvas.width = 80;
         canvas.height = 32;
         function draw() {
-            if (document.hidden) { _lyricsRAF = requestAnimationFrame(draw); return; }
+            if (document.hidden || !state.isPlaying) {
+                if (_lyricsRAF) { cancelAnimationFrame(_lyricsRAF); _lyricsRAF = null; }
+                return;
+            }
             ctx.clearRect(0, 0, 80, 32);
-            if (!state.isPlaying) { _lyricsRAF = null; return; }
             const freqData = (typeof PlayerEngine !== 'undefined' && PlayerEngine.getFrequencyData) ? PlayerEngine.getFrequencyData() : null;
             if (!freqData) { _lyricsRAF = requestAnimationFrame(draw); return; }
             const bars = 16;

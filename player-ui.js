@@ -609,9 +609,8 @@ const PlayerUI = (() => {
         window.addEventListener('resize', resize);
 
         function draw() {
-            if (!PlayerEngine.isPlaying) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                visualizerRAF = requestAnimationFrame(draw);
+            if (document.hidden || !PlayerEngine.isPlaying) {
+                if (visualizerRAF) { cancelAnimationFrame(visualizerRAF); visualizerRAF = null; }
                 return;
             }
 
@@ -654,14 +653,16 @@ const PlayerUI = (() => {
     /* ---- EQ Bars Animation ---- */
     function startEqAnimation() {
         function animate() {
+            if (document.hidden || !PlayerEngine.isPlaying) {
+                const bars = document.querySelectorAll('.fp-eq-bars span, #miniEqBars span');
+                bars.forEach(bar => { bar.style.height = '3px'; });
+                if (eqBarsRAF) { cancelAnimationFrame(eqBarsRAF); eqBarsRAF = null; }
+                return;
+            }
             const bars = document.querySelectorAll('.fp-eq-bars span, #miniEqBars span');
             bars.forEach((bar, i) => {
-                if (PlayerEngine.isPlaying) {
-                    const h = 4 + Math.random() * 16;
-                    bar.style.height = h + 'px';
-                } else {
-                    bar.style.height = '3px';
-                }
+                const h = 4 + Math.random() * 16;
+                bar.style.height = h + 'px';
             });
             eqBarsRAF = requestAnimationFrame(animate);
         }
@@ -777,7 +778,7 @@ const PlayerUI = (() => {
 
     function startLyricsSync() {
         if (_lyricsScrollTimer) clearInterval(_lyricsScrollTimer);
-        _lyricsScrollTimer = setInterval(syncLyricsHighlight, 250);
+        _lyricsScrollTimer = setInterval(() => { if (!document.hidden) syncLyricsHighlight(); }, 250);
     }
 
     function syncLyricsHighlight() {

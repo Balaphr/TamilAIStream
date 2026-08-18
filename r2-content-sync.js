@@ -487,7 +487,7 @@
     function startSyncing(intervalMs = 120000) {
         if (_syncTimer) return;
         _syncTimer = setInterval(() => {
-            pollForChanges();
+            if (!document.hidden) pollForChanges();
         }, intervalMs);
     }
 
