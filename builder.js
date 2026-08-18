@@ -17,6 +17,25 @@ let publishState = 'draft';
 let publishHistory = [];
 
 // ============================================
+// Performance: Debounce Utility
+// ============================================
+const _syncTimers = {};
+function debounce(key, fn, delay) {
+    if (_syncTimers[key]) clearTimeout(_syncTimers[key]);
+    _syncTimers[key] = setTimeout(fn, delay);
+}
+
+// Debounced sync — batches rapid-fire calls into one sync per 400ms
+let _syncDebounceTimer = null;
+function scheduleSync() {
+    if (_syncDebounceTimer) clearTimeout(_syncDebounceTimer);
+    _syncDebounceTimer = setTimeout(() => {
+        syncToLiveWebsite();
+        _syncDebounceTimer = null;
+    }, 400);
+}
+
+// ============================================
 // Authentication System
 // ============================================
 const ADMIN_CREDENTIALS = {
@@ -418,7 +437,12 @@ function setupLoginScreen() {
 // ============================================
 // Navigation
 // ============================================
+let _currentPage = null; // track current page to avoid redundant loads
 function navigateTo(page) {
+    // Skip if already on this page
+    if (_currentPage === page) return;
+    _currentPage = page;
+
     // Hide all pages
     document.querySelectorAll('.builder-page').forEach(p => p.style.display = 'none');
     document.querySelectorAll('.builder-sidebar-item').forEach(i => i.classList.remove('active'));
@@ -1464,7 +1488,7 @@ function applySavedSettingsToWebsite() {
     }
 }
 
-async function syncToLiveWebsite() {
+async function _syncToLiveWebsiteActual() {
     try {
         localStorage.setItem('tamilAIStream_lastSyncedAt', new Date().toISOString());
         localStorage.setItem('builderLastPublished', Date.now().toString());
@@ -1576,6 +1600,23 @@ async function syncToLiveWebsite() {
         return false;
     }
 }
+
+// Debounced wrapper — batches rapid-fire sync calls into one per 400ms
+function syncToLiveWebsite() {
+    if (_syncDebounceTimer) clearTimeout(_syncDebounceTimer);
+    _syncDebounceTimer = setTimeout(() => {
+        _syncDebounceTimer = null;
+        _syncToLiveWebsiteActual();
+    }, 400);
+}
+
+// Immediate sync bypass for explicit user actions (publish button)
+function syncToLiveWebsiteImmediate() {
+    if (_syncDebounceTimer) clearTimeout(_syncDebounceTimer);
+    _syncDebounceTimer = null;
+    return _syncToLiveWebsiteActual();
+}
+
 function saveDraft() {
     showToast('Saving draft...', 'info');
     try {
@@ -1634,7 +1675,7 @@ async function publishChanges() {
 
     showToast('Publishing changes...', 'info');
     try {
-        await syncToLiveWebsite();
+        await syncToLiveWebsiteImmediate();
 
         if ('caches' in window) {
             try {

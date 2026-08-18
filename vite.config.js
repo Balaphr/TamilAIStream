@@ -50,7 +50,7 @@ function copyVanillaScripts() {
         'yt-music.js', 'script.js', 'mini-audio-player.js',
         'global-player.js', 'listening-history.js', 'ai-home.js',
         'premium-landing.js',
-        'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
+        'builder.js', 'builder-360.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
         'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js',
         'brand-config.js'
@@ -62,7 +62,7 @@ function copyVanillaScripts() {
         'listening-history.css', 'search-ui.css',
         'responsive.css', 'ai-glass.css', 'splash.css',
         'premium-ui.css', 'ultra-perf.css',
-        'builder.css', 'admin.css', 'admin-login.css', 'analytics.css',
+        'builder.css', 'builder-360.css', 'admin.css', 'admin-login.css', 'analytics.css',
         'profile.css', 'playlist.css', 'dashboard.css'
       ]
 

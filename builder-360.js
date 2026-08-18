@@ -1,7 +1,7 @@
 'use strict';
 /* ============================================================
-   Site 360 - Visual Website Editor
-   Two-panel workspace: visual canvas (left) + settings (right)
+   Site 360 - Complete Website Control System
+   Every website section, feature, and function is mapped here.
    Edits DataStore directly, publishes via existing sync system.
    ============================================================ */
 
@@ -10,6 +10,7 @@ const Site360 = (function () {
     let canvasElements = [];
     let undoStack = [];
     let redoStack = [];
+    let _saveTimeout = null;
 
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
@@ -21,37 +22,536 @@ const Site360 = (function () {
     }
 
     /* ============================================================
-       CANVAS DATA - Maps every website element to editable props
+       CANVAS DATA - Maps EVERY website element to editable props
        ============================================================ */
     function buildCanvasData() {
         canvasElements = [];
-
-        // ---- Global Settings ----
         const site = safeGet(() => DataStore.getSiteSettings(), {});
+
+        // ═══════════════════════════════════════════════
+        // SECTION 1: GLOBAL SETTINGS
+        // ═══════════════════════════════════════════════
         canvasElements.push({
-            id: 'el_site_title', section: 'global', label: 'Site Title', icon: 'fa-heading',
+            id: 'el_site_title', section: 'global', label: 'Site Identity', icon: 'fa-heading',
             category: 'settings', source: 'siteSettings', field: 'title',
-            value: site.title || 'Tamil AI Stream',
+            value: site,
             controls: [
-                { key: 'title', label: 'Title', type: 'text', value: site.title || 'Tamil AI Stream' },
-                { key: 'description', label: 'Description', type: 'textarea', value: site.description || '' },
+                { key: 'title', label: 'Site Title', type: 'text', value: site.title || 'Tamil AI Stream' },
+                { key: 'description', label: 'Site Description', type: 'textarea', value: site.description || '' },
+                { key: 'logo', label: 'Logo Image', type: 'image', value: site.logo || '' },
+                { key: 'favicon', label: 'Favicon', type: 'image', value: site.favicon || '' },
                 { key: 'themeColor', label: 'Theme Color', type: 'color', value: site.themeColor || '#34d399' },
                 { key: 'accentColor', label: 'Accent Color', type: 'color', value: site.accentColor || '#38bdf8' },
-                { key: 'bgColor', label: 'Background', type: 'color', value: site.bgColor || '#0a0e17' },
-                { key: 'textColor', label: 'Text Color', type: 'color', value: site.textColor || '#ffffff' },
-                { key: 'fontFamily', label: 'Font Family', type: 'select', value: site.fontFamily || 'Inter', options: ['Inter', 'Poppins', 'Roboto', 'Open Sans', 'Montserrat', 'Raleway'] },
-                { key: 'borderRadius', label: 'Border Radius', type: 'text', value: site.borderRadius || '18px' },
-                { key: 'logo', label: 'Logo', type: 'image', value: site.logo || '' },
-                { key: 'favicon', label: 'Favicon', type: 'image', value: site.favicon || '' }
+                { key: 'fontFamily', label: 'Font Family', type: 'select', value: site.fontFamily || 'Inter', options: ['Inter', 'Poppins', 'Roboto', 'Open Sans', 'Montserrat', 'Raleway', 'Nunito', 'Outfit'] }
             ]
         });
 
-        // ---- Navigation ----
+        // ═══════════════════════════════════════════════
+        // SECTION 2: BACKGROUND & THEME
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_bg_theme', section: 'global', label: 'Background & Theme', icon: 'fa-palette',
+            category: 'theme', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'bgColor', label: 'Body Background', type: 'color', value: site.bgColor || '#05070f' },
+                { key: 'textColor', label: 'Primary Text Color', type: 'color', value: site.textColor || '#ffffff' },
+                { key: 'textColor2', label: 'Secondary Text Color', type: 'color', value: site.textColor2 || 'rgba(255,255,255,0.7)' },
+                { key: 'textColor3', label: 'Muted Text Color', type: 'color', value: site.textColor3 || 'rgba(255,255,255,0.4)' },
+                { key: 'borderRadius', label: 'Global Border Radius', type: 'text', value: site.borderRadius || '18px' },
+                { key: 'glowEnabled', label: 'Ambient Glow Enabled', type: 'toggle', value: site.glowEnabled !== false },
+                { key: 'glowColor1', label: 'Glow Orb 1 (Top-Left)', type: 'color', value: site.glowColor1 || '#2563eb' },
+                { key: 'glowColor2', label: 'Glow Orb 2 (Top-Right)', type: 'color', value: site.glowColor2 || '#8b5cf6' },
+                { key: 'glowColor3', label: 'Glow Orb 3 (Bottom)', type: 'color', value: site.glowColor3 || '#06b6d4' },
+                { key: 'glowOpacity', label: 'Glow Intensity', type: 'range', value: site.glowOpacity ?? 0.15, min: 0, max: 0.5, step: 0.01 },
+                { key: 'noiseOverlay', label: 'Noise Texture Overlay', type: 'toggle', value: site.noiseOverlay !== false }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 3: TOP HEADER
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_header', section: 'global', label: 'Top Header', icon: 'fa-bars',
+            category: 'header', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'headerVisible', label: 'Header Visible', type: 'toggle', value: site.headerVisible !== false },
+                { key: 'headerBg', label: 'Header Background', type: 'color', value: site.headerBg || '#0a0f1e' },
+                { key: 'headerOpacity', label: 'Header Opacity', type: 'range', value: site.headerOpacity ?? 0.92, min: 0, max: 1, step: 0.01 },
+                { key: 'headerBlur', label: 'Header Blur (px)', type: 'number', value: site.headerBlur ?? 20, min: 0, max: 40 },
+                { key: 'headerHeight', label: 'Header Height (px)', type: 'number', value: site.headerHeight ?? 60, min: 40, max: 100 },
+                { key: 'searchPlaceholder', label: 'Search Placeholder', type: 'text', value: site.searchPlaceholder || 'Search songs, artists...' },
+                { key: 'showSearch', label: 'Show Search Bar', type: 'toggle', value: site.showSearch !== false },
+                { key: 'showNotifications', label: 'Show Notifications Bell', type: 'toggle', value: site.showNotifications !== false },
+                { key: 'showUserMenu', label: 'Show User Menu', type: 'toggle', value: site.showUserMenu !== false }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 4: BOTTOM NAVIGATION (PWA/Mobile)
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_bottom_nav', section: 'global', label: 'Bottom Navigation', icon: 'fa-navicon',
+            category: 'navigation', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'bottomNavVisible', label: 'Bottom Nav Visible', type: 'toggle', value: site.bottomNavVisible !== false },
+                { key: 'bottomNavBg', label: 'Background Color', type: 'color', value: site.bottomNavBg || '#080c16' },
+                { key: 'bottomNavOpacity', label: 'Background Opacity', type: 'range', value: site.bottomNavOpacity ?? 0.92, min: 0, max: 1, step: 0.01 },
+                { key: 'bottomNavBlur', label: 'Blur (px)', type: 'number', value: site.bottomNavBlur ?? 32, min: 0, max: 40 },
+                { key: 'bottomNavHeight', label: 'Height (px)', type: 'number', value: site.bottomNavHeight ?? 60, min: 44, max: 80 },
+                { key: 'bottomNavActiveColor', label: 'Active Tab Color', type: 'color', value: site.bottomNavActiveColor || '#34d399' },
+                { key: 'bottomNavInactiveColor', label: 'Inactive Tab Color', type: 'color', value: site.bottomNavInactiveColor || 'rgba(255,255,255,0.4)' },
+                { key: 'bottomNavItems', label: 'Nav Items (comma-separated)', type: 'text', value: site.bottomNavItems || 'Home,Explore,Playlists,Stations,History' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 5: GREETING SECTION
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_greeting', section: 'home', label: 'Greeting Section', icon: 'fa-hand-wave',
+            category: 'greeting', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'greetingVisible', label: 'Visible', type: 'toggle', value: site.greetingVisible !== false },
+                { key: 'greetingShowTime', label: 'Show Time', type: 'toggle', value: site.greetingShowTime !== false },
+                { key: 'greetingShowWeather', label: 'Show Weather', type: 'toggle', value: site.greetingShowWeather !== false },
+                { key: 'greetingShowQuote', label: 'Show Quote', type: 'toggle', value: site.greetingShowQuote !== false },
+                { key: 'greetingBg', label: 'Background Color', type: 'color', value: site.greetingBg || 'transparent' },
+                { key: 'greetingPadding', label: 'Padding (px)', type: 'number', value: site.greetingPadding ?? 16, min: 0, max: 48 }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 6: MUSIC HERO (Home → Music Section)
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_music_hero', section: 'home', label: 'Music Hero Section', icon: 'fa-music',
+            category: 'hero', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'musicHeroVisible', label: 'Visible', type: 'toggle', value: site.musicHeroVisible !== false },
+                { key: 'musicHeroBg', label: 'Background Gradient', type: 'text', value: site.musicHeroBg || 'linear-gradient(135deg, #0c1a3d, #0d2847, #0a1e3a, #061228)' },
+                { key: 'musicHeroTitle', label: 'Section Title', type: 'text', value: site.musicHeroTitle || 'Music' },
+                { key: 'musicHeroEyebrow', label: 'Eyebrow Text', type: 'text', value: site.musicHeroEyebrow || 'TAMIL AI STREAM' },
+                { key: 'musicHeroSubtitle', label: 'Subtitle (Tamil)', type: 'text', value: site.musicHeroSubtitle || 'தமிழின் புதிய டிஜிட்டல் அனுபவம்' },
+                { key: 'musicHeroArtSize', label: 'Artwork Size (px)', type: 'number', value: site.musicHeroArtSize ?? 128, min: 64, max: 200 },
+                { key: 'musicHeroArtRadius', label: 'Artwork Radius (px)', type: 'number', value: site.musicHeroArtRadius ?? 34, min: 0, max: 50 },
+                { key: 'musicHeroShowPlayBtn', label: 'Show Play Button', type: 'toggle', value: site.musicHeroShowPlayBtn !== false },
+                { key: 'musicHeroPlayBtnText', label: 'Play Button Text', type: 'text', value: site.musicHeroPlayBtnText || 'Play Now' },
+                { key: 'musicHeroShowDots', label: 'Show Slide Dots', type: 'toggle', value: site.musicHeroShowDots !== false },
+                { key: 'musicHeroAutoRotate', label: 'Auto Rotate Slides', type: 'toggle', value: site.musicHeroAutoRotate !== false },
+                { key: 'musicHeroRotateInterval', label: 'Rotate Interval (ms)', type: 'number', value: site.musicHeroRotateInterval ?? 5500, min: 2000, max: 15000 }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 7: TRENDING PLAYLISTS
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_trending_playlists', section: 'home', label: 'Trending Playlists', icon: 'fa-fire',
+            category: 'trending', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'trendingPlaylistsVisible', label: 'Visible', type: 'toggle', value: site.trendingPlaylistsVisible !== false },
+                { key: 'trendingPlaylistsTitle', label: 'Section Title', type: 'text', value: site.trendingPlaylistsTitle || 'Trending Playlists' },
+                { key: 'trendingPlaylistsMax', label: 'Max Items', type: 'number', value: site.trendingPlaylistsMax ?? 10, min: 2, max: 30 },
+                { key: 'trendingPlaylistsCardWidth', label: 'Card Width (px)', type: 'number', value: site.trendingPlaylistsCardWidth ?? 164, min: 100, max: 250 },
+                { key: 'trendingPlaylistsShowCount', label: 'Show Song Count', type: 'toggle', value: site.trendingPlaylistsShowCount !== false },
+                { key: 'trendingPlaylistsShowPlayBtn', label: 'Show Play Button', type: 'toggle', value: site.trendingPlaylistsShowPlayBtn !== false },
+                { key: 'trendingPlaylistsScrollSnap', label: 'Scroll Snap', type: 'select', value: site.trendingPlaylistsScrollSnap || 'proximity', options: ['none', 'proximity', 'mandatory'] }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 8: LIVE FM STATIONS
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_live_fm', section: 'home', label: 'Live FM Stations', icon: 'fa-tower-broadcast',
+            category: 'fm', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'liveFmVisible', label: 'Visible', type: 'toggle', value: site.liveFmVisible !== false },
+                { key: 'liveFmTitle', label: 'Section Title', type: 'text', value: site.liveFmTitle || 'Live FM Stations' },
+                { key: 'liveFmMax', label: 'Max Stations Shown', type: 'number', value: site.liveFmMax ?? 6, min: 1, max: 20 },
+                { key: 'liveFmColumns', label: 'Grid Columns', type: 'select', value: site.liveFmColumns || '2', options: ['1', '2', '3'] },
+                { key: 'liveFmShowBadge', label: 'Show LIVE Badge', type: 'toggle', value: site.liveFmShowBadge !== false },
+                { key: 'liveFmShowFreq', label: 'Show Frequency', type: 'toggle', value: site.liveFmShowFreq !== false },
+                { key: 'liveFmShowListeners', label: 'Show Listeners', type: 'toggle', value: site.liveFmShowListeners !== false },
+                { key: 'liveFmShowWave', label: 'Show EQ Wave', type: 'toggle', value: site.liveFmShowWave !== false },
+                { key: 'liveFmCardBg', label: 'Card Background', type: 'color', value: site.liveFmCardBg || 'rgba(255,255,255,0.04)' },
+                { key: 'liveFmCardRadius', label: 'Card Radius (px)', type: 'number', value: site.liveFmCardRadius ?? 16, min: 0, max: 30 }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 9: LIVE TAMIL NEWS (Complete)
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_live_news', section: 'home', label: 'Live Tamil News', icon: 'fa-newspaper',
+            category: 'news', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'liveNewsVisible', label: 'Visible', type: 'toggle', value: site.liveNewsVisible !== false },
+                { key: 'liveNewsTitle', label: 'Section Title', type: 'text', value: site.liveNewsTitle || 'Live Tamil News' },
+                { key: 'liveNewsMax', label: 'Max Items Shown', type: 'number', value: site.liveNewsMax ?? 6, min: 1, max: 40 },
+                { key: 'liveNewsLayout', label: 'Layout', type: 'select', value: site.liveNewsLayout || 'list', options: ['list', 'grid', 'compact'] },
+                { key: 'liveNewsShowThumbnails', label: 'Show Thumbnails', type: 'toggle', value: site.liveNewsShowThumbnails !== false },
+                { key: 'liveNewsShowTime', label: 'Show Time Ago', type: 'toggle', value: site.liveNewsShowTime !== false },
+                { key: 'liveNewsHighlightHours', label: 'Highlight Fresh News (hours)', type: 'number', value: site.liveNewsHighlightHours ?? 6, min: 1, max: 48 },
+                { key: 'liveNewsTnPriority', label: 'TN Priority Badge', type: 'toggle', value: site.liveNewsTnPriority !== false },
+                { key: 'liveNewsShowBadge', label: 'Show NEW Badge', type: 'toggle', value: site.liveNewsShowBadge !== false },
+                { key: 'liveNewsCardBg', label: 'Card Background', type: 'color', value: site.liveNewsCardBg || 'rgba(255,255,255,0.04)' },
+                { key: 'liveNewsCardRadius', label: 'Card Radius (px)', type: 'number', value: site.liveNewsCardRadius ?? 14, min: 0, max: 30 },
+                { key: 'liveNewsCardGap', label: 'Card Gap (px)', type: 'number', value: site.liveNewsCardGap ?? 10, min: 0, max: 24 },
+                { key: 'liveNewsThumbWidth', label: 'Thumbnail Width (px)', type: 'number', value: site.liveNewsThumbWidth ?? 84, min: 40, max: 160 },
+                { key: 'liveNewsThumbHeight', label: 'Thumbnail Height (px)', type: 'number', value: site.liveNewsThumbHeight ?? 62, min: 30, max: 120 },
+                { key: 'liveNewsRefreshInterval', label: 'Auto-Refresh (ms)', type: 'number', value: site.liveNewsRefreshInterval ?? 300000, min: 60000, max: 3600000 },
+                { key: 'liveNewsShowDetail', label: 'Open Detail View on Click', type: 'toggle', value: site.liveNewsShowDetail !== false },
+                { key: 'liveNewsDetailShowPlayer', label: 'Keep Player on Detail', type: 'toggle', value: site.liveNewsDetailShowPlayer !== false },
+                { key: 'liveNewsRetainHours', label: 'Retention Period (hours)', type: 'number', value: site.liveNewsRetainHours ?? 72, min: 6, max: 168 }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 10: AI RECOMMENDATIONS
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_ai_rec', section: 'home', label: 'AI Recommendations', icon: 'fa-wand-magic-sparkles',
+            category: 'ai', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'aiRecVisible', label: 'Visible', type: 'toggle', value: site.aiRecVisible !== false },
+                { key: 'aiRecTitle', label: 'Section Title', type: 'text', value: site.aiRecTitle || 'AI Recommendations' },
+                { key: 'aiRecMax', label: 'Max Items', type: 'number', value: site.aiRecMax ?? 6, min: 2, max: 20 },
+                { key: 'aiRecShowGreeting', label: 'Show AI Greeting', type: 'toggle', value: site.aiRecShowGreeting !== false },
+                { key: 'aiRecShowDiscoverBtn', label: 'Show Discover Button', type: 'toggle', value: site.aiRecShowDiscoverBtn !== false },
+                { key: 'aiRecDiscoverText', label: 'Discover Button Text', type: 'text', value: site.aiRecDiscoverText || 'Discover with AI' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 11: RECENTLY PLAYED
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_recently', section: 'home', label: 'Recently Played', icon: 'fa-clock-rotate-left',
+            category: 'recently', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'recentlyVisible', label: 'Visible', type: 'toggle', value: site.recentlyVisible !== false },
+                { key: 'recentlyTitle', label: 'Section Title', type: 'text', value: site.recentlyTitle || 'Recently Played' },
+                { key: 'recentlyMax', label: 'Max Items', type: 'number', value: site.recentlyMax ?? 12, min: 2, max: 30 },
+                { key: 'recentlyShowDuration', label: 'Show Duration', type: 'toggle', value: site.recentlyShowDuration !== false }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 12: HERO BANNER (Legacy)
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_sec_hero', section: 'home', label: 'Hero Banner (Legacy)', icon: 'fa-image',
+            category: 'section', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'heroTitle', label: 'Hero Title', type: 'text', value: site.heroTitle || '' },
+                { key: 'heroSubtitle', label: 'Hero Subtitle', type: 'text', value: site.heroSubtitle || '' },
+                { key: 'heroImage', label: 'Hero Image', type: 'image', value: site.heroImage || '' },
+                { key: 'heroLink', label: 'Link URL', type: 'text', value: site.heroLink || '' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 13: CATEGORIES
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_sec_categories', section: 'home', label: 'Categories Section', icon: 'fa-tags',
+            category: 'section', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'categoriesVisible', label: 'Visible', type: 'toggle', value: site.categoriesVisible !== false },
+                { key: 'categoriesTitle', label: 'Section Title', type: 'text', value: site.categoriesTitle || 'Categories' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 14: UPCOMING RELEASES
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_sec_upcoming', section: 'home', label: 'Upcoming Releases', icon: 'fa-rocket',
+            category: 'section', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'upcomingVisible', label: 'Visible', type: 'toggle', value: site.upcomingVisible !== false },
+                { key: 'upcomingTitle', label: 'Section Title', type: 'text', value: site.upcomingTitle || 'Upcoming Releases' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 15: LATEST RELEASES
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_sec_latest', section: 'home', label: 'Latest Releases', icon: 'fa-compact-disc',
+            category: 'section', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'latestVisible', label: 'Visible', type: 'toggle', value: site.latestVisible !== false },
+                { key: 'latestTitle', label: 'Section Title', type: 'text', value: site.latestTitle || 'Latest Releases' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 16: ALBUMS
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_sec_albums', section: 'home', label: 'Albums Section', icon: 'fa-compact-disc',
+            category: 'section', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'albumsVisible', label: 'Visible', type: 'toggle', value: site.albumsVisible !== false },
+                { key: 'albumsTitle', label: 'Section Title', type: 'text', value: site.albumsTitle || 'Albums' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 17: ARTIST HITS
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_sec_artists', section: 'home', label: 'Artist Hits', icon: 'fa-microphone',
+            category: 'section', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'artistsVisible', label: 'Visible', type: 'toggle', value: site.artistsVisible !== false },
+                { key: 'artistsTitle', label: 'Section Title', type: 'text', value: site.artistsTitle || 'Artist Hits' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 18: MOVIE COLLECTIONS
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_sec_movies', section: 'home', label: 'Movie Collections', icon: 'fa-film',
+            category: 'section', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'moviesVisible', label: 'Visible', type: 'toggle', value: site.moviesVisible !== false },
+                { key: 'moviesTitle', label: 'Section Title', type: 'text', value: site.moviesTitle || 'Movie Collections' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 19: YEARLY COLLECTIONS
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_sec_yearly', section: 'home', label: 'Yearly Collections', icon: 'fa-calendar',
+            category: 'section', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'yearlyVisible', label: 'Visible', type: 'toggle', value: site.yearlyVisible !== false },
+                { key: 'yearlyTitle', label: 'Section Title', type: 'text', value: site.yearlyTitle || 'Yearly Collections' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 20: MUSIC COLLECTIONS
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_sec_music', section: 'home', label: 'Music Collections', icon: 'fa-folder-tree',
+            category: 'section', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'musicVisible', label: 'Visible', type: 'toggle', value: site.musicVisible !== false },
+                { key: 'musicTitle', label: 'Section Title', type: 'text', value: site.musicTitle || 'Music Collections' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 21: PERSONALIZED / MADE FOR YOU
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_sec_personalized', section: 'home', label: 'Made For You', icon: 'fa-heart',
+            category: 'section', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'personalizedVisible', label: 'Visible', type: 'toggle', value: site.personalizedVisible !== false },
+                { key: 'personalizedTitle', label: 'Section Title', type: 'text', value: site.personalizedTitle || 'Made For You' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 22: AI RECOMMENDED (Legacy)
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_sec_ai', section: 'home', label: 'AI Recommended (Legacy)', icon: 'fa-wand-magic-sparkles',
+            category: 'section', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'aiVisible', label: 'Visible', type: 'toggle', value: site.aiVisible !== false },
+                { key: 'aiTitle', label: 'Section Title', type: 'text', value: site.aiTitle || 'AI Recommended' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 23: TRENDING SONGS (Legacy)
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_sec_trending', section: 'home', label: 'Trending Songs (Legacy)', icon: 'fa-fire',
+            category: 'section', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'trendingVisible', label: 'Visible', type: 'toggle', value: site.trendingVisible !== false },
+                { key: 'trendingTitle', label: 'Section Title', type: 'text', value: site.trendingTitle || 'Trending Songs' }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 24: SPLASH SCREEN
+        // ═══════════════════════════════════════════════
+        const splash = safeGet(() => DataStore.getSplash(), {});
+        canvasElements.push({
+            id: 'el_splash', section: 'global', label: 'Splash Screen', icon: 'fa-play-circle',
+            category: 'splash', source: 'splash', value: splash,
+            controls: [
+                { key: 'enabled', label: 'Enabled', type: 'toggle', value: splash.enabled !== false },
+                { key: 'title', label: 'Title', type: 'text', value: splash.title || 'Tamil AI Stream' },
+                { key: 'subtitle', label: 'Subtitle', type: 'text', value: splash.subtitle || 'AI-Powered Tamil Radio' },
+                { key: 'background', label: 'Background Image', type: 'image', value: splash.background || splash.bgImage || '' },
+                { key: 'duration', label: 'Duration (ms)', type: 'number', value: splash.duration || 600, min: 0, max: 5000 },
+                { key: 'showEqualizer', label: 'Show Equalizer Bars', type: 'toggle', value: splash.showEqualizer !== false },
+                { key: 'showLoadingBar', label: 'Show Loading Bar', type: 'toggle', value: splash.showLoadingBar !== false },
+                { key: 'showSkipBtn', label: 'Show Skip Button', type: 'toggle', value: splash.showSkipBtn !== false }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 25: PLAYER SETTINGS
+        // ═══════════════════════════════════════════════
+        const prefs = safeGet(() => DataStore.getPlayerPrefs(), {});
+        canvasElements.push({
+            id: 'el_player', section: 'global', label: 'Player Settings', icon: 'fa-headphones',
+            category: 'player', source: 'playerPrefs', value: prefs,
+            controls: [
+                { key: 'volume', label: 'Default Volume', type: 'range', value: prefs.volume || 0.7, min: 0, max: 1, step: 0.1 },
+                { key: 'autoPlay', label: 'Auto Play', type: 'toggle', value: prefs.autoPlay || false },
+                { key: 'crossfade', label: 'Crossfade', type: 'toggle', value: prefs.crossfade || false },
+                { key: 'crossfadeDuration', label: 'Crossfade Duration (s)', type: 'number', value: prefs.crossfadeDuration || 3, min: 1, max: 12 },
+                { key: 'repeat', label: 'Repeat Mode', type: 'select', value: prefs.repeat || 'off', options: ['off', 'all', 'one'] },
+                { key: 'shuffle', label: 'Shuffle', type: 'toggle', value: prefs.shuffle || false }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 26: MINI PLAYER
+        // ═══════════════════════════════════════════════
+        const mp = safeGet(() => DataStore.getMiniPlayerSettings(), {});
+        canvasElements.push({
+            id: 'el_minip', section: 'global', label: 'Mini Player (Bottom Bar)', icon: 'fa-play-circle',
+            category: 'miniPlayer', source: 'miniPlayerSettings', value: mp,
+            controls: [
+                { key: 'visible', label: 'Visible', type: 'toggle', value: mp.visible !== false },
+                { key: 'bgColor', label: 'Background Color', type: 'color', value: mp.bgColor || '#0a0f1e' },
+                { key: 'bgOpacity', label: 'Background Opacity', type: 'range', value: mp.bgOpacity ?? 0.95, min: 0, max: 1, step: 0.01 },
+                { key: 'blur', label: 'Blur (px)', type: 'number', value: mp.blur ?? 20, min: 0, max: 40 },
+                { key: 'borderWidth', label: 'Border Width (px)', type: 'number', value: mp.borderWidth ?? 1, min: 0, max: 4 },
+                { key: 'borderColor', label: 'Border Color', type: 'color', value: mp.borderColor || 'rgba(255,255,255,0.08)' },
+                { key: 'borderRadius', label: 'Border Radius (px)', type: 'number', value: mp.borderRadius ?? 18, min: 0, max: 30 },
+                { key: 'maxWidth', label: 'Max Width (px)', type: 'number', value: mp.maxWidth ?? 500, min: 300, max: 800 },
+                { key: 'bottomOffset', label: 'Bottom Offset (px)', type: 'number', value: mp.bottomOffset ?? 8, min: 0, max: 40 },
+                { key: 'zIndex', label: 'Z-Index', type: 'number', value: mp.zIndex ?? 1600, min: 100, max: 9999 },
+                { key: 'showArt', label: 'Show Artwork', type: 'toggle', value: mp.showArt !== false },
+                { key: 'showEq', label: 'Show EQ Bars', type: 'toggle', value: mp.showEq !== false },
+                { key: 'showTime', label: 'Show Time', type: 'toggle', value: mp.showTime !== false },
+                { key: 'showProgress', label: 'Show Progress Bar', type: 'toggle', value: mp.showProgress !== false },
+                { key: 'showPrev', label: 'Show Previous Button', type: 'toggle', value: mp.showPrev !== false },
+                { key: 'showNext', label: 'Show Next Button', type: 'toggle', value: mp.showNext !== false },
+                { key: 'showFav', label: 'Show Favorite Button', type: 'toggle', value: mp.showFav !== false },
+                { key: 'showExpand', label: 'Show Expand Button', type: 'toggle', value: mp.showExpand !== false },
+                { key: 'showWave', label: 'Show Waveform', type: 'toggle', value: mp.showWave !== false },
+                { key: 'showNowPlaying', label: 'Show Now Playing Badge', type: 'toggle', value: mp.showNowPlaying !== false }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 27: FULL-SCREEN PLAYER
+        // ═══════════════════════════════════════════════
+        const fs = safeGet(() => {
+            const mp2 = DataStore.getMiniPlayerSettings();
+            return mp2.fullScreen || mp2;
+        }, {});
+        canvasElements.push({
+            id: 'el_fs_player', section: 'global', label: 'Full-Screen Player', icon: 'fa-expand',
+            category: 'player', source: 'siteSettings',
+            value: fs,
+            controls: [
+                { key: 'fsBgColor', label: 'Background Color', type: 'color', value: fs.bgColor || '#0a0f1e' },
+                { key: 'fsBgOpacity', label: 'Background Opacity', type: 'range', value: fs.bgOpacity ?? 0.95, min: 0, max: 1, step: 0.01 },
+                { key: 'fsBlur', label: 'Background Blur (px)', type: 'number', value: fs.blur ?? 30, min: 0, max: 60 },
+                { key: 'fsGlow', label: 'Ambient Glow', type: 'toggle', value: fs.glow !== false },
+                { key: 'fsArtSize', label: 'Artwork Size (px)', type: 'number', value: fs.artSize ?? 280, min: 100, max: 400 },
+                { key: 'fsArtRadius', label: 'Artwork Radius (px)', type: 'number', value: fs.artRadius ?? 24, min: 0, max: 50 },
+                { key: 'fsArtFloat', label: 'Floating Artwork', type: 'toggle', value: fs.artFloat !== false },
+                { key: 'fsArtGlow', label: 'Artwork Glow', type: 'toggle', value: fs.artGlow !== false },
+                { key: 'fsAiRing', label: 'AI Ring Around Art', type: 'toggle', value: fs.aiRing !== false },
+                { key: 'fsVisualizer', label: 'Show Visualizer', type: 'toggle', value: fs.visualizer !== false },
+                { key: 'fsTitleSize', label: 'Title Font Size (px)', type: 'number', value: fs.titleSize ?? 20, min: 12, max: 36 },
+                { key: 'fsTitleColor', label: 'Title Color', type: 'color', value: fs.titleColor || '#ffffff' },
+                { key: 'fsArtistSize', label: 'Artist Font Size (px)', type: 'number', value: fs.artistSize ?? 14, min: 10, max: 24 },
+                { key: 'fsArtistColor', label: 'Artist Color', type: 'color', value: fs.artistColor || 'rgba(255,255,255,0.6)' },
+                { key: 'fsPlayBtnSize', label: 'Play Button Size (px)', type: 'number', value: fs.playBtnSize ?? 64, min: 36, max: 100 },
+                { key: 'fsPlayBtnColor', label: 'Play Button Color', type: 'color', value: fs.playBtnColor || '#34d399' },
+                { key: 'fsProgressH', label: 'Progress Bar Height (px)', type: 'number', value: fs.progressH ?? 4, min: 2, max: 12 },
+                { key: 'fsProgressColor', label: 'Progress Color', type: 'color', value: fs.progressColor || '#34d399' },
+                { key: 'fsShowShuffle', label: 'Show Shuffle', type: 'toggle', value: fs.showShuffle !== false },
+                { key: 'fsShowRepeat', label: 'Show Repeat', type: 'toggle', value: fs.showRepeat !== false },
+                { key: 'fsShowFav', label: 'Show Favorite', type: 'toggle', value: fs.showFav !== false },
+                { key: 'fsShowLyrics', label: 'Show Lyrics Button', type: 'toggle', value: fs.showLyrics !== false },
+                { key: 'fsShowQueue', label: 'Show Queue Button', type: 'toggle', value: fs.showQueue !== false },
+                { key: 'fsShowShare', label: 'Show Share Button', type: 'toggle', value: fs.showShare !== false },
+                { key: 'fsShowVolume', label: 'Show Volume Control', type: 'toggle', value: fs.showVolume !== false },
+                { key: 'fsShowEq', label: 'Show EQ Button', type: 'toggle', value: fs.showEq !== false }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 28: FOOTER
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_footer', section: 'global', label: 'Footer', icon: 'fa-shoe-prints',
+            category: 'footer', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'footerVisible', label: 'Visible', type: 'toggle', value: site.footerVisible !== false },
+                { key: 'footerText', label: 'Footer Text', type: 'text', value: site.footerText || 'Tamil AI Stream' },
+                { key: 'footerCopyright', label: 'Copyright Text', type: 'text', value: site.footerCopyright || '© 2026 Tamil AI Stream. All rights reserved.' },
+                { key: 'footerBg', label: 'Background Color', type: 'color', value: site.footerBg || 'rgba(10,15,30,0.95)' },
+                { key: 'footerTextColor', label: 'Text Color', type: 'color', value: site.footerTextColor || 'rgba(255,255,255,0.5)' },
+                { key: 'footerShowSocial', label: 'Show Social Links', type: 'toggle', value: site.footerShowSocial !== false }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 29: NOTIFICATION SETTINGS
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_notifications', section: 'global', label: 'Notifications', icon: 'fa-bell',
+            category: 'notifications', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'notificationsEnabled', label: 'Notifications Enabled', type: 'toggle', value: site.notificationsEnabled !== false },
+                { key: 'notificationsMax', label: 'Max Shown', type: 'number', value: site.notificationsMax ?? 4, min: 1, max: 20 },
+                { key: 'notificationsShowBadge', label: 'Show Badge', type: 'toggle', value: site.notificationsShowBadge !== false }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 30: NAVIGATION ITEMS
+        // ═══════════════════════════════════════════════
         const nav = safeGet(() => DataStore.getNavigation(), {});
         const navItems = nav.items || nav.navItems || [];
         navItems.forEach((item, i) => {
             canvasElements.push({
-                id: 'el_nav_' + i, section: 'navigation', label: item.label || item.name || 'Nav ' + (i + 1),
+                id: 'el_nav_' + i, section: 'navigation', label: 'Nav: ' + (item.label || item.name || 'Item ' + (i + 1)),
                 icon: item.icon || 'fa-link', category: 'navigation', source: 'navigation',
                 navIndex: i, value: item,
                 controls: [
@@ -64,71 +564,11 @@ const Site360 = (function () {
             });
         });
 
-        // ---- Home Sections ----
-        const homeSections = [
-            { id: 'el_sec_hero', sectionId: 'hero', label: 'Hero Banner', icon: 'fa-image', source: 'siteSettings', controls: [
-                { key: 'heroTitle', label: 'Hero Title', type: 'text', value: site.heroTitle || '' },
-                { key: 'heroSubtitle', label: 'Hero Subtitle', type: 'text', value: site.heroSubtitle || '' },
-                { key: 'heroImage', label: 'Hero Image', type: 'image', value: site.heroImage || '' },
-                { key: 'heroLink', label: 'Link URL', type: 'text', value: site.heroLink || '' }
-            ]},
-            { id: 'el_sec_categories', sectionId: 'categories', label: 'Categories', icon: 'fa-tags', source: 'siteSettings', controls: [
-                { key: 'categoriesTitle', label: 'Section Title', type: 'text', value: site.categoriesTitle || 'Categories' },
-                { key: 'categoriesVisible', label: 'Visible', type: 'toggle', value: site.categoriesVisible !== false }
-            ]},
-            { id: 'el_sec_upcoming', sectionId: 'upcomingReleases', label: 'Upcoming Releases', icon: 'fa-rocket', source: 'siteSettings', controls: [
-                { key: 'upcomingTitle', label: 'Section Title', type: 'text', value: site.upcomingTitle || 'Upcoming Releases' },
-                { key: 'upcomingVisible', label: 'Visible', type: 'toggle', value: site.upcomingVisible !== false }
-            ]},
-            { id: 'el_sec_recently', sectionId: 'recentlyAdded', label: 'Recently Added', icon: 'fa-clock-rotate-left', source: 'siteSettings', controls: [
-                { key: 'recentlyTitle', label: 'Section Title', type: 'text', value: site.recentlyTitle || 'Recently Added' },
-                { key: 'recentlyVisible', label: 'Visible', type: 'toggle', value: site.recentlyVisible !== false },
-                { key: 'recentlyLimit', label: 'Max Items', type: 'number', value: site.recentlyLimit || 20 }
-            ]},
-            { id: 'el_sec_personalized', sectionId: 'personalized', label: 'Made For You', icon: 'fa-heart', source: 'siteSettings', controls: [
-                { key: 'personalizedTitle', label: 'Section Title', type: 'text', value: site.personalizedTitle || 'Made For You' },
-                { key: 'personalizedVisible', label: 'Visible', type: 'toggle', value: site.personalizedVisible !== false }
-            ]},
-            { id: 'el_sec_trending', sectionId: 'trending', label: 'Trending Songs', icon: 'fa-fire', source: 'siteSettings', controls: [
-                { key: 'trendingTitle', label: 'Section Title', type: 'text', value: site.trendingTitle || 'Trending Songs' },
-                { key: 'trendingVisible', label: 'Visible', type: 'toggle', value: site.trendingVisible !== false }
-            ]},
-            { id: 'el_sec_latest', sectionId: 'latestCollection', label: 'Latest Releases', icon: 'fa-compact-disc', source: 'siteSettings', controls: [
-                { key: 'latestTitle', label: 'Section Title', type: 'text', value: site.latestTitle || 'Latest Releases' },
-                { key: 'latestVisible', label: 'Visible', type: 'toggle', value: site.latestVisible !== false }
-            ]},
-            { id: 'el_sec_ai', sectionId: 'aiRecommended', label: 'AI Recommended', icon: 'fa-wand-magic-sparkles', source: 'siteSettings', controls: [
-                { key: 'aiTitle', label: 'Section Title', type: 'text', value: site.aiTitle || 'AI Recommended' },
-                { key: 'aiVisible', label: 'Visible', type: 'toggle', value: site.aiVisible !== false }
-            ]},
-            { id: 'el_sec_albums', sectionId: 'albums', label: 'Albums', icon: 'fa-compact-disc', source: 'siteSettings', controls: [
-                { key: 'albumsTitle', label: 'Section Title', type: 'text', value: site.albumsTitle || 'Albums' },
-                { key: 'albumsVisible', label: 'Visible', type: 'toggle', value: site.albumsVisible !== false }
-            ]},
-            { id: 'el_sec_artists', sectionId: 'tamilHits', label: 'Artist Hits', icon: 'fa-microphone', source: 'siteSettings', controls: [
-                { key: 'artistsTitle', label: 'Section Title', type: 'text', value: site.artistsTitle || 'Artist Hits' },
-                { key: 'artistsVisible', label: 'Visible', type: 'toggle', value: site.artistsVisible !== false }
-            ]},
-            { id: 'el_sec_movies', sectionId: 'moviesCollection', label: 'Movie Collections', icon: 'fa-film', source: 'siteSettings', controls: [
-                { key: 'moviesTitle', label: 'Section Title', type: 'text', value: site.moviesTitle || 'Movie Collections' },
-                { key: 'moviesVisible', label: 'Visible', type: 'toggle', value: site.moviesVisible !== false }
-            ]},
-            { id: 'el_sec_yearly', sectionId: 'yearlyCollection', label: 'Yearly Collections', icon: 'fa-calendar', source: 'siteSettings', controls: [
-                { key: 'yearlyTitle', label: 'Section Title', type: 'text', value: site.yearlyTitle || 'Yearly Collections' },
-                { key: 'yearlyVisible', label: 'Visible', type: 'toggle', value: site.yearlyVisible !== false }
-            ]},
-            { id: 'el_sec_music', sectionId: 'musicCollection', label: 'Music Collections', icon: 'fa-folder-tree', source: 'siteSettings', controls: [
-                { key: 'musicTitle', label: 'Section Title', type: 'text', value: site.musicTitle || 'Music Collections' },
-                { key: 'musicVisible', label: 'Visible', type: 'toggle', value: site.musicVisible !== false }
-            ]}
-        ];
-        homeSections.forEach(s => {
-            canvasElements.push({ ...s, section: 'homeSections', category: 'section', value: '' });
-        });
-
-        // ---- Songs (up to 30) ----
+        // ═══════════════════════════════════════════════
+        // SECTION 31: SONGS (up to 50)
+        // ═══════════════════════════════════════════════
         const songs = safeGet(() => DataStore.getSongs(), []);
-        songs.slice(0, 30).forEach((s, i) => {
+        songs.slice(0, 50).forEach((s, i) => {
             canvasElements.push({
                 id: 'el_song_' + (s.id || i), section: 'content', label: s.title || 'Untitled',
                 icon: 'fa-music', category: 'song', source: 'songs', dataIndex: i, value: s,
@@ -142,13 +582,15 @@ const Site360 = (function () {
                     { key: 'duration', label: 'Duration', type: 'text', value: s.duration || '' },
                     { key: 'status', label: 'Status', type: 'select', value: s.status || 'published', options: ['published', 'draft', 'active', 'inactive'] },
                     { key: 'thumbnail', label: 'Thumbnail', type: 'image', value: s.thumbnail || s.albumCover || s.cover || '' },
-                    { key: 'audioUrl', label: 'Audio URL', type: 'text', value: s.audioUrl || '', readonly: true },
-                    { key: 'albumCover', label: 'Album Cover', type: 'image', value: s.albumCover || s.cover || '' }
+                    { key: 'albumCover', label: 'Album Cover', type: 'image', value: s.albumCover || s.cover || '' },
+                    { key: 'audioUrl', label: 'Audio URL', type: 'text', value: s.audioUrl || '', readonly: true }
                 ]
             });
         });
 
-        // ---- Stations ----
+        // ═══════════════════════════════════════════════
+        // SECTION 32: STATIONS
+        // ═══════════════════════════════════════════════
         const stations = safeGet(() => DataStore.getStations(), []);
         stations.forEach((s, i) => {
             canvasElements.push({
@@ -166,7 +608,9 @@ const Site360 = (function () {
             });
         });
 
-        // ---- Advertisements ----
+        // ═══════════════════════════════════════════════
+        // SECTION 33: ADVERTISEMENTS
+        // ═══════════════════════════════════════════════
         const ads = safeGet(() => DataStore.getAdvertisements(), []);
         ads.forEach((a, i) => {
             canvasElements.push({
@@ -177,13 +621,15 @@ const Site360 = (function () {
                     { key: 'description', label: 'Description', type: 'textarea', value: a.description || '' },
                     { key: 'imageUrl', label: 'Banner Image', type: 'image', value: a.imageUrl || a.image || '' },
                     { key: 'targetLink', label: 'Target Link', type: 'text', value: a.targetLink || a.url || '' },
-                    { key: 'position', label: 'Position', type: 'select', value: a.position || 1, options: [0, 1, 2, 3, 4].map(String) },
+                    { key: 'position', label: 'Position', type: 'select', value: a.position || 1, options: ['0', '1', '2', '3', '4'] },
                     { key: 'enabled', label: 'Enabled', type: 'toggle', value: a.enabled !== false }
                 ]
             });
         });
 
-        // ---- Featured ----
+        // ═══════════════════════════════════════════════
+        // SECTION 34: FEATURED
+        // ═══════════════════════════════════════════════
         const featured = safeGet(() => DataStore.getFeatured(), []);
         featured.forEach((f, i) => {
             canvasElements.push({
@@ -198,12 +644,14 @@ const Site360 = (function () {
             });
         });
 
-        // ---- Trending ----
+        // ═══════════════════════════════════════════════
+        // SECTION 35: TRENDING ITEMS
+        // ═══════════════════════════════════════════════
         const trending = safeGet(() => DataStore.getTrending(), []);
         trending.forEach((t, i) => {
             canvasElements.push({
                 id: 'el_trending_' + i, section: 'content', label: t.title || t.name || 'Trending ' + (i + 1),
-                icon: 'fa-fire', category: 'trending', source: 'trending', dataIndex: i, value: t,
+                icon: 'fa-fire', category: 'trending-item', source: 'trending', dataIndex: i, value: t,
                 controls: [
                     { key: 'title', label: 'Title', type: 'text', value: t.title || t.name || '' },
                     { key: 'artist', label: 'Artist', type: 'text', value: t.artist || '' },
@@ -213,12 +661,14 @@ const Site360 = (function () {
             });
         });
 
-        // ---- Categories ----
+        // ═══════════════════════════════════════════════
+        // SECTION 36: CATEGORIES ITEMS
+        // ═══════════════════════════════════════════════
         const categories = safeGet(() => DataStore.getCategories(), []);
         categories.forEach((c, i) => {
             canvasElements.push({
                 id: 'el_category_' + i, section: 'content', label: c.name || 'Category ' + (i + 1),
-                icon: 'fa-tag', category: 'category', source: 'categories', dataIndex: i, value: c,
+                icon: 'fa-tag', category: 'category-item', source: 'categories', dataIndex: i, value: c,
                 controls: [
                     { key: 'name', label: 'Name', type: 'text', value: c.name || '' },
                     { key: 'icon', label: 'Icon', type: 'icon', value: c.icon || '' },
@@ -227,7 +677,9 @@ const Site360 = (function () {
             });
         });
 
-        // ---- Artist Hits ----
+        // ═══════════════════════════════════════════════
+        // SECTION 37: ARTIST HITS ITEMS
+        // ═══════════════════════════════════════════════
         const artists = safeGet(() => DataStore.getArtistHits(), []);
         artists.forEach((a, i) => {
             canvasElements.push({
@@ -244,7 +696,9 @@ const Site360 = (function () {
             });
         });
 
-        // ---- Moods ----
+        // ═══════════════════════════════════════════════
+        // SECTION 38: MOODS
+        // ═══════════════════════════════════════════════
         const moods = safeGet(() => DataStore.getMoods(), []);
         moods.forEach((m, i) => {
             canvasElements.push({
@@ -259,51 +713,73 @@ const Site360 = (function () {
             });
         });
 
-        // ---- Splash Screen ----
-        const splash = safeGet(() => DataStore.getSplash(), {});
-        canvasElements.push({
-            id: 'el_splash', section: 'global', label: 'Splash Screen', icon: 'fa-play-circle',
-            category: 'splash', source: 'splash', value: splash,
-            controls: [
-                { key: 'enabled', label: 'Enabled', type: 'toggle', value: splash.enabled !== false },
-                { key: 'title', label: 'Title', type: 'text', value: splash.title || 'Tamil AI Stream' },
-                { key: 'subtitle', label: 'Subtitle', type: 'text', value: splash.subtitle || 'AI-Powered Tamil Radio' },
-                { key: 'background', label: 'Background', type: 'image', value: splash.background || splash.bgImage || '' },
-                { key: 'duration', label: 'Duration (ms)', type: 'number', value: splash.duration || 2500, min: 1000, max: 5000 }
-            ]
+        // ═══════════════════════════════════════════════
+        // SECTION 39: UPCOMING RELEASES
+        // ═══════════════════════════════════════════════
+        const releases = safeGet(() => DataStore.getUpcomingReleases(), []);
+        releases.forEach((r, i) => {
+            canvasElements.push({
+                id: 'el_release_' + i, section: 'content', label: r.title || 'Release ' + (i + 1),
+                icon: 'fa-rocket', category: 'release', source: 'upcomingReleases', dataIndex: i, value: r,
+                controls: [
+                    { key: 'title', label: 'Title', type: 'text', value: r.title || '' },
+                    { key: 'subtitle', label: 'Subtitle', type: 'text', value: r.subtitle || '' },
+                    { key: 'image', label: 'Poster Image', type: 'image', value: r.image || '' },
+                    { key: 'order', label: 'Display Order', type: 'number', value: r.order || 0 },
+                    { key: 'enabled', label: 'Enabled', type: 'toggle', value: r.enabled !== false }
+                ]
+            });
         });
 
-        // ---- Player Settings ----
-        const prefs = safeGet(() => DataStore.getPlayerPrefs(), {});
-        canvasElements.push({
-            id: 'el_player', section: 'global', label: 'Player Settings', icon: 'fa-headphones',
-            category: 'player', source: 'playerPrefs', value: prefs,
-            controls: [
-                { key: 'volume', label: 'Default Volume', type: 'range', value: prefs.volume || 0.7, min: 0, max: 1, step: 0.1 },
-                { key: 'autoPlay', label: 'Auto Play', type: 'toggle', value: prefs.autoPlay || false },
-                { key: 'crossfade', label: 'Crossfade', type: 'toggle', value: prefs.crossfade || false },
-                { key: 'crossfadeDuration', label: 'Crossfade Duration', type: 'number', value: prefs.crossfadeDuration || 3, min: 1, max: 12 },
-                { key: 'repeat', label: 'Repeat Mode', type: 'select', value: prefs.repeat || 'off', options: ['off', 'all', 'one'] },
-                { key: 'shuffle', label: 'Shuffle', type: 'toggle', value: prefs.shuffle || false }
-            ]
+        // ═══════════════════════════════════════════════
+        // SECTION 40: NEWS ITEMS
+        // ═══════════════════════════════════════════════
+        const news = safeGet(() => DataStore.getNews(), []);
+        news.slice(0, 30).forEach((n, i) => {
+            canvasElements.push({
+                id: 'el_news_' + i, section: 'content', label: (n.title || 'News ' + (i + 1)).slice(0, 40),
+                icon: 'fa-newspaper', category: 'news-item', source: 'news', dataIndex: i, value: n,
+                controls: [
+                    { key: 'title', label: 'Headline', type: 'text', value: n.title || '' },
+                    { key: 'content', label: 'Content', type: 'textarea', value: n.content || '' },
+                    { key: 'image', label: 'Thumbnail', type: 'image', value: n.image || '' },
+                    { key: 'priority', label: 'TN Priority', type: 'toggle', value: n.priority === 'tamil-nadu' || n.tamilNadu === true },
+                    { key: 'highlighted', label: 'Highlight as NEW', type: 'toggle', value: n.highlighted === true },
+                    { key: 'status', label: 'Status', type: 'select', value: n.status || 'published', options: ['published', 'draft'] }
+                ]
+            });
         });
 
-        // ---- Mini Player ----
-        const mp = safeGet(() => DataStore.getMiniPlayerSettings(), {});
-        canvasElements.push({
-            id: 'el_minip', section: 'global', label: 'Mini Player', icon: 'fa-play-circle',
-            category: 'miniPlayer', source: 'miniPlayerSettings', value: mp,
-            controls: [
-                { key: 'enabled', label: 'Enabled', type: 'toggle', value: mp.enabled !== false },
-                { key: 'position', label: 'Position', type: 'select', value: mp.position || 'bottom-right', options: ['bottom-right', 'bottom-left', 'top-right', 'top-left'] },
-                { key: 'theme', label: 'Theme', type: 'select', value: mp.theme || 'dark', options: ['dark', 'light', 'auto'] },
-                { key: 'showArtwork', label: 'Show Artwork', type: 'toggle', value: mp.showArtwork !== false }
-            ]
+        // ═══════════════════════════════════════════════
+        // SECTION 41: COLLECTIONS (Movies/Yearly/Latest/Music)
+        // ═══════════════════════════════════════════════
+        const collectionTypes = [
+            { key: 'moviesCollections', getter: 'getMoviesCollections', label: 'Movie Collection', icon: 'fa-film' },
+            { key: 'yearlyCollections', getter: 'getYearlyCollections', label: 'Yearly Collection', icon: 'fa-calendar' },
+            { key: 'latestCollections', getter: 'getLatestCollections', label: 'Latest Collection', icon: 'fa-clock' },
+            { key: 'musicCollections', getter: 'getMusicCollections', label: 'Music Collection', icon: 'fa-folder-tree' }
+        ];
+        collectionTypes.forEach(ct => {
+            const items = safeGet(() => DataStore[ct.getter](), []);
+            items.forEach((item, i) => {
+                canvasElements.push({
+                    id: 'el_' + ct.key + '_' + i, section: 'content',
+                    label: (item.name || item.title || ct.label + ' ' + (i + 1)).slice(0, 34),
+                    icon: ct.icon, category: ct.label.toLowerCase().replace(/\s/g, '-'),
+                    source: ct.key, dataIndex: i, value: item,
+                    controls: [
+                        { key: 'name', label: 'Name', type: 'text', value: item.name || item.title || '' },
+                        { key: 'description', label: 'Description', type: 'text', value: item.description || '' },
+                        { key: 'thumbnail', label: 'Thumbnail', type: 'image', value: item.thumbnail || item.image || '' },
+                        { key: 'status', label: 'Status', type: 'select', value: item.status || 'active', options: ['active', 'inactive'] }
+                    ]
+                });
+            });
         });
     }
 
     /* ============================================================
-       CANVAS RENDERING - Visual website representation
+       CANVAS RENDERING
        ============================================================ */
     function renderCanvas() {
         const canvas = $('s360Canvas');
@@ -315,11 +791,11 @@ const Site360 = (function () {
             sections[el.section].push(el);
         });
 
-        const sectionOrder = ['global', 'navigation', 'homeSections', 'content'];
+        const sectionOrder = ['global', 'home', 'navigation', 'content'];
         const sectionLabels = {
-            global: { label: 'Global Settings', icon: 'fa-globe' },
-            navigation: { label: 'Navigation', icon: 'fa-navicon' },
-            homeSections: { label: 'Home Page Sections', icon: 'fa-layer-group' },
+            global: { label: 'Global & Theme', icon: 'fa-globe' },
+            home: { label: 'Home Page Sections', icon: 'fa-layer-group' },
+            navigation: { label: 'Navigation Items', icon: 'fa-navicon' },
             content: { label: 'Content Library', icon: 'fa-database' }
         };
 
@@ -354,7 +830,6 @@ const Site360 = (function () {
 
         canvas.innerHTML = html;
 
-        // Bind clicks
         canvas.querySelectorAll('.s360-canvas-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -365,10 +840,9 @@ const Site360 = (function () {
     }
 
     function getThumbnailHtml(el) {
-        // Try to get an image from the element's value
         const img = el.value && (el.value.thumbnail || el.value.image || el.value.albumCover || el.value.logo || el.value.background);
         if (img) {
-            return '<img src="' + esc(img) + '" alt="" onerror="this.parentElement.innerHTML=\'<div class=s360-canvas-card-icon><i class=fas ' + esc(el.icon) + '></i></div>\'">';
+            return '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=s360-canvas-card-icon><i class=fas ' + esc(el.icon) + '></i></div>\'">';
         }
         return '<div class="s360-canvas-card-icon"><i class="fas ' + esc(el.icon) + '"></i></div>';
     }
@@ -383,7 +857,7 @@ const Site360 = (function () {
     }
 
     /* ============================================================
-       SETTINGS PANEL - Comprehensive right-side editor
+       SETTINGS PANEL
        ============================================================ */
     function renderSettingsPanel() {
         const panel = $('s360Settings');
@@ -402,14 +876,11 @@ const Site360 = (function () {
         if (actionsBar) actionsBar.style.display = 'flex';
 
         let html = '';
-
-        // Header
         html += '<div class="s360-settings-header">';
         html += '<div class="s360-settings-title"><i class="fas ' + esc(el.icon) + '"></i> ' + esc(el.label) + '</div>';
         html += '<span class="s360-settings-badge">' + esc(el.category) + '</span>';
         html += '</div>';
 
-        // Controls
         if (el.controls && el.controls.length) {
             html += '<div class="s360-settings-fields">';
             el.controls.forEach((ctrl, ci) => {
@@ -420,7 +891,6 @@ const Site360 = (function () {
 
         panel.innerHTML = html;
 
-        // Bind input changes
         panel.querySelectorAll('.s360-ctrl').forEach(input => {
             const eventType = (input.type === 'range' || input.type === 'color') ? 'input' : 'change';
             input.addEventListener(eventType, () => {
@@ -428,11 +898,9 @@ const Site360 = (function () {
             });
         });
 
-        // Bind image pickers
         panel.querySelectorAll('.s360-img-pick-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const key = btn.dataset.key;
-                openImagePicker(el, key);
+                openImagePicker(el, btn.dataset.key);
             });
         });
     }
@@ -500,33 +968,27 @@ const Site360 = (function () {
         else if (input.type === 'number') newValue = parseFloat(input.value);
         else newValue = input.value;
 
-        // Update in element controls
         const ctrl = el.controls.find(c => c.key === key);
         if (ctrl) ctrl.value = newValue;
 
-        // Update color hex
         if (input.type === 'color') {
             const hex = input.parentElement.querySelector('.s360-ctrl-color-hex');
             if (hex) hex.textContent = newValue;
         }
-        // Update range value
         if (input.type === 'range') {
             const rv = input.parentElement.querySelector('.s360-ctrl-range-val');
             if (rv) rv.textContent = newValue;
         }
-        // Update icon preview
         if (ctrl && ctrl.type === 'icon') {
             const ip = input.parentElement.querySelector('.s360-ctrl-icon-preview i');
             if (ip) ip.className = 'fas ' + newValue;
         }
-        // Update image preview
         if (ctrl && ctrl.type === 'image') {
             const preview = input.parentElement.querySelector('.s360-ctrl-img-preview');
             if (newValue && preview) { preview.src = newValue; preview.style.display = ''; }
             else if (!newValue && preview) { preview.style.display = 'none'; }
         }
 
-        // Push undo
         pushUndo();
     }
 
@@ -539,7 +1001,6 @@ const Site360 = (function () {
         if (!el) return;
 
         try {
-            // Build updated value object from controls
             const updated = {};
             el.controls.forEach(c => { updated[c.key] = c.value; });
 
@@ -566,7 +1027,6 @@ const Site360 = (function () {
                 Object.assign(data, updated);
                 DataStore.setMiniPlayerSettings(data);
             } else if (el.dataIndex !== undefined) {
-                // Array-based stores (songs, stations, ads, etc.)
                 const getter = 'get' + el.source.charAt(0).toUpperCase() + el.source.slice(1);
                 const setter = 'set' + el.source.charAt(0).toUpperCase() + el.source.slice(1);
                 if (typeof DataStore[getter] === 'function' && typeof DataStore[setter] === 'function') {
@@ -588,7 +1048,7 @@ const Site360 = (function () {
     }
 
     /* ============================================================
-       PUBLISH - Triggers existing sync system
+       PUBLISH
        ============================================================ */
     function publishChanges() {
         saveChanges();
@@ -742,7 +1202,6 @@ const Site360 = (function () {
         buildCanvasData();
         renderCanvas();
         renderSettingsPanel();
-        // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (!$('site360Page') || $('site360Page').style.display === 'none') return;
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
@@ -754,7 +1213,6 @@ const Site360 = (function () {
         });
     }
 
-    // Public API
     return {
         init,
         scan: init,
