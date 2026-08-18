@@ -494,12 +494,12 @@ a,
 @media (max-width: 1024px) {
     .ytm-main-content {
         -webkit-overflow-scrolling: touch;
-        /* Let vertical page scroll propagate; only contain horizontal overscroll */
-        overscroll-behavior-y: auto;
+        overscroll-behavior-y: contain;
     }
 
     .ytm-page-home {
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
     }
 
     .stations-track,
@@ -935,9 +935,9 @@ body.gp-visible .tamilai-bottom-nav {
     *, *::before, *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
-        transition-duration: 0.15s !important;
+        transition-duration: 0.12s !important;
     }
-    /* Re-enable essential transitions */
+    /* Re-enable essential transitions only */
     .tamilai-nav-item,
     .ai-playlist-card,
     .ai-fm-card,
@@ -948,8 +948,9 @@ body.gp-visible .tamilai-bottom-nav {
     .ai-fm-play-btn,
     .ai-play-now,
     .gp-btn,
-    .splash-skip {
-        transition-duration: 0.25s !important;
+    .splash-skip,
+    .ai-decade-card {
+        transition-duration: 0.18s !important;
     }
     .tamilai-nav-item:active,
     .ai-playlist-card:active,
@@ -959,8 +960,9 @@ body.gp-visible .tamilai-bottom-nav {
     .ai-news-card:active,
     .ai-play-btn:active,
     .ai-fm-play-btn:active,
-    .ai-play-now:active {
-        transition-duration: 0.1s !important;
+    .ai-play-now:active,
+    .ai-decade-card:active {
+        transition-duration: 0.06s !important;
     }
     /* Kill splash animations entirely */
     .splash-overlay { animation: none !important; }
@@ -968,6 +970,19 @@ body.gp-visible .tamilai-bottom-nav {
     .splash-logo { animation: none !important; transform: none !important; }
     .splash-eq-bar { animation: none !important; }
     .splash-loading-fill { animation: none !important; width: 100% !important; }
+    /* Reduce will-change on interactive elements */
+    .ai-song-card,
+    .ai-fm-card,
+    .ai-playlist-card,
+    .ai-rec-song,
+    .ai-news-card,
+    .ai-decade-card {
+        will-change: auto !important;
+    }
+    /* Disable live dot pulse */
+    .ai-live-dot { animation: none !important; }
+    /* Reduce box-shadow */
+    .ai-panel { box-shadow: 0 2px 10px rgba(0,0,0,0.15) !important; }
 }
 
 /* PWA standalone: maximum performance mode */
@@ -975,7 +990,7 @@ body.gp-visible .tamilai-bottom-nav {
     *, *::before, *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
-        transition-duration: 0.15s !important;
+        transition-duration: 0.12s !important;
     }
     .tamilai-nav-item,
     .ai-playlist-card,
@@ -987,7 +1002,7 @@ body.gp-visible .tamilai-bottom-nav {
     .ai-fm-play-btn,
     .ai-play-now,
     .gp-btn {
-        transition-duration: 0.25s !important;
+        transition-duration: 0.18s !important;
     }
     .tamilai-nav-item:active,
     .ai-playlist-card:active,
@@ -995,9 +1010,9 @@ body.gp-visible .tamilai-bottom-nav {
     .ai-song-card:active,
     .ai-rec-song:active,
     .ai-news-card:active {
-        transition-duration: 0.1s !important;
+        transition-duration: 0.06s !important;
     }
-    /* Remove all glass effects in PWA */
+    /* Kill ALL glass/blur effects in PWA */
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     /* Kill all floating / glowing effects */
@@ -1007,7 +1022,53 @@ body.gp-visible .tamilai-bottom-nav {
     .splash-orb,
     .splash-logo,
     .splash-eq-bar,
-    .splash-loading-fill {
+    .splash-loading-fill,
+    .ai-live-dot,
+    .ai-decade-icon,
+    .ai-fm-eq-bar,
+    .ai-song-pulse,
+    .gp-rainbow-line {
+        animation: none !important;
+    }
+    /* Remove will-change from most elements */
+    .ai-panel,
+    .ai-fm-card,
+    .ai-playlist-card,
+    .ai-song-card,
+    .ai-rec-song,
+    .ai-news-card,
+    .ai-decade-card,
+    .gp-mini,
+    .gp-expanded {
+        will-change: auto !important;
+    }
+    /* Content visibility for off-screen pages */
+    .ytm-page:not(.ytm-page-home),
+    .ytm-page-explore,
+    .ytm-page-search,
+    .ytm-page-playlists,
+    .ytm-page-stations,
+    .ytm-page-history,
+    .ytm-page-library,
+    .ytm-page-liked,
+    .ytm-page-radio,
+    .ytm-page-artists,
+    .ytm-page-dashboard {
+        content-visibility: auto;
+        contain-intrinsic-size: 0 500px;
+    }
+    /* Reduce box-shadow complexity */
+    .ai-panel,
+    .ai-fm-card,
+    .ai-playlist-card,
+    .ai-song-card,
+    .ai-news-card,
+    .gp-mini {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+    }
+    .now-playing-bar {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
         animation: none !important;
     }
 }

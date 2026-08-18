@@ -633,6 +633,78 @@ body.ai-light .ai-dark-knob { left: 21px; }
     font-size: 0.78rem;
 }
 
+/* ---------- Now Playing Top Bar ---------- */
+.now-playing-bar {
+    position: sticky; top: 0; z-index: 900;
+    background: linear-gradient(135deg, rgba(10, 15, 30, 0.96), rgba(15, 20, 40, 0.96));
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: npbSlideIn 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes npbSlideIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.npb-inner {
+    display: flex; align-items: center; gap: 12px;
+    max-width: 1360px; margin: 0 auto;
+    padding: 8px 20px;
+}
+.npb-art {
+    width: 42px; height: 42px; border-radius: 10px; overflow: hidden;
+    background: linear-gradient(135deg, #1a1f3a, #0d1330);
+    display: grid; place-items: center; flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.npb-art img { width: 100%; height: 100%; object-fit: cover; }
+.npb-art i { color: rgba(255, 255, 255, 0.3); font-size: 0.9rem; }
+.npb-info { flex: 1; min-width: 0; display: flex; gap: 16px; }
+.npb-current, .npb-next { min-width: 0; }
+.npb-label {
+    display: block; font-size: 0.55rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ai-cyan, #22d3ee); margin-bottom: 2px;
+}
+.npb-next .npb-label { color: rgba(255, 255, 255, 0.3); }
+.npb-title {
+    display: block; font-family: var(--ai-ff); font-size: 0.82rem;
+    font-weight: 700; color: #fff; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; max-width: 260px;
+}
+.npb-artist {
+    display: block; font-size: 0.7rem; color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.npb-next-title {
+    display: block; font-family: var(--ai-ff); font-size: 0.75rem;
+    font-weight: 600; color: rgba(255, 255, 255, 0.55);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;
+}
+.npb-controls { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.npb-btn {
+    width: 34px; height: 34px; border-radius: 50%; border: none;
+    background: rgba(255, 255, 255, 0.06); color: #fff;
+    display: grid; place-items: center; cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent; font-size: 0.75rem;
+}
+.npb-btn:hover { background: rgba(255, 255, 255, 0.12); }
+.npb-btn:active { transform: scale(0.9); }
+.npb-play { background: var(--ai-cyan, #22d3ee); color: #04121a; font-size: 0.8rem; }
+.npb-play:hover { background: #06b6d4; }
+@media (max-width: 767px) {
+    .npb-inner { padding: 6px 14px; gap: 8px; }
+    .npb-art { width: 36px; height: 36px; border-radius: 8px; }
+    .npb-title { font-size: 0.78rem; max-width: 160px; }
+    .npb-artist { font-size: 0.65rem; }
+    .npb-next { display: none !important; }
+    .npb-btn { width: 30px; height: 30px; font-size: 0.7rem; }
+}
+@media (max-width: 480px) {
+    .npb-info { gap: 8px; }
+    .npb-title { max-width: 120px; }
+    .npb-label { font-size: 0.5rem; }
+}
+
 /* ---------- 5. Home Page Layout ---------- */
 .ai-home {
     max-width: 1360px;
@@ -1617,6 +1689,7 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
 .gp-mini.visible { transform: translateY(0); }
 body.gp-active { padding-bottom: 88px; }
 body.gp-active .tamilai-bottom-nav { bottom: 88px; }
+.site-footer { display: none; }
 .gp-mini-inner { display: flex; align-items: center; gap: 12px; max-width: 1400px; margin: 0 auto; padding: 8px 0; }
 .gp-mini-artwork { width: 52px; height: 52px; border-radius: 12px; }
 .gp-mini-info { gap: 2px; }
@@ -2029,12 +2102,12 @@ body.gp-active .tamilai-bottom-nav { bottom: 88px; }
 }
 
 @media (max-width: 1024px) {
-    .ai-home { padding: 16px 16px 44px; gap: 16px; }
+    .ai-home { padding: 16px 16px 20px; gap: 16px; }
     .ai-music-hero { min-height: 280px; }
 }
 
 @media (max-width: 767px) {
-    .ai-home { padding: 12px 12px 130px; gap: 14px; }
+    .ai-home { padding: 12px 12px 20px; gap: 14px; overflow: hidden; }
     .ai-home-row { gap: 14px; }
     .ai-fm-grid { grid-template-columns: 1fr; }
     .ai-rec-inner { flex-direction: column; gap: 14px; }

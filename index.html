@@ -381,6 +381,29 @@
                 </div>
             </header>
 
+            <!-- Now Playing Top Bar (shows when song is playing) -->
+            <div class="now-playing-bar" id="nowPlayingBar" style="display:none;">
+                <div class="npb-inner">
+                    <div class="npb-art" id="npbArt"><i class="fas fa-music"></i></div>
+                    <div class="npb-info">
+                        <div class="npb-current">
+                            <span class="npb-label">NOW PLAYING</span>
+                            <span class="npb-title" id="npbTitle">—</span>
+                            <span class="npb-artist" id="npbArtist">—</span>
+                        </div>
+                        <div class="npb-next" id="npbNextWrap" style="display:none;">
+                            <span class="npb-label">NEXT</span>
+                            <span class="npb-next-title" id="npbNextTitle">—</span>
+                        </div>
+                    </div>
+                    <div class="npb-controls">
+                        <button class="npb-btn" id="npbPrev" aria-label="Previous"><i class="fas fa-backward-step"></i></button>
+                        <button class="npb-btn npb-play" id="npbPlayPause" aria-label="Play/Pause"><i class="fas fa-pause"></i></button>
+                        <button class="npb-btn" id="npbNext" aria-label="Next"><i class="fas fa-forward-step"></i></button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Responsive Mobile/Tablet Menu (replaces old sidebar) -->
             <div class="premium-mobile-menu-overlay" id="premiumMobileMenuOverlay"></div>
             <aside class="premium-mobile-menu" id="premiumMobileMenu" aria-label="Responsive navigation menu">
