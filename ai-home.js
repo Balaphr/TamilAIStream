@@ -491,17 +491,37 @@ window.AIHome = (() => {
     let newsTimer = null;
     let newsLoading = false;
     let newsLastLoaded = 0;
+    let _newsCurrentIndex = -1;
+    let _newsRefreshCount = 0;
+    let _newsLastRefreshTime = 0;
 
     // News display config lives in Builder Site Settings (tamilAIStream_siteSettings.newsSettings).
     function newsDisplayConfig() {
-        const cfg = { maxItems: 4, highlightHours: 6, showPlayerOnDetail: true, seeAllMax: 25 };
+        const cfg = { maxItems: 4, highlightHours: 6, showPlayerOnDetail: true, seeAllMax: 25, refreshInterval: 300000, retainHours: 72, showNavButtons: true, showViewButton: true, showRefreshIndicator: true };
         try {
             if (window.DataStore) {
                 const s = DataStore.getSiteSettings() || {};
                 const ns = s.newsSettings || {};
+                // Read from nested newsSettings (legacy)
                 if (ns.maxItems && ns.maxItems > 0) cfg.maxItems = Math.min(ns.maxItems, 40);
                 if (ns.highlightHours && ns.highlightHours > 0) cfg.highlightHours = ns.highlightHours;
                 if (typeof ns.showPlayerOnDetail === 'boolean') cfg.showPlayerOnDetail = ns.showPlayerOnDetail;
+                if (ns.seeAllMax && ns.seeAllMax > 0) cfg.seeAllMax = Math.min(ns.seeAllMax, 50);
+                if (ns.refreshInterval && ns.refreshInterval >= 30000) cfg.refreshInterval = ns.refreshInterval;
+                if (ns.retainHours && ns.retainHours > 0) cfg.retainHours = ns.retainHours;
+                if (typeof ns.showNavButtons === 'boolean') cfg.showNavButtons = ns.showNavButtons;
+                if (typeof ns.showViewButton === 'boolean') cfg.showViewButton = ns.showViewButton;
+                if (typeof ns.showRefreshIndicator === 'boolean') cfg.showRefreshIndicator = ns.showRefreshIndicator;
+                // Read from flat liveNews* keys (Builder registry)
+                if (s.liveNewsMax && s.liveNewsMax > 0) cfg.maxItems = Math.min(s.liveNewsMax, 40);
+                if (s.liveNewsHighlightHours && s.liveNewsHighlightHours > 0) cfg.highlightHours = s.liveNewsHighlightHours;
+                if (typeof s.liveNewsShowDetail === 'boolean') cfg.showPlayerOnDetail = s.liveNewsShowDetailPlayer !== false;
+                if (s.liveNewsSeeAllMax && s.liveNewsSeeAllMax > 0) cfg.seeAllMax = Math.min(s.liveNewsSeeAllMax, 50);
+                if (s.liveNewsAutoRefreshInterval && s.liveNewsAutoRefreshInterval >= 30000) cfg.refreshInterval = s.liveNewsAutoRefreshInterval;
+                if (s.liveNewsRetainHours && s.liveNewsRetainHours > 0) cfg.retainHours = s.liveNewsRetainHours;
+                if (typeof s.liveNewsShowNavButtons === 'boolean') cfg.showNavButtons = s.liveNewsShowNavButtons;
+                if (typeof s.liveNewsShowViewButton === 'boolean') cfg.showViewButton = s.liveNewsShowViewButton;
+                if (typeof s.liveNewsShowRefreshIndicator === 'boolean') cfg.showRefreshIndicator = s.liveNewsShowRefreshIndicator;
             }
         } catch (e) { /* ignore */ }
         return cfg;
@@ -525,9 +545,11 @@ window.AIHome = (() => {
     let _newsDetailEscHandler = null;
     let _newsDetailClosing = false;
 
-    function newsDetailOpen(id) {
-        const item = (newsItems || []).find(n => String(n.id) === String(id));
-        if (!item) return;
+    function newsDetailOpen(id, skipIndex) {
+        const idx = (newsItems || []).findIndex(n => String(n.id) === String(id));
+        if (idx < 0) return;
+        const item = newsItems[idx];
+        _newsCurrentIndex = idx;
         try {
             // Guard: if a detail is already open, close it first (prevents stacking)
             const existing = document.getElementById('aiNewsDetail');
@@ -541,25 +563,49 @@ window.AIHome = (() => {
             // Guard: if a close animation is in progress, don't open yet
             if (_newsDetailClosing) return;
 
+            const cfg = newsDisplayConfig();
+            const total = newsItems.length;
+            const pubTime = item.publishedAt ? new Date(item.publishedAt) : null;
+            const timeText = pubTime ? pubTime.toLocaleString('ta-IN', {
+                day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            }) : '';
+            if (cfg.showPlayerOnDetail) {
+                document.body.classList.add('ai-news-player-visible');
+            }
+
+            const tnBadge = isTnNews(item) ? '<span class="ai-news-detail-tn"><i class="fa-solid fa-location-dot"></i> Tamil Nadu</span>' : '';
+
+            // Nav buttons
+            let navHtml = '';
+            if (cfg.showNavButtons && total > 1) {
+                const hasPrev = idx > 0;
+                const hasNext = idx < total - 1;
+                navHtml =
+                    '<div class="ai-news-detail-nav">' +
+                    '<button class="ai-news-nav-btn ai-news-nav-prev" type="button"' + (!hasPrev ? ' disabled' : '') + ' data-dir="prev"><i class="fa-solid fa-chevron-left"></i> Prev</button>' +
+                    '<span class="ai-news-nav-counter">' + (idx + 1) + ' / ' + total + '</span>' +
+                    '<button class="ai-news-nav-btn ai-news-nav-next" type="button"' + (!hasNext ? ' disabled' : '') + ' data-dir="next">Next <i class="fa-solid fa-chevron-right"></i></button>' +
+                    '</div>';
+            }
+
+            // View button
+            let viewHtml = '';
+            if (cfg.showViewButton && item.url) {
+                viewHtml = '<a class="ai-news-detail-view-btn" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-up-right-from-square"></i> View Full Article</a>';
+            }
+
             const wrap = document.createElement('div');
             wrap.className = 'ai-news-detail';
             wrap.id = 'aiNewsDetail';
             wrap.setAttribute('role', 'dialog');
             wrap.setAttribute('aria-modal', 'true');
-            const pubTime = item.publishedAt ? new Date(item.publishedAt) : null;
-            const timeText = pubTime ? pubTime.toLocaleString('ta-IN', {
-                day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
-            }) : '';
-            const cfg = newsDisplayConfig();
-            if (cfg.showPlayerOnDetail) {
-                wrap.classList.add('keep-player');
-                document.body.classList.add('ai-news-player-visible');
-            }
-            const tnBadge = isTnNews(item) ? '<span class="ai-news-detail-tn"><i class="fa-solid fa-location-dot"></i> Tamil Nadu</span>' : '';
             wrap.innerHTML =
                 '<div class="ai-news-detail-overlay"></div>' +
                 '<div class="ai-news-detail-panel">' +
+                '<div class="ai-news-detail-topbar">' +
                 '<button class="ai-news-detail-back" type="button"><i class="fa-solid fa-arrow-left"></i> Back</button>' +
+                navHtml +
+                '</div>' +
                 (item.image ? '<div class="ai-news-detail-img"><img src="' + escapeHtml(item.image) + '" alt="" loading="lazy"></div>' : '') +
                 '<div class="ai-news-detail-body">' +
                 (tnBadge ? '<div class="ai-news-detail-flags">' + tnBadge + '</div>' : '') +
@@ -568,17 +614,17 @@ window.AIHome = (() => {
                 (timeText ? '<span class="ai-news-detail-time"><i class="fa-regular fa-clock"></i> ' + escapeHtml(timeText) + '</span>' : '') +
                 '</div>' +
                 '<div class="ai-news-detail-content">' + escapeHtml(item.content || '') + '</div>' +
+                viewHtml +
                 '</div></div>';
             document.body.appendChild(wrap);
             document.body.classList.add('ai-news-detail-open');
             requestAnimationFrame(() => wrap.classList.add('open'));
 
-            // Unified close function — works with or without event argument
+            // Unified close function
             const removeDetail = () => {
                 if (_newsDetailClosing) return;
                 _newsDetailClosing = true;
                 wrap.classList.remove('open');
-                // Clean up Escape handler
                 if (_newsDetailEscHandler) {
                     document.removeEventListener('keydown', _newsDetailEscHandler);
                     _newsDetailEscHandler = null;
@@ -588,13 +634,46 @@ window.AIHome = (() => {
                     document.body.classList.remove('ai-news-detail-open');
                     document.body.classList.remove('ai-news-player-visible');
                     _newsDetailClosing = false;
+                    _newsCurrentIndex = -1;
+                    // Force re-enable touch on news cards
+                    document.querySelectorAll('.ai-news-card').forEach(c => {
+                        c.style.pointerEvents = '';
+                        c.style.webkitTapHighlightColor = '';
+                    });
                 }, 220);
+            };
+
+            // Navigation function
+            const navigateTo = (dir) => {
+                const newIdx = dir === 'next' ? _newsCurrentIndex + 1 : _newsCurrentIndex - 1;
+                if (newIdx < 0 || newIdx >= newsItems.length) return;
+                removeDetail();
+                setTimeout(() => {
+                    newsDetailOpen(newsItems[newIdx].id);
+                }, 260);
             };
 
             wrap.querySelector('.ai-news-detail-back').addEventListener('click', removeDetail);
             wrap.querySelector('.ai-news-detail-overlay').addEventListener('click', removeDetail);
 
-            // Escape key — properly removeable
+            // Nav button handlers
+            const prevBtn = wrap.querySelector('.ai-news-nav-prev');
+            const nextBtn = wrap.querySelector('.ai-news-nav-next');
+            if (prevBtn) prevBtn.addEventListener('click', () => navigateTo('prev'));
+            if (nextBtn) nextBtn.addEventListener('click', () => navigateTo('next'));
+
+            // Swipe support for mobile
+            let touchStartX = 0;
+            wrap.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+            wrap.addEventListener('touchend', (e) => {
+                const diff = e.changedTouches[0].screenX - touchStartX;
+                if (Math.abs(diff) > 60) {
+                    if (diff > 0) navigateTo('prev');
+                    else navigateTo('next');
+                }
+            }, { passive: true });
+
+            // Escape key
             _newsDetailEscHandler = (e) => {
                 if (e.key === 'Escape') removeDetail();
             };
@@ -670,14 +749,56 @@ window.AIHome = (() => {
 
     let newsVisibilityBound = false;
     function startNewsAutoRefresh() {
+        const cfg = newsDisplayConfig();
         if (newsTimer) clearInterval(newsTimer);
-        newsTimer = setInterval(() => { loadNews(); }, 300000);
+        // Check if auto-refresh bot is enabled
+        let botEnabled = true;
+        let botInterval = cfg.refreshInterval;
+        let botOnFocus = true;
+        try {
+            if (window.DataStore) {
+                const s = DataStore.getSiteSettings() || {};
+                const ns = s.newsSettings || {};
+                if (typeof ns.liveNewsAutoRefreshEnabled === 'boolean') botEnabled = ns.liveNewsAutoRefreshEnabled;
+                if (ns.liveNewsAutoRefreshInterval && ns.liveNewsAutoRefreshInterval >= 30000) botInterval = ns.liveNewsAutoRefreshInterval;
+                if (typeof ns.liveNewsAutoRefreshOnFocus === 'boolean') botOnFocus = ns.liveNewsAutoRefreshOnFocus;
+            }
+        } catch (e) { /* ignore */ }
+
+        if (!botEnabled) {
+            updateNewsRefreshIndicator();
+            return;
+        }
+
+        newsTimer = setInterval(() => {
+            _newsRefreshCount++;
+            _newsLastRefreshTime = Date.now();
+            updateNewsRefreshIndicator();
+            loadNews();
+        }, botInterval);
+
         if (!newsVisibilityBound) {
             newsVisibilityBound = true;
             document.addEventListener('visibilitychange', () => {
-                if (!document.hidden) loadNews();
+                if (!document.hidden && botOnFocus) {
+                    _newsRefreshCount++;
+                    _newsLastRefreshTime = Date.now();
+                    updateNewsRefreshIndicator();
+                    loadNews();
+                }
             });
         }
+        updateNewsRefreshIndicator();
+    }
+
+    function updateNewsRefreshIndicator() {
+        const indicator = $('aiNewsRefreshIndicator');
+        if (!indicator) return;
+        const cfg = newsDisplayConfig();
+        if (!cfg.showRefreshIndicator) { indicator.style.display = 'none'; return; }
+        indicator.style.display = '';
+        const timeText = _newsLastRefreshTime ? timeAgo(new Date(_newsLastRefreshTime).toISOString()) : 'Never';
+        indicator.innerHTML = '<i class="fas fa-sync-alt"></i> Updated ' + timeText + ' (#' + _newsRefreshCount + ')';
     }
 
     function renderLiveNews() {
@@ -795,23 +916,47 @@ window.AIHome = (() => {
     // Opens a news detail inline within the see-all overlay (not as a separate
     // body-level dialog). This avoids the stacked-dialog bugs.
     function newsDetailOpenInline(id, container) {
-        const item = (newsItems || []).find(n => String(n.id) === String(id));
-        if (!item) return;
+        const idx = (newsItems || []).findIndex(n => String(n.id) === String(id));
+        if (idx < 0) return;
+        const item = newsItems[idx];
         // Remove any existing inline detail first
         const existing = container.querySelector('.ai-news-detail');
         if (existing) existing.remove();
 
-        const detail = document.createElement('div');
-        detail.className = 'ai-news-detail ai-news-detail-inline';
+        const cfg = newsDisplayConfig();
+        const total = newsItems.length;
         const pubTime = item.publishedAt ? new Date(item.publishedAt) : null;
         const timeText = pubTime ? pubTime.toLocaleString('ta-IN', {
             day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
         }) : '';
         const tnBadge = isTnNews(item) ? '<span class="ai-news-detail-tn"><i class="fa-solid fa-location-dot"></i> Tamil Nadu</span>' : '';
+
+        let navHtml = '';
+        if (cfg.showNavButtons && total > 1) {
+            const hasPrev = idx > 0;
+            const hasNext = idx < total - 1;
+            navHtml =
+                '<div class="ai-news-detail-nav">' +
+                '<button class="ai-news-nav-btn ai-news-nav-prev" type="button"' + (!hasPrev ? ' disabled' : '') + ' data-dir="prev"><i class="fa-solid fa-chevron-left"></i> Prev</button>' +
+                '<span class="ai-news-nav-counter">' + (idx + 1) + ' / ' + total + '</span>' +
+                '<button class="ai-news-nav-btn ai-news-nav-next" type="button"' + (!hasNext ? ' disabled' : '') + ' data-dir="next">Next <i class="fa-solid fa-chevron-right"></i></button>' +
+                '</div>';
+        }
+
+        let viewHtml = '';
+        if (cfg.showViewButton && item.url) {
+            viewHtml = '<a class="ai-news-detail-view-btn" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-up-right-from-square"></i> View Full Article</a>';
+        }
+
+        const detail = document.createElement('div');
+        detail.className = 'ai-news-detail ai-news-detail-inline';
         detail.innerHTML =
             '<div class="ai-news-detail-overlay"></div>' +
             '<div class="ai-news-detail-panel">' +
+            '<div class="ai-news-detail-topbar">' +
             '<button class="ai-news-detail-back" type="button"><i class="fa-solid fa-arrow-left"></i> Back</button>' +
+            navHtml +
+            '</div>' +
             (item.image ? '<div class="ai-news-detail-img"><img src="' + escapeHtml(item.image) + '" alt="" loading="lazy"></div>' : '') +
             '<div class="ai-news-detail-body">' +
             (tnBadge ? '<div class="ai-news-detail-flags">' + tnBadge + '</div>' : '') +
@@ -820,6 +965,7 @@ window.AIHome = (() => {
             (timeText ? '<span class="ai-news-detail-time"><i class="fa-regular fa-clock"></i> ' + escapeHtml(timeText) + '</span>' : '') +
             '</div>' +
             '<div class="ai-news-detail-content">' + escapeHtml(item.content || '') + '</div>' +
+            viewHtml +
             '</div></div>';
 
         container.appendChild(detail);
@@ -829,8 +975,32 @@ window.AIHome = (() => {
             detail.classList.remove('open');
             setTimeout(() => { if (detail.parentNode) detail.parentNode.removeChild(detail); }, 220);
         };
+
+        const navigateInline = (dir) => {
+            const newIdx = dir === 'next' ? idx + 1 : idx - 1;
+            if (newIdx < 0 || newIdx >= newsItems.length) return;
+            removeDetail();
+            setTimeout(() => newsDetailOpenInline(newsItems[newIdx].id, container), 260);
+        };
+
         detail.querySelector('.ai-news-detail-back').addEventListener('click', removeDetail);
         detail.querySelector('.ai-news-detail-overlay').addEventListener('click', removeDetail);
+
+        const prevBtn = detail.querySelector('.ai-news-nav-prev');
+        const nextBtn = detail.querySelector('.ai-news-nav-next');
+        if (prevBtn) prevBtn.addEventListener('click', () => navigateInline('prev'));
+        if (nextBtn) nextBtn.addEventListener('click', () => navigateInline('next'));
+
+        // Swipe support
+        let touchStartX = 0;
+        detail.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+        detail.addEventListener('touchend', (e) => {
+            const diff = e.changedTouches[0].screenX - touchStartX;
+            if (Math.abs(diff) > 60) {
+                if (diff > 0) navigateInline('prev');
+                else navigateInline('next');
+            }
+        }, { passive: true });
     }
 
     function emptyHtml(icon, title, text) { return emptyHTML(icon, title, text); }
