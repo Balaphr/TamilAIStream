@@ -918,6 +918,16 @@ function playStation(stationName) {
                 hideLoadingSpinner();
                 showToast(`Now playing: ${stationInfo.name}`, 'success');
                 showPlaybackNotification(currentPlaybackTrack, true);
+                // Sync GlobalPlayer state for mini/expanded player
+                if (typeof GlobalPlayer !== 'undefined') {
+                    GlobalPlayer.showMiniPlayer();
+                    if (GlobalPlayer.state) {
+                        GlobalPlayer.state.track = currentPlaybackTrack;
+                        GlobalPlayer.state.queue = [];
+                        GlobalPlayer.state.queueIndex = -1;
+                        GlobalPlayer.state.isLive = true;
+                    }
+                }
             }).catch((err) => {
                 console.error('[TamilAI FM] Play promise rejected:', err?.name, err?.message, '| URL:', streamUrl);
                 currentUrlIndex++;
@@ -994,10 +1004,16 @@ async function playSong(song, playlist = []) {
                         _updateSmartQueue(song, currentPlaylist);
             showToast(`Now playing: ${song.title}`, 'success');
             showPlaybackNotification(currentPlaybackTrack, false);
-            // Playback plays in the bottom mini bar only. The full-screen
-            // player (gp-expanded) is opened exclusively by the user via the
-            // mini-player expand control (gpMiniExpand / gpMiniInfo) — never
-            // automatically on track start, so song clicks stay non-intrusive.
+            // Sync GlobalPlayer state for mini/expanded player
+            if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.showMiniPlayer();
+                if (GlobalPlayer.state) {
+                    GlobalPlayer.state.track = currentPlaybackTrack;
+                    GlobalPlayer.state.queue = currentPlaybackQueue;
+                    GlobalPlayer.state.queueIndex = currentPlaybackQueueIndex;
+                    GlobalPlayer.state.isLive = false;
+                }
+            }
         } catch (err) {
             console.error('Play error:', err);
             streamConnecting = false;
@@ -1015,7 +1031,16 @@ async function playSong(song, playlist = []) {
         if (typeof ListeningHistory !== 'undefined') {
             ListeningHistory.trackPlayback(currentPlaybackTrack, 'song');
         }
-                // (No auto-expand here either — bottom player only; see playSong note.)
+        // Sync GlobalPlayer state for mini/expanded player
+        if (typeof GlobalPlayer !== 'undefined') {
+            GlobalPlayer.showMiniPlayer();
+            if (GlobalPlayer.state) {
+                GlobalPlayer.state.track = currentPlaybackTrack;
+                GlobalPlayer.state.queue = currentPlaybackQueue;
+                GlobalPlayer.state.queueIndex = currentPlaybackQueueIndex;
+                GlobalPlayer.state.isLive = false;
+            }
+        }
     }
 }
 
@@ -4876,6 +4901,9 @@ if (typeof window !== 'undefined') {
     window.getPlaybackDuration = getPlaybackDuration;
     window.seekPlaybackToPercent = seekPlaybackToPercent;
     window.setPlaybackVolume = setPlaybackVolume;
+    // Expose queue for Now Playing bar and GlobalPlayer
+    window.getCurrentPlaybackQueue = () => currentPlaybackQueue;
+    window.getCurrentPlaybackQueueIndex = () => currentPlaybackQueueIndex;
     window.togglePlayPause = togglePlayPause;
     window.playNextTrack = playNextTrack;
     window.playPreviousTrack = playPreviousTrack;

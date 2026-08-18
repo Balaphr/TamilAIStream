@@ -1070,7 +1070,7 @@ const GlobalPlayer = (() => {
             const w = canvas.offsetWidth;
             const h = canvas.offsetHeight;
             ctx.clearRect(0, 0, w, h);
-            if (!freqData || !state.isPlaying) { waveformRAF = requestAnimationFrame(draw); return; }
+            if (!freqData || !state.isPlaying) { cancelAnimationFrame(waveformRAF); waveformRAF = null; return; }
             const bars = 64;
             const barW = w / bars;
             const step = Math.floor(freqData.length / bars);
@@ -1142,7 +1142,7 @@ const GlobalPlayer = (() => {
             }
             ctx.clearRect(0, 0, 80, 32);
             const freqData = (typeof PlayerEngine !== 'undefined' && PlayerEngine.getFrequencyData) ? PlayerEngine.getFrequencyData() : null;
-            if (!freqData) { _lyricsRAF = requestAnimationFrame(draw); return; }
+            if (!freqData) { cancelAnimationFrame(_lyricsRAF); _lyricsRAF = null; return; }
             const bars = 16;
             const barW = 80 / bars;
             const step = Math.floor(freqData.length / bars);
