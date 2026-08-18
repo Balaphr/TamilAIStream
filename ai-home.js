@@ -93,6 +93,8 @@ window.AIHome = (() => {
     let heroSlides = [];
     let heroIdx = 0;
     let heroTimer = null;
+    let heroBgActive = 'A'; // Track which background layer is active ('A' or 'B')
+    let heroTransitioning = false;
 
     function stationColorFallback() {
         return 'radial-gradient(circle at 50% 40%, rgba(34,211,238,0.28) 0%, rgba(99,102,241,0.16) 40%, rgba(10,15,34,0.9) 75%)';
@@ -103,7 +105,7 @@ window.AIHome = (() => {
         const dots = $('aiHeroDotsWrap');
         if (!body) return;
         const songs = publishedSongs();
-        heroSlides = songs.length ? songs.slice(0, 5) : [];
+        heroSlides = songs.length ? songs.slice(0, 10) : [];
         if (!heroSlides.length) {
             body.style.background = stationColorFallback();
             body.innerHTML = '<i class="fa-solid fa-music"></i>';
@@ -113,37 +115,109 @@ window.AIHome = (() => {
             '<button class="ai-hero-dot' + (i === 0 ? ' active' : '') + '" data-i="' + i + '" aria-label="Slide ' + (i + 1) + '"></button>'
         ).join('');
         dots.querySelectorAll('button').forEach(btn => {
-            btn.addEventListener('click', () => { showHeroSlide(parseInt(btn.dataset.i, 10)); restartHeroTimer(); });
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.dataset.i, 10);
+                if (idx !== heroIdx) transitionHeroSlide(idx);
+                restartHeroTimer();
+            });
         });
-        applyHeroSlide(0);
+        // Set initial background
+        applyHeroBackground(heroSlides[0], false);
+        applyHeroForeground(heroSlides[0]);
         startHeroTimer();
     }
 
-    function applyHeroSlide(idx) {
-        if (!heroSlides.length) return;
-        heroIdx = (idx + heroSlides.length) % heroSlides.length;
-        const song = heroSlides[heroIdx];
-        const art = artOf(song) || ART_PLACEHOLDER;
+    // Apply background image to the inactive layer, then crossfade
+    function applyHeroBackground(song, animate) {
+        const art = artOf(song) || '';
+        const layerActive = $('aiHeroBg' + heroBgActive);
+        const layerInactive = $('aiHeroBg' + (heroBgActive === 'A' ? 'B' : 'A'));
+        if (!layerActive || !layerInactive) return;
+
+        if (animate) {
+            // Crossfade: set new image on inactive layer, fade it in, fade old out
+            heroTransitioning = true;
+            if (art) {
+                layerInactive.style.backgroundImage = 'url(' + art + ')';
+            } else {
+                layerInactive.style.backgroundImage = 'none';
+                layerInactive.style.background = stationColorFallback();
+            }
+            // Force reflow before adding active class
+            layerInactive.offsetHeight;
+            layerInactive.classList.add('active');
+            layerActive.classList.remove('active');
+            layerActive.classList.add('prev');
+
+            // Swap active layer reference after transition
+            setTimeout(() => {
+                layerActive.classList.remove('prev');
+                heroBgActive = heroBgActive === 'A' ? 'B' : 'A';
+                heroTransitioning = false;
+            }, 1300);
+        } else {
+            // Instant set (first load)
+            if (art) {
+                layerActive.style.backgroundImage = 'url(' + art + ')';
+            } else {
+                layerActive.style.backgroundImage = 'none';
+                layerActive.style.background = stationColorFallback();
+            }
+        }
+    }
+
+    // Update foreground art, title, artist with slide animation
+    function applyHeroForeground(song) {
+        const art = artOf(song) || '';
         const body = $('aiHeroBackdrop');
         if (body) {
-            body.style.background = art ? 'url("' + art + '") center/cover no-repeat' : stationColorFallback();
-            body.innerHTML = art ? '<img src="' + art + '" alt="" loading="lazy">' : '<i class="fa-solid fa-music"></i>';
+            if (art) {
+                body.style.background = 'url("' + art + '") center/cover no-repeat';
+                body.innerHTML = '<img src="' + art + '" alt="" loading="lazy">';
+            } else {
+                body.style.background = stationColorFallback();
+                body.innerHTML = '<i class="fa-solid fa-music"></i>';
+            }
         }
         const titleEl = $('aiHeroTitle');
-        if (titleEl && !titleEl.dataset.static) titleEl.textContent = song.title || 'Tamil Music';
+        if (titleEl) titleEl.textContent = song.title || 'Tamil Music';
+        const artistEl = $('aiHeroArtist');
+        if (artistEl) artistEl.textContent = song.artist || song.singer || 'Tamil AI Stream';
         const dots = $('aiHeroDotsWrap');
         if (dots) Array.from(dots.children).forEach((d, i) => d.classList.toggle('active', i === heroIdx));
+    }
+
+    // Full slide transition with crossfade background + foreground animation
+    function transitionHeroSlide(idx) {
+        if (!heroSlides.length || heroTransitioning) return;
+        heroIdx = (idx + heroSlides.length) % heroSlides.length;
+        const song = heroSlides[heroIdx];
+        const wrap = document.querySelector('.ai-hero-art-wrap');
+
+        // Animate foreground exit
+        if (wrap) wrap.classList.add('slide-exit');
+
+        // After brief exit, update content and animate in
+        setTimeout(() => {
+            applyHeroBackground(song, true);
+            applyHeroForeground(song);
+            if (wrap) {
+                wrap.classList.remove('slide-exit');
+                wrap.classList.add('slide-enter');
+                setTimeout(() => wrap.classList.remove('slide-enter'), 700);
+            }
+        }, 350);
     }
 
     function startHeroTimer() {
         stopHeroTimer();
         if (heroSlides.length < 2) return;
-        heroTimer = setInterval(() => { if (!document.hidden) applyHeroSlide(heroIdx + 1); }, 5500);
+        heroTimer = setInterval(() => {
+            if (!document.hidden) transitionHeroSlide(heroIdx + 1);
+        }, 20000); // 20 seconds between rotations
     }
     function stopHeroTimer() { if (heroTimer) { clearInterval(heroTimer); heroTimer = null; } }
     function restartHeroTimer() { startHeroTimer(); }
-
-    function showHeroSlide(idx) { applyHeroSlide(idx); }
 
     /* ---------------- Trending Playlists ---------------- */
     function collectPlaylists() {
