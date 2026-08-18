@@ -22,6 +22,489 @@ const Site360 = (function () {
     }
 
     /* ============================================================
+       FEATURE REGISTRY - Auto-detect & auto-configure features
+       ============================================================ */
+    const FEATURE_REGISTRY = {
+        'music-by-era': {
+            label: 'Music by Era (Decades)',
+            icon: 'fa-clock',
+            section: 'home',
+            category: 'decades',
+            source: 'siteSettings',
+            files: { css: 'ai-glass.css', js: 'ai-home.js', html: 'index.html' },
+            defaults: {
+                decadesVisible: true,
+                decadesTitle: 'Music by Era',
+                decadesLayout: 'grid',
+                decadesColumns: 4,
+                decadesCardRadius: 18,
+                decadesCardPadding: 24,
+                decadesIconSize: 56,
+                decadesShowCount: true,
+                decadesCountLabel: 'songs',
+                decadesAutoRotate: false,
+                decadesRotateInterval: 20000,
+                decadesAutoPlayEnabled: true,
+                decadesAutoPlayShuffle: true,
+                decadesAutoPlayLoop: true,
+                decadesAutoPlayDelay: 300,
+                decadesMediaSession: true,
+                decadesMediaSessionArtwork: true,
+                decadesMediaSessionActions: 'play,pause,stop,next,prev',
+                decadesResponsiveMobile: '2col',
+                decadesResponsiveTablet: '4col',
+                decadesResponsiveDesktop: '4col',
+                decadesPerfLazyLoad: true,
+                decadesPerfThrottle: 16,
+                decadesPerfHardwareAccel: true,
+                decades80sGrad: 'linear-gradient(135deg,#f43f5e,#fb923c)',
+                decades80sIcon: 'fa-compact-disc',
+                decades80sGlow: 'rgba(244,63,94,0.3)',
+                decades90sGrad: 'linear-gradient(135deg,#a855f7,#6366f1)',
+                decades90sIcon: 'fa-record-vinyl',
+                decades90sGlow: 'rgba(168,85,247,0.3)',
+                decades2kGrad: 'linear-gradient(135deg,#3b82f6,#06b6d4)',
+                decades2kIcon: 'fa-compact-disc',
+                decades2kGlow: 'rgba(59,130,246,0.3)',
+                decadesNewGrad: 'linear-gradient(135deg,#34d399,#10b981)',
+                decadesNewIcon: 'fa-headphones',
+                decadesNewGlow: 'rgba(52,211,153,0.3)'
+            },
+            controls: [
+                { key: 'decadesVisible', label: 'Visible', type: 'toggle' },
+                { key: 'decadesTitle', label: 'Section Title', type: 'text' },
+                { key: 'decadesLayout', label: 'Layout', type: 'select', options: ['grid', 'carousel', 'list'] },
+                { key: 'decadesColumns', label: 'Grid Columns', type: 'number', min: 2, max: 6 },
+                { key: 'decadesCardRadius', label: 'Card Border Radius (px)', type: 'number', min: 0, max: 40 },
+                { key: 'decadesCardPadding', label: 'Card Padding (px)', type: 'number', min: 8, max: 48 },
+                { key: 'decadesIconSize', label: 'Icon Size (px)', type: 'number', min: 24, max: 100 },
+                { key: 'decadesShowCount', label: 'Show Song Count', type: 'toggle' },
+                { key: 'decadesCountLabel', label: 'Count Label Text', type: 'text' },
+                { key: 'decadesAutoRotate', label: 'Auto Rotate (Carousel)', type: 'toggle' },
+                { key: 'decadesRotateInterval', label: 'Rotate Interval (ms)', type: 'number', min: 2000, max: 30000 },
+                { key: 'decadesAutoPlayEnabled', label: 'AI Auto-Play Bot Enabled', type: 'toggle' },
+                { key: 'decadesAutoPlayShuffle', label: 'Auto-Play Shuffle', type: 'toggle' },
+                { key: 'decadesAutoPlayLoop', label: 'Auto-Play Loop', type: 'toggle' },
+                { key: 'decadesAutoPlayDelay', label: 'Auto-Play Delay (ms)', type: 'number', min: 0, max: 3000 },
+                { key: 'decadesMediaSession', label: 'Media Session API', type: 'toggle' },
+                { key: 'decadesMediaSessionArtwork', label: 'Show Artwork in Notifications', type: 'toggle' },
+                { key: 'decadesMediaSessionActions', label: 'Media Actions', type: 'text' },
+                { key: 'decadesResponsiveMobile', label: 'Mobile Columns', type: 'select', options: ['1col', '2col'] },
+                { key: 'decadesResponsiveTablet', label: 'Tablet Columns', type: 'select', options: ['2col', '3col', '4col'] },
+                { key: 'decadesResponsiveDesktop', label: 'Desktop Columns', type: 'select', options: ['3col', '4col', '5col', '6col'] },
+                { key: 'decadesPerfLazyLoad', label: 'Lazy Load Images', type: 'toggle' },
+                { key: 'decadesPerfThrottle', label: 'Render Throttle (ms)', type: 'number', min: 0, max: 100 },
+                { key: 'decadesPerfHardwareAccel', label: 'Hardware Acceleration', type: 'toggle' },
+                { key: 'decades80sGrad', label: '80s Gradient', type: 'text' },
+                { key: 'decades80sIcon', label: '80s Icon', type: 'icon' },
+                { key: 'decades80sGlow', label: '80s Glow Color', type: 'color' },
+                { key: 'decades90sGrad', label: '90s Gradient', type: 'text' },
+                { key: 'decades90sIcon', label: '90s Icon', type: 'icon' },
+                { key: 'decades90sGlow', label: '90s Glow Color', type: 'color' },
+                { key: 'decades2kGrad', label: '2K Gradient', type: 'text' },
+                { key: 'decades2kIcon', label: '2K Icon', type: 'icon' },
+                { key: 'decades2kGlow', label: '2K Glow Color', type: 'color' },
+                { key: 'decadesNewGrad', label: 'New Gradient', type: 'text' },
+                { key: 'decadesNewIcon', label: 'New Icon', type: 'icon' },
+                { key: 'decadesNewGlow', label: 'New Glow Color', type: 'color' }
+            ]
+        },
+        'music-hero': {
+            label: 'Music Hero',
+            icon: 'fa-music',
+            section: 'home',
+            category: 'hero',
+            source: 'siteSettings',
+            files: { css: 'ai-glass.css', js: 'ai-home.js', html: 'index.html' },
+            defaults: {
+                musicHeroVisible: true, musicHeroTitle: 'Music',
+                musicHeroEyebrow: 'TAMIL AI STREAM', musicHeroSubtitle: 'தமிழின் புதிய டிஜிட்டல் அனுபவம்',
+                musicHeroArtSize: 128, musicHeroArtRadius: 34, musicHeroShowPlayBtn: true,
+                musicHeroPlayBtnText: 'Play Now', musicHeroShowDots: true,
+                musicHeroAutoRotate: true, musicHeroRotateInterval: 5500
+            },
+            controls: [
+                { key: 'musicHeroVisible', label: 'Visible', type: 'toggle' },
+                { key: 'musicHeroTitle', label: 'Title', type: 'text' },
+                { key: 'musicHeroEyebrow', label: 'Eyebrow', type: 'text' },
+                { key: 'musicHeroSubtitle', label: 'Subtitle', type: 'text' },
+                { key: 'musicHeroArtSize', label: 'Artwork Size (px)', type: 'number', min: 64, max: 200 },
+                { key: 'musicHeroArtRadius', label: 'Artwork Radius (px)', type: 'number', min: 0, max: 50 },
+                { key: 'musicHeroShowPlayBtn', label: 'Show Play Button', type: 'toggle' },
+                { key: 'musicHeroPlayBtnText', label: 'Play Button Text', type: 'text' },
+                { key: 'musicHeroShowDots', label: 'Show Slide Dots', type: 'toggle' },
+                { key: 'musicHeroAutoRotate', label: 'Auto Rotate', type: 'toggle' },
+                { key: 'musicHeroRotateInterval', label: 'Rotate Interval (ms)', type: 'number', min: 2000, max: 15000 }
+            ]
+        },
+        'ai-recommendations': {
+            label: 'AI Recommendations',
+            icon: 'fa-wand-magic-sparkles',
+            section: 'home',
+            category: 'ai',
+            source: 'siteSettings',
+            files: { css: 'ai-glass.css', js: 'ai-home.js', html: 'index.html' },
+            defaults: { aiRecVisible: true, aiRecTitle: 'AI Recommendations', aiRecMax: 6, aiRecShowGreeting: true, aiRecShowDiscoverBtn: true, aiRecDiscoverText: 'Discover with AI' },
+            controls: [
+                { key: 'aiRecVisible', label: 'Visible', type: 'toggle' },
+                { key: 'aiRecTitle', label: 'Title', type: 'text' },
+                { key: 'aiRecMax', label: 'Max Items', type: 'number', min: 2, max: 20 },
+                { key: 'aiRecShowGreeting', label: 'Show AI Greeting', type: 'toggle' },
+                { key: 'aiRecShowDiscoverBtn', label: 'Show Discover Button', type: 'toggle' },
+                { key: 'aiRecDiscoverText', label: 'Discover Button Text', type: 'text' }
+            ]
+        },
+        'live-tamil-news': {
+            label: 'Live Tamil News',
+            icon: 'fa-newspaper',
+            section: 'home',
+            category: 'news',
+            source: 'siteSettings',
+            files: { css: 'ai-glass.css', js: 'ai-home.js', html: 'index.html' },
+            defaults: { liveNewsVisible: true, liveNewsTitle: 'Live Tamil News', liveNewsMax: 6, liveNewsLayout: 'list', liveNewsShowThumbnails: true, liveNewsShowTime: true, liveNewsHighlightHours: 6, liveNewsTnPriority: true, liveNewsShowBadge: true, liveNewsRefreshInterval: 300000, liveNewsShowDetail: true, liveNewsRetainHours: 72 },
+            controls: [
+                { key: 'liveNewsVisible', label: 'Visible', type: 'toggle' },
+                { key: 'liveNewsTitle', label: 'Title', type: 'text' },
+                { key: 'liveNewsMax', label: 'Max Items', type: 'number', min: 1, max: 40 },
+                { key: 'liveNewsLayout', label: 'Layout', type: 'select', options: ['list', 'grid', 'compact'] },
+                { key: 'liveNewsShowThumbnails', label: 'Show Thumbnails', type: 'toggle' },
+                { key: 'liveNewsShowTime', label: 'Show Time Ago', type: 'toggle' },
+                { key: 'liveNewsHighlightHours', label: 'Highlight Fresh (hours)', type: 'number', min: 1, max: 48 },
+                { key: 'liveNewsTnPriority', label: 'TN Priority Badge', type: 'toggle' },
+                { key: 'liveNewsShowBadge', label: 'Show NEW Badge', type: 'toggle' },
+                { key: 'liveNewsRefreshInterval', label: 'Auto-Refresh (ms)', type: 'number', min: 60000, max: 3600000 },
+                { key: 'liveNewsShowDetail', label: 'Open Detail View', type: 'toggle' },
+                { key: 'liveNewsRetainHours', label: 'Retention (hours)', type: 'number', min: 6, max: 168 }
+            ]
+        },
+        'live-fm': {
+            label: 'Live FM Stations',
+            icon: 'fa-tower-broadcast',
+            section: 'home',
+            category: 'fm',
+            source: 'siteSettings',
+            files: { css: 'ai-glass.css', js: 'ai-home.js', html: 'index.html' },
+            defaults: { liveFmVisible: true, liveFmTitle: 'Live FM Stations', liveFmMax: 6, liveFmColumns: '2', liveFmShowBadge: true, liveFmShowFreq: true, liveFmShowListeners: true, liveFmShowWave: true },
+            controls: [
+                { key: 'liveFmVisible', label: 'Visible', type: 'toggle' },
+                { key: 'liveFmTitle', label: 'Title', type: 'text' },
+                { key: 'liveFmMax', label: 'Max Stations', type: 'number', min: 1, max: 20 },
+                { key: 'liveFmColumns', label: 'Columns', type: 'select', options: ['1', '2', '3'] },
+                { key: 'liveFmShowBadge', label: 'Show LIVE Badge', type: 'toggle' },
+                { key: 'liveFmShowFreq', label: 'Show Frequency', type: 'toggle' },
+                { key: 'liveFmShowListeners', label: 'Show Listeners', type: 'toggle' },
+                { key: 'liveFmShowWave', label: 'Show EQ Wave', type: 'toggle' }
+            ]
+        },
+        'greeting': {
+            label: 'Greeting Section',
+            icon: 'fa-hand-wave',
+            section: 'home',
+            category: 'greeting',
+            source: 'siteSettings',
+            files: { css: 'ai-glass.css', js: 'ai-home.js', html: 'index.html' },
+            defaults: { greetingVisible: true, greetingShowTime: true, greetingShowWeather: true, greetingShowQuote: true },
+            controls: [
+                { key: 'greetingVisible', label: 'Visible', type: 'toggle' },
+                { key: 'greetingShowTime', label: 'Show Time', type: 'toggle' },
+                { key: 'greetingShowWeather', label: 'Show Weather', type: 'toggle' },
+                { key: 'greetingShowQuote', label: 'Show Quote', type: 'toggle' }
+            ]
+        },
+        'recently-played': {
+            label: 'Recently Played',
+            icon: 'fa-clock-rotate-left',
+            section: 'home',
+            category: 'recently',
+            source: 'siteSettings',
+            files: { css: 'ai-glass.css', js: 'ai-home.js', html: 'index.html' },
+            defaults: { recentlyVisible: true, recentlyTitle: 'Recently Played', recentlyMax: 12, recentlyShowDuration: true },
+            controls: [
+                { key: 'recentlyVisible', label: 'Visible', type: 'toggle' },
+                { key: 'recentlyTitle', label: 'Title', type: 'text' },
+                { key: 'recentlyMax', label: 'Max Items', type: 'number', min: 2, max: 30 },
+                { key: 'recentlyShowDuration', label: 'Show Duration', type: 'toggle' }
+            ]
+        },
+        'trending-playlists': {
+            label: 'Trending Playlists',
+            icon: 'fa-fire',
+            section: 'home',
+            category: 'trending',
+            source: 'siteSettings',
+            files: { css: 'ai-glass.css', js: 'ai-home.js', html: 'index.html' },
+            defaults: { trendingPlaylistsVisible: true, trendingPlaylistsTitle: 'Trending Playlists', trendingPlaylistsMax: 10, trendingPlaylistsCardWidth: 164, trendingPlaylistsShowCount: true, trendingPlaylistsShowPlayBtn: true, trendingPlaylistsScrollSnap: 'proximity' },
+            controls: [
+                { key: 'trendingPlaylistsVisible', label: 'Visible', type: 'toggle' },
+                { key: 'trendingPlaylistsTitle', label: 'Title', type: 'text' },
+                { key: 'trendingPlaylistsMax', label: 'Max Items', type: 'number', min: 2, max: 30 },
+                { key: 'trendingPlaylistsCardWidth', label: 'Card Width (px)', type: 'number', min: 100, max: 250 },
+                { key: 'trendingPlaylistsShowCount', label: 'Show Count', type: 'toggle' },
+                { key: 'trendingPlaylistsShowPlayBtn', label: 'Show Play Button', type: 'toggle' },
+                { key: 'trendingPlaylistsScrollSnap', label: 'Scroll Snap', type: 'select', options: ['none', 'proximity', 'mandatory'] }
+            ]
+        },
+        'splash-screen': {
+            label: 'Splash Screen',
+            icon: 'fa-play-circle',
+            section: 'global',
+            category: 'splash',
+            source: 'splash',
+            files: { css: 'premium-ui.css', js: 'script.js', html: 'index.html' },
+            defaults: { enabled: true, title: 'Tamil AI Stream', subtitle: 'AI-Powered Tamil Radio', duration: 600, showEqualizer: true, showLoadingBar: true, showSkipBtn: true },
+            controls: [
+                { key: 'enabled', label: 'Enabled', type: 'toggle' },
+                { key: 'title', label: 'Title', type: 'text' },
+                { key: 'subtitle', label: 'Subtitle', type: 'text' },
+                { key: 'background', label: 'Background Image', type: 'image' },
+                { key: 'duration', label: 'Duration (ms)', type: 'number', min: 0, max: 5000 },
+                { key: 'showEqualizer', label: 'Show Equalizer', type: 'toggle' },
+                { key: 'showLoadingBar', label: 'Show Loading Bar', type: 'toggle' },
+                { key: 'showSkipBtn', label: 'Show Skip Button', type: 'toggle' }
+            ]
+        },
+        'player-settings': {
+            label: 'Player Settings',
+            icon: 'fa-headphones',
+            section: 'global',
+            category: 'player',
+            source: 'playerPrefs',
+            files: { css: 'global-player.css', js: 'global-player.js', html: 'index.html' },
+            defaults: { volume: 0.7, autoPlay: false, crossfade: false, crossfadeDuration: 3, repeat: 'off', shuffle: false },
+            controls: [
+                { key: 'volume', label: 'Default Volume', type: 'range', min: 0, max: 1, step: 0.1 },
+                { key: 'autoPlay', label: 'Auto Play', type: 'toggle' },
+                { key: 'crossfade', label: 'Crossfade', type: 'toggle' },
+                { key: 'crossfadeDuration', label: 'Crossfade Duration (s)', type: 'number', min: 1, max: 12 },
+                { key: 'repeat', label: 'Repeat Mode', type: 'select', options: ['off', 'all', 'one'] },
+                { key: 'shuffle', label: 'Shuffle', type: 'toggle' }
+            ]
+        },
+        'bottom-nav': {
+            label: 'Bottom Navigation',
+            icon: 'fa-navicon',
+            section: 'global',
+            category: 'navigation',
+            source: 'siteSettings',
+            files: { css: 'premium-ui.css', js: 'script.js', html: 'index.html' },
+            defaults: { bottomNavVisible: true, bottomNavBg: '#080c16', bottomNavOpacity: 0.92, bottomNavBlur: 32, bottomNavHeight: 60, bottomNavActiveColor: '#34d399', bottomNavItems: 'Home,Explore,Playlists,Stations,History' },
+            controls: [
+                { key: 'bottomNavVisible', label: 'Visible', type: 'toggle' },
+                { key: 'bottomNavBg', label: 'Background', type: 'color' },
+                { key: 'bottomNavOpacity', label: 'Opacity', type: 'range', min: 0, max: 1, step: 0.01 },
+                { key: 'bottomNavBlur', label: 'Blur (px)', type: 'number', min: 0, max: 40 },
+                { key: 'bottomNavHeight', label: 'Height (px)', type: 'number', min: 44, max: 80 },
+                { key: 'bottomNavActiveColor', label: 'Active Color', type: 'color' },
+                { key: 'bottomNavItems', label: 'Nav Items', type: 'text' }
+            ]
+        }
+    };
+
+    /* ============================================================
+       FEATURE AGENT - Activity timeline & status per feature
+       ============================================================ */
+    const _agentLog = {};
+    const _agentSnapshots = {};
+    const _agentPolling = {};
+
+    function agentLog(featureId, action, detail, status) {
+        if (!_agentLog[featureId]) _agentLog[featureId] = [];
+        const entry = { ts: Date.now(), action, detail, status: status || 'done' };
+        _agentLog[featureId].push(entry);
+        if (_agentLog[featureId].length > 50) _agentLog[featureId].shift();
+        _renderAgentPanel(featureId);
+    }
+
+    function agentGetLog(featureId) {
+        return _agentLog[featureId] || [];
+    }
+
+    function agentTakeSnapshot(featureId) {
+        const site = safeGet(() => DataStore.getSiteSettings(), {});
+        _agentSnapshots[featureId] = JSON.parse(JSON.stringify(site));
+        agentLog(featureId, 'snapshot', 'Configuration snapshot saved', 'done');
+    }
+
+    function agentRollback(featureId) {
+        if (!_agentSnapshots[featureId]) {
+            showToast('No snapshot available for rollback', 'warning');
+            return;
+        }
+        const site = DataStore.getSiteSettings();
+        const snapshot = _agentSnapshots[featureId];
+        const reg = FEATURE_REGISTRY[featureId];
+        if (reg && reg.defaults) {
+            Object.keys(reg.defaults).forEach(k => {
+                if (snapshot[k] !== undefined) site[k] = snapshot[k];
+                else delete site[k];
+            });
+        }
+        DataStore.setSiteSettings(site);
+        agentLog(featureId, 'rollback', 'Rolled back to previous snapshot', 'done');
+        buildCanvasData();
+        renderCanvas();
+        renderSettingsPanel();
+        showToast('Rolled back: ' + (reg ? reg.label : featureId), 'success');
+    }
+
+    function agentGetCompletion(featureId) {
+        const reg = FEATURE_REGISTRY[featureId];
+        if (!reg) return { pct: 0, items: [] };
+        const site = safeGet(() => DataStore.getSiteSettings(), {});
+        const items = [];
+        let done = 0;
+        const total = reg.controls.length;
+        reg.controls.forEach(c => {
+            const val = site[c.key];
+            const hasVal = val !== undefined && val !== null && val !== '';
+            items.push({ label: c.label, key: c.key, configured: hasVal, value: val });
+            if (hasVal) done++;
+        });
+        return { pct: total ? Math.round((done / total) * 100) : 0, items };
+    }
+
+    function _renderAgentPanel(featureId) {
+        const panel = $('s360AgentPanel');
+        if (!panel) return;
+        const reg = FEATURE_REGISTRY[featureId];
+        if (!reg) { panel.innerHTML = ''; panel.style.display = 'none'; return; }
+
+        panel.style.display = '';
+        const log = agentGetLog(featureId);
+        const comp = agentGetCompletion(featureId);
+        const logHtml = log.slice(-12).reverse().map(e => {
+            const time = new Date(e.ts).toLocaleTimeString();
+            const statusIcon = e.status === 'done' ? '<i class="fas fa-check-circle" style="color:#34d399;"></i>' :
+                               e.status === 'pending' ? '<i class="fas fa-spinner fa-spin" style="color:#fbbf24;"></i>' :
+                               e.status === 'error' ? '<i class="fas fa-exclamation-circle" style="color:#ef4444;"></i>' :
+                               '<i class="fas fa-info-circle" style="color:#38bdf8;"></i>';
+            return '<div class="s360-agent-log-entry">' + statusIcon +
+                   '<span class="s360-agent-log-action">' + esc(e.action) + '</span>' +
+                   '<span class="s360-agent-log-detail">' + esc(e.detail) + '</span>' +
+                   '<span class="s360-agent-log-time">' + time + '</span></div>';
+        }).join('');
+
+        const itemsHtml = comp.items.map(it =>
+            '<div class="s360-agent-item' + (it.configured ? ' done' : '') + '">' +
+            (it.configured ? '<i class="fas fa-check" style="color:#34d399;"></i>' : '<i class="fas fa-circle" style="color:rgba(255,255,255,0.2);"></i>') +
+            '<span>' + esc(it.label) + '</span></div>'
+        ).join('');
+
+        panel.innerHTML =
+            '<div class="s360-agent-header">' +
+            '<div class="s360-agent-title"><i class="fas ' + esc(reg.icon) + '"></i> ' + esc(reg.label) + ' Agent</div>' +
+            '<div class="s360-agent-badge">' + comp.pct + '% ready</div>' +
+            '</div>' +
+            '<div class="s360-agent-progress"><div class="s360-agent-progress-bar" style="width:' + comp.pct + '%"></div></div>' +
+            '<div class="s360-agent-files">' +
+            '<span class="s360-agent-file"><i class="fas fa-file-code"></i> ' + esc(reg.files.js || '') + '</span>' +
+            '<span class="s360-agent-file"><i class="fas fa-file-css"></i> ' + esc(reg.files.css || '') + '</span>' +
+            '<span class="s360-agent-file"><i class="fas fa-file-code"></i> ' + esc(reg.files.html || '') + '</span>' +
+            '</div>' +
+            '<div class="s360-agent-section-title">Configuration Status</div>' +
+            '<div class="s360-agent-items">' + itemsHtml + '</div>' +
+            '<div class="s360-agent-section-title">Activity Timeline</div>' +
+            '<div class="s360-agent-log">' + (logHtml || '<div class="s360-agent-log-empty">No activity yet</div>') + '</div>' +
+            '<div class="s360-agent-actions">' +
+            '<button class="builder-btn" onclick="Site360.agentRollback(\'' + esc(featureId) + '\')"><i class="fas fa-rotate-left"></i> Rollback</button>' +
+            '<button class="builder-btn" onclick="Site360.agentTakeSnapshot(\'' + esc(featureId) + '\')"><i class="fas fa-camera"></i> Snapshot</button>' +
+            '<button class="builder-btn primary" onclick="Site360.agentSyncFeature(\'' + esc(featureId) + '\')"><i class="fas fa-sync"></i> Sync Now</button>' +
+            '</div>';
+    }
+
+    function agentSyncFeature(featureId) {
+        const reg = FEATURE_REGISTRY[featureId];
+        if (!reg) return;
+        agentLog(featureId, 'sync', 'Starting full sync...', 'pending');
+        autoConfigureFeature(featureId);
+        setTimeout(() => {
+            agentLog(featureId, 'sync', 'Builder config updated', 'done');
+            buildCanvasData();
+            renderCanvas();
+            if (typeof syncToLiveWebsite === 'function') {
+                syncToLiveWebsite();
+                agentLog(featureId, 'publish', 'Published to live website', 'done');
+            }
+            agentLog(featureId, 'complete', 'All components synchronized', 'done');
+            showToast('Synced: ' + reg.label, 'success');
+        }, 300);
+    }
+
+    /* ============================================================
+       AUTO-CONFIGURE - Create settings for any feature automatically
+       ============================================================ */
+    function autoConfigureFeature(featureId) {
+        const reg = FEATURE_REGISTRY[featureId];
+        if (!reg || !reg.defaults) return;
+        let data;
+        if (reg.source === 'siteSettings') data = DataStore.getSiteSettings();
+        else if (reg.source === 'splash') data = DataStore.getSplash();
+        else if (reg.source === 'playerPrefs') data = DataStore.getPlayerPrefs();
+        else data = DataStore.getSiteSettings();
+
+        let changed = 0;
+        Object.keys(reg.defaults).forEach(key => {
+            if (data[key] === undefined || data[key] === null) {
+                data[key] = reg.defaults[key];
+                changed++;
+            }
+        });
+
+        if (reg.source === 'siteSettings') DataStore.setSiteSettings(data);
+        else if (reg.source === 'splash') DataStore.setSplash(data);
+        else if (reg.source === 'playerPrefs') DataStore.setPlayerPrefs(data);
+
+        if (changed > 0) {
+            agentLog(featureId, 'auto-config', 'Created ' + changed + ' new settings with defaults', 'done');
+        }
+        return changed;
+    }
+
+    function autoConfigureAllFeatures() {
+        let total = 0;
+        Object.keys(FEATURE_REGISTRY).forEach(fid => {
+            const n = autoConfigureFeature(fid);
+            if (n) total += n;
+        });
+        if (total > 0) {
+            agentLog('system', 'auto-config', 'Auto-configured ' + total + ' settings across all features', 'done');
+        }
+        return total;
+    }
+
+    /* ============================================================
+       FEATURE REGISTRY - Build controls from registry for canvas
+       ============================================================ */
+    function buildRegistryElements() {
+        Object.keys(FEATURE_REGISTRY).forEach(featureId => {
+            const reg = FEATURE_REGISTRY[featureId];
+            const source = reg.source || 'siteSettings';
+            let data;
+            if (source === 'siteSettings') data = safeGet(() => DataStore.getSiteSettings(), {});
+            else if (source === 'splash') data = safeGet(() => DataStore.getSplash(), {});
+            else if (source === 'playerPrefs') data = safeGet(() => DataStore.getPlayerPrefs(), {});
+            else data = safeGet(() => DataStore.getSiteSettings(), {});
+
+            const controls = reg.controls.map(c => ({
+                ...c,
+                value: data[c.key] != null ? data[c.key] : (reg.defaults[c.key] != null ? reg.defaults[c.key] : '')
+            }));
+
+            canvasElements.push({
+                id: 'el_feature_' + featureId,
+                section: reg.section,
+                label: reg.label,
+                icon: reg.icon,
+                category: reg.category,
+                source: source,
+                featureId: featureId,
+                value: data,
+                controls: controls
+            });
+        });
+    }
+
+    /* ============================================================
        CANVAS DATA - Maps EVERY website element to editable props
        ============================================================ */
     function buildCanvasData() {
@@ -776,6 +1259,25 @@ const Site360 = (function () {
                 });
             });
         });
+
+        // Add registry-powered feature elements (auto-configured)
+        buildRegistryElements();
+
+        // Deduplicate: remove hardcoded elements that are now registry-managed
+        const registryManagedIds = new Set(Object.keys(FEATURE_REGISTRY).map(fid => 'el_feature_' + fid));
+        const registryKeys = new Set();
+        Object.values(FEATURE_REGISTRY).forEach(reg => {
+            reg.controls.forEach(c => registryKeys.add(c.key));
+        });
+        canvasElements = canvasElements.filter(el => {
+            if (el.featureId) return true;
+            // Remove elements whose controls overlap significantly with registry features
+            if (el.source === 'siteSettings' && el.controls) {
+                const overlap = el.controls.filter(c => registryKeys.has(c.key)).length;
+                if (overlap >= 2) return false;
+            }
+            return true;
+        });
     }
 
     /* ============================================================
@@ -815,8 +1317,17 @@ const Site360 = (function () {
             items.forEach(el => {
                 const isSelected = selectedId === el.id;
                 const thumbHtml = getThumbnailHtml(el);
+                const hasAgent = el.featureId && FEATURE_REGISTRY[el.featureId];
+                const comp = hasAgent ? agentGetCompletion(el.featureId) : null;
                 html += '<div class="s360-canvas-card' + (isSelected ? ' selected' : '') + '" data-el-id="' + esc(el.id) + '">';
                 html += '<div class="s360-canvas-card-thumb">' + thumbHtml + '</div>';
+                if (hasAgent) {
+                    const pct = comp ? comp.pct : 0;
+                    html += '<button class="s360-agent-btn" data-feature="' + esc(el.featureId) + '" title="Agent Bot - ' + esc(el.label) + '">';
+                    html += '<i class="fas fa-robot"></i>';
+                    if (pct < 100) html += '<span class="s360-agent-btn-pct">' + pct + '%</span>';
+                    html += '</button>';
+                }
                 html += '<div class="s360-canvas-card-info">';
                 html += '<div class="s360-canvas-card-label" title="' + esc(el.label) + '">' + esc(el.label) + '</div>';
                 html += '<div class="s360-canvas-card-cat"><i class="fas ' + esc(el.icon) + '"></i> ' + esc(el.category) + '</div>';
@@ -832,11 +1343,29 @@ const Site360 = (function () {
 
         canvas.querySelectorAll('.s360-canvas-card').forEach(card => {
             card.addEventListener('click', (e) => {
+                if (e.target.closest('.s360-agent-btn')) return;
                 e.preventDefault();
                 e.stopPropagation();
                 selectElement(card.dataset.elId);
             });
         });
+
+        canvas.querySelectorAll('.s360-agent-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const fid = btn.dataset.feature;
+                if (fid) openAgentForFeature(fid);
+            });
+        });
+    }
+
+    function openAgentForFeature(featureId) {
+        const reg = FEATURE_REGISTRY[featureId];
+        if (!reg) return;
+        const elId = 'el_feature_' + featureId;
+        selectElement(elId);
+        agentLog(featureId, 'open', 'Agent panel opened', 'info');
     }
 
     function getThumbnailHtml(el) {
@@ -890,6 +1419,18 @@ const Site360 = (function () {
         }
 
         panel.innerHTML = html;
+
+        // Render Agent Bot panel for feature elements
+        const agentPanel = $('s360AgentPanel');
+        if (agentPanel) {
+            if (el.featureId && FEATURE_REGISTRY[el.featureId]) {
+                agentPanel.style.display = '';
+                _renderAgentPanel(el.featureId);
+            } else {
+                agentPanel.style.display = 'none';
+                agentPanel.innerHTML = '';
+            }
+        }
 
         panel.querySelectorAll('.s360-ctrl').forEach(input => {
             const eventType = (input.type === 'range' || input.type === 'color') ? 'input' : 'change';
@@ -1199,9 +1740,12 @@ const Site360 = (function () {
        INIT
        ============================================================ */
     function init() {
+        autoConfigureAllFeatures();
         buildCanvasData();
         renderCanvas();
         renderSettingsPanel();
+        Object.keys(FEATURE_REGISTRY).forEach(fid => agentTakeSnapshot(fid));
+        agentLog('system', 'init', 'Builder initialized with ' + Object.keys(FEATURE_REGISTRY).length + ' registered features', 'done');
         document.addEventListener('keydown', (e) => {
             if (!$('site360Page') || $('site360Page').style.display === 'none') return;
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
@@ -1209,7 +1753,16 @@ const Site360 = (function () {
             if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); }
             if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveChanges(); }
             if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelected(); }
-            if (e.key === 'Escape') { selectedId = null; renderCanvas(); renderSettingsPanel(); }
+            if (e.key === 'Escape') {
+                const agentPanel = $('s360AgentPanel');
+                if (agentPanel && agentPanel.style.display !== 'none') {
+                    agentPanel.style.display = 'none';
+                    agentPanel.innerHTML = '';
+                }
+                selectedId = null;
+                renderCanvas();
+                renderSettingsPanel();
+            }
         });
     }
 
@@ -1226,6 +1779,15 @@ const Site360 = (function () {
         undo, redo,
         searchCanvas,
         showToast,
-        pickImage: openImagePicker
+        pickImage: openImagePicker,
+        agentLog,
+        agentTakeSnapshot,
+        agentRollback,
+        agentSyncFeature,
+        agentGetCompletion,
+        autoConfigureFeature,
+        autoConfigureAllFeatures,
+        openAgentForFeature,
+        FEATURE_REGISTRY
     };
 })();
