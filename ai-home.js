@@ -470,6 +470,7 @@ window.AIHome = (() => {
     function bindPlaybackHooks() {
         document.addEventListener('play', (e) => {
             if (e.target === window.audioPlayer) setTimeout(syncFmPlaying, 80);
+            if (e.target === window.audioPlayer) setTimeout(syncDecadeListPlaying, 80);
         }, true);
         document.addEventListener('pause', (e) => {
             if (e.target === window.audioPlayer) setTimeout(syncFmPlaying, 80);
@@ -1265,6 +1266,261 @@ window.AIHome = (() => {
         });
     }
 
+    /* ---------------- Decades by Era ---------------- */
+    const DECADES = [
+        { id: '80s', label: "80's", range: [1980, 1989], icon: 'fa-compact-disc', grad: 'linear-gradient(135deg,#f43f5e,#fb923c)', glow: 'rgba(244,63,94,0.3)' },
+        { id: '90s', label: "90's", range: [1990, 1999], icon: 'fa-record-vinyl', grad: 'linear-gradient(135deg,#a855f7,#6366f1)', glow: 'rgba(168,85,247,0.3)' },
+        { id: '2k', label: '2K', range: [2000, 2009], icon: 'fa-compact-disc', grad: 'linear-gradient(135deg,#3b82f6,#06b6d4)', glow: 'rgba(59,130,246,0.3)' },
+        { id: 'new', label: 'New', range: [2010, 2099], icon: 'fa-headphones', grad: 'linear-gradient(135deg,#34d399,#10b981)', glow: 'rgba(52,211,153,0.3)' }
+    ];
+
+    let _decadeSongCache = {};
+    let _decadeBotActive = false;
+    let _decadeBotSongs = [];
+    let _decadeBotIndex = 0;
+    let _decadeBotDecadeId = '';
+    let _decadeListEl = null;
+    let _decadeListEscHandler = null;
+
+    function getDecadeSongs(decade) {
+        const key = decade.id;
+        if (_decadeSongCache[key]) return _decadeSongCache[key];
+        const all = publishedSongs();
+        const [minY, maxY] = decade.range;
+        const songs = all.filter(s => {
+            const y = parseInt(s.year, 10);
+            return !isNaN(y) && y >= minY && y <= maxY;
+        });
+        _decadeSongCache[key] = songs;
+        return songs;
+    }
+
+    function renderDecadeCards() {
+        const wrap = $('aiDecadeCards');
+        if (!wrap) return;
+        wrap.innerHTML = DECADES.map((d, i) => {
+            const songs = getDecadeSongs(d);
+            const count = songs.length;
+            return '<div class="ai-decade-card" data-decade="' + d.id + '" style="--ai-decade-grad:' + d.grad + ';--ai-decade-glow:' + d.glow + ';">' +
+                '<div class="ai-decade-icon"><i class="fas ' + d.icon + '"></i></div>' +
+                '<div class="ai-decade-label">' + d.label + '</div>' +
+                '<div class="ai-decade-count"><strong>' + count + '</strong> songs</div>' +
+                '</div>';
+        }).join('');
+        wrap.querySelectorAll('.ai-decade-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const decadeId = card.dataset.decade;
+                const decade = DECADES.find(d => d.id === decadeId);
+                if (decade) openDecadeList(decade);
+            });
+        });
+    }
+
+    function openDecadeList(decade) {
+        closeDecadeList();
+        const songs = getDecadeSongs(decade);
+        if (!songs.length) {
+            showToastSafe('No songs found for ' + decade.label, 'info');
+            return;
+        }
+        const wrap = document.createElement('div');
+        wrap.className = 'ai-decade-list';
+        wrap.id = 'aiDecadeList';
+        const autoActive = _decadeBotActive && _decadeBotDecadeId === decade.id;
+        wrap.innerHTML =
+            '<div class="ai-decade-list-overlay"></div>' +
+            '<div class="ai-decade-list-panel">' +
+            '<div class="ai-decade-list-header">' +
+            '<button class="ai-decade-list-back" type="button"><i class="fa-solid fa-xmark"></i></button>' +
+            '<h3><i class="fas ' + decade.icon + '"></i> ' + decade.label + ' Hits</h3>' +
+            '<span class="ai-decade-list-count">' + songs.length + ' songs</span>' +
+            '</div>' +
+            '<div class="ai-decade-list-actions">' +
+            '<button class="ai-decade-play-all-btn"><i class="fas fa-play" style="margin-left:2px;"></i> Play All</button>' +
+            '<button class="ai-decade-auto-btn' + (autoActive ? ' active' : '') + '" data-auto="' + decade.id + '"><i class="fas fa-robot"></i> ' + (autoActive ? 'Auto-Playing' : 'Auto-Play') + '</button>' +
+            '</div>' +
+            '<div class="ai-decade-list-body">' +
+            songs.map((s, i) => {
+                const title = (s.title || s.name || 'Untitled').slice(0, 38);
+                const artist = (s.artist || s.singer || '').slice(0, 30);
+                const dur = durationText(s.duration);
+                const songArt = artOf(s);
+                const playing = typeof window.isSameActivePlayback === 'function' && window.isSameActivePlayback(s);
+                return '<div class="ai-decade-song' + (playing ? ' playing-song' : '') + '" data-idx="' + i + '">' +
+                    '<div class="ai-decade-song-num">' + (i + 1) + '</div>' +
+                    '<div class="ai-decade-song-art">' +
+                    (songArt ? '<img src="' + escapeHtml(songArt) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-music"></i>') +
+                    '</div>' +
+                    '<div class="ai-decade-song-info">' +
+                    '<div class="ai-decade-song-title">' + escapeHtml(title) + '</div>' +
+                    '<div class="ai-decade-song-artist">' + escapeHtml(artist) + '</div>' +
+                    '</div>' +
+                    (dur ? '<div class="ai-decade-song-dur">' + dur + '</div>' : '') +
+                    '</div>';
+            }).join('') +
+            '</div></div>';
+        document.body.appendChild(wrap);
+        _decadeListEl = wrap;
+        document.body.classList.add('ai-playlist-detail-open');
+        requestAnimationFrame(() => wrap.classList.add('open'));
+
+        /* Play All */
+        wrap.querySelector('.ai-decade-play-all-btn').addEventListener('click', () => {
+            if (songs.length && typeof window.playSong === 'function') window.playSong(songs[0], songs);
+        });
+
+        /* Auto-Play Bot */
+        wrap.querySelector('.ai-decade-auto-btn').addEventListener('click', () => {
+            if (_decadeBotActive && _decadeBotDecadeId === decade.id) {
+                stopDecadeBot();
+            } else {
+                startDecadeBot(decade, songs);
+            }
+            const btn = wrap.querySelector('.ai-decade-auto-btn');
+            if (btn) {
+                const isActive = _decadeBotActive && _decadeBotDecadeId === decade.id;
+                btn.classList.toggle('active', isActive);
+                btn.innerHTML = '<i class="fas fa-robot"></i> ' + (isActive ? 'Auto-Playing' : 'Auto-Play');
+            }
+        });
+
+        /* Individual song clicks */
+        wrap.querySelectorAll('.ai-decade-song').forEach(row => {
+            row.addEventListener('click', () => {
+                const idx = parseInt(row.dataset.idx, 10);
+                const song = songs[idx];
+                if (song && typeof window.playSong === 'function') window.playSong(song, songs);
+                // Update playing state in list
+                wrap.querySelectorAll('.ai-decade-song').forEach(r => r.classList.remove('playing-song'));
+                row.classList.add('playing-song');
+            });
+        });
+
+        /* Close handlers */
+        const closeList = () => closeDecadeList();
+        wrap.querySelector('.ai-decade-list-back').addEventListener('click', closeList);
+        wrap.querySelector('.ai-decade-list-overlay').addEventListener('click', closeList);
+        _decadeListEscHandler = (e) => {
+            if (e.key === 'Escape') closeList();
+        };
+        document.addEventListener('keydown', _decadeListEscHandler);
+    }
+
+    function closeDecadeList() {
+        if (_decadeListEscHandler) {
+            document.removeEventListener('keydown', _decadeListEscHandler);
+            _decadeListEscHandler = null;
+        }
+        if (_decadeListEl) {
+            _decadeListEl.classList.remove('open');
+            const el = _decadeListEl;
+            setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 250);
+            _decadeListEl = null;
+        }
+        document.body.classList.remove('ai-playlist-detail-open');
+    }
+
+    /* ---- Auto-Play Bot ---- */
+    function startDecadeBot(decade, songs) {
+        stopDecadeBot();
+        if (!songs.length) return;
+        _decadeBotActive = true;
+        _decadeBotSongs = songs.slice();
+        _decadeBotIndex = 0;
+        _decadeBotDecadeId = decade.id;
+        // Show bot status in section header
+        const statusEl = $('aiDecadeBotStatus');
+        if (statusEl) statusEl.style.display = '';
+        const stopBtn = $('aiDecadeBotStop');
+        if (stopBtn) stopBtn.addEventListener('click', stopDecadeBot);
+        // Shuffle and play
+        _decadeBotSongs.sort(() => Math.random() - 0.5);
+        _decadeBotPlayCurrent();
+        // Hook ended event for auto-advance
+        if (window.audioPlayer && !window.audioPlayer._decadeBotHooked) {
+            window.audioPlayer._decadeBotHooked = true;
+            window.audioPlayer.addEventListener('ended', _decadeBotOnEnded);
+        }
+        showToastSafe('AI Bot: Playing ' + decade.label + ' hits continuously', 'success');
+    }
+
+    function stopDecadeBot() {
+        _decadeBotActive = false;
+        _decadeBotSongs = [];
+        _decadeBotIndex = 0;
+        _decadeBotDecadeId = '';
+        const statusEl = $('aiDecadeBotStatus');
+        if (statusEl) statusEl.style.display = 'none';
+        if (window.audioPlayer && window.audioPlayer._decadeBotHooked) {
+            window.audioPlayer.removeEventListener('ended', _decadeBotOnEnded);
+            window.audioPlayer._decadeBotHooked = false;
+        }
+    }
+
+    function _decadeBotPlayCurrent() {
+        if (!_decadeBotActive || !_decadeBotSongs.length) return;
+        if (_decadeBotIndex >= _decadeBotSongs.length) {
+            // Loop: reshuffle and restart
+            _decadeBotSongs.sort(() => Math.random() - 0.5);
+            _decadeBotIndex = 0;
+        }
+        const song = _decadeBotSongs[_decadeBotIndex];
+        if (!song) return;
+        if (typeof window.playSong === 'function') window.playSong(song, _decadeBotSongs);
+        _updateDecadeListPlaying(song);
+        _updateMediaSessionForBot(song);
+    }
+
+    function _decadeBotOnEnded() {
+        if (!_decadeBotActive) return;
+        _decadeBotIndex++;
+        // Brief delay for smooth transition
+        setTimeout(() => {
+            if (_decadeBotActive) _decadeBotPlayCurrent();
+        }, 300);
+    }
+
+    function _updateDecadeListPlaying(song) {
+        if (!_decadeListEl) return;
+        const rows = _decadeListEl.querySelectorAll('.ai-decade-song');
+        rows.forEach(r => {
+            const idx = parseInt(r.dataset.idx, 10);
+            const s = _decadeBotSongs[idx];
+            r.classList.toggle('playing-song', s && s === song);
+        });
+    }
+
+    function _updateMediaSessionForBot(song) {
+        if (!('mediaSession' in navigator)) return;
+        try {
+            const title = song.title || song.name || 'Unknown';
+            const artist = song.artist || song.singer || 'Tamil AI Stream';
+            const artwork = song.thumbnail || song.albumCover || song.cover || '';
+            const meta = { title, artist, album: 'Tamil AI Stream - Auto-Play' };
+            if (artwork) meta.artwork = [{ src: artwork, sizes: '512x512', type: 'image/png' }];
+            navigator.mediaSession.metadata = new MediaMetadata(meta);
+            navigator.mediaSession.playbackState = 'playing';
+            navigator.mediaSession.setActionHandler('play', () => { if (typeof window.resumePlayback === 'function') window.resumePlayback(); });
+            navigator.mediaSession.setActionHandler('pause', () => { if (typeof window.pausePlayback === 'function') window.pausePlayback(); });
+            navigator.mediaSession.setActionHandler('stop', () => { stopDecadeBot(); if (typeof window.pausePlayback === 'function') window.pausePlayback(); });
+            navigator.mediaSession.setActionHandler('nexttrack', () => {
+                if (_decadeBotActive) { _decadeBotIndex++; _decadeBotPlayCurrent(); }
+                else if (typeof window.playNextTrack === 'function') window.playNextTrack();
+            });
+            navigator.mediaSession.setActionHandler('previoustrack', () => {
+                if (_decadeBotActive) { _decadeBotIndex = Math.max(0, _decadeBotIndex - 1); _decadeBotPlayCurrent(); }
+                else if (typeof window.playPreviousTrack === 'function') window.playPreviousTrack();
+            });
+        } catch (e) { /* ignore */ }
+    }
+
+    /* ---- Sync decade list playing state with audio events ---- */
+    function syncDecadeListPlaying() {
+        if (!_decadeListEl || !_decadeBotActive) return;
+        const track = window.currentPlaybackTrack;
+        if (track) _updateDecadeListPlaying(track);
+    }
+
     /* ---------------- Refresh + init ---------------- */
     function refreshHome() {
         stopHeroTimer();
@@ -1277,6 +1533,7 @@ window.AIHome = (() => {
         renderLiveNews();
         renderRecentlyPlayed();
         renderAIRecommendations();
+        renderDecadeCards();
         bindHeroPlay();
         bindDiscoverAI();
         syncFmPlaying();
@@ -1335,5 +1592,5 @@ window.AIHome = (() => {
         init();
     }
 
-    return { init, refreshHome, renderLiveFm, syncFmPlaying };
+    return { init, refreshHome, renderLiveFm, syncFmPlaying, renderDecadeCards, stopDecadeBot };
 })();
