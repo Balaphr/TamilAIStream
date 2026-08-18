@@ -181,7 +181,7 @@ async function runNewsAutoCleanup(env) {
     const autoDelete = ns.autoDelete !== false;
     if (!autoDelete) return;
     const retentionHours = parseInt(ns.retentionHours, 10);
-    const cutoff = Date.now() - (retentionHours > 0 ? retentionHours : 24) * 3600 * 1000;
+    const cutoff = Date.now() - (retentionHours > 0 ? retentionHours : 0.5) * 3600 * 1000;
 
     let moved = 0;
     const news = data.news.map((n) => {
@@ -751,7 +751,7 @@ async function readCuratedNews(env, settings) {
     const data = manifest.data || {};
     if (!Array.isArray(data.news)) return [];
 
-    const cutoff = Date.now() - (settings && settings.autoDelete !== false ? (settings.retentionHours || 24) * 3600 * 1000 : 0);
+    const cutoff = Date.now() - (settings && settings.autoDelete !== false ? (settings.retentionHours || 0.5) * 3600 * 1000 : 0);
     return data.news.filter((n) => {
       if (n.status === 'trashed' || !n.published) return false;
       if (settings && settings.autoDelete !== false) {

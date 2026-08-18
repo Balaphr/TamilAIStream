@@ -419,7 +419,7 @@ window.AIHome = (() => {
 
     // News display config lives in Builder Site Settings (tamilAIStream_siteSettings.newsSettings).
     function newsDisplayConfig() {
-        const cfg = { maxItems: 6, highlightHours: 6, showPlayerOnDetail: true };
+        const cfg = { maxItems: 4, highlightHours: 6, showPlayerOnDetail: true, seeAllMax: 25 };
         try {
             if (window.DataStore) {
                 const s = DataStore.getSiteSettings() || {};
@@ -638,7 +638,8 @@ window.AIHome = (() => {
         wrap.id = 'aiNewsSeeAll';
         const cfg = newsDisplayConfig();
         const now = Date.now();
-        const allHTML = newsItems.map((n) => {
+        const seeAllItems = newsItems.slice(0, cfg.seeAllMax || 25);
+        const allHTML = seeAllItems.map((n) => {
             const pub = n.publishedAt ? new Date(n.publishedAt).getTime() : 0;
             const isFresh = !isNaN(pub) && (now - pub) < cfg.highlightHours * 3600000;
             const isHighlighted = !!n.highlighted || isFresh;
@@ -662,7 +663,7 @@ window.AIHome = (() => {
             '<div class="ai-news-seeall-header">' +
             '<button class="ai-news-seeall-close" type="button"><i class="fa-solid fa-xmark"></i></button>' +
             '<h3><span class="ai-live-dot"></span> All Tamil News</h3>' +
-            '<span class="ai-news-seeall-count">' + newsItems.length + ' articles</span>' +
+            '<span class="ai-news-seeall-count">' + seeAllItems.length + ' articles</span>' +
             '</div>' +
             '<div class="ai-news-seeall-list">' + allHTML + '</div>' +
             '</div>';
@@ -807,6 +808,10 @@ window.AIHome = (() => {
         row.innerHTML = items.slice(0, 12).map((s, i) => songCardHTML(s, i)).join('');
         row.querySelectorAll('.ai-song-card').forEach(card => {
             card.addEventListener('click', () => {
+                // Visual feedback: brief tapped animation
+                card.classList.add('tapped');
+                setTimeout(() => card.classList.remove('tapped'), 300);
+
                 const i = parseInt(card.dataset.idx, 10);
                 const song = items[i];
                 if (!song) return;

@@ -42,6 +42,44 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
+// Playback notification — slides in from left with AI recommendation
+function showPlaybackNotification(track, isStation) {
+    const existing = document.querySelector('.playback-notification');
+    if (existing) existing.remove();
+    const name = track.title || track.name || 'Unknown';
+    const artist = track.artist || (isStation ? 'Live FM Station' : 'Unknown Artist');
+    const thumb = track.thumbnail || track.albumCover || track.cover || '';
+    const isFM = isStation || track.streamUrl;
+    // AI recommendation based on context
+    const recs = isFM
+        ? ['Enjoying the vibes? Try Tamil Hits next!', 'Love this station? Check out similar FM channels.', 'FM playing — explore curated playlists next.', 'Great taste! Try our AI-powered radio for more.']
+        : ['Up next: more songs you love.', 'Enjoying this? Try a curated playlist.', 'Want similar music? Ask the AI assistant.', 'Add to favorites to build your collection.'];
+    const rec = recs[Math.floor(Math.random() * recs.length)];
+    const el = document.createElement('div');
+    el.className = 'playback-notification';
+    el.innerHTML =
+        '<div class="pn-art">' + (thumb ? '<img src="' + thumb + '" alt="" onerror="this.remove()">' : '<i class="fa-solid fa-' + (isFM ? 'tower-broadcast' : 'music') + '"></i>') + '</div>' +
+        '<div class="pn-info">' +
+        '<div class="pn-label">' + (isFM ? '<span class="pn-live"><span class="gp-live-dot"></span>LIVE</span>' : 'Now Playing') + '</div>' +
+        '<div class="pn-title">' + name + '</div>' +
+        '<div class="pn-artist">' + artist + '</div>' +
+        '<div class="pn-rec"><i class="fa-solid fa-wand-magic-sparkles"></i> ' + rec + '</div>' +
+        '</div>' +
+        '<button class="pn-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>';
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('visible'));
+    el.querySelector('.pn-close').addEventListener('click', () => {
+        el.classList.remove('visible');
+        setTimeout(() => { if (el.parentNode) el.remove(); }, 350);
+    });
+    setTimeout(() => {
+        if (el.parentNode) {
+            el.classList.remove('visible');
+            setTimeout(() => { if (el.parentNode) el.remove(); }, 350);
+        }
+    }, 5000);
+}
+
 // Inject toast styles (if not already present)
 if (!document.querySelector('#toast-style')) {
     const toastStyle = document.createElement('style');
@@ -879,6 +917,7 @@ function playStation(stationName) {
                 }
                 hideLoadingSpinner();
                 showToast(`Now playing: ${stationInfo.name}`, 'success');
+                showPlaybackNotification(currentPlaybackTrack, true);
             }).catch((err) => {
                 console.error('[TamilAI FM] Play promise rejected:', err?.name, err?.message, '| URL:', streamUrl);
                 currentUrlIndex++;
@@ -954,6 +993,7 @@ async function playSong(song, playlist = []) {
             // Smart Queue: auto-select next song based on mood/artist/movie
                         _updateSmartQueue(song, currentPlaylist);
             showToast(`Now playing: ${song.title}`, 'success');
+            showPlaybackNotification(currentPlaybackTrack, false);
             // Playback plays in the bottom mini bar only. The full-screen
             // player (gp-expanded) is opened exclusively by the user via the
             // mini-player expand control (gpMiniExpand / gpMiniInfo) — never

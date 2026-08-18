@@ -17,4 +17,4 @@ binding = "MEDIA_BUCKET"
 bucket_name = "tamil-ai-stream-media"
 
 [triggers]
-crons = ["0 */2 * * *"]
+crons = ["*/10 * * * *"]

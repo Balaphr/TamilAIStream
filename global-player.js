@@ -817,8 +817,19 @@ const GlobalPlayer = (() => {
         if (movieEl) movieEl.style.display = (track.movie || track.album || track.movieName) ? '' : 'none';
         setArtwork('gpExpArtImg', artwork);
         setText('gpExpSource', track.movie || 'Tamil AI Stream');
+        // Blurred artwork background for polished visual effect
         const bg = document.getElementById('gpExpBg');
-        if (bg && artwork) bg.style.background = 'radial-gradient(circle at 50% 30%, ' + THEMES[themeIdx].glow + ' 0%, transparent 60%)';
+        if (bg) {
+            if (artwork) {
+                bg.style.background = 'url(' + artwork + ') center/cover no-repeat';
+                bg.style.filter = 'blur(60px) saturate(1.5) brightness(0.35)';
+                bg.style.transform = 'scale(1.3)';
+            } else {
+                bg.style.background = 'radial-gradient(circle at 50% 30%, ' + THEMES[themeIdx].glow + ' 0%, transparent 60%)';
+                bg.style.filter = 'blur(60px)';
+                bg.style.transform = '';
+            }
+        }
         // Dynamic gradient from artwork
         try {
             const img = new Image();
