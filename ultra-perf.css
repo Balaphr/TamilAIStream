@@ -102,8 +102,7 @@ body {
 /* ============================================
    4. LAYOUT CONTAINMENT — Isolate paint/layout
    ============================================ */
-.ytm-page,
-.ytm-page-home {
+.ytm-page {
     contain: layout style;
 }
 
@@ -494,12 +493,10 @@ a,
 @media (max-width: 1024px) {
     .ytm-main-content {
         -webkit-overflow-scrolling: touch;
-        overscroll-behavior-y: contain;
     }
 
     .ytm-page-home {
         -webkit-overflow-scrolling: touch;
-        overscroll-behavior-y: contain;
     }
 
     .stations-track,
@@ -1077,8 +1074,6 @@ body.gp-visible .tamilai-bottom-nav {
    31. SCROLL PERFORMANCE
    ============================================ */
 /* GPU-accelerate scrollable containers */
-.ytm-main-content,
-.ai-home,
 .ai-card-row,
 .ai-fm-grid,
 .ai-recent-row,
@@ -1087,15 +1082,10 @@ body.gp-visible .tamilai-bottom-nav {
 .ai-sidebar-inner {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
-    contain: layout style;
 }
 
 /* Content visibility for off-screen sections — browser skips rendering */
 @media (max-width: 768px) {
-    .ai-panel {
-        content-visibility: auto;
-        contain-intrinsic-size: 0 400px;
-    }
     .ai-fm-card,
     .ai-song-card,
     .ai-rec-song,

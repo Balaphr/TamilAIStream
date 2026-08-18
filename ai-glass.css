@@ -57,7 +57,7 @@
 }
 
 /* Let the ambient glow act as the page background layer */
-.bg-container { background: transparent; }
+.bg-container { background: transparent; pointer-events: none; }
 .ytm-app {
     background: transparent !important;
     position: relative;
@@ -2107,7 +2107,7 @@ body.gp-active .tamilai-bottom-nav { bottom: 88px; }
 }
 
 @media (max-width: 767px) {
-    .ai-home { padding: 12px 12px 20px; gap: 14px; overflow: hidden; }
+    .ai-home { padding: 12px 12px 20px; gap: 14px; }
     .ai-home-row { gap: 14px; }
     .ai-fm-grid { grid-template-columns: 1fr; }
     .ai-rec-inner { flex-direction: column; gap: 14px; }

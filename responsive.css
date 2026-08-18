@@ -438,7 +438,6 @@ body {
 
     /* ======== Mobile perf: native momentum & light compositing ======== */
     html { scroll-behavior: auto; }            /* a smooth-scrolling ROOT causes the stuck/scroll-bounce & extra-swipe on Android */
-    .ytm-main-content { contain: layout; }       /* no style-containment so scroll anchoring keeps working */
     .categories-grid,
     .stations-grid,
     .ytm-explore-grid,
