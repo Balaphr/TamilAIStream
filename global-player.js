@@ -731,18 +731,24 @@ const GlobalPlayer = (() => {
         const track = state.track || getCurrentTrackFromScript();
         const currentTrackId = track?.id || track?.songId;
         const currentStationName = state.track?.title || state.track?.name || '';
+        const currentTrackTitle = track?.title || track?.name || '';
 
         // --- Song card: only update previous + new active card ---
         let newActiveCard = null;
         if (playing && currentTrackId) {
             const now = Date.now();
             if (!_songCardsCache || now - _songCardsCacheTime > 3000) {
-                _songCardsCache = document.querySelectorAll('.ra-card, .song-card, .dash-song-card, .ai-glass-song-card, .ytm-song-card');
+                _songCardsCache = document.querySelectorAll('.ra-card, .song-card, .dash-song-card, .ai-glass-song-card, .ytm-song-card, .ai-song-card, .ai-rec-song');
                 _songCardsCacheTime = now;
             }
             _songCardsCache.forEach(card => {
                 const songId = card.dataset?.songId || card.dataset?.id;
-                if (songId && songId === currentTrackId) newActiveCard = card;
+                if (songId && songId === currentTrackId) { newActiveCard = card; return; }
+                // Fallback: match by title for AI home cards (they use data-idx, not songId)
+                if (!newActiveCard && currentTrackTitle) {
+                    const cardTitle = card.querySelector('.ai-song-title, .ai-rec-song-title')?.textContent?.trim();
+                    if (cardTitle && cardTitle === currentTrackTitle) newActiveCard = card;
+                }
             });
         }
 
@@ -765,11 +771,11 @@ const GlobalPlayer = (() => {
         if (playing && currentStationName) {
             const now = Date.now();
             if (!_stationCardsCache || now - _stationCardsCacheTime > 3000) {
-                _stationCardsCache = document.querySelectorAll('.station-card, .station-grid-card, .slide-card, .premium-radio-card');
+                _stationCardsCache = document.querySelectorAll('.station-card, .station-grid-card, .slide-card, .premium-radio-card, .ai-fm-card');
                 _stationCardsCacheTime = now;
             }
             _stationCardsCache.forEach(card => {
-                const cardName = card.querySelector('h3, h4')?.textContent || '';
+                const cardName = card.dataset?.station || card.querySelector('h3, h4')?.textContent || '';
                 if (cardName && cardName === currentStationName) newActiveStation = card;
             });
         }

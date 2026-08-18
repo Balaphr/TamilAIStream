@@ -446,10 +446,26 @@ window.AIHome = (() => {
     // Tamil Nadu priority flag comes from the worker (priority:'tamil-nadu').
     function isTnNews(n) { return n && (n.priority === 'tamil-nadu' || n.tamilNadu === true); }
 
+    // Track the currently open detail's Escape handler so we can clean it up
+    let _newsDetailEscHandler = null;
+    let _newsDetailClosing = false;
+
     function newsDetailOpen(id) {
         const item = (newsItems || []).find(n => String(n.id) === String(id));
         if (!item) return;
         try {
+            // Guard: if a detail is already open, close it first (prevents stacking)
+            const existing = document.getElementById('aiNewsDetail');
+            if (existing) {
+                existing.remove();
+                if (_newsDetailEscHandler) {
+                    document.removeEventListener('keydown', _newsDetailEscHandler);
+                    _newsDetailEscHandler = null;
+                }
+            }
+            // Guard: if a close animation is in progress, don't open yet
+            if (_newsDetailClosing) return;
+
             const wrap = document.createElement('div');
             wrap.className = 'ai-news-detail';
             wrap.id = 'aiNewsDetail';
@@ -481,25 +497,33 @@ window.AIHome = (() => {
             document.body.appendChild(wrap);
             document.body.classList.add('ai-news-detail-open');
             requestAnimationFrame(() => wrap.classList.add('open'));
-            const close = (ev) => {
-                if (ev && ev.target.closest('.ai-news-detail-back')) {
-                    wrap.classList.remove('open');
-                    setTimeout(() => { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); document.body.classList.remove('ai-news-detail-open'); document.body.classList.remove('ai-news-player-visible'); }, 220);
-                    return;
+
+            // Unified close function — works with or without event argument
+            const removeDetail = () => {
+                if (_newsDetailClosing) return;
+                _newsDetailClosing = true;
+                wrap.classList.remove('open');
+                // Clean up Escape handler
+                if (_newsDetailEscHandler) {
+                    document.removeEventListener('keydown', _newsDetailEscHandler);
+                    _newsDetailEscHandler = null;
                 }
-                if (ev && ev.target.classList.contains('ai-news-detail-overlay')) {
-                    wrap.classList.remove('open');
-                    setTimeout(() => { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); document.body.classList.remove('ai-news-detail-open'); document.body.classList.remove('ai-news-player-visible'); }, 220);
-                }
+                setTimeout(() => {
+                    if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+                    document.body.classList.remove('ai-news-detail-open');
+                    document.body.classList.remove('ai-news-player-visible');
+                    _newsDetailClosing = false;
+                }, 220);
             };
-            wrap.querySelector('.ai-news-detail-back').addEventListener('click', close);
-            wrap.querySelector('.ai-news-detail-overlay').addEventListener('click', close);
-            document.addEventListener('keydown', function esc(e) {
-                if (e.key === 'Escape') {
-                    document.removeEventListener('keydown', esc);
-                    close();
-                }
-            });
+
+            wrap.querySelector('.ai-news-detail-back').addEventListener('click', removeDetail);
+            wrap.querySelector('.ai-news-detail-overlay').addEventListener('click', removeDetail);
+
+            // Escape key — properly removeable
+            _newsDetailEscHandler = (e) => {
+                if (e.key === 'Escape') removeDetail();
+            };
+            document.addEventListener('keydown', _newsDetailEscHandler);
         } catch (e) { /* ignore */ }
     }
 
@@ -592,6 +616,145 @@ window.AIHome = (() => {
         }
         loadNews();
         startNewsAutoRefresh();
+    }
+
+    /* ---------------- News See All Overlay ---------------- */
+    // Opens a full-page overlay showing ALL news items. Clicking an item opens
+    // the detail view inside the same overlay. Back returns to the list. This
+    // avoids the broken "See All → radio page" redirect and lets users browse
+    // multiple articles seamlessly.
+    let _newsSeeAllEl = null;
+    let _newsSeeAllEscHandler = null;
+
+    function newsSeeAllOpen() {
+        // Close any existing overlay first
+        newsSeeAllClose();
+        if (!newsItems.length) {
+            showToastSafe('No news loaded yet', 'info');
+            return;
+        }
+        const wrap = document.createElement('div');
+        wrap.className = 'ai-news-seeall';
+        wrap.id = 'aiNewsSeeAll';
+        const cfg = newsDisplayConfig();
+        const now = Date.now();
+        const allHTML = newsItems.map((n) => {
+            const pub = n.publishedAt ? new Date(n.publishedAt).getTime() : 0;
+            const isFresh = !isNaN(pub) && (now - pub) < cfg.highlightHours * 3600000;
+            const isHighlighted = !!n.highlighted || isFresh;
+            const tn = isTnNews(n);
+            return '<div class="ai-news-card' + (tn ? ' ai-news-card-tn' : '') + '" role="button" tabindex="0" data-news-id="' + escapeHtml(String(n.id)) + '">' +
+                '<div class="ai-news-img">' +
+                (n.image ? '<img src="' + escapeHtml(n.image) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-newspaper"></i>') +
+                (isHighlighted ? '<span class="ai-news-live"><span class="ai-live-dot" style="box-shadow:none;animation:none;width:5px;height:5px;"></span>NEW</span>' : '') +
+                (tn ? '<span class="ai-news-tn-badge">TAMIL NADU</span>' : '') +
+                '</div>' +
+                '<div class="ai-news-info">' +
+                '<div class="ai-news-headline">' + escapeHtml(n.title) + '</div>' +
+                '<div class="ai-news-meta">' +
+                (n.publishedAt ? '<span>' + timeAgo(n.publishedAt) + '</span>' : '') +
+                '</div></div></div>';
+        }).join('');
+
+        wrap.innerHTML =
+            '<div class="ai-news-seeall-overlay"></div>' +
+            '<div class="ai-news-seeall-panel">' +
+            '<div class="ai-news-seeall-header">' +
+            '<button class="ai-news-seeall-close" type="button"><i class="fa-solid fa-xmark"></i></button>' +
+            '<h3><span class="ai-live-dot"></span> All Tamil News</h3>' +
+            '<span class="ai-news-seeall-count">' + newsItems.length + ' articles</span>' +
+            '</div>' +
+            '<div class="ai-news-seeall-list">' + allHTML + '</div>' +
+            '</div>';
+
+        document.body.appendChild(wrap);
+        _newsSeeAllEl = wrap;
+        document.body.classList.add('ai-news-detail-open');
+        requestAnimationFrame(() => wrap.classList.add('open'));
+
+        // Bind close
+        const closeOverlay = () => newsSeeAllClose();
+        wrap.querySelector('.ai-news-seeall-close').addEventListener('click', closeOverlay);
+        wrap.querySelector('.ai-news-seeall-overlay').addEventListener('click', closeOverlay);
+
+        // Bind news card clicks — open detail inside the overlay
+        wrap.querySelectorAll('.ai-news-card').forEach(card => {
+            const openDetail = () => {
+                const id = card.dataset.newsId;
+                // Open detail inside the see-all overlay
+                newsDetailOpenInline(id, wrap);
+            };
+            card.addEventListener('click', openDetail);
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(); }
+            });
+        });
+
+        // Escape key
+        _newsSeeAllEscHandler = (e) => {
+            if (e.key === 'Escape') {
+                // If a detail is open inside, close that first
+                const detail = wrap.querySelector('.ai-news-detail');
+                if (detail) { detail.remove(); return; }
+                newsSeeAllClose();
+            }
+        };
+        document.addEventListener('keydown', _newsSeeAllEscHandler);
+    }
+
+    function newsSeeAllClose() {
+        if (_newsSeeAllEscHandler) {
+            document.removeEventListener('keydown', _newsSeeAllEscHandler);
+            _newsSeeAllEscHandler = null;
+        }
+        if (_newsSeeAllEl) {
+            _newsSeeAllEl.classList.remove('open');
+            const el = _newsSeeAllEl;
+            setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 250);
+            _newsSeeAllEl = null;
+        }
+        document.body.classList.remove('ai-news-detail-open');
+    }
+
+    // Opens a news detail inline within the see-all overlay (not as a separate
+    // body-level dialog). This avoids the stacked-dialog bugs.
+    function newsDetailOpenInline(id, container) {
+        const item = (newsItems || []).find(n => String(n.id) === String(id));
+        if (!item) return;
+        // Remove any existing inline detail first
+        const existing = container.querySelector('.ai-news-detail');
+        if (existing) existing.remove();
+
+        const detail = document.createElement('div');
+        detail.className = 'ai-news-detail ai-news-detail-inline';
+        const pubTime = item.publishedAt ? new Date(item.publishedAt) : null;
+        const timeText = pubTime ? pubTime.toLocaleString('ta-IN', {
+            day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        }) : '';
+        const tnBadge = isTnNews(item) ? '<span class="ai-news-detail-tn"><i class="fa-solid fa-location-dot"></i> Tamil Nadu</span>' : '';
+        detail.innerHTML =
+            '<div class="ai-news-detail-overlay"></div>' +
+            '<div class="ai-news-detail-panel">' +
+            '<button class="ai-news-detail-back" type="button"><i class="fa-solid fa-arrow-left"></i> Back</button>' +
+            (item.image ? '<div class="ai-news-detail-img"><img src="' + escapeHtml(item.image) + '" alt="" loading="lazy"></div>' : '') +
+            '<div class="ai-news-detail-body">' +
+            (tnBadge ? '<div class="ai-news-detail-flags">' + tnBadge + '</div>' : '') +
+            '<h3 class="ai-news-detail-title">' + escapeHtml(item.title) + '</h3>' +
+            '<div class="ai-news-detail-meta">' +
+            (timeText ? '<span class="ai-news-detail-time"><i class="fa-regular fa-clock"></i> ' + escapeHtml(timeText) + '</span>' : '') +
+            '</div>' +
+            '<div class="ai-news-detail-content">' + escapeHtml(item.content || '') + '</div>' +
+            '</div></div>';
+
+        container.appendChild(detail);
+        requestAnimationFrame(() => detail.classList.add('open'));
+
+        const removeDetail = () => {
+            detail.classList.remove('open');
+            setTimeout(() => { if (detail.parentNode) detail.parentNode.removeChild(detail); }, 220);
+        };
+        detail.querySelector('.ai-news-detail-back').addEventListener('click', removeDetail);
+        detail.querySelector('.ai-news-detail-overlay').addEventListener('click', removeDetail);
     }
 
     function emptyHtml(icon, title, text) { return emptyHTML(icon, title, text); }
@@ -758,8 +921,8 @@ window.AIHome = (() => {
                 if (page && typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {
                     YTMusic.navigateTo(page);
                     requestAnimationFrame(() => { try { window.scrollTo({ top: 0 }); } catch (e) { /* ignore */ } });
-                } else if (target === 'news' && typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {
-                    YTMusic.navigateTo('radio');
+                } else if (target === 'news') {
+                    newsSeeAllOpen();
                 }
                 setSidebarActive(target);
             });
@@ -788,6 +951,8 @@ window.AIHome = (() => {
         document.querySelectorAll('.ai-see-all[data-ai-seeall]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const target = btn.dataset.aiSeeall;
+                // News "See All" opens a dedicated overlay with all news items
+                if (target === 'news') { newsSeeAllOpen(); return; }
                 const page = AI_TO_PAGE[target] || target;
                 if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {
                     YTMusic.navigateTo(page);
