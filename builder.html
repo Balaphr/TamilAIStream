@@ -72,6 +72,20 @@
                         <i class="fas fa-bolt"></i> Quick Login as Admin
                     </button>
                 </div>
+
+                <!-- Test Account Quick Login -->
+                <div class="login-quick-admin" style="border-color:rgba(34,211,238,0.2);background:rgba(34,211,238,0.04);">
+                    <div class="login-quick-info">
+                        <i class="fas fa-flask-vial" style="color:#22d3ee;"></i>
+                        <div>
+                            <strong style="color:#22d3ee;">Test Account <span style="font-size:0.6rem;padding:2px 6px;border-radius:4px;background:rgba(34,211,238,0.15);border:1px solid rgba(34,211,238,0.3);margin-left:4px;">TEST MODE</span></strong>
+                            <span>test@tamilaistream.com &middot; Test@123</span>
+                        </div>
+                    </div>
+                    <button type="button" class="builder-btn quick-login-btn" id="builderTestLogin" style="background:linear-gradient(135deg,#22d3ee,#0891b2);box-shadow:0 4px 14px rgba(34,211,238,0.3);">
+                        <i class="fas fa-flask"></i> Login as Test User
+                    </button>
+                </div>
                 <div class="login-footer">
                     <p>Don't have an account? <a href="#" id="signupTab">Create Account</a></p>
                 </div>
@@ -154,6 +168,29 @@
 
     <!-- Builder Dashboard (hidden until login) -->
     <div class="builder-dashboard" id="builderDashboard" style="display:none;">
+        <!-- Test Mode Banner -->
+        <div class="test-mode-banner" id="testModeBanner" style="display:none;">
+            <div class="test-mode-banner-inner">
+                <div class="test-mode-banner-left">
+                    <i class="fas fa-flask-vial"></i>
+                    <span class="test-mode-banner-text">
+                        <strong>TEST MODE</strong> — Changes are isolated from the live website.
+                    </span>
+                </div>
+                <div class="test-mode-banner-right">
+                    <button class="test-mode-btn test-mode-preview-btn" id="testPreviewBtn" title="Preview live site">
+                        <i class="fas fa-eye"></i> View Live
+                    </button>
+                    <button class="test-mode-btn test-mode-publish-btn" id="testPublishBtn" title="Publish test changes to live site">
+                        <i class="fas fa-rocket"></i> Publish to Live
+                    </button>
+                    <button class="test-mode-btn test-mode-exit-btn" id="testExitBtn" title="Exit test mode">
+                        <i class="fas fa-right-from-bracket"></i> Exit
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Builder Navigation -->
         <header class="builder-nav">
             <div class="builder-nav-container">

@@ -169,6 +169,24 @@ window.Auth = (function () {
         return false;
     }
 
+    function isTestMode() {
+        return lsGet('tamilAIStream_testMode') === 'true';
+    }
+
+    function isTestUser() {
+        try {
+            var s = JSON.parse(lsGet('testSession') || 'null');
+            if (s && s.expiry && s.expiry > now()) return true;
+        } catch (e) { /* ignore */ }
+        try {
+            var u = getStoredUser();
+            if (u && u.expiry && u.expiry > now() && /test@tamilaistream\.com/i.test(u.email || '')) {
+                return true;
+            }
+        } catch (e) { /* ignore */ }
+        return false;
+    }
+
     // --------------------------------------------------------------------------
     // Route guards
     // --------------------------------------------------------------------------
@@ -255,6 +273,8 @@ window.Auth = (function () {
         isAuthenticated: isAuthenticated,
         currentUser: currentUser,
         isAdmin: isAdmin,
+        isTestMode: isTestMode,
+        isTestUser: isTestUser,
         requireAuth: requireAuth,
         getRedirect: getRedirect,
         afterLogin: afterLogin,

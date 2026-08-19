@@ -68,13 +68,36 @@ function isAutoLoginRequest() {
 
 function checkAuth() {
     return new Promise((resolve) => {
+        // Check for test mode first
+        const testSession = localStorage.getItem('testSession');
+        if (testSession) {
+            try {
+                const data = JSON.parse(testSession);
+                if (data.expiry > Date.now()) {
+                    window._builderTestMode = true;
+                    localStorage.setItem('tamilAIStream_testMode', 'true');
+                    if (!isAutoLoginRequest()) {
+                        showAccessGate(data);
+                    }
+                    resolve(data);
+                    return;
+                } else {
+                    localStorage.removeItem('testSession');
+                    localStorage.removeItem('tamilAIStream_testMode');
+                }
+            } catch (e) {
+                localStorage.removeItem('testSession');
+                localStorage.removeItem('tamilAIStream_testMode');
+            }
+        }
+
         const session = localStorage.getItem('adminSession');
         if (session) {
             try {
                 const data = JSON.parse(session);
                 if (data.expiry > Date.now()) {
-                    // Skip the access gate when arriving through ?auto=1 so the
-                    // login page's "Open Website Builder" drops straight into the dashboard
+                    window._builderTestMode = false;
+                    localStorage.removeItem('tamilAIStream_testMode');
                     if (!isAutoLoginRequest()) {
                         showAccessGate(data);
                     }
@@ -168,8 +191,88 @@ function showBuilderDashboard(user) {
     document.getElementById('builderUserName').textContent = displayName;
     document.getElementById('builderUserAvatar').textContent = initial;
     
+    // Test mode banner
+    if (window._builderTestMode || localStorage.getItem('tamilAIStream_testMode') === 'true') {
+        window._builderTestMode = true;
+        const banner = document.getElementById('testModeBanner');
+        if (banner) banner.style.display = 'block';
+        document.title = 'Tamil AI Stream — TEST MODE';
+        document.body.classList.add('test-mode');
+        setupTestModeButtons();
+    }
+    
     // Initialize builder
     initBuilder();
+}
+
+function setupTestModeButtons() {
+    const publishBtn = document.getElementById('testPublishBtn');
+    const exitBtn = document.getElementById('testExitBtn');
+    const previewBtn = document.getElementById('testPreviewBtn');
+
+    if (publishBtn) {
+        publishBtn.addEventListener('click', showPublishToLiveModal);
+    }
+    if (exitBtn) {
+        exitBtn.addEventListener('click', () => {
+            localStorage.removeItem('tamilAIStream_testMode');
+            localStorage.removeItem('testSession');
+            window._builderTestMode = false;
+            window.location.href = 'login.html';
+        });
+    }
+    if (previewBtn) {
+        previewBtn.addEventListener('click', () => {
+            window.open('index.html', '_blank');
+        });
+    }
+}
+
+function showPublishToLiveModal() {
+    const existing = document.querySelector('.test-publish-modal-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'test-publish-modal-overlay';
+    overlay.innerHTML = `
+        <div class="test-publish-modal">
+            <h3><i class="fas fa-rocket" style="color:#22d3ee;"></i> Publish to Live</h3>
+            <p>This will copy all your test data (songs, stations, settings, etc.) to the live website. The live website will be updated immediately.</p>
+            <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:16px;">This action cannot be undone. The current live data will be overwritten.</p>
+            <div class="test-publish-modal-actions">
+                <button class="test-publish-cancel-btn" onclick="this.closest('.test-publish-modal-overlay').remove()">Cancel</button>
+                <button class="test-publish-confirm-btn" id="confirmPublishBtn"><i class="fas fa-check"></i> Publish Now</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+    });
+
+    document.getElementById('confirmPublishBtn')?.addEventListener('click', () => {
+        overlay.remove();
+        executePublishToLive();
+    });
+}
+
+function executePublishToLive() {
+    try {
+        const count = DataStore.publishToLive();
+        if (typeof showToast === 'function') {
+            showToast(`Published ${count} data sets to live website!`, 'success');
+        }
+        // Also sync via the existing sync mechanism
+        if (typeof syncToLiveWebsite === 'function') {
+            syncToLiveWebsite();
+        }
+    } catch (e) {
+        console.error('Publish to live failed:', e);
+        if (typeof showToast === 'function') {
+            showToast('Publish failed: ' + e.message, 'error');
+        }
+    }
 }
 
 // Access Gate Event Listeners
@@ -218,6 +321,28 @@ async function signInWithEmail(email, password) {
                 }));
                 showToast('Welcome Admin!', 'success');
                 showAccessGate(demoUser);
+                return;
+            }
+            // Check if it's the test credentials
+            if (email === TEST_CREDENTIALS.username && password === TEST_CREDENTIALS.password) {
+                const testUser = {
+                    username: TEST_CREDENTIALS.username,
+                    email: TEST_CREDENTIALS.username,
+                    displayName: 'Test User',
+                    role: 'test',
+                    password: TEST_CREDENTIALS.password
+                };
+                localStorage.setItem('testSession', JSON.stringify({
+                    username: TEST_CREDENTIALS.username,
+                    email: TEST_CREDENTIALS.username,
+                    displayName: 'Test User',
+                    role: 'test',
+                    loginTime: Date.now(),
+                    expiry: Date.now() + (24 * 60 * 60 * 1000)
+                }));
+                localStorage.setItem('tamilAIStream_testMode', 'true');
+                showToast('Test Mode activated!', 'success');
+                showAccessGate(testUser);
                 return;
             }
             showToast('Invalid email or password', 'error');
@@ -337,6 +462,62 @@ function quickAdminLogin() {
     }, 400);
 }
 
+const TEST_CREDENTIALS = {
+    username: 'test@tamilaistream.com',
+    password: 'Test@123'
+};
+
+function quickTestLogin() {
+    const btn = document.getElementById('builderTestLogin');
+    if (!btn) return;
+
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Signing in...';
+
+    setTimeout(() => {
+        const testUser = {
+            username: TEST_CREDENTIALS.username,
+            email: TEST_CREDENTIALS.username,
+            displayName: 'Test User',
+            role: 'test',
+            password: TEST_CREDENTIALS.password
+        };
+
+        // Sync the main website session
+        try {
+            if (typeof Auth !== 'undefined' && Auth.createSession) {
+                Auth.createSession({ name: 'Test User', email: TEST_CREDENTIALS.username, uid: 'test-local', photoURL: '' }, true, false);
+            } else {
+                localStorage.setItem('tamilAIStream_user', JSON.stringify({
+                    uid: 'test-local',
+                    name: 'Test User',
+                    email: TEST_CREDENTIALS.username,
+                    loginTime: Date.now()
+                }));
+                localStorage.setItem('tamilAIStream_loggedIn', 'true');
+            }
+        } catch (e) {
+            console.warn('Unable to sync website session:', e);
+        }
+
+        localStorage.setItem('testSession', JSON.stringify({
+            username: TEST_CREDENTIALS.username,
+            email: TEST_CREDENTIALS.username,
+            displayName: 'Test User',
+            role: 'test',
+            loginTime: Date.now(),
+            expiry: Date.now() + (24 * 60 * 60 * 1000)
+        }));
+
+        localStorage.setItem('tamilAIStream_testMode', 'true');
+        window._builderTestMode = true;
+
+        showToast('Test Mode activated! Changes will not affect the live site.', 'success');
+        showBuilderDashboard(testUser);
+    }, 400);
+}
+
 // Sign Out
 async function signOut() {
     try {
@@ -414,6 +595,9 @@ function setupLoginScreen() {
 
     // Admin Quick Login (one-click)
     document.getElementById('builderQuickLogin')?.addEventListener('click', quickAdminLogin);
+    
+    // Test Account Quick Login (one-click)
+    document.getElementById('builderTestLogin')?.addEventListener('click', quickTestLogin);
     
     // Switch to sign up tab
     document.getElementById('signupTab')?.addEventListener('click', (e) => {

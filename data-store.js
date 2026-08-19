@@ -40,19 +40,51 @@ const DataStore = {
         NEWS: 'tamilAIStream_news'
     },
 
+    _isTestMode() {
+        return localStorage.getItem('tamilAIStream_testMode') === 'true';
+    },
+
+    _prefixKey(key) {
+        if (this._isTestMode() && !key.startsWith('test_')) {
+            return 'test_' + key;
+        }
+        return key;
+    },
+
     get(key) {
-        const data = localStorage.getItem(key);
+        const actualKey = this._prefixKey(key);
+        const data = localStorage.getItem(actualKey);
         return data ? JSON.parse(data) : null;
     },
 
     set(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
+        const actualKey = this._prefixKey(key);
+        localStorage.setItem(actualKey, JSON.stringify(value));
         
         // Trigger storage event for cross-tab sync
         window.dispatchEvent(new StorageEvent('storage', {
-            key: key,
+            key: actualKey,
             newValue: JSON.stringify(value)
         }));
+    },
+
+    getLive(key) {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+    },
+
+    publishToLive() {
+        const keys = Object.values(this.KEYS);
+        let count = 0;
+        keys.forEach(key => {
+            const testKey = 'test_' + key;
+            const testData = localStorage.getItem(testKey);
+            if (testData !== null) {
+                localStorage.setItem(key, testData);
+                count++;
+            }
+        });
+        return count;
     },
 
     getSongs() { return this.get(this.KEYS.SONGS) || []; },
