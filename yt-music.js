@@ -461,7 +461,8 @@ const YTMusic = {
             bars.appendChild(bar);
         }
         const draw = () => {
-            if (document.hidden || !this.isPlaying) {
+            const actuallyPlaying = this.isPlaying && window.audioPlayer && !window.audioPlayer.paused;
+            if (document.hidden || !actuallyPlaying) {
                 if (this.visualizerFrame) cancelAnimationFrame(this.visualizerFrame);
                 this.visualizerFrame = null;
                 return;
@@ -472,10 +473,13 @@ const YTMusic = {
 
             let freqData = null;
             let isActive = false;
-            if (typeof audioFreqData !== 'undefined' && audioFreqData && typeof analyserNode !== 'undefined' && analyserNode) {
-                analyserNode.getByteFrequencyData(audioFreqData);
-                freqData = audioFreqData;
-                isActive = this.isPlaying;
+            if (typeof window.analyserNode !== 'undefined' && window.analyserNode) {
+                try {
+                    if (!window.audioFreqData) window.audioFreqData = new Uint8Array(window.analyserNode.frequencyBinCount);
+                    window.analyserNode.getByteFrequencyData(window.audioFreqData);
+                    freqData = window.audioFreqData;
+                    isActive = actuallyPlaying;
+                } catch(e) {}
             }
 
             const gradient = ctx.createLinearGradient(0, 0, width, 0);
@@ -1333,11 +1337,12 @@ const YTMusic = {
         const t = this.currentTrack;
         this.setText('ytmFsTitle', t.title || 'Unknown');
         this.setText('ytmFsArtist', t.artist || t.name || '');
+        const fsArt = t.thumbnail || t.cover || t.albumCover || t.image || '';
         const artwork = document.getElementById('ytmFsArtwork');
         const placeholder = document.getElementById('ytmFsPlaceholder');
         const qualityBadge = document.getElementById('ytmQualityBadge');
         const nowPlayingBadge = document.getElementById('ytmNowPlayingBadge');
-        const fsArt = t.thumbnail || t.cover || t.albumCover || t.image || '';
+        const movieBadge = document.getElementById('ytmMovieBadge');
         if (fsArt) {
             this.setSrc('ytmFsArtwork', fsArt);
             if (artwork) artwork.style.display = 'block';
@@ -1348,6 +1353,11 @@ const YTMusic = {
         }
         if (qualityBadge) qualityBadge.textContent = t.streamUrl ? 'Live Stream' : 'AAC 320 kbps';
         if (nowPlayingBadge) nowPlayingBadge.textContent = t.streamUrl ? 'Live FM' : 'Now Playing';
+        if (movieBadge) {
+            const movieName = t.movie || t.album || t.movieName || '';
+            movieBadge.textContent = movieName;
+            movieBadge.style.display = movieName ? '' : 'none';
+        }
         this.updateProgressUI();
         this.updateLikeButton();
     },

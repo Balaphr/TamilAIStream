@@ -710,12 +710,17 @@ const GlobalPlayer = (() => {
         updateEqBars(playing);
         if (typeof updatePlayPauseButton === 'function') updatePlayPauseButton(playing);
         
-        // Restart animation loops when playback starts
+        // Restart/stopped animation loops based on actual playback state
         if (playing) {
             if (!eqRAF) startEqAnimation();
             if (!_lyricsRAF) drawMiniWaveform();
         } else {
-            if (eqRAF) startEqAnimation();
+            if (eqRAF) { cancelAnimationFrame(eqRAF); eqRAF = null; }
+            if (_lyricsRAF) { cancelAnimationFrame(_lyricsRAF); _lyricsRAF = null; }
+            if (waveformRAF) { cancelAnimationFrame(waveformRAF); waveformRAF = null; }
+            getEqBars().forEach(bar => { bar.style.height = '3px'; });
+            const canvas = document.getElementById('gpMiniWaveCanvas');
+            if (canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, 80, 32); }
         }
 
         // Sync playing state with song cards and station cards across the site
@@ -1068,15 +1073,16 @@ const GlobalPlayer = (() => {
         canvas.height = canvas.offsetHeight * window.devicePixelRatio;
         ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         function draw() {
-            if (document.hidden || !isExpanded) {
+            const actuallyPlaying = state.isPlaying && window.audioPlayer && !window.audioPlayer.paused;
+            if (document.hidden || !isExpanded || !actuallyPlaying) {
                 if (waveformRAF) { cancelAnimationFrame(waveformRAF); waveformRAF = null; }
                 return;
             }
-            const freqData = (typeof PlayerEngine !== 'undefined' && PlayerEngine.getFrequencyData) ? PlayerEngine.getFrequencyData() : null;
+            const freqData = (typeof window.analyserNode !== 'undefined' && window.analyserNode) ? (() => { try { const d = new Uint8Array(window.analyserNode.frequencyBinCount); window.analyserNode.getByteFrequencyData(d); return d; } catch(e) { return null; } })() : null;
             const w = canvas.offsetWidth;
             const h = canvas.offsetHeight;
             ctx.clearRect(0, 0, w, h);
-            if (!freqData || !state.isPlaying) { cancelAnimationFrame(waveformRAF); waveformRAF = null; return; }
+            if (!freqData || !actuallyPlaying) { cancelAnimationFrame(waveformRAF); waveformRAF = null; return; }
             const bars = 64;
             const barW = w / bars;
             const step = Math.floor(freqData.length / bars);
@@ -1112,14 +1118,16 @@ const GlobalPlayer = (() => {
     function startEqAnimation() {
         if (eqRAF) cancelAnimationFrame(eqRAF);
         eqRAF = null;
-        if (!state.isPlaying || document.hidden) {
+        const actuallyPlaying = state.isPlaying && window.audioPlayer && !window.audioPlayer.paused;
+        if (!actuallyPlaying || document.hidden) {
             getEqBars().forEach(bar => { bar.style.height = '3px'; });
             return;
         }
         let lastFrame = 0;
         const FRAME_INTERVAL = 1000 / 15;
         function animate(ts) {
-            if (!state.isPlaying || document.hidden) {
+            const stillPlaying = state.isPlaying && window.audioPlayer && !window.audioPlayer.paused;
+            if (!stillPlaying || document.hidden) {
                 getEqBars().forEach(bar => { bar.style.height = '3px'; });
                 eqRAF = null;
                 return;
@@ -1142,12 +1150,13 @@ const GlobalPlayer = (() => {
         canvas.width = 80;
         canvas.height = 32;
         function draw() {
-            if (document.hidden || !state.isPlaying) {
+            const actuallyPlaying = state.isPlaying && window.audioPlayer && !window.audioPlayer.paused;
+            if (document.hidden || !actuallyPlaying) {
                 if (_lyricsRAF) { cancelAnimationFrame(_lyricsRAF); _lyricsRAF = null; }
                 return;
             }
             ctx.clearRect(0, 0, 80, 32);
-            const freqData = (typeof PlayerEngine !== 'undefined' && PlayerEngine.getFrequencyData) ? PlayerEngine.getFrequencyData() : null;
+            const freqData = (typeof window.analyserNode !== 'undefined' && window.analyserNode) ? (() => { try { const d = new Uint8Array(window.analyserNode.frequencyBinCount); window.analyserNode.getByteFrequencyData(d); return d; } catch(e) { return null; } })() : null;
             if (!freqData) { cancelAnimationFrame(_lyricsRAF); _lyricsRAF = null; return; }
             const bars = 16;
             const barW = 80 / bars;

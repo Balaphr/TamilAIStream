@@ -653,7 +653,8 @@ const PlayerUI = (() => {
     /* ---- EQ Bars Animation ---- */
     function startEqAnimation() {
         function animate() {
-            if (document.hidden || !PlayerEngine.isPlaying) {
+            const actuallyPlaying = PlayerEngine.isPlaying && window.audioPlayer && !window.audioPlayer.paused;
+            if (document.hidden || !actuallyPlaying) {
                 const bars = document.querySelectorAll('.fp-eq-bars span, #miniEqBars span');
                 bars.forEach(bar => { bar.style.height = '3px'; });
                 if (eqBarsRAF) { cancelAnimationFrame(eqBarsRAF); eqBarsRAF = null; }

@@ -576,14 +576,22 @@ function initAudioPlayer() {
             analyserNode.fftSize = 256;
             analyserNode.smoothingTimeConstant = 0.8;
             audioFreqData = new Uint8Array(analyserNode.frequencyBinCount);
+            window.analyserNode = analyserNode;
+            window.audioFreqData = audioFreqData;
+            window.audioCtx = audioCtx;
+            try {
+                audioSourceNode = audioCtx.createMediaElementSource(audioPlayer);
+                audioSourceNode.connect(analyserNode);
+                analyserNode.connect(audioCtx.destination);
+            } catch(e) {}
         } catch (e) {
             console.warn('Web Audio API not available:', e);
         }
         audioPlayer.addEventListener('playing', () => {
-            if (userPaused) return;
             isStreamPlaying = true;
             streamConnecting = false;
             playbackHasLoaded = true;
+            userPaused = false;
             // Clear the seek flag — post-seek buffering is done
             window._isSeeking = false;
             window._seekingUntil = 0;
@@ -599,6 +607,7 @@ function initAudioPlayer() {
             hideLoadingSpinner();
             document.body.classList.add('gp-active');
             ProgressSync.start();
+            updateNowPlayingBarPause();
             if (typeof GlobalPlayer !== 'undefined') {
                 GlobalPlayer.updatePlayUI(true);
                 GlobalPlayer.updateLiveUI();
@@ -625,6 +634,7 @@ function initAudioPlayer() {
                 AnalyticsTracker.trackSongEvent('song_pause', currentPlaybackTrack, { position: audioPlayer.currentTime });
             }
             updateStationCardStates(false);
+            updateNowPlayingBarPause();
             if (typeof GlobalPlayer !== 'undefined') {
                 GlobalPlayer.updatePlayUI(false);
             }
@@ -645,9 +655,14 @@ function initAudioPlayer() {
                 YTMusic.updateProgressUI();
             }
             if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.state.currentTime = audioPlayer.currentTime || 0;
+                GlobalPlayer.state.duration = audioPlayer.duration || 0;
                 GlobalPlayer.updateProgressUI();
             }
-            persistPlaybackState();
+            if (typeof MiniAudioPlayer !== 'undefined' && typeof MiniAudioPlayer.updateProgressUI === 'function') {
+                MiniAudioPlayer.updateProgressUI();
+            }
+            updateNowPlayingBarPause();
         });
         audioPlayer.addEventListener('durationchange', () => {
             if (typeof YTMusic !== 'undefined') {
@@ -655,15 +670,34 @@ function initAudioPlayer() {
                 YTMusic.updateProgressUI();
             }
             if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.state.duration = audioPlayer.duration || 0;
                 GlobalPlayer.updateProgressUI();
+            }
+            if (typeof MiniAudioPlayer !== 'undefined' && typeof MiniAudioPlayer.updateProgressUI === 'function') {
+                MiniAudioPlayer.updateProgressUI();
             }
         });
         audioPlayer.addEventListener('error', (e) => {
             streamConnecting = false;
             isStreamPlaying = false;
+            userPaused = false;
             updatePlayPauseButton(false);
             showLiveStatus(false);
             hideLoadingSpinner();
+            updateStationCardStates(false);
+            updateNowPlayingBarPause();
+            if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.updatePlayUI(false);
+            }
+            if (typeof YTMusic !== 'undefined') {
+                YTMusic.isPlaying = false;
+                YTMusic.updatePlayerUI();
+                YTMusic.updateFullscreenPlayerUI();
+                YTMusic.updateMiniPlayerUI();
+            }
+            if (typeof MiniAudioPlayer !== 'undefined') {
+                MiniAudioPlayer.syncPausedUI();
+            }
             const stationName = currentStation || currentPlaybackTrack?.title || 'Station';
             const errCode = audioPlayer.error?.code;
             const errMsg = audioPlayer.error?.message;
@@ -703,7 +737,25 @@ function initAudioPlayer() {
             }
         });
         audioPlayer.addEventListener('ended', () => {
+            isStreamPlaying = false;
             ProgressSync.stop();
+            persistPlaybackState();
+            updatePlayPauseButton(false);
+            showLiveStatus(false);
+            updateStationCardStates(false);
+            updateNowPlayingBarPause();
+            if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.updatePlayUI(false);
+            }
+            if (typeof YTMusic !== 'undefined') {
+                YTMusic.isPlaying = false;
+                YTMusic.updatePlayerUI();
+                YTMusic.updateFullscreenPlayerUI();
+                YTMusic.updateMiniPlayerUI();
+            }
+            if (typeof MiniAudioPlayer !== 'undefined') {
+                MiniAudioPlayer.syncPausedUI();
+            }
             // Analytics: track song complete
             if (typeof AnalyticsTracker !== 'undefined' && currentPlaybackTrack) {
                 AnalyticsTracker.trackSongEvent('song_complete', currentPlaybackTrack);
@@ -770,25 +822,22 @@ function initAudioPlayer() {
 function stopCurrentStream() {
     if (window.__BUILDER_PREVIEW__) return;
     if (audioPlayer) {
-        // CRITICAL FIX: Preserve current playback position instead of always resetting to 0:00
-        // This ensures position is saved when switching views/players
-        const preservedPosition = audioPlayer.currentTime;
         audioPlayer.pause();
-        // Do NOT reset currentTime to 0 - preserve the position
-        // Only remove src if we're truly stopping (not just pausing between tracks)
-        audioPlayer.src = '';
         audioPlayer.removeAttribute('src');
         audioPlayer.load();
         isStreamPlaying = false;
         streamConnecting = false;
         playbackHasLoaded = false;
-        // Restore preserved position after pause if available
-        if (window.__PLAYBACK_POSITION__) {
-            audioPlayer.currentTime = window.__PLAYBACK_POSITION__;
-            window.__PLAYBACK_POSITION__ = null;
-        }
         updatePlayPauseButton(false);
         showLiveStatus(false);
+        updateNowPlayingBarPause();
+        if (typeof GlobalPlayer !== 'undefined') {
+            GlobalPlayer.updatePlayUI(false);
+        }
+        if (typeof YTMusic !== 'undefined') {
+            YTMusic.isPlaying = false;
+            YTMusic.updatePlayerUI();
+        }
     }
     currentStation = null;
     currentPlaybackTrack = null;
@@ -884,6 +933,7 @@ function playStation(stationName) {
     }
     showLoadingSpinner();
     streamConnecting = true;
+    const streamUrlsToTry = [streamUrl];
     let currentUrlIndex = 0;
     let playAttemptTimeout = null;
     function tryNextStream() {
@@ -1100,10 +1150,16 @@ function pausePlayback() {
         isStreamPlaying = false;
         updatePlayPauseButton(false);
         showLiveStatus(false);
+        updateNowPlayingBarPause();
         persistPlaybackState();
+        if (typeof GlobalPlayer !== 'undefined') {
+            GlobalPlayer.updatePlayUI(false);
+        }
         if (typeof YTMusic !== 'undefined') {
             YTMusic.isPlaying = false;
             YTMusic.updatePlayerUI();
+            YTMusic.updateFullscreenPlayerUI();
+            YTMusic.updateMiniPlayerUI();
         }
         if (typeof MiniAudioPlayer !== 'undefined') {
             MiniAudioPlayer.syncPausedUI();
@@ -1117,11 +1173,15 @@ function resumePlayback() {
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         audioPlayer.play().catch(() => {});
         isStreamPlaying = true;
+        userPaused = false;
         updatePlayPauseButton(true);
+        updateNowPlayingBarPause();
         if (typeof GlobalPlayer !== 'undefined') GlobalPlayer.updatePlayUI(true);
         if (typeof YTMusic !== 'undefined') {
             YTMusic.isPlaying = true;
             YTMusic.updatePlayerUI();
+            YTMusic.updateFullscreenPlayerUI();
+            YTMusic.updateMiniPlayerUI();
         }
         if (typeof MiniAudioPlayer !== 'undefined') {
             MiniAudioPlayer.syncPlayingUI();
@@ -1304,16 +1364,22 @@ function playPreviousSong() {
 }
 
 function pauseStation() {
-    if (audioPlayer && isStreamPlaying) {
+    if (audioPlayer) {
         userPaused = true;
         audioPlayer.pause();
         isStreamPlaying = false;
         updatePlayPauseButton(false);
         showLiveStatus(false);
         updateStationCardStates(false);
+        updateNowPlayingBarPause();
+        if (typeof GlobalPlayer !== 'undefined') {
+            GlobalPlayer.updatePlayUI(false);
+        }
         if (typeof YTMusic !== 'undefined') {
             YTMusic.isPlaying = false;
             YTMusic.updatePlayerUI();
+            YTMusic.updateFullscreenPlayerUI();
+            YTMusic.updateMiniPlayerUI();
         }
         if (typeof MiniAudioPlayer !== 'undefined') {
             MiniAudioPlayer.syncPausedUI();
@@ -1335,9 +1401,13 @@ function togglePlayPause() {
             audioPlayer.play().catch(() => {});
             isStreamPlaying = true;
             updatePlayPauseButton(true);
+            updateNowPlayingBarPause();
+            if (typeof GlobalPlayer !== 'undefined') GlobalPlayer.updatePlayUI(true);
             if (typeof YTMusic !== 'undefined') {
                 YTMusic.isPlaying = true;
                 YTMusic.updatePlayerUI();
+                YTMusic.updateFullscreenPlayerUI();
+                YTMusic.updateMiniPlayerUI();
             }
             if (typeof MiniAudioPlayer !== 'undefined') {
                 MiniAudioPlayer.syncPlayingUI();
@@ -1422,8 +1492,16 @@ function updateNowPlayingBar(title, station) {
 
     if (bar && npbTitle) {
         bar.style.display = '';
-        npbTitle.textContent = title || '—';
-        npbArtist.textContent = station || '—';
+        const fullText = (title || '—') + (station ? ' • ' + station : '');
+        npbTitle.textContent = fullText;
+        npbTitle.classList.remove('marquee-active');
+        const titleSpan = npbTitle.querySelector('span');
+        if (titleSpan) titleSpan.remove();
+
+        if (fullText.length > 28) {
+            npbTitle.classList.add('marquee-active');
+            npbTitle.innerHTML = '<span>' + fullText + ' • ' + fullText + '</span>';
+        }
 
         // Art
         const track = window.currentPlaybackTrack || currentPlaybackTrack;
@@ -1449,7 +1527,7 @@ function updateNowPlayingBar(title, station) {
 
         // Play/Pause icon
         if (npbPlayPause) {
-            const playing = !audioPlayer.paused;
+            const playing = audioPlayer && !audioPlayer.paused;
             npbPlayPause.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play" style="margin-left:2px;"></i>';
         }
     }

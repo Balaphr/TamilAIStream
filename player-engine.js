@@ -113,19 +113,21 @@ const PlayerEngine = (() => {
     function initAudio() {
         if (window.__BUILDER_PREVIEW__) return;
         if (audio) return;
-        audio = new Audio();
-        audio.crossOrigin = 'anonymous';
+        audio = window.audioPlayer || new Audio();
+        window.audioPlayer = audio;
         audio.preload = 'auto';
         audio.volume = state.volume;
         audio.playbackRate = state.speed;
 
         try {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioCtx.createAnalyser();
+            audioCtx = window.audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+            window.audioCtx = audioCtx;
+            analyser = window.analyserNode || audioCtx.createAnalyser();
+            window.analyserNode = analyser;
             analyser.fftSize = 512;
             analyser.smoothingTimeConstant = 0.82;
             gainNode = audioCtx.createGain();
-            sourceNode = audioCtx.createMediaElementSource(audio);
+            try { sourceNode = audioCtx.createMediaElementSource(audio); } catch(e) { sourceNode = null; }
 
             eqFilters = EQ_BANDS.map((freq, i) => {
                 const filter = audioCtx.createBiquadFilter();
@@ -136,11 +138,13 @@ const PlayerEngine = (() => {
                 return filter;
             });
 
-            sourceNode.connect(eqFilters[0]);
-            for (let i = 0; i < eqFilters.length - 1; i++) eqFilters[i].connect(eqFilters[i + 1]);
-            eqFilters[eqFilters.length - 1].connect(gainNode);
-            gainNode.connect(analyser);
-            analyser.connect(audioCtx.destination);
+            if (sourceNode) {
+                sourceNode.connect(eqFilters[0]);
+                for (let i = 0; i < eqFilters.length - 1; i++) eqFilters[i].connect(eqFilters[i + 1]);
+                eqFilters[eqFilters.length - 1].connect(gainNode);
+                gainNode.connect(analyser);
+                analyser.connect(audioCtx.destination);
+            }
 
             freqData = new Uint8Array(analyser.frequencyBinCount);
             timeData = new Uint8Array(analyser.fftSize);

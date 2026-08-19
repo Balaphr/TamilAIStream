@@ -670,6 +670,19 @@ body.ai-light .ai-dark-knob { left: 21px; }
     font-weight: 700; color: #fff; white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; max-width: 260px;
 }
+.npb-title.marquee-active {
+    max-width: none;
+    overflow: visible;
+}
+.npb-title.marquee-active span {
+    display: inline-block;
+    padding-right: 40px;
+    animation: npbMarquee 12s linear infinite;
+}
+@keyframes npbMarquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
 .npb-artist {
     display: block; font-size: 0.7rem; color: rgba(255, 255, 255, 0.5);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
