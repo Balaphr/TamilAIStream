@@ -641,8 +641,11 @@ const GlobalPlayer = (() => {
     function toggleFavorite() {
         const track = state.track || getCurrentTrackFromScript();
         if (!track) return;
-        if (typeof PlayerEngine !== 'undefined') { PlayerEngine.toggleFavorite(track); updateFavUI(); }
-        if (typeof PlaylistManager !== 'undefined') PlaylistManager.toggleFavorite(track);
+        const isFav = DataStore.toggleFavorite(track);
+        updateFavUI();
+        if (typeof showToast === 'function') {
+            showToast(isFav ? 'Added to favorites' : 'Removed from favorites', 'success');
+        }
     }
 
     function toggleShuffle() { if (typeof PlayerEngine !== 'undefined') PlayerEngine.toggleShuffle(); }
@@ -894,7 +897,7 @@ const GlobalPlayer = (() => {
 
     function updateFavUI() {
         const track = state.track || getCurrentTrackFromScript();
-        const isFav = track && typeof PlayerEngine !== 'undefined' && PlayerEngine.isFavorite(track);
+        const isFav = track && DataStore.isFavorite(track.id);
         const miniFav = document.querySelector('#gpMiniFav i');
         const expFav = document.querySelector('#gpExpFav i');
         if (miniFav) miniFav.className = isFav ? 'fas fa-heart' : 'far fa-heart';

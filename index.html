@@ -581,6 +581,22 @@
                     </div>
 
                     <!-- Row 4: Decades by Era -->
+                    <section class="ai-panel ai-panel-favorites" data-section="ai-favorites" id="aiFavoritesSection" style="display:none;">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-heart" style="color:#f43f5e;"></i> Favourite Songs</h2>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <button class="ai-fav-play-all-btn" id="aiFavPlayAllBtn" style="display:none;"><i class="fas fa-play" style="margin-left:2px;"></i> Play All</button>
+                                <button class="ai-fav-auto-btn" id="aiFavAutoBtn" style="display:none;"><i class="fas fa-robot"></i> Auto-Play</button>
+                            </div>
+                        </div>
+                        <div class="ai-fav-list" id="aiFavList"></div>
+                        <div class="ai-fav-bot-status" id="aiFavBotStatus" style="display:none;">
+                            <span class="ai-decade-bot-dot"></span>
+                            <span>Auto-Playing favourites</span>
+                            <button class="ai-decade-bot-stop" id="aiFavBotStop" aria-label="Stop auto-play"><i class="fas fa-stop"></i></button>
+                        </div>
+                    </section>
+
                     <section class="ai-panel ai-decades" data-section="ai-decades">
                         <div class="ai-sec-head">
                             <h2 class="ai-sec-title"><i class="fas fa-clock"></i> Music by Era</h2>

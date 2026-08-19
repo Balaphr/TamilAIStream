@@ -37,7 +37,8 @@ const DataStore = {
         MUSIC_COLLECTIONS: 'tamilAIStream_musicCollections',
         ADVERTISEMENTS: 'tamilAIStream_advertisements',
         UPCOMING_RELEASES: 'tamilAIStream_upcomingReleases',
-        NEWS: 'tamilAIStream_news'
+        NEWS: 'tamilAIStream_news',
+        FAVORITES: 'tamilAIStream_favorites'
     },
 
     _isTestMode() {
@@ -179,6 +180,23 @@ const DataStore = {
 
     getNews() { return this.get(this.KEYS.NEWS) || []; },
     setNews(data) { this.set(this.KEYS.NEWS, data); },
+
+    getFavorites() { return this.get(this.KEYS.FAVORITES) || []; },
+    setFavorites(data) { this.set(this.KEYS.FAVORITES, data); },
+    toggleFavorite(song) {
+        const favs = this.getFavorites();
+        const idx = favs.findIndex(f => f.id === song.id);
+        if (idx >= 0) {
+            favs.splice(idx, 1);
+        } else {
+            favs.push({ ...song, favoritedAt: Date.now() });
+        }
+        this.setFavorites(favs);
+        return idx < 0; // returns true if added, false if removed
+    },
+    isFavorite(songId) {
+        return this.getFavorites().some(f => f.id === songId);
+    },
 
     // Initialize with defaults
 init() {

@@ -1007,6 +1007,8 @@ async function saveSong(e) {
         singer: document.getElementById('songSinger').value.trim(),
         language: document.getElementById('songLanguage').value,
         genre: document.getElementById('songGenre').value,
+        year: parseInt(document.getElementById('songYear').value, 10) || null,
+        decade: document.getElementById('songDecade').value || '',
         duration: document.getElementById('songDuration').value.trim(),
         description: document.getElementById('songDescription').value.trim(),
         status: 'published',
@@ -1141,6 +1143,8 @@ async function editSong(songId) {
             document.getElementById('songSinger').value = song.singer || '';
             document.getElementById('songLanguage').value = song.language || 'Tamil';
             document.getElementById('songGenre').value = song.genre || 'Love';
+            document.getElementById('songYear').value = song.year || '';
+            document.getElementById('songDecade').value = song.decade || '';
             document.getElementById('songDuration').value = song.duration || '';
             document.getElementById('songDescription').value = song.description || '';
 

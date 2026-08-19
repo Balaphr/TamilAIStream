@@ -385,7 +385,17 @@ document.querySelectorAll('.bottom-nav-item').forEach(item => {
         } else if (tab === 'profile') {
             window.location.href = 'profile.html';
         } else if (tab === 'favorites') {
-            showToast('Favorites page coming soon!', 'info');
+            // Navigate to home tab first, then scroll to favorites section
+            const homeTab = document.querySelector('.nav-tab[data-tab="home"]');
+            if (homeTab) homeTab.click();
+            setTimeout(() => {
+                const favSection = document.getElementById('aiFavoritesSection');
+                if (favSection && favSection.style.display !== 'none') {
+                    favSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    showToast('No favourite songs yet. Tap the heart icon on any song to add it.', 'info');
+                }
+            }, 300);
         } else if (tab === 'search') {
             document.getElementById('ytmSearchInput')?.focus();
         }
@@ -611,6 +621,17 @@ function initAudioPlayer() {
             hideLoadingSpinner();
             document.body.classList.add('gp-active');
             ProgressSync.start();
+            // Propagate duration immediately when audio starts playing
+            if (audioPlayer.duration && isFinite(audioPlayer.duration)) {
+                if (typeof YTMusic !== 'undefined') {
+                    YTMusic.duration = audioPlayer.duration;
+                    YTMusic.updateProgressUI();
+                }
+                if (typeof GlobalPlayer !== 'undefined' && GlobalPlayer.state) {
+                    GlobalPlayer.state.duration = audioPlayer.duration;
+                    GlobalPlayer.updateProgressUI();
+                }
+            }
             updateNowPlayingBarPause();
             if (typeof GlobalPlayer !== 'undefined') {
                 GlobalPlayer.updatePlayUI(true);
@@ -1060,7 +1081,7 @@ async function playSong(song, playlist = []) {
             currentStation = song.title;
             persistPlaybackState();
             updateNowPlayingBar(song.title, `${song.artist} • ${song.movie}`);
-            updateMediaSessionMetadata(song.title, song.artist, song.thumbnail || song.albumCover || song.cover || '');
+            updateMediaSessionMetadata(song.title, song.artist, currentPlaybackTrack.thumbnail);
             document.body.classList.add('gp-active');
             if (typeof GlobalPlayer !== 'undefined') {
                 GlobalPlayer.updateTrackUI();
@@ -1514,15 +1535,19 @@ function updateNowPlayingBar(title, station) {
 
     if (bar && npbTitle) {
         bar.style.display = '';
-        const fullText = (title || '—') + (station ? ' • ' + station : '');
-        npbTitle.textContent = fullText;
+        npbTitle.textContent = title || '—';
         npbTitle.classList.remove('marquee-active');
         const titleSpan = npbTitle.querySelector('span');
         if (titleSpan) titleSpan.remove();
 
-        if (fullText.length > 28) {
+        if ((title || '').length > 28) {
             npbTitle.classList.add('marquee-active');
-            npbTitle.innerHTML = '<span>' + fullText + ' • ' + fullText + '</span>';
+            npbTitle.innerHTML = '<span>' + title + ' • ' + title + '</span>';
+        }
+
+        // Artist / subtitle line
+        if (npbArtist) {
+            npbArtist.textContent = station || '';
         }
 
         // Art
@@ -2212,16 +2237,37 @@ async function playSongById(songId) {
 }
 
 function toggleFavorite(button, event) {
-    button.classList.toggle('active');
+    // Find the song ID from the parent card's data-song-id attribute
+    const card = button.closest('[data-song-id]');
+    const songId = card ? card.dataset.songId : null;
+    const track = currentPlaybackTrack;
+
+    // Determine which song to toggle
+    let song = null;
+    if (songId) {
+        const allSongs = DataStore.getSongs ? DataStore.getSongs() : [];
+        song = allSongs.find(s => s.id === songId);
+    }
+    if (!song && track) {
+        song = track;
+    }
+    if (!song) {
+        showToast('No song selected', 'info');
+        return;
+    }
+
+    // Toggle in DataStore
+    const isFav = DataStore.toggleFavorite(song);
+
+    // Update button visual state
+    button.classList.toggle('active', isFav);
     const icon = button.querySelector('i');
-    icon.style.fontWeight = button.classList.contains('active') ? '900' : '400';
-    const isFav = button.classList.contains('active');
+    if (icon) icon.style.fontWeight = isFav ? '900' : '400';
+
     showToast(isFav ? 'Added to favorites' : 'Removed from favorites', 'success');
     try {
         if (event) createRipple(event, button);
-    } catch (e) {
-        // Silently handle ripple errors
-    }
+    } catch (e) {}
 }
 
 // ============================================

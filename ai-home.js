@@ -1464,6 +1464,9 @@ window.AIHome = (() => {
         const all = publishedSongs();
         const [minY, maxY] = decade.range;
         const songs = all.filter(s => {
+            // Primary: use the explicit 'decade' field (e.g. '80s', '90s', '2k', 'new')
+            if (s.decade === decade.id) return true;
+            // Fallback: derive from 'year' field
             const y = parseInt(s.year, 10);
             return !isNaN(y) && y >= minY && y <= maxY;
         });
@@ -1697,6 +1700,150 @@ window.AIHome = (() => {
         if (track) _updateDecadeListPlaying(track);
     }
 
+    /* ---------------- Favourite Songs Section ---------------- */
+    let _favBotActive = false;
+    let _favBotSongs = [];
+    let _favBotIndex = 0;
+
+    function renderFavoritesSection() {
+        const section = $('aiFavoritesSection');
+        const list = $('aiFavList');
+        if (!section || !list) return;
+        const favs = DataStore.getFavorites ? DataStore.getFavorites() : [];
+        if (!favs.length) {
+            section.style.display = 'none';
+            return;
+        }
+        section.style.display = '';
+        const playAllBtn = $('aiFavPlayAllBtn');
+        const autoBtn = $('aiFavAutoBtn');
+        if (playAllBtn) playAllBtn.style.display = '';
+        if (autoBtn) {
+            autoBtn.style.display = '';
+            const isActive = _favBotActive;
+            autoBtn.classList.toggle('active', isActive);
+            autoBtn.innerHTML = '<i class="fas fa-robot"></i> ' + (isActive ? 'Auto-Playing' : 'Auto-Play');
+        }
+
+        list.innerHTML = favs.map((s, i) => {
+            const title = (s.title || s.name || 'Untitled').slice(0, 38);
+            const artist = (s.artist || s.singer || '').slice(0, 30);
+            const dur = s.duration || '';
+            const songArt = s.albumCover || s.cover || s.thumbnail || '';
+            const playing = typeof window.isSameActivePlayback === 'function' && window.isSameActivePlayback(s);
+            return '<div class="ai-decade-song' + (playing ? ' playing-song' : '') + '" data-idx="' + i + '">' +
+                '<div class="ai-decade-song-num">' + (i + 1) + '</div>' +
+                '<div class="ai-decade-song-art">' +
+                (songArt ? '<img src="' + escapeHtml(songArt) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-heart"></i>') +
+                '</div>' +
+                '<div class="ai-decade-song-info">' +
+                '<div class="ai-decade-song-title">' + escapeHtml(title) + '</div>' +
+                '<div class="ai-decade-song-artist">' + escapeHtml(artist) + '</div>' +
+                '</div>' +
+                (dur ? '<div class="ai-decade-song-dur">' + dur + '</div>' : '') +
+                '</div>';
+        }).join('');
+
+        // Play All
+        if (playAllBtn) {
+            playAllBtn.onclick = () => {
+                if (favs.length && typeof window.playSong === 'function') window.playSong(favs[0], favs);
+            };
+        }
+
+        // Auto-Play
+        if (autoBtn) {
+            autoBtn.onclick = () => {
+                if (_favBotActive) {
+                    stopFavBot();
+                } else {
+                    startFavBot(favs);
+                }
+                const isActive = _favBotActive;
+                autoBtn.classList.toggle('active', isActive);
+                autoBtn.innerHTML = '<i class="fas fa-robot"></i> ' + (isActive ? 'Auto-Playing' : 'Auto-Play');
+            };
+        }
+
+        // Individual song clicks
+        list.querySelectorAll('.ai-decade-song').forEach(row => {
+            row.addEventListener('click', () => {
+                const idx = parseInt(row.dataset.idx, 10);
+                const song = favs[idx];
+                if (song && typeof window.playSong === 'function') window.playSong(song, favs);
+                list.querySelectorAll('.ai-decade-song').forEach(r => r.classList.remove('playing-song'));
+                row.classList.add('playing-song');
+            });
+        });
+
+        // Bot status stop button
+        const botStop = $('aiFavBotStop');
+        if (botStop) {
+            botStop.addEventListener('click', () => {
+                stopFavBot();
+                if (autoBtn) {
+                    autoBtn.classList.remove('active');
+                    autoBtn.innerHTML = '<i class="fas fa-robot"></i> Auto-Play';
+                }
+            });
+        }
+    }
+
+    function startFavBot(favs) {
+        stopFavBot();
+        _favBotActive = true;
+        _favBotSongs = [...favs];
+        _favBotIndex = 0;
+        _favBotSongs.sort(() => Math.random() - 0.5);
+        _favBotPlayCurrent();
+        // Hook ended event for auto-advance
+        if (window.audioPlayer && !window.audioPlayer._favBotHooked) {
+            window.audioPlayer._favBotHooked = true;
+            window.audioPlayer.addEventListener('ended', _favBotOnEnded);
+        }
+        const status = $('aiFavBotStatus');
+        if (status) status.style.display = '';
+    }
+
+    function stopFavBot() {
+        _favBotActive = false;
+        _favBotSongs = [];
+        _favBotIndex = 0;
+        if (window.audioPlayer && window.audioPlayer._favBotHooked) {
+            window.audioPlayer.removeEventListener('ended', _favBotOnEnded);
+            window.audioPlayer._favBotHooked = false;
+        }
+        const status = $('aiFavBotStatus');
+        if (status) status.style.display = 'none';
+    }
+
+    function _favBotPlayCurrent() {
+        if (!_favBotActive || !_favBotSongs.length) return;
+        if (_favBotIndex >= _favBotSongs.length) {
+            _favBotSongs.sort(() => Math.random() - 0.5);
+            _favBotIndex = 0;
+        }
+        const song = _favBotSongs[_favBotIndex];
+        if (song && typeof window.playSong === 'function') {
+            window.playSong(song, _favBotSongs);
+        }
+        // Update playing state in list
+        const list = $('aiFavList');
+        if (list) {
+            list.querySelectorAll('.ai-decade-song').forEach((r, i) => {
+                r.classList.toggle('playing-song', i === _favBotIndex);
+            });
+        }
+    }
+
+    function _favBotOnEnded() {
+        if (!_favBotActive) return;
+        _favBotIndex++;
+        setTimeout(() => {
+            if (_favBotActive) _favBotPlayCurrent();
+        }, 300);
+    }
+
     /* ---------------- Refresh + init ---------------- */
     function refreshHome() {
         stopHeroTimer();
@@ -1709,6 +1856,7 @@ window.AIHome = (() => {
         renderLiveNews();
         renderRecentlyPlayed();
         renderAIRecommendations();
+        renderFavoritesSection();
         renderDecadeCards();
         bindHeroPlay();
         bindDiscoverAI();
