@@ -168,77 +168,21 @@
                             <span>Admin Panel</span>
                         </div>
                     </div>
-                    <nav class="builder-nav-menu">
-                        <button class="builder-nav-item active" data-page="dashboard">
-                            <i class="fas fa-home"></i> Dashboard
-                        </button>
-                        <button class="builder-nav-item" data-page="stations">
-                            <i class="fas fa-broadcast-tower"></i> Stations
-                        </button>
-                        <button class="builder-nav-item" data-page="songs">
-                            <i class="fas fa-music"></i> Songs
-                        </button>
-                        <button class="builder-nav-item" data-page="content">
-                            <i class="fas fa-layer-group"></i> Content
-                        </button>
-                        <button class="builder-nav-item" data-page="images">
-                            <i class="fas fa-images"></i> Images
-                        </button>
-                        <button class="builder-nav-item" data-page="settings">
-                            <i class="fas fa-cog"></i> Settings
-                        </button>
-                        <button class="builder-nav-item" data-page="moods">
-                            <i class="fas fa-smile"></i> Moods
-                        </button>
-                        <button class="builder-nav-item" data-page="airadio">
-                            <i class="fas fa-robot"></i> AI Radio
-                        </button>
-                        <button class="builder-nav-item" data-page="sections">
-                            <i class="fas fa-sort-amount-up"></i> Sections
-                        </button>
-                        <button class="builder-nav-item" data-page="ads">
-                            <i class="fas fa-ad"></i> Ads
-                        </button>
-                        <button class="builder-nav-item" data-page="upcomingReleases">
-                            <i class="fas fa-rocket"></i> Releases
-                        </button>
-                        <button class="builder-nav-item" data-page="musiccollections">
-                            <i class="fas fa-folder-tree"></i> Music Collections
-                        </button>
-                        <button class="builder-nav-item" data-page="visualeditor">
-                            <i class="fas fa-wand-magic-sparkles"></i> Visual Editor
-                        </button>
-                        <button class="builder-nav-item" data-page="miniplayersettings">
-                            <i class="fas fa-play-circle"></i> Mini Player
-                        </button>
-                        <button class="builder-nav-item" data-page="preview">
-                            <i class="fas fa-eye"></i> Preview
-                        </button>
-                        <button class="builder-nav-item" data-page="analytics">
-                            <i class="fas fa-chart-line"></i> Analytics
-                        </button>
-                        <button class="builder-nav-item" data-page="site360">
-                            <i class="fas fa-circle-nodes"></i> 360
-                        </button>
-                    </nav>
                 </div>
                 <div class="builder-nav-right">
-                    <a href="index.html" target="_blank" class="builder-btn visit-website-btn" title="Visit Website" style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:linear-gradient(135deg,rgba(52,211,153,0.15),rgba(16,185,129,0.08));border:1px solid rgba(52,211,153,0.2);border-radius:8px;color:#6ee7b7;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer;transition:all 0.2s;white-space:nowrap;">
+                    <a href="index.html" target="_blank" class="builder-btn visit-website-btn" title="Visit Website">
                         <i class="fas fa-globe"></i> Website
                     </a>
                     <div class="publish-status">
                         <span class="publish-state-badge draft" id="publishStatusBadge">DRAFT</span>
                     </div>
-                    <button class="builder-btn ai-assistant-toggle" onclick="AICommandBot.toggleBot()" title="AI Assistant" style="background:linear-gradient(135deg,#8b5cf6,#3b82f6);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;">
+                    <button class="builder-btn ai-assistant-toggle" onclick="AICommandBot.toggleBot()" title="AI Assistant">
                         <i class="fas fa-robot"></i> <span class="ai-toggle-text">AI</span>
                     </button>
                     <div class="builder-user-info">
                         <div class="builder-user-avatar" id="builderUserAvatar">U</div>
                         <span class="builder-user-name" id="builderUserName">User</span>
                     </div>
-                    <button class="builder-logout-btn" id="builderLogout">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
                 </div>
             </div>
         </header>
@@ -251,16 +195,16 @@
                 <!-- Sidebar -->
                 <aside class="builder-sidebar">
                     <div class="builder-sidebar-section">
-                        <div class="builder-sidebar-title">Admin Tools</div>
+                        <div class="builder-sidebar-title">Main</div>
                         <div class="builder-sidebar-menu">
                             <button class="builder-sidebar-item active" data-page="dashboard">
                                 <i class="fas fa-home"></i> Dashboard
                             </button>
-                            <button class="builder-sidebar-item" data-page="stations">
-                                <i class="fas fa-broadcast-tower"></i> Radio Stations
-                            </button>
                             <button class="builder-sidebar-item" data-page="songs">
                                 <i class="fas fa-music"></i> Add Songs
+                            </button>
+                            <button class="builder-sidebar-item" data-page="stations">
+                                <i class="fas fa-broadcast-tower"></i> Radio Stations
                             </button>
                             <button class="builder-sidebar-item" data-page="content">
                                 <i class="fas fa-layer-group"></i> Content
@@ -268,26 +212,42 @@
                             <button class="builder-sidebar-item" data-page="images">
                                 <i class="fas fa-images"></i> Manage Images
                             </button>
+                        </div>
+                    </div>
+                    <div class="builder-sidebar-section">
+                        <div class="builder-sidebar-title">Website</div>
+                        <div class="builder-sidebar-menu">
+                            <button class="builder-sidebar-item" data-page="sections">
+                                <i class="fas fa-sort-amount-up"></i> Home Sections
+                            </button>
                             <button class="builder-sidebar-item" data-page="settings">
                                 <i class="fas fa-cog"></i> Site Settings
+                            </button>
+                            <button class="builder-sidebar-item" data-page="navigation">
+                                <i class="fas fa-navicon"></i> Navigation
                             </button>
                             <button class="builder-sidebar-item" data-page="moods">
                                 <i class="fas fa-smile"></i> Moods & Genres
                             </button>
+                            <button class="builder-sidebar-item" data-page="musiccollections">
+                                <i class="fas fa-folder-tree"></i> Music Collections
+                            </button>
+                        </div>
+                    </div>
+                    <div class="builder-sidebar-section">
+                        <div class="builder-sidebar-title">Features</div>
+                        <div class="builder-sidebar-menu">
                             <button class="builder-sidebar-item" data-page="airadio">
                                 <i class="fas fa-robot"></i> AI Radio
+                            </button>
+                            <button class="builder-sidebar-item" data-page="news">
+                                <i class="fas fa-newspaper"></i> Live Tamil News
                             </button>
                             <button class="builder-sidebar-item" data-page="ads">
                                 <i class="fas fa-ad"></i> Advertisements
                             </button>
                             <button class="builder-sidebar-item" data-page="upcomingReleases">
                                 <i class="fas fa-rocket"></i> Upcoming Releases
-                            </button>
-                            <button class="builder-sidebar-item" data-page="news">
-                                <i class="fas fa-newspaper"></i> Live Tamil News
-                            </button>
-                            <button class="builder-sidebar-item" data-page="musiccollections">
-                                <i class="fas fa-folder-tree"></i> Music Collections
                             </button>
                             <button class="builder-sidebar-item" data-page="notifications">
                                 <i class="fas fa-bell"></i> Notifications
@@ -298,17 +258,16 @@
                             <button class="builder-sidebar-item" data-page="player">
                                 <i class="fas fa-sliders-h"></i> Player Settings
                             </button>
-                            <button class="builder-sidebar-item" data-page="navigation">
-                                <i class="fas fa-navicon"></i> Navigation
+                            <button class="builder-sidebar-item" data-page="miniplayersettings">
+                                <i class="fas fa-play-circle"></i> Mini Player
                             </button>
-                            <button class="builder-sidebar-item" data-page="sections">
-                                <i class="fas fa-sort-amount-up"></i> Home Sections
-                            </button>
+                        </div>
+                    </div>
+                    <div class="builder-sidebar-section">
+                        <div class="builder-sidebar-title">Tools</div>
+                        <div class="builder-sidebar-menu">
                             <button class="builder-sidebar-item" data-page="visualeditor">
                                 <i class="fas fa-wand-magic-sparkles"></i> Visual Editor
-                            </button>
-                            <button class="builder-sidebar-item" data-page="miniplayersettings">
-                                <i class="fas fa-play-circle"></i> Mini Player Settings
                             </button>
                             <button class="builder-sidebar-item" data-page="preview">
                                 <i class="fas fa-eye"></i> Preview
@@ -369,6 +328,13 @@
                             </button>
                         </div>
                     </div>
+                    <div class="builder-sidebar-section builder-sidebar-bottom">
+                        <div class="builder-sidebar-menu">
+                            <button class="builder-sidebar-item builder-logout-btn" id="builderLogout">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </div>
+                    </div>
                 </aside>
 
                 <!-- Content Area -->
@@ -376,8 +342,8 @@
                     <!-- Dashboard Page -->
                     <div class="builder-page" id="dashboardPage">
                         <div class="builder-page-header">
-                            <h1 class="builder-page-title">Admin Dashboard</h1>
-                            <p class="builder-page-subtitle">Manage your website content</p>
+                            <h1 class="builder-page-title">Dashboard</h1>
+                            <p class="builder-page-subtitle">Overview of your website performance</p>
                         </div>
                         
                         <!-- Stats Grid -->
@@ -412,10 +378,82 @@
                             </div>
                         </div>
 
+                        <!-- Analytics Overview Cards -->
+                        <div class="stats-grid" id="dashboardAnalyticsGrid">
+                            <div class="stat-card stat-card-wide">
+                                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="dashTotalViewers">--</span>
+                                    <span class="stat-label">Total Viewers</span>
+                                </div>
+                            </div>
+                            <div class="stat-card stat-card-wide">
+                                <div class="stat-icon"><i class="fas fa-user-clock"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="dashActiveViewers">--</span>
+                                    <span class="stat-label">Active Now</span>
+                                </div>
+                            </div>
+                            <div class="stat-card stat-card-wide">
+                                <div class="stat-icon"><i class="fas fa-play-circle"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="dashTotalPlays">--</span>
+                                    <span class="stat-label">Song Plays</span>
+                                </div>
+                            </div>
+                            <div class="stat-card stat-card-wide">
+                                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-value" id="dashListenTime">--</span>
+                                    <span class="stat-label">Listening Time</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Row -->
+                        <div class="dashboard-charts-row">
+                            <div class="content-card" style="flex:1;min-width:300px;">
+                                <div class="content-card-header">
+                                    <h2 class="content-card-title">Daily Plays (7 days)</h2>
+                                </div>
+                                <div style="padding:16px;height:220px;">
+                                    <canvas id="dashPlaysChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="content-card" style="flex:1;min-width:300px;">
+                                <div class="content-card-header">
+                                    <h2 class="content-card-title">Top Categories</h2>
+                                </div>
+                                <div style="padding:16px;height:220px;">
+                                    <canvas id="dashCategoriesChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Top Songs & Most Used Sections -->
+                        <div class="dashboard-charts-row">
+                            <div class="content-card" style="flex:1;min-width:300px;">
+                                <div class="content-card-header">
+                                    <h2 class="content-card-title">Most Played Songs</h2>
+                                </div>
+                                <div class="dashboard-list" id="dashTopSongs">
+                                    <div class="dashboard-list-empty">No play data yet</div>
+                                </div>
+                            </div>
+                            <div class="content-card" style="flex:1;min-width:300px;">
+                                <div class="content-card-header">
+                                    <h2 class="content-card-title">Most Used Sections</h2>
+                                </div>
+                                <div class="dashboard-list" id="dashTopSections">
+                                    <div class="dashboard-list-empty">No section data yet</div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Builder Tools -->
                         <div class="content-card">
                             <div class="content-card-header">
-                                <h2 class="content-card-title">Admin Tools</h2>
+                                <h2 class="content-card-title">Quick Actions</h2>
                             </div>
                             <div class="builder-tools-grid">
                                 <div class="builder-tool-card" onclick="openAddSongModal()">
@@ -859,7 +897,24 @@
                     <div class="builder-page" id="contentPage" style="display:none;">
                         <div class="builder-page-header">
                             <h1 class="builder-page-title">Content Management</h1>
-                            <p class="builder-page-subtitle">Manage Songs, Featured, Trending, Categories, Artist Hits, and Quotes — all synced with Cloudflare R2</p>
+                            <p class="builder-page-subtitle">Manage all website sections — data syncs automatically between Builder and live site</p>
+                        </div>
+
+                        <!-- Section Status Summary -->
+                        <div class="content-card" id="contentSectionSummary">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">Website Sections Overview</h2>
+                            </div>
+                            <div class="stats-grid" id="sectionStatsGrid">
+                                <div class="stat-card"><div class="stat-icon"><i class="fas fa-music"></i></div><div class="stat-info"><span class="stat-value" id="csSongs">0</span><span class="stat-label">Songs</span></div></div>
+                                <div class="stat-card"><div class="stat-icon"><i class="fas fa-heart"></i></div><div class="stat-info"><span class="stat-value" id="csFeatured">0</span><span class="stat-label">Featured</span></div></div>
+                                <div class="stat-card"><div class="stat-icon"><i class="fas fa-fire"></i></div><div class="stat-info"><span class="stat-value" id="csTrending">0</span><span class="stat-label">Trending</span></div></div>
+                                <div class="stat-card"><div class="stat-icon"><i class="fas fa-layer-group"></i></div><div class="stat-info"><span class="stat-value" id="csCategories">0</span><span class="stat-label">Categories</span></div></div>
+                                <div class="stat-card"><div class="stat-icon"><i class="fas fa-user"></i></div><div class="stat-info"><span class="stat-value" id="csArtistHits">0</span><span class="stat-label">Artist Hits</span></div></div>
+                                <div class="stat-card"><div class="stat-icon"><i class="fas fa-film"></i></div><div class="stat-info"><span class="stat-value" id="csMovies">0</span><span class="stat-label">Movies</span></div></div>
+                                <div class="stat-card"><div class="stat-icon"><i class="fas fa-quote-left"></i></div><div class="stat-info"><span class="stat-value" id="csQuotes">0</span><span class="stat-label">Quotes</span></div></div>
+                                <div class="stat-card"><div class="stat-icon"><i class="fas fa-broadcast-tower"></i></div><div class="stat-info"><span class="stat-value" id="csStations">0</span><span class="stat-label">Stations</span></div></div>
+                            </div>
                         </div>
 
                         <!-- Content Tabs -->

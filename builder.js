@@ -437,18 +437,15 @@ function setupLoginScreen() {
 // ============================================
 // Navigation
 // ============================================
-let _currentPage = null; // track current page to avoid redundant loads
+let _currentPage = null;
+const _pageLoaded = {};
 function navigateTo(page) {
-    // Skip if already on this page
     if (_currentPage === page) return;
     _currentPage = page;
 
-    // Hide all pages
     document.querySelectorAll('.builder-page').forEach(p => p.style.display = 'none');
     document.querySelectorAll('.builder-sidebar-item').forEach(i => i.classList.remove('active'));
-    document.querySelectorAll('.builder-nav-item').forEach(i => i.classList.remove('active'));
 
-    // Show selected page
     const pageMap = {
         'dashboard': 'dashboardPage',
         'stations': 'stationsPage',
@@ -482,39 +479,33 @@ function navigateTo(page) {
     // Update active states
     document.querySelectorAll(`[data-page="${page}"]`).forEach(el => el.classList.add('active'));
 
-    // Load page data
-    if (page === 'dashboard') loadDashboardStats();
-    if (page === 'stations') loadAllStations();
-    if (page === 'songs') loadAllSongs();
-    if (page === 'content') {
-        loadFeatured();
-        loadTrending();
-        loadCategories();
-        loadArtistHits();
-        loadCollectionsTable('movies');
-        loadCollectionsTable('yearly');
-        loadCollectionsTable('latest');
-        loadAllSongs();
+    if (!_pageLoaded[page]) {
+        _pageLoaded[page] = true;
+        if (page === 'dashboard') { loadDashboardStats(); loadDashboardAnalytics(); }
+        if (page === 'stations') loadAllStations();
+        if (page === 'songs') loadAllSongs();
+        if (page === 'content') { loadFeatured(); loadTrending(); loadCategories(); loadArtistHits(); loadCollectionsTable('movies'); loadCollectionsTable('yearly'); loadCollectionsTable('latest'); loadAllSongs(); loadQuotes(); loadContentSectionStats(); }
+        if (page === 'musiccollections') loadMusicCollections();
+        if (page === 'images') loadAllImages();
+        if (page === 'settings') loadSettings();
+        if (page === 'moods') loadMoods();
+        if (page === 'airadio') loadAIRadio();
+        if (page === 'notifications') loadNotifications();
+        if (page === 'splash') loadSplashSettings();
+        if (page === 'player') loadPlayerPrefs();
+        if (page === 'navigation') loadNavigation();
+        if (page === 'sections') loadSectionsOrder();
+        if (page === 'ads') loadAdsTable();
+        if (page === 'upcomingReleases') loadUpcomingReleasesTable();
+        if (page === 'news') loadNewsTable();
+        if (page === 'visualeditor') initVisualEditor();
+        if (page === 'miniplayersettings') loadPlayerSettings();
+        if (page === 'preview') updatePreview();
+        if (page === 'analytics') { loadAnalyticsData(); initAnalyticsTabs(); }
+        if (page === 'site360' && typeof Site360 !== 'undefined') Site360.init();
+    } else if (page === 'dashboard') {
+        loadDashboardStats();
     }
-    if (page === 'musiccollections') loadMusicCollections();
-    if (page === 'content') loadQuotes();
-    if (page === 'images') loadAllImages();
-    if (page === 'settings') loadSettings();
-    if (page === 'moods') loadMoods();
-    if (page === 'airadio') loadAIRadio();
-    if (page === 'notifications') loadNotifications();
-    if (page === 'splash') loadSplashSettings();
-    if (page === 'player') loadPlayerPrefs();
-    if (page === 'navigation') loadNavigation();
-    if (page === 'sections') loadSectionsOrder();
-    if (page === 'ads') loadAdsTable();
-    if (page === 'upcomingReleases') loadUpcomingReleasesTable();
-    if (page === 'news') loadNewsTable();
-    if (page === 'visualeditor') initVisualEditor();
-    if (page === 'miniplayersettings') loadPlayerSettings();
-    if (page === 'preview') updatePreview();
-    if (page === 'analytics') { loadAnalyticsData(); initAnalyticsTabs(); }
-    if (page === 'site360' && typeof Site360 !== 'undefined') Site360.init();
 }
 
 // ============================================
@@ -544,9 +535,68 @@ async function loadDashboardStats() {
     }
 }
 
-// ============================================
-// Song Management
-// ============================================
+async function loadDashboardAnalytics() {
+    try {
+        const resp = await fetch('/api/analytics/aggregate?period=7d', { cache: 'no-store' });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const el = (id) => document.getElementById(id);
+        if (el('dashTotalViewers')) el('dashTotalViewers').textContent = data.totalViewers || data.totalSessions || '--';
+        if (el('dashActiveViewers')) el('dashActiveViewers').textContent = data.activeViewers || data.currentSessions || '--';
+        if (el('dashTotalPlays')) el('dashTotalPlays').textContent = data.totalPlays || data.songPlays || '--';
+        if (el('dashListenTime')) {
+            const mins = data.totalListeningMinutes || data.listeningTime || 0;
+            el('dashListenTime').textContent = mins >= 60 ? Math.floor(mins/60) + 'h ' + (mins%60) + 'm' : mins + 'm';
+        }
+        if (data.topSongs && data.topSongs.length) {
+            const container = el('dashTopSongs');
+            if (container) container.innerHTML = data.topSongs.slice(0,5).map((s,i) =>
+                '<div class="dashboard-list-item"><span class="dashboard-list-rank">' + (i+1) + '</span><span class="dashboard-list-name">' + (s.title||s.name||'Unknown') + '</span><span class="dashboard-list-count">' + (s.plays||s.count||0) + ' plays</span></div>'
+            ).join('');
+        }
+        if (data.sectionUsage && data.sectionUsage.length) {
+            const container = el('dashTopSections');
+            if (container) container.innerHTML = data.sectionUsage.slice(0,5).map((s,i) =>
+                '<div class="dashboard-list-item"><span class="dashboard-list-rank">' + (i+1) + '</span><span class="dashboard-list-name">' + (s.section||s.name||'Unknown') + '</span><span class="dashboard-list-count">' + (s.views||s.count||0) + ' views</span></div>'
+            ).join('');
+        }
+        if (data.dailyPlays && typeof Chart !== 'undefined') {
+            const ctx = document.getElementById('dashPlaysChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: data.dailyPlays.map(d => d.date || d.day), datasets: [{ label: 'Plays', data: data.dailyPlays.map(d => d.plays || d.count || 0), backgroundColor: 'rgba(139,92,246,0.6)', borderRadius: 4 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                });
+            }
+        }
+        if (data.categoryPlays && typeof Chart !== 'undefined') {
+            const ctx2 = document.getElementById('dashCategoriesChart');
+            if (ctx2) {
+                new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: { labels: data.categoryPlays.map(c => c.category || c.name), datasets: [{ data: data.categoryPlays.map(c => c.plays || c.count || 0), backgroundColor: ['#8b5cf6','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899'] }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 8, font: { size: 11 } } } } }
+                });
+            }
+        }
+    } catch (e) { console.warn('Dashboard analytics load failed:', e); }
+}
+
+function loadContentSectionStats() {
+    try {
+        const el = (id) => document.getElementById(id);
+        if (el('csSongs')) el('csSongs').textContent = (DataStore.getSongs() || []).length;
+        if (el('csFeatured')) el('csFeatured').textContent = (DataStore.getFeatured() || []).length;
+        if (el('csTrending')) el('csTrending').textContent = (DataStore.getTrending() || []).length;
+        if (el('csCategories')) el('csCategories').textContent = (DataStore.getCategories() || []).length;
+        if (el('csArtistHits')) el('csArtistHits').textContent = (DataStore.getArtistHits() || []).length;
+        if (el('csMovies')) el('csMovies').textContent = (DataStore.getMoviesCollections ? DataStore.getMoviesCollections() : []).length;
+        if (el('csQuotes')) el('csQuotes').textContent = (DataStore.getQuotes() || []).length;
+        if (el('csStations')) el('csStations').textContent = (DataStore.getStations() || []).length;
+    } catch (e) {}
+}
+
 async function loadAllSongs() {
     try {
         // Show loading state
@@ -719,11 +769,12 @@ async function restoreAllR2Songs() {
 }
 
 function createSongRow(song) {
+    const thumb = song.albumCover || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"%3E%3Ccircle cx="40" cy="40" r="30" fill="%2334d399" opacity="0.3"/%3E%3C/svg%3E';
     return `
         <tr>
             <td>
                 <div class="song-thumb">
-                    <img src="${song.albumCover || 'data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 80\"%3E%3Ccircle cx=\"40\" cy=\"40\" r=\"30\" fill=\"%2334d399\" opacity=\"0.3\"/%3E%3C/svg%3E'}" alt="${song.title}">
+                    <img src="${thumb}" alt="${song.title}" loading="lazy">
                 </div>
             </td>
             <td>
@@ -1497,102 +1548,36 @@ async function _syncToLiveWebsiteActual() {
             await window.ContentSync.syncCurrentState();
         }
 
-        // Method 1: Dispatch custom event
         window.dispatchEvent(new Event('storage-sync'));
 
-        // Method 2: Dispatch storage events for cross-tab sync
-        // Sync all builder settings to trigger website updates
         const keysToSync = [
-            'tamilAIStream_songs',
-            'tamilAIStream_stations',
-            'tamilAIStream_categories',
-            'tamilAIStream_featured',
-            'tamilAIStream_trending',
-            'tamilAIStream_artistHits',
-            'tamilAIStream_quotes',
-            'tamilAIStream_siteSettings',
-            'tamilAIStream_navigation',
-            'tamilAIStream_sectionsOrder',
-            'tamilAIStream_miniPlayerSettings',
-            'tamilAIStream_playerPrefs',
-            'tamilAIStream_advertisements',
-            'tamilAIStream_splash',
-            'tamilAIStream_moods',
-            'tamilAIStream_aiRadio',
-            'tamilAIStream_notifications',
-            'tamilAIStream_images',
-            'tamilAIStream_moviesCollections',
-            'tamilAIStream_yearlyCollections',
-            'tamilAIStream_latestCollections',
-            'tamilAIStream_musicCollections',
-            'tamilAIStream_upcomingReleases'
+            'tamilAIStream_songs', 'tamilAIStream_stations', 'tamilAIStream_categories',
+            'tamilAIStream_featured', 'tamilAIStream_trending', 'tamilAIStream_artistHits',
+            'tamilAIStream_quotes', 'tamilAIStream_siteSettings', 'tamilAIStream_navigation',
+            'tamilAIStream_sectionsOrder', 'tamilAIStream_miniPlayerSettings',
+            'tamilAIStream_playerPrefs', 'tamilAIStream_advertisements', 'tamilAIStream_splash',
+            'tamilAIStream_moods', 'tamilAIStream_aiRadio', 'tamilAIStream_notifications',
+            'tamilAIStream_images', 'tamilAIStream_moviesCollections',
+            'tamilAIStream_yearlyCollections', 'tamilAIStream_latestCollections',
+            'tamilAIStream_musicCollections', 'tamilAIStream_upcomingReleases'
         ];
 
         keysToSync.forEach(key => {
-            try {
-                localStorage.setItem(key, localStorage.getItem(key) || 'null');
-            } catch (e) {
-                console.error('Error syncing key ' + key + ':', e);
-            }
+            try { localStorage.setItem(key, localStorage.getItem(key) || 'null'); } catch (e) {}
         });
 
-        // Dispatch storage events for each key to trigger website updates
-        keysToSync.forEach(key => {
-            try {
-                window.dispatchEvent(new StorageEvent('storage', {
-                    key: key,
-                    newValue: localStorage.getItem(key)
-                }));
-            } catch (e) {
-                console.error('Error dispatching storage event for ' + key + ':', e);
-            }
-        });
+        const syncEvent = new CustomEvent('storage-sync', { detail: { keys: keysToSync } });
+        window.dispatchEvent(syncEvent);
 
-        // Method 3: Direct website update - apply settings immediately
-        if (typeof applySavedSettingsToWebsite === 'function') {
-            applySavedSettingsToWebsite();
-        }
-
-        // Method 4: BroadcastChannel for cross-tab instant messaging
         try {
             const channel = new BroadcastChannel('tamilAIStream_sync');
-            channel.postMessage({
-                type: 'content-updated',
-                timestamp: Date.now(),
-                songCount: DataStore.getSongs().length,
-                stationCount: DataStore.getStations().length,
-                sections: ['songs', 'stations', 'featured', 'trending', 'artistHits', 'categories', 'premium']
-            });
-        } catch (e) {
-            console.warn('[Builder] BroadcastChannel not supported');
-        }
+            channel.postMessage({ type: 'content-updated', timestamp: Date.now() });
+            setTimeout(() => channel.close(), 100);
+        } catch (e) {}
 
-        // Dispatch premium section re-render event
-        window.dispatchEvent(new CustomEvent('premium-sections-sync', {
-            detail: { timestamp: Date.now() }
-        }));
+        window.dispatchEvent(new CustomEvent('premium-sections-sync', { detail: { timestamp: Date.now() } }));
 
-        console.log('[Builder] Sync signals sent successfully');
-
-        // Refresh preview iframe to show latest content
-        const previewIframe = document.getElementById('previewFrame');
-        if (previewIframe && previewIframe.src) {
-            const currentSrc = previewIframe.src;
-            previewIframe.src = 'about:blank';
-            setTimeout(() => {
-                previewIframe.src = currentSrc;
-            }, 200);
-        }
-
-        // Also refresh visual editor iframe if active
-        const veIframe = document.getElementById('veFrame');
-        if (veIframe && veIframe.src) {
-            const currentSrc = veIframe.src;
-            veIframe.src = 'about:blank';
-            setTimeout(() => {
-                veIframe.src = currentSrc;
-            }, 200);
-        }
+        if (typeof applySavedSettingsToWebsite === 'function') applySavedSettingsToWebsite();
 
         return true;
     } catch (e) {
@@ -2282,17 +2267,16 @@ function initBuilder() {
 
     // Search functionality
     document.getElementById('songSearch')?.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        const rows = document.querySelectorAll('#allSongsTable tr');
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(query) ? '' : 'none';
-        });
+        debounce('songSearch', () => {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('#allSongsTable tr').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+            });
+        }, 200);
     });
 
-    // Image search
     document.getElementById('imageSearch')?.addEventListener('input', (e) => {
-        searchImages(e.target.value);
+        debounce('imageSearch', () => searchImages(e.target.value), 200);
     });
 
     // Image filter
@@ -2354,10 +2338,12 @@ function initBuilder() {
 
     // Content page — Song Library search
     document.getElementById('contentSongSearch')?.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        document.querySelectorAll('#contentSongsTable tr').forEach(row => {
-            row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
-        });
+        debounce('contentSongSearch', () => {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('#contentSongsTable tr').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+            });
+        }, 200);
     });
 
     // Artist Hits Sub-Tabs

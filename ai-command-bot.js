@@ -42,11 +42,13 @@ const AICommandBot = (() => {
                         <p>Try commands like:</p>
                         <ul>
                             <li>"Check for duplicates"</li>
+                            <li>"Show sections" — view all website sections</li>
+                            <li>"Show categories" — view music categories</li>
                             <li>"Create a devotional playlist"</li>
                             <li>"Show recently added songs"</li>
-                            <li>"Fix seek issues"</li>
                             <li>"Run publish check"</li>
                             <li>"Add [song name] to featured"</li>
+                            <li>"Stats" — get content summary</li>
                         </ul>
                     </div>
                 </div>
@@ -55,8 +57,9 @@ const AICommandBot = (() => {
                 <div class="ai-bot-suggestions" id="aiBotSuggestions">
                     <button class="ai-bot-suggestion" data-cmd="Check for duplicates">Duplicates</button>
                     <button class="ai-bot-suggestion" data-cmd="Run publish check">Publish Check</button>
-                    <button class="ai-bot-suggestion" data-cmd="Show all songs">All Songs</button>
-                    <button class="ai-bot-suggestion" data-cmd="Create a romantic playlist">Romantic Mix</button>
+                    <button class="ai-bot-suggestion" data-cmd="Show sections">Sections</button>
+                    <button class="ai-bot-suggestion" data-cmd="Show categories">Categories</button>
+                    <button class="ai-bot-suggestion" data-cmd="Stats">Stats</button>
                 </div>
                 <div class="ai-bot-input-row">
                     <input type="text" class="ai-bot-input" id="aiBotInput" placeholder="Type a command..." autocomplete="off">
@@ -363,6 +366,14 @@ const AICommandBot = (() => {
             return handleSectionManage(cmd);
         }
 
+        if (lower.includes('section') || lower.includes('home page') || lower.includes('layout')) {
+            return handleSectionInfo();
+        }
+
+        if (lower.includes('category') || lower.includes('categories')) {
+            return handleCategoryInfo(songs);
+        }
+
         if (lower.includes('delete') && lower.includes('song')) {
             return handleDeleteSong(cmd, songs);
         }
@@ -433,6 +444,8 @@ const AICommandBot = (() => {
                 <li><code>show all songs</code> — List all songs</li>
                 <li><code>show stations</code> — List all stations</li>
                 <li><code>add [song] to featured</code> — Add to section</li>
+                <li><code>sections</code> — View all website sections</li>
+                <li><code>categories</code> — View music categories</li>
                 <li><code>fix seek</code> — Apply audio seek fix</li>
                 <li><code>stats</code> — Content summary</li>
                 <li><code>recent songs</code> — Recently added</li>
@@ -443,6 +456,59 @@ const AICommandBot = (() => {
                 <li><code>export</code> — Export website data</li>
                 <li><code>help</code> — Show this list</li>
             </ul>`;
+    }
+
+    function handleSectionInfo() {
+        let sections = [];
+        try {
+            if (typeof DataStore !== 'undefined') {
+                const order = DataStore.getSectionsOrder ? DataStore.getSectionsOrder() : [];
+                const settings = DataStore.getSiteSettings ? DataStore.getSiteSettings() : {};
+                const homeSections = settings.homeSections || {};
+                const allSections = [
+                    { key: 'hero', name: 'Hero Banner', icon: 'fa-star' },
+                    { key: 'featured', name: 'Featured', icon: 'fa-heart' },
+                    { key: 'trending', name: 'Trending', icon: 'fa-fire' },
+                    { key: 'categories', name: 'Categories', icon: 'fa-layer-group' },
+                    { key: 'artistHits', name: 'Artist Hits', icon: 'fa-user' },
+                    { key: 'recentlyPlayed', name: 'Recently Played', icon: 'fa-clock-rotate-left' },
+                    { key: 'recommendations', name: 'AI Recommendations', icon: 'fa-wand-magic-sparkles' },
+                    { key: 'stations', name: 'Live FM', icon: 'fa-broadcast-tower' },
+                    { key: 'news', name: 'Live Tamil News', icon: 'fa-newspaper' },
+                    { key: 'decades', name: 'Decades', icon: 'fa-calendar' },
+                    { key: 'quotes', name: 'Tamil Quotes', icon: 'fa-quote-left' }
+                ];
+                sections = allSections.map(s => {
+                    const enabled = homeSections[s.key] !== false;
+                    const pos = order.indexOf(s.key);
+                    return { ...s, enabled, pos: pos >= 0 ? pos : 99 };
+                }).sort((a, b) => a.pos - b.pos);
+            }
+        } catch (e) {}
+        if (!sections.length) return '<p>No section data available.</p>';
+        let html = '<p><strong>Website Home Sections:</strong></p><ul>';
+        sections.forEach(s => {
+            const status = s.enabled ? '<span style="color:#10b981">✓ Enabled</span>' : '<span style="color:#ef4444">✗ Disabled</span>';
+            html += '<li><i class="fas ' + s.icon + '" style="width:18px;"></i> ' + s.name + ' — ' + status + '</li>';
+        });
+        html += '</ul><p>Use the <strong>Home Sections</strong> page in the sidebar to reorder or toggle sections.</p>';
+        return html;
+    }
+
+    function handleCategoryInfo(songs) {
+        const cats = {};
+        songs.forEach(s => {
+            const c = s.genre || s.category || 'Uncategorized';
+            cats[c] = (cats[c] || 0) + 1;
+        });
+        const entries = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+        if (!entries.length) return '<p>No songs or categories found.</p>';
+        let html = '<p><strong>Music Categories:</strong></p><ul>';
+        entries.forEach(([name, count]) => {
+            html += '<li><strong>' + name + '</strong> — ' + count + ' song' + (count > 1 ? 's' : '') + '</li>';
+        });
+        html += '</ul>';
+        return html;
     }
 
     function handleDuplicateCheck(songs) {
