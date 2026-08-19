@@ -86,8 +86,8 @@ textarea {
     overflow-y: auto;
     z-index: 2200;
     background: rgba(13, 18, 30, 0.95);
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 18px;
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6), 0 0 40px rgba(52, 211, 153, 0.06);
@@ -753,7 +753,7 @@ textarea {
 .ytm-fs-artwork {
     border-radius: 24px;
     box-shadow: var(--premium-shadow-lg), 0 0 60px rgba(52, 211, 153, 0.1);
-    animation: premiumArtworkFloat 7s ease-in-out infinite;
+    animation: premiumArtworkFloat 10s ease-in-out infinite;
 }
 
 @keyframes premiumArtworkFloat {
@@ -886,7 +886,7 @@ html.builder-preview #premiumKebabMenu {
         radial-gradient(40% 50% at 60% 90%, rgba(167, 139, 250, 0.12), transparent 70%);
     filter: blur(8px);
     opacity: 0.9;
-    animation: heroGlowDrift 9s ease-in-out infinite alternate;
+    animation: heroGlowDrift 12s ease-in-out infinite alternate;
 }
 
 @keyframes heroGlowDrift {
@@ -963,7 +963,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     background: linear-gradient(135deg, rgba(52, 211, 153, 0.28), rgba(56, 189, 248, 0.20));
     border: 1px solid rgba(255, 255, 255, 0.20);
     box-shadow: 0 6px 18px rgba(52, 211, 153, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-    animation: heroFadeUp 0.7s var(--premium-ease) both 0.12s, heroWeatherPulse 4.5s ease-in-out infinite 0.9s;
+    animation: heroFadeUp 0.7s var(--premium-ease) both 0.12s, heroWeatherPulse 8s ease-in-out infinite 0.9s;
 }
 
 @keyframes heroWeatherPulse {
@@ -994,7 +994,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     margin-right: 4px;
     text-shadow: 0 0 24px rgba(52, 211, 153, 0.55);
     display: inline-block;
-    animation: heroHashFloat 4s ease-in-out infinite;
+    animation: heroHashFloat 8s ease-in-out infinite;
 }
 
 .ytm-page-home .greeting-title .hero-brand {
@@ -1003,7 +1003,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     background-clip: text;
     -webkit-text-fill-color: transparent;
     background-size: 200% auto;
-    animation: heroBrandShine 6s linear infinite;
+    animation: heroBrandShine 12s linear infinite;
 }
 
 @keyframes heroBrandShine {
@@ -1354,7 +1354,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: title3DGlow 4s ease-in-out infinite, title3DShine 8s linear infinite, title3DFloat 6s ease-in-out infinite;
+    animation: title3DGlow 4s ease-in-out infinite;
     letter-spacing: 0.02em;
 }
 
@@ -1447,7 +1447,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     border-radius: inherit;
     background: linear-gradient(120deg, transparent 30%, rgba(52, 211, 153, 0.06) 50%, transparent 70%);
     background-size: 200% 100%;
-    animation: songShimmer 3s ease-in-out infinite;
+    animation: songShimmer 6s ease-in-out infinite;
     pointer-events: none;
     z-index: 0;
 }
@@ -1591,20 +1591,20 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     width: 500px; height: 500px;
     background: radial-gradient(circle, #34d399, transparent 70%);
     top: -15%; left: -10%;
-    animation: onboardFloat1 8s ease-in-out infinite;
+    animation: onboardFloat1 12s ease-in-out infinite;
 }
 .onboarding-orb-2 {
     width: 400px; height: 400px;
     background: radial-gradient(circle, #6366f1, transparent 70%);
     bottom: -10%; right: -10%;
-    animation: onboardFloat2 10s ease-in-out infinite;
+    animation: onboardFloat2 14s ease-in-out infinite;
 }
 .onboarding-orb-3 {
     width: 300px; height: 300px;
     background: radial-gradient(circle, #a855f7, transparent 70%);
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    animation: onboardFloat3 9s ease-in-out infinite;
+    animation: onboardFloat3 13s ease-in-out infinite;
 }
 @keyframes onboardFloat1 {
     0%, 100% { transform: translate(0, 0) scale(1); }
@@ -1652,7 +1652,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
 }
 .onboard-logo-svg {
     filter: drop-shadow(0 0 30px rgba(52, 211, 153, 0.3));
-    animation: onboardLogoPulse 3s ease-in-out infinite;
+    animation: onboardLogoPulse 6s ease-in-out infinite;
 }
 @keyframes onboardLogoPulse {
     0%, 100% { transform: scale(1); filter: drop-shadow(0 0 30px rgba(52, 211, 153, 0.3)); }
@@ -1663,7 +1663,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     inset: -10px;
     border: 2px solid rgba(52, 211, 153, 0.2);
     border-radius: 50%;
-    animation: onboardRingSpin 8s linear infinite;
+    animation: onboardRingSpin 16s linear infinite;
 }
 @keyframes onboardRingSpin {
     from { transform: rotate(0deg); }
@@ -2139,8 +2139,8 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     width: 380px;
     max-height: 520px;
     background: rgba(10, 12, 24, 0.96);
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 20px;
     z-index: 10000;
@@ -2597,7 +2597,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 8px 32px rgba(52, 211, 153, 0.4);
-    animation: pwaInstallBounce 2s ease-in-out infinite;
+    animation: pwaInstallBounce 3s ease-in-out infinite;
     white-space: nowrap;
 }
 @keyframes pwaInstallBounce {
@@ -2922,8 +2922,8 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     width: 280px;
     z-index: 1900;
     background: rgba(8, 12, 22, 0.88);
-    backdrop-filter: blur(40px) saturate(200%);
-    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    backdrop-filter: blur(16px) saturate(200%);
+    -webkit-backdrop-filter: blur(16px) saturate(200%);
     border-right: 1px solid rgba(255, 255, 255, 0.06);
     transform: translateX(-100%);
     transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
@@ -3170,9 +3170,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     position: sticky;
     top: 0;
     z-index: 1700;
-    background: linear-gradient(135deg, rgba(8, 12, 22, 0.82), rgba(4, 8, 16, 0.92));
-    backdrop-filter: blur(32px) saturate(180%);
-    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    background: rgba(10, 12, 20, 0.95);
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
 }
@@ -3273,7 +3271,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
 }
 .premium-topnav-logo svg,
 .premium-topnav-logo img {
-    animation: premiumBrand3D 6s ease-in-out infinite;
+    animation: premiumBrand3D 10s ease-in-out infinite;
 }
 @keyframes premiumBrand3D {
     0%, 100% {
@@ -3322,7 +3320,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
 .premium-search-ai-icon {
     color: #a78bfa;
     font-size: 12px;
-    animation: aiSearchPulse 3s ease-in-out infinite;
+    animation: aiSearchPulse 6s ease-in-out infinite;
 }
 @keyframes aiSearchPulse {
     0%, 100% { opacity: 0.6; transform: scale(1); }
@@ -3437,8 +3435,8 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     right: 0;
     z-index: 1800;
     background: rgba(8, 12, 22, 0.92);
-    backdrop-filter: blur(32px) saturate(200%);
-    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    backdrop-filter: blur(16px) saturate(200%);
+    -webkit-backdrop-filter: blur(16px) saturate(200%);
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     padding: 4px 0 calc(4px + env(safe-area-inset-bottom, 0));
     box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4);
@@ -3535,7 +3533,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    animation: aiRingSpin 4s linear infinite;
+    animation: aiRingSpin 8s linear infinite;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.6s ease;
@@ -3562,7 +3560,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     border-radius: 50%;
     background: var(--gp-accent, #34d399);
     opacity: 0;
-    animation: artworkParticle 6s ease-in-out infinite;
+    animation: artworkParticle 10s ease-in-out infinite;
 }
 .gp-exp-artwork-particles span:nth-child(1) { left: 20%; top: 10%; animation-delay: 0s; }
 .gp-exp-artwork-particles span:nth-child(2) { left: 80%; top: 20%; animation-delay: 1s; }

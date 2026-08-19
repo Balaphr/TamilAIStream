@@ -403,7 +403,6 @@
     gap: 16px;
     overflow-x: auto;
     padding: 8px 0;
-    scroll-behavior: smooth;
     scrollbar-width: none;
 }
 
@@ -4007,11 +4006,9 @@ body.home-active .ytm-page-home {
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
         scroll-snap-type: x proximity;
-        scroll-behavior: smooth;
         scrollbar-width: none;
         -ms-overflow-style: none;
         padding-bottom: 8px;
-        /* Allow vertical page scroll while seeking horizontally on mobile */
         touch-action: auto;
     }
     

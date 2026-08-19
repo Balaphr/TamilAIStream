@@ -17,34 +17,13 @@ html {
 }
 
 /* ============================================
-   2. GPU ACCELERATION — Global
+   2. GPU ACCELERATION — Only for animated elements
    ============================================ */
-.ytm-page,
-.ytm-page-home,
-.ytm-main-content,
-.premium-topnav,
-.premium-top-nav,
-.mini-player,
 .gp-mini,
 .gp-expanded,
 .gp-mini-progress,
-.stations-track,
-.carousel-track,
-.recently-added-track,
-.song-card,
-.radio-card,
-.station-card,
-.collection-card,
-.movie-card,
-.movie-sidebar-card,
-.artist-hit-card,
-.tamil-hit-card,
-.ad-banner-card,
-.hero-ad-card,
-.premium-sidebar,
-.premium-sidebar-inner,
-.ytm-page-home .section,
-.greeting-section {
+.premium-topnav,
+.premium-top-nav {
     will-change: transform;
     transform: translateZ(0);
     backface-visibility: hidden;
@@ -218,8 +197,6 @@ body {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
-    will-change: scroll-position;
-    transform: translateZ(0);
 }
 
 .stations-track > *,
@@ -240,10 +217,7 @@ img,
 .hero-ad-image {
     content-visibility: auto;
     contain-intrinsic-size: 0 200px;
-    will-change: transform;
-    transform: translateZ(0);
     image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
 }
 
 /* ============================================
@@ -253,8 +227,6 @@ canvas,
 .premium-particles-canvas,
 .hero-particles-canvas,
 .neural-bg-canvas {
-    will-change: transform;
-    transform: translateZ(0);
     image-rendering: optimizeSpeed;
 }
 
@@ -423,14 +395,13 @@ canvas,
    ============================================ */
 .lazy-section {
     opacity: 0;
-    transform: translateY(20px) translateZ(0);
+    transform: translateY(20px);
     transition: opacity 0.4s ease, transform 0.4s ease;
-    will-change: opacity, transform;
 }
 
 .lazy-section.visible {
     opacity: 1;
-    transform: translateY(0) translateZ(0);
+    transform: translateY(0);
 }
 
 /* ============================================
@@ -441,8 +412,6 @@ canvas,
     position: sticky;
     top: 0;
     z-index: 1700;
-    will-change: transform;
-    transform: translateZ(0);
     left: auto;
     right: auto;
     width: auto;
@@ -451,16 +420,11 @@ canvas,
 .gp-mini {
     position: fixed;
     z-index: 1000;
-    will-change: transform;
-    transform: translateZ(0);
 }
 
-/* Sticky section headers */
 .section-header {
     position: sticky;
     z-index: 10;
-    will-change: transform;
-    transform: translateZ(0);
 }
 
 /* ============================================
@@ -558,8 +522,6 @@ a,
 .ad-banner-container,
 .hero-ad-container {
     contain: layout style paint;
-    will-change: transform;
-    transform: translateZ(0);
 }
 
 .ad-banner-container:empty,
@@ -578,9 +540,7 @@ a,
     left: 0;
     right: 0;
     z-index: 1100;
-    background: rgba(10, 12, 20, 0.88);
-    backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
-    -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+    background: rgba(10, 12, 20, 0.95);
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     padding: 4px 0;
     padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
@@ -1081,7 +1041,6 @@ body.gp-visible .tamilai-bottom-nav {
 .ai-news-list,
 .ai-sidebar-inner {
     -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
 }
 
 /* Content visibility for off-screen sections — browser skips rendering */
@@ -1243,28 +1202,11 @@ body {
     text-rendering: optimizeLegibility;
 }
 
-/* GPU layers for smooth 120Hz scrolling */
-.gp-mini,
-.gp-expanded,
-.tamilai-bottom-nav,
-.ai-glass-sidebar,
-.ytm-main-content {
-    will-change: transform;
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-}
-
 /* Smooth transitions at 120Hz */
 .gp-mini,
 .gp-expanded,
 .gp-mini-progress,
-.gp-exp-bar,
-.song-card,
-.ai-song-card,
-.ai-rec-song,
-.station-card,
-.slide-card {
+.gp-exp-bar {
     transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 

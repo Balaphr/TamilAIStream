@@ -1819,8 +1819,7 @@ document.querySelectorAll('.slide-play-btn, .category-card, .nav-icon-btn, .rece
 const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
-            entry.target.style.animation = 'none';
-            entry.target.offsetHeight;
+            entry.target.getAnimations().forEach(a => a.cancel());
             entry.target.style.animation = 'fadeInUp 0.6s ease-out forwards';
         }
     });
@@ -3296,13 +3295,14 @@ function initTamilHitsCarousel() {
     let lastX = 0;
     let lastTime = 0;
     let rafId = null;
+    let cachedOffsetLeft = 0;
 
-    // Mouse drag (desktop)
     grid.addEventListener('mousedown', (e) => {
         if (e.target.closest('button')) return;
         isDown = true;
         grid.style.cursor = 'grabbing';
-        startX = e.pageX - grid.offsetLeft;
+        cachedOffsetLeft = grid.offsetLeft;
+        startX = e.pageX - cachedOffsetLeft;
         scrollLeft = grid.scrollLeft;
         lastX = startX;
         lastTime = Date.now();
@@ -3318,7 +3318,6 @@ function initTamilHitsCarousel() {
     grid.addEventListener('mouseup', () => {
         isDown = false;
         grid.style.cursor = '';
-        // Momentum scrolling
         if (Math.abs(velocity) > 0.5) {
             const decelerate = () => {
                 velocity *= 0.95;
@@ -3334,7 +3333,7 @@ function initTamilHitsCarousel() {
     grid.addEventListener('mousemove', (e) => {
         if (!isDown) return;
         e.preventDefault();
-        const x = e.pageX - grid.offsetLeft;
+        const x = e.pageX - cachedOffsetLeft;
         const walk = (x - startX) * 1.5;
         const now = Date.now();
         const dt = now - lastTime;
@@ -3607,12 +3606,26 @@ function _heroInitTilt() {
     const hover = window.matchMedia &&
         window.matchMedia('(hover: hover)').matches;
     if (reduce || !hover) return;
+    let _heroVisible = true;
+    let _tiltRaf = null;
+    let _pendingTilt = null;
+    const _heroObs = new IntersectionObserver(([e]) => { _heroVisible = e.isIntersecting; }, { threshold: 0 });
+    _heroObs.observe(hero);
     hero.addEventListener('pointermove', (e) => {
-        const r = hero.getBoundingClientRect();
-        const px = (e.clientX - r.left) / r.width - 0.5;
-        const py = (e.clientY - r.top) / r.height - 0.5;
-        content.style.setProperty('--hero-ry', (px * 8).toFixed(2) + 'deg');
-        content.style.setProperty('--hero-rx', (-py * 8).toFixed(2) + 'deg');
+        if (!_heroVisible) return;
+        _pendingTilt = e;
+        if (!_tiltRaf) {
+            _tiltRaf = requestAnimationFrame(() => {
+                _tiltRaf = null;
+                const ev = _pendingTilt;
+                if (!ev) return;
+                const r = hero.getBoundingClientRect();
+                const px = (ev.clientX - r.left) / r.width - 0.5;
+                const py = (ev.clientY - r.top) / r.height - 0.5;
+                content.style.setProperty('--hero-ry', (px * 8).toFixed(2) + 'deg');
+                content.style.setProperty('--hero-rx', (-py * 8).toFixed(2) + 'deg');
+            });
+        }
     });
     hero.addEventListener('pointerleave', () => {
         content.style.setProperty('--hero-rx', '0deg');
@@ -3725,12 +3738,14 @@ function initCarouselSwipe(track) {
     let lastX = 0;
     let lastTime = 0;
     let rafId = null;
+    let cachedOffsetLeft = 0;
     
     track.addEventListener('mousedown', (e) => {
         if (e.target.closest('button')) return;
         isDown = true;
         track.style.cursor = 'grabbing';
-        startX = e.pageX - track.offsetLeft;
+        cachedOffsetLeft = track.offsetLeft;
+        startX = e.pageX - cachedOffsetLeft;
         scrollLeft = track.scrollLeft;
         lastX = startX;
         lastTime = Date.now();
@@ -3761,7 +3776,7 @@ function initCarouselSwipe(track) {
     track.addEventListener('mousemove', (e) => {
         if (!isDown) return;
         e.preventDefault();
-        const x = e.pageX - track.offsetLeft;
+        const x = e.pageX - cachedOffsetLeft;
         const walk = (x - startX) * 1.5;
         const now = Date.now();
         const dt = now - lastTime;
@@ -4774,10 +4789,12 @@ function initHorizontalDragScroll() {
         let isDragging = false;
         let startX = 0;
         let scrollLeft = 0;
+        let cachedOffsetLeft = 0;
 
         viewport.addEventListener('mousedown', function(e) {
             isDragging = true;
-            startX = e.pageX - viewport.offsetLeft;
+            cachedOffsetLeft = viewport.offsetLeft;
+            startX = e.pageX - cachedOffsetLeft;
             scrollLeft = viewport.scrollLeft;
             viewport.style.cursor = 'grabbing';
             viewport.style.userSelect = 'none';
@@ -4795,7 +4812,7 @@ function initHorizontalDragScroll() {
         viewport.addEventListener('mousemove', function(e) {
             if (!isDragging) return;
             e.preventDefault();
-            const x = e.pageX - viewport.offsetLeft;
+            const x = e.pageX - cachedOffsetLeft;
             const walk = (x - startX) * 1.5;
             viewport.scrollLeft = scrollLeft - walk;
         });
@@ -4833,7 +4850,8 @@ function initHorizontalDragScroll() {
                 }
             }
         });
-        _dragScrollObserver.observe(document.body, { childList: true, subtree: true });
+        const target = document.getElementById('stationsGrid') || document.querySelector('.ytm-main-content') || document.body;
+        _dragScrollObserver.observe(target, { childList: true, subtree: true });
     }
 }
 
