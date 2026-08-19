@@ -670,24 +670,37 @@ function initAudioPlayer() {
             console.error('[TamilAI FM] Audio error:', errCode, errMsg, '| src:', audioPlayer.src);
             showToast(`Unable to connect to ${stationName}. Stream currently unavailable. (Error ${errCode})`, 'error');
         });
+        let _waitingTimer = null;
+        let _stalledCount = 0;
         audioPlayer.addEventListener('waiting', () => {
-            // Suppress the buffering toast during/after a user-initiated seek.
-            // The seeking flag is set by seekPlaybackToPercent and cleared after
-            // a short grace period so brief post-seek buffers are invisible.
             if (window._isSeeking || Date.now() < window._seekingUntil) return;
-            showToast('Buffering... Please wait.', 'info');
+            clearTimeout(_waitingTimer);
+            _waitingTimer = setTimeout(() => {
+                if (!audioPlayer || audioPlayer.paused) return;
+                showToast('Buffering... Please wait.', 'info');
+            }, 2000);
         });
         audioPlayer.addEventListener('canplay', () => {
+            clearTimeout(_waitingTimer);
             hideLoadingSpinner();
-            // Also clear seek flag on canplay in case playing event is delayed
+            _stalledCount = 0;
             if (Date.now() >= window._seekingUntil) window._isSeeking = false;
+        });
+        audioPlayer.addEventListener('playing', () => {
+            clearTimeout(_waitingTimer);
+            _stalledCount = 0;
+            hideLoadingSpinner();
         });
         audioPlayer.addEventListener('loadstart', () => {
             streamConnecting = true;
         });
         audioPlayer.addEventListener('stalled', () => {
             if (window._isSeeking || Date.now() < window._seekingUntil) return;
-            showToast('Connection stalled. Retrying...', 'info');
+            _stalledCount++;
+            if (_stalledCount >= 3) {
+                showToast('Connection stalled. Retrying...', 'info');
+                _stalledCount = 0;
+            }
         });
         audioPlayer.addEventListener('ended', () => {
             ProgressSync.stop();
@@ -869,10 +882,10 @@ function playStation(stationName) {
         showToast(`${stationName} stream is currently unavailable.`, 'error');
         return;
     }
-    let streamUrlsToTry = [streamUrl];
     showLoadingSpinner();
     streamConnecting = true;
     let currentUrlIndex = 0;
+    let playAttemptTimeout = null;
     function tryNextStream() {
         if (currentUrlIndex >= streamUrlsToTry.length) {
             streamConnecting = false;
@@ -885,9 +898,18 @@ function playStation(stationName) {
         audioPlayer.src = streamUrl;
         audioPlayer.volume = playbackVolume;
         audioPlayer.load();
+        clearTimeout(playAttemptTimeout);
+        playAttemptTimeout = setTimeout(() => {
+            if (streamConnecting && !isStreamPlaying) {
+                clearTimeout(playAttemptTimeout);
+                currentUrlIndex++;
+                tryNextStream();
+            }
+        }, 8000);
         const playPromise = audioPlayer.play();
         if (playPromise !== undefined) {
             playPromise.then(() => {
+                clearTimeout(playAttemptTimeout);
                 currentStation = stationName;
                 currentPlaybackTrack = {
                     id: 'station_' + stationName,
@@ -916,9 +938,7 @@ function playStation(stationName) {
                     YTMusic.updateMiniPlayerUI();
                 }
                 hideLoadingSpinner();
-                showToast(`Now playing: ${stationInfo.name}`, 'success');
                 showPlaybackNotification(currentPlaybackTrack, true);
-                // Sync GlobalPlayer state for mini/expanded player
                 if (typeof GlobalPlayer !== 'undefined') {
                     GlobalPlayer.showMiniPlayer();
                     if (GlobalPlayer.state) {
@@ -929,9 +949,10 @@ function playStation(stationName) {
                     }
                 }
             }).catch((err) => {
+                clearTimeout(playAttemptTimeout);
                 console.error('[TamilAI FM] Play promise rejected:', err?.name, err?.message, '| URL:', streamUrl);
                 currentUrlIndex++;
-                setTimeout(tryNextStream, 500);
+                setTimeout(tryNextStream, 300);
             });
         }
     }
@@ -1002,7 +1023,6 @@ async function playSong(song, playlist = []) {
             hideLoadingSpinner();
             // Smart Queue: auto-select next song based on mood/artist/movie
                         _updateSmartQueue(song, currentPlaylist);
-            showToast(`Now playing: ${song.title}`, 'success');
             showPlaybackNotification(currentPlaybackTrack, false);
             // Sync GlobalPlayer state for mini/expanded player
             if (typeof GlobalPlayer !== 'undefined') {
@@ -1018,7 +1038,7 @@ async function playSong(song, playlist = []) {
             console.error('Play error:', err);
             streamConnecting = false;
             hideLoadingSpinner();
-            showToast('Click play button to start', 'info');
+            showToast('Unable to play. Check your connection and try again.', 'error');
         }
     } else {
         showToast(`Playing: ${song.title} (Demo mode)`, 'info');
@@ -1345,6 +1365,16 @@ function updatePlayPauseButton(playing) {
         } else {
             btn.classList.remove('fa-pause');
             btn.classList.add('fa-play');
+        }
+    });
+    // Also sync AI home section play buttons
+    document.querySelectorAll('.ai-play-btn i').forEach(icon => {
+        if (playing) {
+            icon.classList.remove('fa-play');
+            icon.classList.add('fa-pause');
+        } else {
+            icon.classList.remove('fa-pause');
+            icon.classList.add('fa-play');
         }
     });
     if (npPlayBtn) {
@@ -3482,13 +3512,7 @@ function applySiteSettings() {
 // AI Glass Premium Home Sections
 // ============================================
 
-// ---- Premium Glass Hero Bar helpers (greeting + live weather) ----
-const HERO_WEATHER_LABELS = {
-    'fa-sun': 'Clear', 'fa-cloud-sun': 'Partly cloudy', 'fa-cloud': 'Overcast',
-    'fa-smog': 'Fog', 'fa-cloud-rain': 'Rain', 'fa-cloud-showers-heavy': 'Showers',
-    'fa-snowflake': 'Snow', 'fa-bolt': 'Thunderstorm',
-    'fa-moon': 'Clear night', 'fa-cloud-moon': 'Cloudy night'
-};
+// ---- Premium Glass Hero Bar helpers (greeting) ----
 
 function _heroTimeGreeting() {
     const h = new Date().getHours();
@@ -3497,22 +3521,6 @@ function _heroTimeGreeting() {
     if (h < 17) return { text: 'Good Afternoon', emoji: '🌤️' };
     if (h < 21) return { text: 'Good Evening', emoji: '🌆' };
     return { text: 'Good Night', emoji: '🌙' };
-}
-
-function _heroTimeWeatherIcon() {
-    const h = new Date().getHours();
-    if (h < 5 || h >= 21) return { icon: 'fa-moon', label: 'Clear night' };
-    if (h < 8)  return { icon: 'fa-cloud-sun', label: 'Dawn' };
-    if (h < 17) return { icon: 'fa-sun', label: 'Clear' };
-    if (h < 19) return { icon: 'fa-cloud-sun', label: 'Evening' };
-    return { icon: 'fa-cloud-moon', label: 'Cloudy night' };
-}
-
-function _heroSetWeather(icon, label) {
-    const el = document.getElementById('greetingWeather');
-    if (!el) return;
-    el.innerHTML = `<i class="fas ${icon}"></i>`;
-    if (label) el.title = label;
 }
 
 function _heroGetTimeOfDay() {
@@ -3527,53 +3535,10 @@ function _heroSetGreeting() {
     el.textContent = 'Good ' + _heroGetTimeOfDay();
 }
 
-let _heroLiveWeather = false;
-let _heroWeatherInterval = null;
 let _heroGreetingInterval = null;
 let _heroQuoteInterval = null;
 let _heroUpdatersStarted = false;
 let _greetingQuotePicked = '';
-
-function _heroWmoToIcon(code) {
-    if (code === 0) return 'fa-sun';
-    if (code === 1 || code === 2) return 'fa-cloud-sun';
-    if (code === 3) return 'fa-cloud';
-    if (code === 45 || code === 48) return 'fa-smog';
-    if (code >= 51 && code <= 57) return 'fa-cloud-rain';
-    if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return 'fa-cloud-showers-heavy';
-    if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'fa-snowflake';
-    if (code >= 95) return 'fa-bolt';
-    return null;
-}
-
-// Live weather (best-effort, keyless via Open-Meteo). Falls back to the
-// time-based icon shown instantly. Only the weather-chip node is updated.
-function updateHeroWeather() {
-    const t = _heroTimeWeatherIcon();
-    _heroSetWeather(t.icon, t.label); // instant fallback
-    if (!navigator.geolocation || typeof fetch !== 'function') return;
-    const guard = setTimeout(() => {}, 8000);
-    navigator.geolocation.getCurrentPosition(
-        (pos) => {
-            const { latitude, longitude } = pos.coords;
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=weather_code`)
-                .then(r => (r.ok ? r.json() : null))
-                .then(d => {
-                    const code = d && d.current && d.current.weather_code;
-                    if (code == null) return;
-                    const icon = _heroWmoToIcon(code);
-                    if (icon) {
-                        _heroLiveWeather = true;
-                        _heroSetWeather(icon, HERO_WEATHER_LABELS[icon] || 'Live weather');
-                    }
-                })
-                .catch(() => {})
-                .finally(() => clearTimeout(guard));
-        },
-        () => clearTimeout(guard), // denied/offline -> keep time-based
-        { enableHighAccuracy: false, timeout: 7000, maximumAge: 600000 }
-    );
-}
 
 function _heroQuotePool() {
     let pool = [];
@@ -3661,13 +3626,8 @@ function _heroStartUpdaters() {
     _heroGreetingInterval = setInterval(() => {
         if (!document.hidden) {
             _heroSetGreeting();
-            if (!_heroLiveWeather) {
-                const t = _heroTimeWeatherIcon();
-                _heroSetWeather(t.icon, t.label);
-            }
         }
     }, 60000);
-    _heroWeatherInterval = setInterval(() => { if (!document.hidden) updateHeroWeather(); }, 15 * 60 * 1000);
     setInterval(() => { if (!document.hidden) _heroSetDateTime(); }, 60000);
 }
 
@@ -3729,7 +3689,6 @@ function renderGreetingSection() {
                     <div class="greeting-hero-top">
                         <div class="greeting-weather">
                             <span class="greeting-label greeting-greeting" id="greetingText"></span>
-                            <span class="greeting-weather-icon" id="greetingWeather" title=""><i class="fas fa-moon"></i></span>
                         </div>
                         <span class="greeting-datetime" id="greetingDateTime"></span>
                     </div>
@@ -3749,9 +3708,6 @@ function renderGreetingSection() {
         qEl.textContent = _heroPickQuote();
     }
     _heroSetDateTime();
-
-    // Live weather (time-based instantly, upgrades to real data if allowed)
-    updateHeroWeather();
 
     // Micro-interactions + lightweight in-place updaters
     _heroInitTilt();

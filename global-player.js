@@ -867,6 +867,12 @@ const GlobalPlayer = (() => {
         setLeft('gpExpBarThumb', pct + '%');
         setText('gpExpCur', fmtTime(cur));
         setText('gpExpDur', fmtTime(dur));
+        // Sync YTMusic player UI if available
+        if (typeof YTMusic !== 'undefined') {
+            YTMusic.progress = cur;
+            YTMusic.duration = dur;
+            YTMusic.updateProgressUI();
+        }
         syncLyricsHighlight();
     }
 

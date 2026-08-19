@@ -1202,3 +1202,110 @@ img[loading="lazy"] {
         border-radius: 20px;
     }
 }
+
+/* ============================================
+   35. THUMBNAIL BLINK FIX — Prevent scroll flicker
+   ============================================ */
+img[loading="lazy"] {
+    opacity: 1;
+    transition: opacity 0.15s ease;
+}
+img[loading="lazy"].loaded,
+img[loading="lazy"]:not([src=""]) {
+    opacity: 1;
+}
+.ai-song-art img,
+.ai-rec-song-art img,
+.ai-playlist-art img,
+.ai-fm-art img,
+.song-thumbnail img,
+.ra-card-art img,
+.ytm-song-art img,
+.dash-song-art img {
+    will-change: auto;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    image-rendering: -webkit-optimize-contrast;
+}
+
+/* ============================================
+   36. 120Hz PWA PERFORMANCE — GPU acceleration
+   ============================================ */
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* GPU layers for smooth 120Hz scrolling */
+.gp-mini,
+.gp-expanded,
+.tamilai-bottom-nav,
+.ai-glass-sidebar,
+.ytm-main-content {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* Smooth transitions at 120Hz */
+.gp-mini,
+.gp-expanded,
+.gp-mini-progress,
+.gp-exp-bar,
+.song-card,
+.ai-song-card,
+.ai-rec-song,
+.station-card,
+.slide-card {
+    transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Prevent jank during scroll */
+.song-card,
+.ai-song-card,
+.ai-rec-song,
+.station-card,
+.slide-card,
+.ra-card {
+    contain: layout style;
+    content-visibility: auto;
+    contain-intrinsic-size: 80px 120px;
+}
+
+/* Smooth image loading without blink */
+img {
+    opacity: 1;
+    transition: opacity 0.12s ease;
+}
+img:not([src]),
+img[src=""] {
+    opacity: 0;
+}
+
+/* 120Hz optimized animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    html { scroll-behavior: auto; }
+}

@@ -497,7 +497,7 @@ window.AIHome = (() => {
 
     // News display config lives in Builder Site Settings (tamilAIStream_siteSettings.newsSettings).
     function newsDisplayConfig() {
-        const cfg = { maxItems: 4, highlightHours: 6, showPlayerOnDetail: true, seeAllMax: 25, refreshInterval: 300000, retainHours: 72, showNavButtons: true, showViewButton: true, showRefreshIndicator: true };
+        const cfg = { maxItems: 4, highlightHours: 6, showPlayerOnDetail: true, seeAllMax: 25, refreshInterval: 60000, retainHours: 1, showNavButtons: true, showViewButton: true, showRefreshIndicator: true };
         try {
             if (window.DataStore) {
                 const s = DataStore.getSiteSettings() || {};
@@ -691,6 +691,13 @@ window.AIHome = (() => {
         }
         const cfg = newsDisplayConfig();
         const now = Date.now();
+        // Auto-trash news older than retainHours (default 1 hour)
+        const maxAge = cfg.retainHours * 3600000;
+        newsItems = newsItems.filter(n => {
+            if (!n.publishedAt) return true;
+            const pub = new Date(n.publishedAt).getTime();
+            return !isNaN(pub) && (now - pub) < maxAge;
+        });
         const visible = newsItems.slice(0, cfg.maxItems);
         list.innerHTML = visible.map((n) => {
             const pub = n.publishedAt ? new Date(n.publishedAt).getTime() : 0;
@@ -722,9 +729,8 @@ window.AIHome = (() => {
         const list = $('aiNewsList');
         if (!list) return;
         if (newsLoading) return;
-        // Avoid hammering the endpoint when refreshHome fires repeatedly.
         const nowMs = Date.now();
-        if (newsItems.length && (nowMs - newsLastLoaded) < 30000) return;
+        if (newsItems.length && (nowMs - newsLastLoaded) < 10000) return;
         newsLoading = true;
         try {
             const resp = await fetch('/api/news', { cache: 'no-store' });

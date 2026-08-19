@@ -1337,8 +1337,6 @@ const YTMusic = {
         const placeholder = document.getElementById('ytmFsPlaceholder');
         const qualityBadge = document.getElementById('ytmQualityBadge');
         const nowPlayingBadge = document.getElementById('ytmNowPlayingBadge');
-        // Builder stores artwork under `albumCover`; fall back across all
-        // thumbnail field names so uploaded art always propagates.
         const fsArt = t.thumbnail || t.cover || t.albumCover || t.image || '';
         if (fsArt) {
             this.setSrc('ytmFsArtwork', fsArt);
