@@ -112,9 +112,14 @@ const PlayerEngine = (() => {
 
     function initAudio() {
         if (window.__BUILDER_PREVIEW__) return;
-        if (audio) return;
-        audio = window.audioPlayer || new Audio();
-        window.audioPlayer = audio;
+        if (audio && audio === window.audioPlayer) return;
+        // Always prefer the canonical window.audioPlayer created by script.js
+        if (window.audioPlayer) {
+            audio = window.audioPlayer;
+        } else if (!audio) {
+            audio = new Audio();
+            window.audioPlayer = audio;
+        }
         audio.preload = 'auto';
         audio.volume = state.volume;
         audio.playbackRate = state.speed;
@@ -163,11 +168,12 @@ const PlayerEngine = (() => {
             emit('pause', state);
         });
 
+        // NOTE: 'ended' handler only updates PlayerEngine internal state.
+        // Queue advancement is handled exclusively by script.js to avoid
+        // double-play-next race conditions.
         audio.addEventListener('ended', () => {
-            handleTrackEnd();
-            if (state.aiAutomation && state.queue.length === 0) {
-                autoRecommendNext();
-            }
+            state.isPlaying = false;
+            emit('ended', state);
         });
 
         audio.addEventListener('timeupdate', () => {

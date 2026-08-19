@@ -587,6 +587,10 @@ function initAudioPlayer() {
         } catch (e) {
             console.warn('Web Audio API not available:', e);
         }
+
+        // Guard: only attach the primary ended handler once
+        if (!audioPlayer._primaryEndedHandlerAttached) {
+            audioPlayer._primaryEndedHandlerAttached = true;
         audioPlayer.addEventListener('playing', () => {
             isStreamPlaying = true;
             streamConnecting = false;
@@ -769,6 +773,7 @@ function initAudioPlayer() {
                 playNextTrack();
             }
         });
+        } // end _primaryEndedHandlerAttached guard
 
         // ---- MediaSession API (Android notification / lock-screen controls) ----
         if ('mediaSession' in navigator) {
@@ -824,7 +829,10 @@ function stopCurrentStream() {
     if (audioPlayer) {
         audioPlayer.pause();
         audioPlayer.removeAttribute('src');
-        audioPlayer.load();
+        // NOTE: Do NOT call audioPlayer.load() here — it resets the media
+        // element state and can prevent the next play() from succeeding.
+        // Removing src is enough to stop playback. The next playSong/playStation
+        // call will set a new src and call load() + play() explicitly.
         isStreamPlaying = false;
         streamConnecting = false;
         playbackHasLoaded = false;
@@ -847,6 +855,7 @@ function stopCurrentStream() {
 /**
  * Check whether the same song/station is already the active playback source.
  * Returns true when clicking the currently-playing track must NOT restart it.
+ * Requires exact ID match to avoid false positives with same-titled songs.
  */
 function isSameActivePlayback(trackOrStation) {
     if (!trackOrStation) return false;
@@ -854,14 +863,15 @@ function isSameActivePlayback(trackOrStation) {
         // Station name comparison
         return !!(currentStation && currentStation === trackOrStation);
     }
-    // Track object comparison (by id, then by audioUrl/streamUrl, then by title+artist)
+    // Track object comparison — require exact ID match
     const id = trackOrStation.id || trackOrStation.songId;
     if (id && currentPlaybackTrack && currentPlaybackTrack.id === id) return true;
+    // Also match by audio URL (for stations that don't have stable IDs)
     const url = trackOrStation.audioUrl || trackOrStation.streamUrl || trackOrStation.url;
-    if (url && audioPlayer && audioPlayer.src && audioPlayer.src.indexOf(url) !== -1) return true;
-    if (currentPlaybackTrack && trackOrStation.title && currentPlaybackTrack.title === trackOrStation.title
-        && (!trackOrStation.artist || !currentPlaybackTrack.artist || currentPlaybackTrack.artist === trackOrStation.artist)) {
-        return true;
+    if (url && audioPlayer && audioPlayer.src && audioPlayer.src.indexOf(url) !== -1) {
+        // Only match by URL if we also have a playing track (prevents false match
+        // when audioPlayer src is leftover from a previous song)
+        if (currentPlaybackTrack) return true;
     }
     return false;
 }
@@ -1045,12 +1055,11 @@ async function playSong(song, playlist = []) {
         audioPlayer.load();
         try {
             await audioPlayer.play();
+            // State is set by the 'playing' event handler (initAudioPlayer) to
+            // avoid race conditions. Only update non-state UI here.
             currentStation = song.title;
-            isStreamPlaying = true;
-            streamConnecting = false;
             persistPlaybackState();
-            updatePlayPauseButton(true);
-            updateNowPlayingBar(song.title, `${song.artist} â€¢ ${song.movie}`);
+            updateNowPlayingBar(song.title, `${song.artist} • ${song.movie}`);
             updateMediaSessionMetadata(song.title, song.artist, song.thumbnail || song.albumCover || song.cover || '');
             document.body.classList.add('gp-active');
             if (typeof GlobalPlayer !== 'undefined') {
@@ -1064,7 +1073,6 @@ async function playSong(song, playlist = []) {
                 YTMusic.currentTrack = currentPlaybackTrack;
                 YTMusic.queue = currentPlaybackQueue;
                 YTMusic.queueIndex = currentPlaybackQueueIndex;
-                YTMusic.isPlaying = true;
                 YTMusic.addToHistory(currentPlaybackTrack);
                 YTMusic.updatePlayerUI();
                 YTMusic.updateFullscreenPlayerUI();
@@ -1087,7 +1095,9 @@ async function playSong(song, playlist = []) {
         } catch (err) {
             console.error('Play error:', err);
             streamConnecting = false;
+            isStreamPlaying = false;
             hideLoadingSpinner();
+            updatePlayPauseButton(false);
             showToast('Unable to play. Check your connection and try again.', 'error');
         }
     } else {
@@ -1171,21 +1181,27 @@ function resumePlayback() {
     if (!audioPlayer) return;
     if (audioPlayer.paused) {
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        audioPlayer.play().catch(() => {});
-        isStreamPlaying = true;
-        userPaused = false;
-        updatePlayPauseButton(true);
-        updateNowPlayingBarPause();
-        if (typeof GlobalPlayer !== 'undefined') GlobalPlayer.updatePlayUI(true);
-        if (typeof YTMusic !== 'undefined') {
-            YTMusic.isPlaying = true;
-            YTMusic.updatePlayerUI();
-            YTMusic.updateFullscreenPlayerUI();
-            YTMusic.updateMiniPlayerUI();
-        }
-        if (typeof MiniAudioPlayer !== 'undefined') {
-            MiniAudioPlayer.syncPlayingUI();
-        }
+        audioPlayer.play().then(() => {
+            // Only set state AFTER play() succeeds
+            isStreamPlaying = true;
+            userPaused = false;
+            updatePlayPauseButton(true);
+            updateNowPlayingBarPause();
+            if (typeof GlobalPlayer !== 'undefined') GlobalPlayer.updatePlayUI(true);
+            if (typeof YTMusic !== 'undefined') {
+                YTMusic.isPlaying = true;
+                YTMusic.updatePlayerUI();
+                YTMusic.updateFullscreenPlayerUI();
+                YTMusic.updateMiniPlayerUI();
+            }
+            if (typeof MiniAudioPlayer !== 'undefined') {
+                MiniAudioPlayer.syncPlayingUI();
+            }
+        }).catch(() => {
+            // Play failed — keep UI in paused state
+            isStreamPlaying = false;
+            updatePlayPauseButton(false);
+        });
     }
 }
 
@@ -1398,20 +1414,26 @@ function togglePlayPause() {
             playStation(currentStation);
         } else if (audioPlayer && (audioPlayer.src || currentPlaybackTrack?.audioUrl)) {
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            audioPlayer.play().catch(() => {});
-            isStreamPlaying = true;
-            updatePlayPauseButton(true);
-            updateNowPlayingBarPause();
-            if (typeof GlobalPlayer !== 'undefined') GlobalPlayer.updatePlayUI(true);
-            if (typeof YTMusic !== 'undefined') {
-                YTMusic.isPlaying = true;
-                YTMusic.updatePlayerUI();
-                YTMusic.updateFullscreenPlayerUI();
-                YTMusic.updateMiniPlayerUI();
-            }
-            if (typeof MiniAudioPlayer !== 'undefined') {
-                MiniAudioPlayer.syncPlayingUI();
-            }
+            audioPlayer.play().then(() => {
+                // Only set state AFTER play() succeeds
+                isStreamPlaying = true;
+                updatePlayPauseButton(true);
+                updateNowPlayingBarPause();
+                if (typeof GlobalPlayer !== 'undefined') GlobalPlayer.updatePlayUI(true);
+                if (typeof YTMusic !== 'undefined') {
+                    YTMusic.isPlaying = true;
+                    YTMusic.updatePlayerUI();
+                    YTMusic.updateFullscreenPlayerUI();
+                    YTMusic.updateMiniPlayerUI();
+                }
+                if (typeof MiniAudioPlayer !== 'undefined') {
+                    MiniAudioPlayer.syncPlayingUI();
+                }
+            }).catch(() => {
+                // Play failed — keep UI in paused state
+                isStreamPlaying = false;
+                updatePlayPauseButton(false);
+            });
         } else {
             showToast('Please select a station or song to play', 'info');
         }

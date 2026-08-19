@@ -521,7 +521,8 @@ const GlobalPlayer = (() => {
             persistState();
         });
         ap.addEventListener('playing', () => { state.isPlaying = true; updatePlayUI(true); });
-        ap.addEventListener('ended', () => { state.isPlaying = false; updatePlayUI(false); });
+        // NOTE: 'ended' is NOT handled here — script.js handles queue advancement
+        // and UI state. Handling it here would cause double-play-next.
         ap.addEventListener('loadedmetadata', () => {
             state.duration = ap.duration || 0;
             state.isLive = !isFinite(ap.duration) || ap.duration === 0;
