@@ -61,7 +61,10 @@ const PlayerEngine = (() => {
         return () => { listeners[event] = listeners[event].filter(f => f !== fn); };
     }
 
-    function saveState() {
+    let _saveStateTimer = null;
+    const _SAVE_DEBOUNCE = 1500; // 1.5 second debounce
+
+    function _doSaveState() {
         try {
             const toSave = {
                 isPlaying: state.isPlaying,
@@ -85,6 +88,16 @@ const PlayerEngine = (() => {
             };
             localStorage.setItem('player_engine_state', JSON.stringify(toSave));
         } catch (e) {}
+    }
+
+    function saveState() {
+        if (_saveStateTimer) clearTimeout(_saveStateTimer);
+        _saveStateTimer = setTimeout(_doSaveState, _SAVE_DEBOUNCE);
+    }
+
+    function saveStateImmediate() {
+        if (_saveStateTimer) clearTimeout(_saveStateTimer);
+        _doSaveState();
     }
 
     function loadState() {
@@ -344,18 +357,31 @@ const PlayerEngine = (() => {
         emit('trackChange', state);
     }
 
+    let _isCrossfading = false;
+    let _crossfadeTimeout = null;
+
     async function crossfadeTo(newUrl) {
+        if (_isCrossfading) {
+            // Cancel previous crossfade - just switch immediately
+            if (_crossfadeTimeout) clearTimeout(_crossfadeTimeout);
+            _isCrossfading = false;
+        }
+        
         if (!audioCtx) {
             audio.src = newUrl;
             audio.load();
             await audio.play().catch(() => {});
             return;
         }
+        
+        _isCrossfading = true;
         const oldGain = gainNode.gain.value;
         gainNode.gain.setValueAtTime(oldGain, audioCtx.currentTime);
         gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + CROSSFADE_SECONDS);
 
-        await new Promise(r => setTimeout(r, CROSSFADE_SECONDS * 800));
+        await new Promise(r => {
+            _crossfadeTimeout = setTimeout(r, CROSSFADE_SECONDS * 800);
+        });
 
         audio.src = newUrl;
         audio.load();
@@ -363,6 +389,7 @@ const PlayerEngine = (() => {
 
         gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
         gainNode.gain.linearRampToValueAtTime(state.volume, audioCtx.currentTime + CROSSFADE_SECONDS * 0.5);
+        _isCrossfading = false;
     }
 
     function play() {
@@ -609,7 +636,7 @@ const PlayerEngine = (() => {
     function startSaveInterval() {
         if (_saveInterval) return;
         _saveInterval = setInterval(() => {
-            if (state.isPlaying) saveState();
+            if (state.isPlaying) saveStateImmediate();
         }, 30000);
     }
 
@@ -619,12 +646,12 @@ const PlayerEngine = (() => {
 
     function init() {
         loadState();
-        window.addEventListener('beforeunload', saveState);
+        window.addEventListener('beforeunload', saveStateImmediate);
         startSaveInterval();
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                saveState();
+                saveStateImmediate();
             }
         });
     }
@@ -645,6 +672,7 @@ const PlayerEngine = (() => {
         getFrequencyData, getTimeDomainData,
         getAudioElement, getAudioContext, getAnalyser, getState,
         toggleAIAutomation, autoRecommendNext, cycleColorTheme, getColorTheme,
+        saveState, saveStateImmediate,
         EQ_BANDS,
         get audio() { return audio; },
         get isPlaying() { return state.isPlaying; },

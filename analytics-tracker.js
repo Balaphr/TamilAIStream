@@ -10,8 +10,8 @@ const AnalyticsTracker = (() => {
     let _pageLoadTime = Date.now();
     let _lastPage = null;
     let _sectionTimers = {};
-    const FLUSH_INTERVAL = 15000;
-    const MAX_QUEUE = 50;
+    const FLUSH_INTERVAL = 60000;  // 60 seconds (reduced from 15s for performance)
+    const MAX_QUEUE = 30;          // Reduced from 50 to limit memory usage
     const API_BASE = '/api/analytics';
 
     function _getDevice() {

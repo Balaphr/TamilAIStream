@@ -2,6 +2,7 @@
 
 /* ============================================
    EqualizerUI - 10-Band Equalizer Interface
+   Dolby-style Enhancement Controls
    ============================================ */
 
 const EqualizerUI = (() => {
@@ -18,15 +19,83 @@ const EqualizerUI = (() => {
                     <h3>Equalizer</h3>
                     <button class="eq-close" id="eqClose"><i class="fas fa-times"></i></button>
                 </div>
-                <div class="eq-presets" id="eqPresets"></div>
-                <div class="eq-bands" id="eqBands"></div>
-                <div class="eq-boost-row">
-                    <button class="eq-boost-btn" id="eqBass">Bass Boost</button>
-                    <button class="eq-boost-btn" id="eqVocal">Vocal Boost</button>
-                    <button class="eq-boost-btn" id="eqTreble">Treble Boost</button>
+                
+                <div class="eq-section">
+                    <div class="eq-section-title">Presets</div>
+                    <div class="eq-presets" id="eqPresets"></div>
                 </div>
-                <div class="eq-boost-row">
-                    <button class="eq-boost-btn" id="eqReset">Reset All</button>
+                
+                <div class="eq-section">
+                    <div class="eq-section-title">Frequency Bands</div>
+                    <div class="eq-bands" id="eqBands"></div>
+                </div>
+                
+                <div class="eq-section eq-boost-section">
+                    <div class="eq-section-title">Quick Boost</div>
+                    <div class="eq-boost-row">
+                        <button class="eq-boost-btn" id="eqBass">
+                            <i class="fas fa-arrow-up"></i> Bass
+                        </button>
+                        <button class="eq-boost-btn" id="eqVocal">
+                            <i class="fas fa-microphone"></i> Vocal
+                        </button>
+                        <button class="eq-boost-btn" id="eqTreble">
+                            <i class="fas fa-arrow-up"></i> Treble
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="eq-section eq-enhancement-section">
+                    <div class="eq-section-title">
+                        <i class="fas fa-magic"></i> Audio Enhancement
+                    </div>
+                    <div class="eq-enhancement-toggle">
+                        <label class="eq-switch">
+                            <input type="checkbox" id="eqEnhancementToggle">
+                            <span class="eq-slider"></span>
+                        </label>
+                        <span class="eq-switch-label">Enable Enhancement</span>
+                    </div>
+                    
+                    <div class="eq-enhancement-options" id="eqEnhancementOptions" style="display: none;">
+                        <div class="eq-enhancement-level">
+                            <label>Enhancement Level</label>
+                            <input type="range" id="eqEnhancementLevel" min="0" max="100" value="70">
+                            <span id="eqEnhancementLevelValue">70%</span>
+                        </div>
+                        
+                        <div class="eq-enhancement-features">
+                            <div class="eq-feature-toggle">
+                                <label class="eq-switch small">
+                                    <input type="checkbox" id="eqSpatialToggle">
+                                    <span class="eq-slider"></span>
+                                </label>
+                                <span>Spatial Audio</span>
+                            </div>
+                            
+                            <div class="eq-feature-toggle">
+                                <label class="eq-switch small">
+                                    <input type="checkbox" id="eqLoudnessNormToggle">
+                                    <span class="eq-slider"></span>
+                                </label>
+                                <span>Loudness Normalization</span>
+                            </div>
+                            
+                            <div class="eq-feature-toggle">
+                                <label class="eq-switch small">
+                                    <input type="checkbox" id="eqStereoWidenToggle">
+                                    <span class="eq-slider"></span>
+                                </label>
+                                <span>Stereo Widening</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="eq-footer">
+                    <button class="eq-reset-btn" id="eqReset">
+                        <i class="fas fa-undo"></i> Reset All
+                    </button>
                 </div>
             </div>
         `;
@@ -34,6 +103,7 @@ const EqualizerUI = (() => {
         bindEQEvents();
         renderPresets();
         renderBands();
+        loadEnhancementState();
     }
 
     function bindEQEvents() {
@@ -46,6 +116,7 @@ const EqualizerUI = (() => {
             Equalizer.reset();
             renderBands();
             updateBoostButtons();
+            loadEnhancementState();
         });
 
         document.getElementById('eqBass')?.addEventListener('click', () => {
@@ -68,6 +139,33 @@ const EqualizerUI = (() => {
             Equalizer.setTrebleBoost(isActive ? 8 : 0);
             renderBands();
         });
+        
+        // Enhancement toggle
+        document.getElementById('eqEnhancementToggle')?.addEventListener('change', (e) => {
+            const enabled = e.target.checked;
+            Equalizer.enableEnhancement(enabled);
+            document.getElementById('eqEnhancementOptions').style.display = enabled ? 'block' : 'none';
+        });
+        
+        // Enhancement level
+        document.getElementById('eqEnhancementLevel')?.addEventListener('input', (e) => {
+            const level = parseInt(e.target.value) / 100;
+            Equalizer.setEnhancementLevel(level);
+            document.getElementById('eqEnhancementLevelValue').textContent = e.target.value + '%';
+        });
+        
+        // Feature toggles
+        document.getElementById('eqSpatialToggle')?.addEventListener('change', (e) => {
+            Equalizer.toggleSpatial(e.target.checked);
+        });
+        
+        document.getElementById('eqLoudnessNormToggle')?.addEventListener('change', (e) => {
+            Equalizer.toggleLoudnessNorm(e.target.checked);
+        });
+        
+        document.getElementById('eqStereoWidenToggle')?.addEventListener('change', (e) => {
+            Equalizer.toggleStereoWiden(e.target.checked);
+        });
     }
 
     function renderPresets() {
@@ -77,7 +175,9 @@ const EqualizerUI = (() => {
         const current = Equalizer.getCurrentPreset();
 
         container.innerHTML = presets.map(p => `
-            <button class="eq-preset-btn ${p === current ? 'active' : ''}" data-preset="${p}">${p}</button>
+            <button class="eq-preset-btn ${p === current ? 'active' : ''}" data-preset="${p}">
+                ${p.replace(/([A-Z])/g, ' $1').trim()}
+            </button>
         `).join('');
 
         container.querySelectorAll('.eq-preset-btn').forEach(btn => {
@@ -128,6 +228,30 @@ const EqualizerUI = (() => {
         document.getElementById('eqBass')?.classList.toggle('active', bassAvg > 2);
         document.getElementById('eqVocal')?.classList.toggle('active', vocalAvg > 2);
         document.getElementById('eqTreble')?.classList.toggle('active', trebleAvg > 2);
+    }
+    
+    function loadEnhancementState() {
+        const enabled = Equalizer.isEnhancementEnabled();
+        const level = Equalizer.getEnhancementLevel();
+        const spatial = Equalizer.getSpatialState();
+        const loudness = Equalizer.getLoudnessNormState();
+        const stereo = Equalizer.getStereoWidenState();
+        
+        const toggle = document.getElementById('eqEnhancementToggle');
+        const options = document.getElementById('eqEnhancementOptions');
+        const levelSlider = document.getElementById('eqEnhancementLevel');
+        const levelValue = document.getElementById('eqEnhancementLevelValue');
+        const spatialToggle = document.getElementById('eqSpatialToggle');
+        const loudnessToggle = document.getElementById('eqLoudnessNormToggle');
+        const stereoToggle = document.getElementById('eqStereoWidenToggle');
+        
+        if (toggle) toggle.checked = enabled;
+        if (options) options.style.display = enabled ? 'block' : 'none';
+        if (levelSlider) levelSlider.value = Math.round(level * 100);
+        if (levelValue) levelValue.textContent = Math.round(level * 100) + '%';
+        if (spatialToggle) spatialToggle.checked = spatial;
+        if (loudnessToggle) loudnessToggle.checked = loudness;
+        if (stereoToggle) stereoToggle.checked = stereo;
     }
 
     function openEQ() {

@@ -20,7 +20,7 @@
 
   /* ---------- constants ---------- */
   var VERSION_KEY    = 'tamilai_pwa_last_content_version';
-  var POLL_INTERVAL  = 300000;   // 5 minutes
+  var POLL_INTERVAL  = 600000;   // 10 minutes (increased from 5 min for performance)
 
   /* ---------- state ---------- */
   var registration    = null;

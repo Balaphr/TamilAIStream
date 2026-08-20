@@ -1115,14 +1115,15 @@ const GlobalPlayer = (() => {
             const bars = 64;
             const barW = w / bars;
             const step = Math.floor(freqData.length / bars);
+            // Use a single gradient for all bars (cached per frame)
+            const grad = ctx.createLinearGradient(0, h, 0, 0);
+            grad.addColorStop(0, 'rgba(52,211,153,0.8)');
+            grad.addColorStop(0.5, 'rgba(59,130,246,0.6)');
+            grad.addColorStop(1, 'rgba(168,85,247,0.4)');
+            ctx.fillStyle = grad;
             for (let i = 0; i < bars; i++) {
                 const val = freqData[i * step] / 255;
                 const barH = val * h * 0.8;
-                const grad = ctx.createLinearGradient(0, h, 0, h - barH);
-                grad.addColorStop(0, 'rgba(52,211,153,0.8)');
-                grad.addColorStop(0.5, 'rgba(59,130,246,0.6)');
-                grad.addColorStop(1, 'rgba(168,85,247,0.4)');
-                ctx.fillStyle = grad;
                 ctx.fillRect(i * barW + 1, h - barH, barW - 2, barH);
             }
             waveformRAF = requestAnimationFrame(draw);
@@ -1153,7 +1154,7 @@ const GlobalPlayer = (() => {
             return;
         }
         let lastFrame = 0;
-        const FRAME_INTERVAL = 1000 / 15;
+        const FRAME_INTERVAL = 1000 / 10;  // Reduced from 15 FPS to 10 FPS for battery savings
         function animate(ts) {
             const stillPlaying = state.isPlaying && window.audioPlayer && !window.audioPlayer.paused;
             if (!stillPlaying || document.hidden) {
