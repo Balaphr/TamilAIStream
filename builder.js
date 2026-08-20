@@ -203,6 +203,9 @@ function showBuilderDashboard(user) {
     
     // Initialize builder
     initBuilder();
+    
+    // Initialize AI Webflow
+    if (typeof AIWebflow !== 'undefined') AIWebflow.init();
 }
 
 function setupTestModeButtons() {
@@ -652,7 +655,8 @@ function navigateTo(page) {
         'preview': 'previewPage',
         'analytics': 'analyticsPage',
         'musiccollections': 'musicCollectionsPage',
-        'site360': 'site360Page'
+        'site360': 'site360Page',
+        'aiwebflow': 'aiwebflowPage'
     };
 
     const pageId = pageMap[page];
@@ -687,6 +691,7 @@ function navigateTo(page) {
         if (page === 'preview') updatePreview();
         if (page === 'analytics') { loadAnalyticsData(); initAnalyticsTabs(); }
         if (page === 'site360' && typeof Site360 !== 'undefined') Site360.init();
+        if (page === 'aiwebflow' && typeof AIWebflow !== 'undefined') AIWebflow.activate();
     } else if (page === 'dashboard') {
         loadDashboardStats();
     }

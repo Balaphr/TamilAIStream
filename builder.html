@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="builder.css">
     <link rel="stylesheet" href="builder-360.css">
+    <link rel="stylesheet" href="ai-webflow.css">
     <link rel="stylesheet" href="analytics.css">
     <link rel="stylesheet" href="ultra-perf.css">
 </head>
@@ -305,6 +306,9 @@
                         <div class="builder-sidebar-menu">
                             <button class="builder-sidebar-item" data-page="visualeditor">
                                 <i class="fas fa-wand-magic-sparkles"></i> Visual Editor
+                            </button>
+                            <button class="builder-sidebar-item" data-page="aiwebflow">
+                                <i class="fas fa-diagram-project"></i> AI Webflow
                             </button>
                             <button class="builder-sidebar-item" data-page="preview">
                                 <i class="fas fa-eye"></i> Preview
@@ -2815,6 +2819,152 @@
         </div>
     </div>
     <!-- ========== END SITE 360 ========== -->
+
+    <!-- ========== AI WEBFLOW - Visual Website Builder ========== -->
+    <div class="builder-page" id="aiwebflowPage" style="display:none;">
+        <div class="aw-builder">
+            <!-- Top Toolbar -->
+            <div class="aw-toolbar">
+                <div class="aw-toolbar-section">
+                    <button class="aw-toolbar-btn" id="awToggleLeft" title="Toggle Left Panel"><i class="fas fa-bars"></i></button>
+                    <div class="aw-toolbar-divider"></div>
+                    <button class="aw-toolbar-btn" id="awUndoBtn" title="Undo (Ctrl+Z)"><i class="fas fa-rotate-left"></i></button>
+                    <button class="aw-toolbar-btn" id="awRedoBtn" title="Redo (Ctrl+Y)"><i class="fas fa-rotate-right"></i></button>
+                    <div class="aw-toolbar-divider"></div>
+                    <button class="aw-toolbar-btn" id="awSaveBtn" title="Save Draft (Ctrl+S)"><i class="fas fa-save"></i> Save</button>
+                    <button class="aw-toolbar-btn primary" id="awPreviewBtn" title="Preview"><i class="fas fa-eye"></i> Preview</button>
+                    <button class="aw-toolbar-btn success" id="awPublishBtn" title="Publish"><i class="fas fa-rocket"></i> Publish</button>
+                </div>
+                <div class="aw-toolbar-section">
+                    <span class="aw-toolbar-label">Device:</span>
+                    <div class="aw-device-switcher">
+                        <button class="aw-device-btn active" data-aw-device="desktop" title="Desktop (1440px)"><i class="fas fa-desktop"></i></button>
+                        <button class="aw-device-btn" data-aw-device="tablet" title="Tablet (768px)"><i class="fas fa-tablet-alt"></i></button>
+                        <button class="aw-device-btn" data-aw-device="mobile" title="Mobile (375px)"><i class="fas fa-mobile-alt"></i></button>
+                    </div>
+                </div>
+                <div class="aw-toolbar-section">
+                    <div class="aw-zoom-controls">
+                        <button class="aw-toolbar-btn" id="awZoomOut" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+                        <span class="aw-zoom-label" id="awZoomLabel">100%</span>
+                        <button class="aw-toolbar-btn" id="awZoomIn" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+                        <button class="aw-toolbar-btn" id="awZoomFit" title="Fit"><i class="fas fa-expand"></i></button>
+                    </div>
+                    <div class="aw-toolbar-divider"></div>
+                    <button class="aw-toolbar-btn" id="awRefreshBtn" title="Refresh Canvas"><i class="fas fa-arrows-rotate"></i></button>
+                    <span class="aw-publish-badge draft" id="awPublishBadge">DRAFT</span>
+                    <div class="aw-toolbar-divider"></div>
+                    <button class="aw-toolbar-btn" id="awAIToggle" title="AI Assistant"><i class="fas fa-robot"></i> AI</button>
+                    <button class="aw-toolbar-btn" id="awToggleRight" title="Toggle Properties"><i class="fas fa-sliders"></i></button>
+                </div>
+            </div>
+
+            <!-- Main Workspace -->
+            <div class="aw-workspace">
+                <!-- Left Panel -->
+                <div class="aw-left-panel">
+                    <div class="aw-panel-tabs">
+                        <button class="aw-panel-tab active" data-aw-ltab="navigator"><i class="fas fa-layer-group"></i> Navigator</button>
+                        <button class="aw-panel-tab" data-aw-ltab="components"><i class="fas fa-puzzle-piece"></i> Add</button>
+                        <button class="aw-panel-tab" data-aw-ltab="templates"><i class="fas fa-object-group"></i> Templates</button>
+                    </div>
+
+                    <!-- Navigator Content -->
+                    <div class="aw-panel-content" id="awNavigatorContent">
+                        <div class="aw-panel-search">
+                            <i class="fas fa-search" style="color:var(--aw-text-muted);font-size:0.75rem;"></i>
+                            <input type="text" id="awLayerSearch" placeholder="Search elements...">
+                        </div>
+                        <div class="aw-navigator" id="awNavigatorTree">
+                            <div class="aw-empty-state"><i class="fas fa-layer-group"></i><p>Canvas not loaded yet</p></div>
+                        </div>
+                    </div>
+
+                    <!-- Components Content -->
+                    <div class="aw-panel-content" id="awComponentsContent" style="display:none;">
+                        <div class="aw-panel-search">
+                            <i class="fas fa-search" style="color:var(--aw-text-muted);font-size:0.75rem;"></i>
+                            <input type="text" id="awCompSearch" placeholder="Search components...">
+                        </div>
+                        <div class="aw-components-panel" id="awComponentsList"></div>
+                    </div>
+
+                    <!-- Templates Content -->
+                    <div class="aw-panel-content" id="awTemplatesContent" style="display:none;">
+                        <div class="aw-panel-search">
+                            <i class="fas fa-search" style="color:var(--aw-text-muted);font-size:0.75rem;"></i>
+                            <input type="text" id="awTplSearch" placeholder="Search templates...">
+                        </div>
+                        <div class="aw-template-list" id="awTemplatesList"></div>
+                    </div>
+                </div>
+
+                <!-- Center: Canvas -->
+                <div class="aw-canvas-area">
+                    <div class="aw-canvas-wrapper" id="awCanvasWrapper">
+                        <div class="aw-canvas-frame-wrapper desktop" id="awFrameWrapper">
+                            <iframe id="awFrame" class="aw-canvas-frame" src="index.html"></iframe>
+                        </div>
+                    </div>
+                    <div class="aw-status-bar">
+                        <span id="awStatusBar">Ready - Load the canvas to start editing</span>
+                    </div>
+                </div>
+
+                <!-- Right Panel -->
+                <div class="aw-right-panel">
+                    <div class="aw-props-tabs">
+                        <button class="aw-props-tab active" data-aw-rtab="style"><i class="fas fa-palette"></i> Style</button>
+                        <button class="aw-props-tab" data-aw-rtab="layout"><i class="fas fa-table-cells"></i> Layout</button>
+                        <button class="aw-props-tab" data-aw-rtab="text"><i class="fas fa-font"></i> Text</button>
+                        <button class="aw-props-tab" data-aw-rtab="effects"><i class="fas fa-wand-magic-sparkles"></i> Effects</button>
+                    </div>
+                    <div class="aw-props-body" id="awPropsBody">
+                        <div class="aw-empty-state"><i class="fas fa-mouse-pointer"></i><p>Click any element on the canvas to edit its properties</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Context Menu -->
+            <div class="aw-context-menu" id="awContextMenu">
+                <div class="aw-context-item" onclick="AIWebflow.toggleAIPanel()"><i class="fas fa-copy"></i> Duplicate <span class="shortcut">Ctrl+D</span></div>
+                <div class="aw-context-item" onclick="document.getElementById('awContextMenu').classList.remove('visible')"><i class="fas fa-scissors"></i> Cut <span class="shortcut">Ctrl+X</span></div>
+                <div class="aw-context-item" onclick="document.getElementById('awContextMenu').classList.remove('visible')"><i class="fas fa-paste"></i> Paste <span class="shortcut">Ctrl+V</span></div>
+                <div class="aw-context-divider"></div>
+                <div class="aw-context-item" onclick="document.getElementById('awContextMenu').classList.remove('visible')"><i class="fas fa-arrow-up"></i> Move Up</div>
+                <div class="aw-context-item" onclick="document.getElementById('awContextMenu').classList.remove('visible')"><i class="fas fa-arrow-down"></i> Move Down</div>
+                <div class="aw-context-item" onclick="document.getElementById('awContextMenu').classList.remove('visible')"><i class="fas fa-object-group"></i> Wrap in Container</div>
+                <div class="aw-context-divider"></div>
+                <div class="aw-context-item danger" onclick="document.getElementById('awContextMenu').classList.remove('visible')"><i class="fas fa-trash"></i> Delete <span class="shortcut">Del</span></div>
+            </div>
+
+            <!-- Toast Container -->
+            <div class="aw-toast-container" id="awToastContainer"></div>
+
+            <!-- AI Assistant Panel -->
+            <div class="aw-ai-panel" id="awAIPanel">
+                <div class="aw-ai-header">
+                    <div class="aw-ai-title"><i class="fas fa-robot"></i> AI Assistant <span class="aw-ai-badge">BETA</span></div>
+                    <button class="aw-ai-close" onclick="AIWebflow.toggleAIPanel()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="aw-ai-messages" id="awAIMessages">
+                    <div class="aw-ai-msg system">AI Webflow Assistant ready. Tell me what you want to build!</div>
+                </div>
+                <div class="aw-ai-suggestions">
+                    <button class="aw-ai-suggestion">Add music section</button>
+                    <button class="aw-ai-suggestion">Add Tamil News</button>
+                    <button class="aw-ai-suggestion">Add FM stations</button>
+                    <button class="aw-ai-suggestion">Create hero section</button>
+                    <button class="aw-ai-suggestion">Switch to mobile</button>
+                </div>
+                <div class="aw-ai-input-area">
+                    <input type="text" class="aw-ai-input" id="awAIInput" placeholder="Tell AI what to do...">
+                    <button class="aw-ai-send" id="awAISend"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ========== END AI WEBFLOW ========== -->
                     </div>
                 </div>
         </main>
@@ -2861,6 +3011,7 @@
     <script src="analytics.js"></script>
     <script src="builder.js"></script>
     <script src="builder-360.js"></script>
+    <script src="ai-webflow.js"></script>
     <script src="brand-config.js"></script>
 </body>
 </html>
