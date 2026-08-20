@@ -53,7 +53,7 @@ function copyVanillaScripts() {
         'builder.js', 'builder-360.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
         'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js',
-        'brand-config.js'
+        'brand-config.js', 've-edit-mode.js'
       ]
 
       const vanillaCSS = [

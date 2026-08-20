@@ -2683,178 +2683,70 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 }
 
 /* ============================================
-   TEST MODE BANNER
+   VISUAL EDITOR — EDIT / PREVIEW MODE TOGGLE
    ============================================ */
-.test-mode-banner {
-    background: linear-gradient(135deg, rgba(34, 211, 238, 0.08), rgba(6, 182, 212, 0.05));
-    border-bottom: 1px solid rgba(34, 211, 238, 0.2);
-    padding: 8px 16px;
-    position: sticky;
-    top: 0;
-    z-index: 1001;
-    animation: testBannerSlideIn 0.3s ease-out;
-}
-@keyframes testBannerSlideIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-.test-mode-banner-inner {
+.ve-mode-toggle {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    max-width: 1400px;
-    margin: 0 auto;
-    gap: 12px;
+    gap: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 2px;
 }
 
-.test-mode-banner-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.8rem;
-    color: #22d3ee;
-}
-
-.test-mode-banner-left i {
-    font-size: 1rem;
-    animation: testFlaskPulse 2s ease-in-out infinite;
-}
-@keyframes testFlaskPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
-
-.test-mode-banner-text {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.test-mode-banner-text strong {
-    color: #22d3ee;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-}
-
-.test-mode-banner-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.test-mode-btn {
+.ve-mode-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px;
-    border-radius: 8px;
+    padding: 6px 14px;
     border: none;
-    font-size: 0.72rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
-    white-space: nowrap;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
 }
 
-.test-mode-preview-btn {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+.ve-mode-btn:hover {
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.06);
 }
-.test-mode-preview-btn:hover {
-    background: rgba(255, 255, 255, 0.14);
+
+.ve-mode-btn.active {
+    background: #6366f1;
     color: #fff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
 }
 
-.test-mode-publish-btn {
-    background: linear-gradient(135deg, #22d3ee, #0891b2);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(34, 211, 238, 0.3);
-}
-.test-mode-publish-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(34, 211, 238, 0.45);
+.ve-mode-btn[data-ve-mode="preview"].active {
+    background: #10b981;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
 }
 
-.test-mode-exit-btn {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-}
-.test-mode-exit-btn:hover {
-    background: rgba(239, 68, 68, 0.2);
-}
-
-@media (max-width: 768px) {
-    .test-mode-banner-inner { flex-direction: column; gap: 8px; }
-    .test-mode-banner-right { width: 100%; justify-content: center; }
-    .test-mode-btn { flex: 1; justify-content: center; padding: 8px; }
-    .test-mode-banner-text { font-size: 0.72rem; }
-}
-
-/* Publish to Live Modal */
-.test-publish-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
-    z-index: 10000;
+.ve-canvas-toolbar {
     display: flex;
     align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.2s ease-out;
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-.test-publish-modal {
-    background: #111;
-    border: 1px solid rgba(34, 211, 238, 0.2);
-    border-radius: 16px;
-    padding: 28px;
-    max-width: 440px;
-    width: 90%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-    animation: modalSlideUp 0.3s ease-out;
-}
-@keyframes modalSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-.test-publish-modal h3 {
-    font-size: 1.1rem;
-    font-weight: 800;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(15, 15, 20, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-wrap: wrap;
 }
 
-.test-publish-modal p {
-    font-size: 0.82rem;
-    color: rgba(255, 255, 255, 0.6);
-    line-height: 1.5;
-    margin-bottom: 20px;
-}
-
-.test-publish-modal-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-}
-
-.test-publish-modal-actions button {
-    padding: 10px 20px;
-    border-radius: 10px;
+.ve-frame {
+    width: 100%;
+    height: 100%;
     border: none;
-    font-weight: 700;
-    font-size: 0.82rem;
-    cursor: pointer;
-    transition: all 0.2s;
+    background: #fff;
+    transition: width 0.3s ease;
 }
 
-.test-publish-cancel-btn {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.7);
-}
-.test-publish-cancel-btn:hover { background: rgba(255, 255, 255, 0.14); }
-
-.test-publish-confirm-btn {
-    background: linear-gradient(135deg, #22d3ee, #0891b2);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(34, 211, 238, 0.3);
-}
-.test-publish-confirm-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(34, 211, 238, 0.45);
+.ve-canvas-wrapper {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #1a1a2e;
 }

@@ -68,36 +68,11 @@ function isAutoLoginRequest() {
 
 function checkAuth() {
     return new Promise((resolve) => {
-        // Check for test mode first
-        const testSession = localStorage.getItem('testSession');
-        if (testSession) {
-            try {
-                const data = JSON.parse(testSession);
-                if (data.expiry > Date.now()) {
-                    window._builderTestMode = true;
-                    localStorage.setItem('tamilAIStream_testMode', 'true');
-                    if (!isAutoLoginRequest()) {
-                        showAccessGate(data);
-                    }
-                    resolve(data);
-                    return;
-                } else {
-                    localStorage.removeItem('testSession');
-                    localStorage.removeItem('tamilAIStream_testMode');
-                }
-            } catch (e) {
-                localStorage.removeItem('testSession');
-                localStorage.removeItem('tamilAIStream_testMode');
-            }
-        }
-
         const session = localStorage.getItem('adminSession');
         if (session) {
             try {
                 const data = JSON.parse(session);
                 if (data.expiry > Date.now()) {
-                    window._builderTestMode = false;
-                    localStorage.removeItem('tamilAIStream_testMode');
                     if (!isAutoLoginRequest()) {
                         showAccessGate(data);
                     }
@@ -191,91 +166,11 @@ function showBuilderDashboard(user) {
     document.getElementById('builderUserName').textContent = displayName;
     document.getElementById('builderUserAvatar').textContent = initial;
     
-    // Test mode banner
-    if (window._builderTestMode || localStorage.getItem('tamilAIStream_testMode') === 'true') {
-        window._builderTestMode = true;
-        const banner = document.getElementById('testModeBanner');
-        if (banner) banner.style.display = 'block';
-        document.title = 'Tamil AI Stream — TEST MODE';
-        document.body.classList.add('test-mode');
-        setupTestModeButtons();
-    }
-    
     // Initialize builder
     initBuilder();
     
     // Initialize AI Webflow
     if (typeof AIWebflow !== 'undefined') AIWebflow.init();
-}
-
-function setupTestModeButtons() {
-    const publishBtn = document.getElementById('testPublishBtn');
-    const exitBtn = document.getElementById('testExitBtn');
-    const previewBtn = document.getElementById('testPreviewBtn');
-
-    if (publishBtn) {
-        publishBtn.addEventListener('click', showPublishToLiveModal);
-    }
-    if (exitBtn) {
-        exitBtn.addEventListener('click', () => {
-            localStorage.removeItem('tamilAIStream_testMode');
-            localStorage.removeItem('testSession');
-            window._builderTestMode = false;
-            window.location.href = 'login.html';
-        });
-    }
-    if (previewBtn) {
-        previewBtn.addEventListener('click', () => {
-            window.open('index.html', '_blank');
-        });
-    }
-}
-
-function showPublishToLiveModal() {
-    const existing = document.querySelector('.test-publish-modal-overlay');
-    if (existing) existing.remove();
-
-    const overlay = document.createElement('div');
-    overlay.className = 'test-publish-modal-overlay';
-    overlay.innerHTML = `
-        <div class="test-publish-modal">
-            <h3><i class="fas fa-rocket" style="color:#22d3ee;"></i> Publish to Live</h3>
-            <p>This will copy all your test data (songs, stations, settings, etc.) to the live website. The live website will be updated immediately.</p>
-            <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:16px;">This action cannot be undone. The current live data will be overwritten.</p>
-            <div class="test-publish-modal-actions">
-                <button class="test-publish-cancel-btn" onclick="this.closest('.test-publish-modal-overlay').remove()">Cancel</button>
-                <button class="test-publish-confirm-btn" id="confirmPublishBtn"><i class="fas fa-check"></i> Publish Now</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) overlay.remove();
-    });
-
-    document.getElementById('confirmPublishBtn')?.addEventListener('click', () => {
-        overlay.remove();
-        executePublishToLive();
-    });
-}
-
-function executePublishToLive() {
-    try {
-        const count = DataStore.publishToLive();
-        if (typeof showToast === 'function') {
-            showToast(`Published ${count} data sets to live website!`, 'success');
-        }
-        // Also sync via the existing sync mechanism
-        if (typeof syncToLiveWebsite === 'function') {
-            syncToLiveWebsite();
-        }
-    } catch (e) {
-        console.error('Publish to live failed:', e);
-        if (typeof showToast === 'function') {
-            showToast('Publish failed: ' + e.message, 'error');
-        }
-    }
 }
 
 // Access Gate Event Listeners
@@ -324,28 +219,6 @@ async function signInWithEmail(email, password) {
                 }));
                 showToast('Welcome Admin!', 'success');
                 showAccessGate(demoUser);
-                return;
-            }
-            // Check if it's the test credentials
-            if (email === TEST_CREDENTIALS.username && password === TEST_CREDENTIALS.password) {
-                const testUser = {
-                    username: TEST_CREDENTIALS.username,
-                    email: TEST_CREDENTIALS.username,
-                    displayName: 'Test User',
-                    role: 'test',
-                    password: TEST_CREDENTIALS.password
-                };
-                localStorage.setItem('testSession', JSON.stringify({
-                    username: TEST_CREDENTIALS.username,
-                    email: TEST_CREDENTIALS.username,
-                    displayName: 'Test User',
-                    role: 'test',
-                    loginTime: Date.now(),
-                    expiry: Date.now() + (24 * 60 * 60 * 1000)
-                }));
-                localStorage.setItem('tamilAIStream_testMode', 'true');
-                showToast('Test Mode activated!', 'success');
-                showAccessGate(testUser);
                 return;
             }
             showToast('Invalid email or password', 'error');
@@ -465,62 +338,6 @@ function quickAdminLogin() {
     }, 400);
 }
 
-const TEST_CREDENTIALS = {
-    username: 'test@tamilaistream.com',
-    password: 'Test@123'
-};
-
-function quickTestLogin() {
-    const btn = document.getElementById('builderTestLogin');
-    if (!btn) return;
-
-    const originalHTML = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Signing in...';
-
-    setTimeout(() => {
-        const testUser = {
-            username: TEST_CREDENTIALS.username,
-            email: TEST_CREDENTIALS.username,
-            displayName: 'Test User',
-            role: 'test',
-            password: TEST_CREDENTIALS.password
-        };
-
-        // Sync the main website session
-        try {
-            if (typeof Auth !== 'undefined' && Auth.createSession) {
-                Auth.createSession({ name: 'Test User', email: TEST_CREDENTIALS.username, uid: 'test-local', photoURL: '' }, true, false);
-            } else {
-                localStorage.setItem('tamilAIStream_user', JSON.stringify({
-                    uid: 'test-local',
-                    name: 'Test User',
-                    email: TEST_CREDENTIALS.username,
-                    loginTime: Date.now()
-                }));
-                localStorage.setItem('tamilAIStream_loggedIn', 'true');
-            }
-        } catch (e) {
-            console.warn('Unable to sync website session:', e);
-        }
-
-        localStorage.setItem('testSession', JSON.stringify({
-            username: TEST_CREDENTIALS.username,
-            email: TEST_CREDENTIALS.username,
-            displayName: 'Test User',
-            role: 'test',
-            loginTime: Date.now(),
-            expiry: Date.now() + (24 * 60 * 60 * 1000)
-        }));
-
-        localStorage.setItem('tamilAIStream_testMode', 'true');
-        window._builderTestMode = true;
-
-        showToast('Test Mode activated! Changes will not affect the live site.', 'success');
-        showBuilderDashboard(testUser);
-    }, 400);
-}
-
 // Sign Out
 async function signOut() {
     try {
@@ -598,9 +415,6 @@ function setupLoginScreen() {
 
     // Admin Quick Login (one-click)
     document.getElementById('builderQuickLogin')?.addEventListener('click', quickAdminLogin);
-    
-    // Test Account Quick Login (one-click)
-    document.getElementById('builderTestLogin')?.addEventListener('click', quickTestLogin);
     
     // Switch to sign up tab
     document.getElementById('signupTab')?.addEventListener('click', (e) => {
@@ -6409,6 +6223,7 @@ let veGridEnabled = false;
 let veGuidesEnabled = true;
 let veSnapThreshold = 5;
 let veElementCount = 0;
+let veEditMode = true; // true = edit mode, false = preview mode
 
 function initVisualEditor() {
     if (veInitialized) {
@@ -6428,9 +6243,91 @@ function initVisualEditor() {
         setTimeout(onVEIframeLoad, 1000);
     }
 
+    // Mode toggle buttons
+    document.querySelectorAll('.ve-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.ve-mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const mode = btn.dataset.veMode;
+            setVEEditMode(mode === 'edit');
+        });
+    });
+
+    // Listen for messages from the iframe
+    window.addEventListener('message', handleVEIframeMessage);
+
     bindVisualEditorEvents();
     loadVEDraft();
     if (typeof initV2Enhancements === 'function') initV2Enhancements();
+}
+
+function handleVEIframeMessage(e) {
+    const msg = e.data;
+    if (!msg || !msg.type) return;
+    switch (msg.type) {
+        case 've-edit-mode-ready':
+            console.log('[VE] Edit mode script injected successfully');
+            break;
+        case 've-element-selected':
+            handleVEElementSelected(msg);
+            break;
+        case 've-selection-cleared':
+            clearVESelection();
+            break;
+    }
+}
+
+function handleVEElementSelected(msg) {
+    // Find the element in the iframe by building a selector
+    const tag = msg.tag;
+    const id = msg.id;
+    const className = msg.className;
+
+    let selector = tag;
+    if (id) selector = '#' + id;
+    else if (className && typeof className === 'string') {
+        const firstClass = className.split(' ')[0];
+        if (firstClass) selector = tag + '.' + firstClass;
+    }
+
+    // Try to find the element
+    try {
+        const el = veIframeDoc.querySelector(selector);
+        if (el) {
+            veSelectedElement = el;
+            veSelectedSelector = selector;
+            updateVEOverlay();
+            showVEProperties(el);
+            updateVEElementTree();
+            document.getElementById('veStatusElement').textContent = tag + (id ? '#' + id : '') + (className ? '.' + (className.split(' ')[0] || '') : '');
+        }
+    } catch (err) {}
+}
+
+function setVEEditMode(editMode) {
+    veEditMode = editMode;
+    if (!veIframe) return;
+    try {
+        veIframe.contentWindow.postMessage({
+            type: 've-set-edit-mode',
+            editMode: editMode
+        }, '*');
+    } catch (err) {}
+
+    if (!editMode) {
+        // Preview mode: clear selection, restore cursor
+        clearVESelection();
+        if (veIframeDoc && veIframeDoc.body) {
+            veIframeDoc.body.style.cursor = '';
+        }
+        document.getElementById('veStatusElement').textContent = 'Preview mode — website interactions active';
+    } else {
+        // Edit mode: set crosshair cursor
+        if (veIframeDoc && veIframeDoc.body) {
+            veIframeDoc.body.style.cursor = 'crosshair';
+        }
+        document.getElementById('veStatusElement').textContent = 'Edit mode — click elements to select and edit';
+    }
 }
 
 function onVEIframeLoad() {
@@ -6440,12 +6337,28 @@ function onVEIframeLoad() {
             setTimeout(onVEIframeLoad, 500);
             return;
         }
+        // Inject edit mode script into the iframe
+        injectVEEditModeScript();
         scanIframeElements();
         setupIframeInteraction();
         addVEHistoryEntry('Page loaded');
     } catch (err) {
         console.warn('[VE] iframe access error, retrying:', err);
         setTimeout(onVEIframeLoad, 1000);
+    }
+}
+
+function injectVEEditModeScript() {
+    if (!veIframeDoc) return;
+    try {
+        // Check if already injected
+        if (veIframeDoc.querySelector('script[data-ve-edit-mode]')) return;
+        const script = veIframeDoc.createElement('script');
+        script.src = 've-edit-mode.js';
+        script.setAttribute('data-ve-edit-mode', 'true');
+        veIframeDoc.head.appendChild(script);
+    } catch (err) {
+        console.warn('[VE] Could not inject edit mode script:', err);
     }
 }
 
@@ -6920,13 +6833,8 @@ function veDeleteSection(idx) {
 function setupIframeInteraction() {
     if (!veIframeDoc) return;
 
-    veIframeDoc.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const target = e.target;
-        if (!target || target === veIframeDoc.body) { clearVESelection(); return; }
-        selectVEElement(target);
-    });
+    // Click selection is handled by ve-edit-mode.js inside the iframe
+    // via postMessage. We only need drag/resize handlers here.
 
     veIframeDoc.addEventListener('mousedown', (e) => {
         if (!veSelectedElement || e.target !== veSelectedElement) return;

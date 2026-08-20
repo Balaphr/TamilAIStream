@@ -41,26 +41,13 @@ const DataStore = {
         FAVORITES: 'tamilAIStream_favorites'
     },
 
-    _isTestMode() {
-        return localStorage.getItem('tamilAIStream_testMode') === 'true';
-    },
-
-    _prefixKey(key) {
-        if (this._isTestMode() && !key.startsWith('test_')) {
-            return 'test_' + key;
-        }
-        return key;
-    },
-
     get(key) {
-        const actualKey = this._prefixKey(key);
-        const data = localStorage.getItem(actualKey);
+        const data = localStorage.getItem(key);
         return data ? JSON.parse(data) : null;
     },
 
     set(key, value) {
-        const actualKey = this._prefixKey(key);
-        localStorage.setItem(actualKey, JSON.stringify(value));
+        localStorage.setItem(key, JSON.stringify(value));
         
         // Trigger storage event for cross-tab sync
         window.dispatchEvent(new StorageEvent('storage', {
