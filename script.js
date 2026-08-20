@@ -894,6 +894,15 @@ function isSameActivePlayback(trackOrStation) {
         // when audioPlayer src is leftover from a previous song)
         if (currentPlaybackTrack) return true;
     }
+    // Fallback: match by title+artist to prevent 00:00 reset when clicking the
+    // same song from a different section that creates a different song object
+    if (currentPlaybackTrack && isStreamPlaying) {
+        const t1 = (trackOrStation.title || trackOrStation.name || '').toLowerCase();
+        const t2 = (currentPlaybackTrack.title || currentPlaybackTrack.name || '').toLowerCase();
+        const a1 = (trackOrStation.artist || '').toLowerCase();
+        const a2 = (currentPlaybackTrack.artist || '').toLowerCase();
+        if (t1 && t2 && t1 === t2 && a1 === a2) return true;
+    }
     return false;
 }
 
@@ -987,6 +996,7 @@ function playStation(stationName) {
                 tryNextStream();
             }
         }, 8000);
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
         const playPromise = audioPlayer.play();
         if (playPromise !== undefined) {
             playPromise.then(() => {
@@ -1075,6 +1085,7 @@ async function playSong(song, playlist = []) {
         audioPlayer.volume = playbackVolume;
         audioPlayer.load();
         try {
+            if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume().catch(() => {});
             await audioPlayer.play();
             // State is set by the 'playing' event handler (initAudioPlayer) to
             // avoid race conditions. Only update non-state UI here.
@@ -1349,9 +1360,13 @@ function setPlaybackVolume(volume) {
     persistPlaybackState();
 }
 
+let _nextTrackCooldown = 0;
 function playNextTrack() {
     if (window.__BUILDER_PREVIEW__) return;
     if (currentPlaybackQueue.length === 0) return;
+    // Guard: prevent double-fire from ended handler + global-player button
+    if (Date.now() - _nextTrackCooldown < 500) return;
+    _nextTrackCooldown = Date.now();
     // Analytics: track next song
     if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('next_song');
     if (playbackShuffle) {
@@ -1370,9 +1385,12 @@ function playNextTrack() {
     }
 }
 
+let _prevTrackCooldown = 0;
 function playPreviousTrack() {
     if (window.__BUILDER_PREVIEW__) return;
     if (currentPlaybackQueue.length === 0) return;
+    if (Date.now() - _prevTrackCooldown < 500) return;
+    _prevTrackCooldown = Date.now();
     // Analytics: track previous song
     if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('previous_song');
     if (currentPlaybackQueueIndex < 0) currentPlaybackQueueIndex = 0;

@@ -592,6 +592,24 @@ const GlobalPlayer = (() => {
         } catch (e) {}
     }
 
+    function syncStateFromScript() {
+        const track = getCurrentTrackFromScript();
+        if (track) {
+            state.track = track;
+            state.isLive = !!(track.streamUrl && !track.audioUrl);
+        }
+        const ap = window.audioPlayer;
+        if (ap) {
+            state.isPlaying = !ap.paused;
+            state.currentTime = ap.currentTime || 0;
+            state.duration = ap.duration || 0;
+            state.volume = ap.volume;
+        }
+        state.isPlaying = !!(window.isStreamPlaying);
+        state.queue = window.currentPlaybackQueue || state.queue;
+        state.queueIndex = window.currentPlaybackQueueIndex ?? state.queueIndex;
+    }
+
     function togglePlay() {
         if (window.audioPlayer && window.audioPlayer.src) {
             if (window.audioPlayer.paused) {
@@ -959,7 +977,12 @@ const GlobalPlayer = (() => {
         expandedEl?.classList.add('open');
         document.body.style.overflow = 'hidden';
         startVisualizer();
+        // Sync state from script.js before updating UI to ensure full-screen
+        // player always shows the current track even if events were missed
+        syncStateFromScript();
         updateTrackUI();
+        updateProgressUI();
+        updatePlayUI(state.isPlaying);
     }
 
     function collapse() {
