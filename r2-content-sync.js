@@ -85,7 +85,9 @@
                 history: safeGet(global.DataStore.getHistory?.bind(global.DataStore), []),
                 queue: safeGet(global.DataStore.getQueue?.bind(global.DataStore), []),
                 settings: safeGet(global.DataStore.getYTSettings?.bind(global.DataStore), {}),
-                news: safeGet(global.DataStore.getNews?.bind(global.DataStore), [])
+                news: safeGet(global.DataStore.getNews?.bind(global.DataStore), []),
+                deletedIds: safeGet(global.DataStore.getDeletedIds?.bind(global.DataStore), {}),
+                trash: safeGet(global.DataStore.getTrash?.bind(global.DataStore), [])
             };
             return payload;
         }
@@ -115,6 +117,8 @@
             sectionsOrder: readLocalStorage('tamilAIStream_sectionsOrder', []),
             miniPlayerSettings: readLocalStorage('tamilAIStream_miniPlayerSettings', {}),
             news: readLocalStorage('tamilAIStream_news', []),
+            deletedIds: readLocalStorage('tamilAIStream_deletedIds', {}),
+            trash: readLocalStorage('tamilAIStream_trash', []),
             playlists: readLocalStorage('ytm_playlists', []),
             likedSongs: readLocalStorage('ytm_likedSongs', []),
             history: readLocalStorage('ytm_history', []),
@@ -140,7 +144,7 @@
         const localTime = localPayload?.updatedAt ? new Date(localPayload.updatedAt).getTime() : 0;
         const remoteTime = remotePayload?.updatedAt ? new Date(remotePayload.updatedAt).getTime() : 0;
 
-        const sharedKeys = ['songs', 'stations', 'categories', 'featured', 'trending', 'artistHits', 'quotes', 'siteSettings', 'layout', 'images', 'moods', 'aiRadio', 'notifications', 'splash', 'playerPrefs', 'navigation', 'sectionsOrder', 'miniPlayerSettings', 'moviesCollections', 'yearlyCollections', 'latestCollections', 'musicCollections', 'advertisements', 'news'];
+        const sharedKeys = ['songs', 'stations', 'categories', 'featured', 'trending', 'artistHits', 'quotes', 'siteSettings', 'layout', 'images', 'moods', 'aiRadio', 'notifications', 'splash', 'playerPrefs', 'navigation', 'sectionsOrder', 'miniPlayerSettings', 'moviesCollections', 'yearlyCollections', 'latestCollections', 'musicCollections', 'advertisements', 'news', 'deletedIds', 'trash'];
         const userKeys = ['likedSongs', 'playlists', 'history', 'queue', 'settings'];
 
         keys.forEach((key) => {
@@ -208,6 +212,54 @@
         };
     }
 
+    // After merging, strip out items whose IDs are in the local deletedIds list.
+    // This ensures that items deleted in the Builder stay deleted even when the
+    // remote manifest still contains them.
+    function applyDeletedIdsFilter(payload) {
+        if (typeof global.DataStore === 'undefined' || !global.DataStore) return payload;
+        try {
+            const deletedIds = global.DataStore.getDeletedIds ? global.DataStore.getDeletedIds() : {};
+            if (!deletedIds || typeof deletedIds !== 'object') return payload;
+
+            const data = payload?.data || {};
+            const typeMap = {
+                songs: 'songs',
+                stations: 'stations',
+                categories: 'categories',
+                featured: 'featured',
+                trending: 'trending',
+                artistHits: 'artistHits',
+                quotes: 'quotes',
+                moods: 'moods',
+                aiRadio: 'aiRadio',
+                notifications: 'notifications',
+                images: 'images',
+                moviesCollections: 'moviesCollections',
+                yearlyCollections: 'yearlyCollections',
+                latestCollections: 'latestCollections',
+                musicCollections: 'musicCollections',
+                advertisements: 'advertisements',
+                news: 'news'
+            };
+
+            let changed = false;
+            for (const [dataKey, typeKey] of Object.entries(typeMap)) {
+                const ids = deletedIds[typeKey];
+                if (Array.isArray(ids) && ids.length > 0 && Array.isArray(data[dataKey])) {
+                    const before = data[dataKey].length;
+                    data[dataKey] = data[dataKey].filter(item => item && !ids.includes(item.id));
+                    if (data[dataKey].length !== before) changed = true;
+                }
+            }
+            if (changed) {
+                payload.data = data;
+            }
+        } catch (e) {
+            // ignore errors in deleted-IDs filtering
+        }
+        return payload;
+    }
+
     function persistLocalContent(payload) {
         const data = payload?.data || {};
 
@@ -241,7 +293,9 @@
                 setHistory: data.history || [],
                 setQueue: data.queue || [],
                 setYTSettings: data.settings || {},
-                setNews: data.news || []
+                setNews: data.news || [],
+                setDeletedIds: data.deletedIds || {},
+                setTrash: data.trash || []
             };
             Object.entries(setters).forEach(([method, value]) => {
                 if (typeof global.DataStore[method] === 'function') {
@@ -279,6 +333,8 @@
         writeLocalStorage('ytm_queue', data.queue || []);
         writeLocalStorage('ytm_settings', data.settings || {});
         writeLocalStorage('tamilAIStream_news', data.news || []);
+        writeLocalStorage('tamilAIStream_deletedIds', data.deletedIds || {});
+        writeLocalStorage('tamilAIStream_trash', data.trash || []);
         writeLocalStorage('tamilAIStream_lastSyncedAt', payload?.updatedAt || new Date().toISOString());
     }
 
@@ -407,6 +463,8 @@
 
         const isWriter = isWriterPage() || forcePushBack;
         const mergedPayload = mergePayloads(localPayload, remotePayload, isWriter);
+        // Remove any items the user previously deleted (even if R2 still has them)
+        applyDeletedIdsFilter(mergedPayload);
         persistLocalContent(mergedPayload);
 
         // Writers always push their merged state back so any local-only item
@@ -433,6 +491,7 @@
 
         try {
             const payload = buildContentPayload();
+            applyDeletedIdsFilter(payload);
             const remoteUrl = await uploadManifest(payload);
             persistLocalContent(payload);
             notifyContentChanged();
@@ -473,6 +532,7 @@
             }
             const isWriter = isWriterPage();
             const mergedPayload = mergePayloads(localPayload, remotePayload, isWriter);
+            applyDeletedIdsFilter(mergedPayload);
             persistLocalContent(mergedPayload);
             writeLocalStorage('tamilAIStream_lastSyncedAt', remotePayload.updatedAt);
             notifyContentChanged();

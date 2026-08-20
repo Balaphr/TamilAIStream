@@ -312,6 +312,7 @@ function initAnalyticsTabs() {
             const panel = document.getElementById(panelId);
             if (panel) panel.classList.add('active');
             if (this.dataset.atab === 'realtime') startRealtimeRefresh(); else stopRealtimeRefresh();
+            if (this.dataset.atab === 'sync' && typeof runSyncAudit === 'function') runSyncAudit();
         });
     });
 }

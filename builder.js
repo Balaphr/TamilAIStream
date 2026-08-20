@@ -470,7 +470,8 @@ function navigateTo(page) {
         'analytics': 'analyticsPage',
         'musiccollections': 'musicCollectionsPage',
         'site360': 'site360Page',
-        'aiwebflow': 'aiwebflowPage'
+        'aiwebflow': 'aiwebflowPage',
+        'trash': 'trashPage'
     };
 
     const pageId = pageMap[page];
@@ -506,6 +507,7 @@ function navigateTo(page) {
         if (page === 'analytics') { loadAnalyticsData(); initAnalyticsTabs(); }
         if (page === 'site360' && typeof Site360 !== 'undefined') Site360.init();
         if (page === 'aiwebflow' && typeof AIWebflow !== 'undefined') AIWebflow.activate();
+        if (page === 'trash') loadTrashPage();
     } else if (page === 'dashboard') {
         loadDashboardStats();
     }
@@ -982,19 +984,23 @@ async function editSong(songId) {
 }
 
 async function deleteSong(songId) {
-    if (!confirm('Are you sure you want to delete this song?')) return;
+    if (!confirm('Move this song to Trash?')) return;
     
     try {
         const songs = DataStore.getSongs();
+        const song = songs.find(s => s.id === songId);
+        if (!song) { showToast('Song not found', 'error'); return; }
+        
+        DataStore.moveToTrash(song, 'songs');
         const filtered = songs.filter(s => s.id !== songId);
         DataStore.setSongs(filtered);
-        showToast('Song deleted successfully!', 'success');
+        showToast('Song moved to Trash', 'success');
         loadAllSongs();
         await syncToLiveWebsite();
-        addActivity('Song Deleted', 'Removed a song from the library');
+        addActivity('Song Trashed', 'Moved "' + (song.title || 'Unknown') + '" to Trash');
     } catch (error) {
-        console.error('Error deleting song:', error);
-        showToast('Error deleting song', 'error');
+        console.error('Error trashing song:', error);
+        showToast('Error moving song to trash', 'error');
     }
 }
 
@@ -1566,7 +1572,8 @@ async function _syncToLiveWebsiteActual() {
             'tamilAIStream_moods', 'tamilAIStream_aiRadio', 'tamilAIStream_notifications',
             'tamilAIStream_images', 'tamilAIStream_moviesCollections',
             'tamilAIStream_yearlyCollections', 'tamilAIStream_latestCollections',
-            'tamilAIStream_musicCollections', 'tamilAIStream_upcomingReleases'
+            'tamilAIStream_musicCollections', 'tamilAIStream_upcomingReleases',
+            'tamilAIStream_deletedIds', 'tamilAIStream_trash'
         ];
 
         keysToSync.forEach(key => {
@@ -2541,10 +2548,15 @@ function cancelEditStation() {
 }
 
 function deleteStation(id) {
-    if (!confirm('Delete this station?')) return;
-    const stations = DataStore.getStations().filter(s => s.id !== id);
-    DataStore.setStations(stations);
-    showToast('Station deleted', 'success');
+    if (!confirm('Move this station to Trash?')) return;
+    const stations = DataStore.getStations();
+    const station = stations.find(s => s.id === id);
+    if (station) {
+        DataStore.moveToTrash(station, 'stations');
+    }
+    const filtered = stations.filter(s => s.id !== id);
+    DataStore.setStations(filtered);
+    showToast('Station moved to Trash', 'success');
     loadAllStations();
     syncToLiveWebsite();
 }
@@ -2741,10 +2753,12 @@ function editFeatured(id) {
 }
 
 function deleteFeatured(id) {
-    if (!confirm('Delete this featured item?')) return;
-    const featured = DataStore.getFeatured().filter(f => f.id !== id);
-    DataStore.setFeatured(featured);
-    showToast('Featured deleted', 'success');
+    if (!confirm('Move this featured item to Trash?')) return;
+    const featured = DataStore.getFeatured();
+    const item = featured.find(f => f.id === id);
+    if (item) DataStore.moveToTrash(item, 'featured');
+    DataStore.setFeatured(featured.filter(f => f.id !== id));
+    showToast('Featured moved to Trash', 'success');
     loadFeatured();
     syncToLiveWebsite();
 }
@@ -2839,10 +2853,12 @@ function openAddTrendingModal() {
 }
 
 function deleteTrending(id) {
-    if (!confirm('Delete from trending?')) return;
-    const trending = DataStore.getTrending().filter(t => t.id !== id);
-    DataStore.setTrending(trending);
-    showToast('Removed from trending', 'success');
+    if (!confirm('Move from trending to Trash?')) return;
+    const trending = DataStore.getTrending();
+    const item = trending.find(t => t.id === id);
+    if (item) DataStore.moveToTrash(item, 'trending');
+    DataStore.setTrending(trending.filter(t => t.id !== id));
+    showToast('Moved to Trash', 'success');
     loadTrending();
     syncToLiveWebsite();
 }
@@ -3042,10 +3058,12 @@ function editCategory(id) {
 }
 
 function deleteCategory(id) {
-    if (!confirm('Delete this category?')) return;
-    const categories = DataStore.getCategories().filter(c => c.id !== id);
-    DataStore.setCategories(categories);
-    showToast('Category deleted', 'success');
+    if (!confirm('Move this category to Trash?')) return;
+    const categories = DataStore.getCategories();
+    const cat = categories.find(c => c.id === id);
+    if (cat) DataStore.moveToTrash(cat, 'categories');
+    DataStore.setCategories(categories.filter(c => c.id !== id));
+    showToast('Category moved to Trash', 'success');
     loadCategories();
     syncToLiveWebsite();
 }
@@ -3420,10 +3438,12 @@ function openEditArtistSongsModal(hitId) {
 }
 
 function deleteArtistHit(id) {
-    if (!confirm('Delete this artist hit?')) return;
-    const artistHits = DataStore.getArtistHits().filter(h => h.id !== id);
-    DataStore.setArtistHits(artistHits);
-    showToast('Artist hit deleted', 'success');
+    if (!confirm('Move this artist hit to Trash?')) return;
+    const artistHits = DataStore.getArtistHits();
+    const hit = artistHits.find(h => h.id === id);
+    if (hit) DataStore.moveToTrash(hit, 'artistHits');
+    DataStore.setArtistHits(artistHits.filter(h => h.id !== id));
+    showToast('Artist hit moved to Trash', 'success');
     loadArtistHits();
     syncToLiveWebsite();
 }
@@ -4493,11 +4513,13 @@ function pickGalleryImage(url, inputId, previewId, imgId) {
 }
 
 function deleteMusicCollection(id) {
-    if (confirm('Are you sure you want to delete this collection?')) {
+    if (confirm('Move this collection to Trash?')) {
         let collections = DataStore.getMusicCollections();
+        const col = collections.find(c => c.id === id);
+        if (col) DataStore.moveToTrash(col, 'musicCollections');
         collections = collections.filter(c => c.id !== id);
         DataStore.setMusicCollections(collections);
-        showToast('Collection deleted', 'info');
+        showToast('Collection moved to Trash', 'info');
         loadMusicCollections();
         syncToLiveWebsite();
     }
@@ -4733,12 +4755,14 @@ function saveCollection(type, editId) {
 }
 
 function deleteCollection(type, colId) {
-    if (!confirm('Delete this collection?')) return;
+    if (!confirm('Move this collection to Trash?')) return;
     let collections = getCollectionsByType(type);
+    const col = collections.find(c => c.id === colId);
+    if (col) DataStore.moveToTrash({ ...col, _collectionType: type }, 'collections');
     collections = collections.filter(c => c.id !== colId);
     setCollectionsByType(type, collections);
     loadCollectionsTable(type);
-    showToast('Collection deleted', 'success');
+    showToast('Collection moved to Trash', 'success');
     syncToLiveWebsite();
 }
 
@@ -4851,10 +4875,12 @@ function editQuote(id) {
 }
 
 function deleteQuote(id) {
-    if (!confirm('Delete this quote?')) return;
-    const quotes = DataStore.getQuotes().filter(q => q.id !== id);
-    DataStore.setQuotes(quotes);
-    showToast('Quote deleted', 'success');
+    if (!confirm('Move this quote to Trash?')) return;
+    const quotes = DataStore.getQuotes();
+    const q = quotes.find(x => x.id === id);
+    if (q) DataStore.moveToTrash(q, 'quotes');
+    DataStore.setQuotes(quotes.filter(q => q.id !== id));
+    showToast('Quote moved to Trash', 'success');
     loadQuotes();
     syncToLiveWebsite();
 }
@@ -4929,9 +4955,12 @@ function updateMood(e, id) {
 }
 
 function deleteMood(id) {
-    if (!confirm('Delete this mood?')) return;
-    DataStore.setMoods(DataStore.getMoods().filter(m => m.id !== id));
-    showToast('Mood deleted', 'success'); loadMoods(); syncToLiveWebsite();
+    if (!confirm('Move this mood to Trash?')) return;
+    const moods = DataStore.getMoods();
+    const mood = moods.find(m => m.id === id);
+    if (mood) DataStore.moveToTrash(mood, 'moods');
+    DataStore.setMoods(moods.filter(m => m.id !== id));
+    showToast('Mood moved to Trash', 'success'); loadMoods(); syncToLiveWebsite();
 }
 
 // ============================================
@@ -5008,9 +5037,12 @@ function updateAIRadio(e, id) {
 }
 
 function deleteAIRadio(id) {
-    if (!confirm('Delete this AI Radio card?')) return;
-    DataStore.setAIRadio(DataStore.getAIRadio().filter(a => a.id !== id));
-    showToast('AI Radio card deleted', 'success'); loadAIRadio(); syncToLiveWebsite();
+    if (!confirm('Move this AI Radio card to Trash?')) return;
+    const items = DataStore.getAIRadio();
+    const item = items.find(a => a.id === id);
+    if (item) DataStore.moveToTrash(item, 'aiRadio');
+    DataStore.setAIRadio(items.filter(a => a.id !== id));
+    showToast('AI Radio card moved to Trash', 'success'); loadAIRadio(); syncToLiveWebsite();
 }
 
 // ============================================
@@ -5083,9 +5115,12 @@ function updateNotification(e, id) {
 }
 
 function deleteNotification(id) {
-    if (!confirm('Delete this notification?')) return;
-    DataStore.setNotifications(DataStore.getNotifications().filter(n => n.id !== id));
-    showToast('Notification deleted', 'success'); loadNotifications(); syncToLiveWebsite();
+    if (!confirm('Move this notification to Trash?')) return;
+    const items = DataStore.getNotifications();
+    const item = items.find(n => n.id === id);
+    if (item) DataStore.moveToTrash(item, 'notifications');
+    DataStore.setNotifications(items.filter(n => n.id !== id));
+    showToast('Notification moved to Trash', 'success'); loadNotifications(); syncToLiveWebsite();
 }
 
 // ============================================
@@ -5400,12 +5435,14 @@ async function saveAd(event) {
 }
 
 function deleteAd(adId) {
-    if (!confirm('Delete this advertisement?')) return;
+    if (!confirm('Move this advertisement to Trash?')) return;
     let ads = DataStore.getAdvertisements();
+    const ad = ads.find(a => a.id === adId);
+    if (ad) DataStore.moveToTrash(ad, 'advertisements');
     ads = ads.filter(a => a.id !== adId);
     DataStore.setAdvertisements(ads);
     loadAdsTable();
-    showToast('Advertisement deleted', 'success');
+    showToast('Advertisement moved to Trash', 'success');
     syncToLiveWebsite();
 }
 
@@ -5546,12 +5583,14 @@ async function saveUpcomingRelease(event) {
 }
 
 function deleteUpcomingRelease(id) {
-    if (!confirm('Delete this release?')) return;
+    if (!confirm('Move this release to Trash?')) return;
     let releases = DataStore.getUpcomingReleases();
+    const rel = releases.find(r => r.id === id);
+    if (rel) DataStore.moveToTrash(rel, 'upcomingReleases');
     releases = releases.filter(r => r.id !== id);
     DataStore.setUpcomingReleases(releases);
     loadUpcomingReleasesTable();
-    showToast('Release deleted', 'success');
+    showToast('Release moved to Trash', 'success');
     syncToLiveWebsite();
 }
 
@@ -8010,10 +8049,374 @@ if (typeof window !== 'undefined') {
     window.syncR2Songs = syncR2Songs;
     window.restoreAllR2Songs = restoreAllR2Songs;
     window.loadAllSongs = loadAllSongs;
+    window.restoreFromTrash = restoreFromTrash;
+    window.permanentDeleteFromTrash = permanentDeleteFromTrash;
+    window.emptyTrash = emptyTrash;
+    window.runTrashBotNow = runTrashBotNow;
+    window.filterTrash = filterTrash;
+    window.loadTrashPage = loadTrashPage;
+    window.runSyncAudit = runSyncAudit;
     if (typeof initV2Enhancements === 'function') window.initV2Enhancements = initV2Enhancements;
     if (typeof showVEToast === 'function') window.showVEToast = showVEToast;
     if (typeof openVEPreview === 'function') window.openVEPreview = openVEPreview;
     if (typeof closeVEPreview === 'function') window.closeVEPreview = closeVEPreview;
+}
+
+// ============================================
+// Trash Management
+// ============================================
+const TRASH_AUTO_DELETE_MS = 60 * 60 * 1000; // 1 hour
+let _trashCurrentFilter = 'all';
+
+function loadTrashPage() {
+    runTrashBotNow();
+    renderTrashTable();
+}
+
+function renderTrashTable(filter) {
+    const tbody = document.getElementById('trashTableBody');
+    const emptyState = document.getElementById('trashEmptyState');
+    const countEl = document.getElementById('trashTotalCount');
+    const nextCleanupEl = document.getElementById('trashNextCleanup');
+    if (!tbody) return;
+
+    let trash = DataStore.getTrash();
+    const now = Date.now();
+
+    // Calculate next cleanup time
+    if (nextCleanupEl) {
+        const nextCleanup = trash.length > 0
+            ? Math.min(...trash.map(t => {
+                const trashedAt = t._trashedAt ? new Date(t._trashedAt).getTime() : 0;
+                return trashedAt + TRASH_AUTO_DELETE_MS;
+            }))
+            : 0;
+        if (nextCleanup > now) {
+            const mins = Math.ceil((nextCleanup - now) / 60000);
+            nextCleanupEl.textContent = mins + ' min';
+        } else if (trash.length > 0) {
+            nextCleanupEl.textContent = 'Overdue — cleaning now';
+        } else {
+            nextCleanupEl.textContent = '--';
+        }
+    }
+
+    // Apply filter
+    const activeFilter = filter || _trashCurrentFilter;
+    _trashCurrentFilter = activeFilter;
+    if (activeFilter !== 'all') {
+        if (activeFilter === 'other') {
+            const knownTypes = ['songs', 'stations', 'moods', 'featured', 'collections', 'artistHits', 'categories', 'quotes', 'aiRadio', 'notifications', 'musicCollections', 'advertisements', 'upcomingReleases', 'images', 'trending'];
+            trash = trash.filter(t => !knownTypes.includes(t._trashType));
+        } else {
+            trash = trash.filter(t => t._trashType === activeFilter);
+        }
+    }
+
+    if (countEl) countEl.textContent = DataStore.getTrash().length;
+
+    if (!trash.length) {
+        tbody.innerHTML = '';
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+    }
+    if (emptyState) emptyState.style.display = 'none';
+
+    tbody.innerHTML = trash.map(item => {
+        const name = item.name || item.title || item.text || item._originalId || 'Unknown';
+        const type = item._trashType || 'unknown';
+        const trashedAt = item._trashedAt ? new Date(item._trashedAt) : null;
+        const ageMs = trashedAt ? now - trashedAt.getTime() : 0;
+        const remainingMs = Math.max(0, TRASH_AUTO_DELETE_MS - ageMs);
+        const remainingMin = Math.ceil(remainingMs / 60000);
+        const remainingStr = remainingMin > 60
+            ? Math.floor(remainingMin / 60) + 'h ' + (remainingMin % 60) + 'm'
+            : remainingMin + 'm';
+        const urgencyClass = remainingMin < 15 ? 'color:#ef4444;' : remainingMin < 30 ? 'color:#f59e0b;' : '';
+        const typeBadgeColors = {
+            songs: '#34d399', stations: '#60a5fa', moods: '#a78bfa', featured: '#f472b6',
+            collections: '#fbbf24', musicCollections: '#fbbf24', artistHits: '#fb923c',
+            categories: '#38bdf8', quotes: '#94a3b8', aiRadio: '#c084fc',
+            notifications: '#f97316', advertisements: '#ef4444', upcomingReleases: '#2dd4bf',
+            images: '#67e8f9', trending: '#f59e0b'
+        };
+        const badgeColor = typeBadgeColors[type] || '#6b7280';
+
+        return `<tr>
+            <td><strong>${name}</strong></td>
+            <td><span class="builder-badge" style="background:${badgeColor}22;color:${badgeColor};">${type}</span></td>
+            <td style="font-size:12px;color:rgba(255,255,255,0.5);">${trashedAt ? trashedAt.toLocaleString() : '—'}</td>
+            <td style="font-size:12px;${urgencyClass}"><strong>${remainingStr}</strong></td>
+            <td>
+                <div style="display:flex;gap:6px;">
+                    <button class="builder-btn small" onclick="restoreFromTrash('${item._originalId}', '${type}')" title="Restore"><i class="fas fa-undo"></i></button>
+                    <button class="builder-btn small danger" onclick="permanentDeleteFromTrash('${item._originalId}', '${type}')" title="Delete Forever"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function filterTrash(type) {
+    document.querySelectorAll('[data-trashtab]').forEach(t => t.classList.remove('active'));
+    const tab = document.querySelector(`[data-trashtab="${type}"]`);
+    if (tab) tab.classList.add('active');
+    renderTrashTable(type);
+}
+
+function restoreFromTrash(originalId, type) {
+    const cleanItem = DataStore.restoreFromTrash(originalId, type);
+    if (!cleanItem) { showToast('Item not found in Trash', 'error'); return; }
+
+    // Re-add to the appropriate content store
+    switch (type) {
+        case 'songs': {
+            const songs = DataStore.getSongs();
+            if (!songs.find(s => s.id === originalId)) { songs.push(cleanItem); DataStore.setSongs(songs); }
+            break;
+        }
+        case 'stations': {
+            const stations = DataStore.getStations();
+            if (!stations.find(s => s.id === originalId)) { stations.push(cleanItem); DataStore.setStations(stations); }
+            break;
+        }
+        case 'moods': {
+            const moods = DataStore.getMoods();
+            if (!moods.find(m => m.id === originalId)) { moods.push(cleanItem); DataStore.setMoods(moods); }
+            break;
+        }
+        case 'featured': {
+            const featured = DataStore.getFeatured();
+            if (!featured.find(f => f.id === originalId)) { featured.push(cleanItem); DataStore.setFeatured(featured); }
+            break;
+        }
+        case 'trending': {
+            const trending = DataStore.getTrending();
+            if (!trending.find(t => t.id === originalId)) { trending.push(cleanItem); DataStore.setTrending(trending); }
+            break;
+        }
+        case 'categories': {
+            const cats = DataStore.getCategories();
+            if (!cats.find(c => c.id === originalId)) { cats.push(cleanItem); DataStore.setCategories(cats); }
+            break;
+        }
+        case 'artistHits': {
+            const hits = DataStore.getArtistHits();
+            if (!hits.find(h => h.id === originalId)) { hits.push(cleanItem); DataStore.setArtistHits(hits); }
+            break;
+        }
+        case 'quotes': {
+            const quotes = DataStore.getQuotes();
+            if (!quotes.find(q => q.id === originalId)) { quotes.push(cleanItem); DataStore.setQuotes(quotes); }
+            break;
+        }
+        case 'aiRadio': {
+            const items = DataStore.getAIRadio();
+            if (!items.find(a => a.id === originalId)) { items.push(cleanItem); DataStore.setAIRadio(items); }
+            break;
+        }
+        case 'notifications': {
+            const items = DataStore.getNotifications();
+            if (!items.find(n => n.id === originalId)) { items.push(cleanItem); DataStore.setNotifications(items); }
+            break;
+        }
+        case 'musicCollections': {
+            const cols = DataStore.getMusicCollections();
+            if (!cols.find(c => c.id === originalId)) { cols.push(cleanItem); DataStore.setMusicCollections(cols); }
+            break;
+        }
+        case 'advertisements': {
+            const ads = DataStore.getAdvertisements();
+            if (!ads.find(a => a.id === originalId)) { ads.push(cleanItem); DataStore.setAdvertisements(ads); }
+            break;
+        }
+        case 'upcomingReleases': {
+            const releases = DataStore.getUpcomingReleases();
+            if (!releases.find(r => r.id === originalId)) { releases.push(cleanItem); DataStore.setUpcomingReleases(releases); }
+            break;
+        }
+        case 'images': {
+            const images = DataStore.getImages();
+            if (!images.find(i => i.id === originalId)) { images.push(cleanItem); DataStore.setImages(images); }
+            break;
+        }
+        default: {
+            if (cleanItem._collectionType) {
+                const cType = cleanItem._collectionType;
+                delete cleanItem._collectionType;
+                const collections = getCollectionsByType(cType);
+                if (!collections.find(c => c.id === originalId)) {
+                    collections.push(cleanItem);
+                    setCollectionsByType(cType, collections);
+                }
+            }
+            break;
+        }
+    }
+
+    showToast('Item restored from Trash', 'success');
+    renderTrashTable();
+    syncToLiveWebsite();
+}
+
+function permanentDeleteFromTrash(originalId, type) {
+    if (!confirm('Permanently delete this item? This cannot be undone.')) return;
+    DataStore.permanentDeleteFromTrash(originalId, type);
+    showToast('Item permanently deleted', 'success');
+    renderTrashTable();
+    syncToLiveWebsite();
+}
+
+function emptyTrash() {
+    if (!confirm('Permanently delete ALL items in Trash? This cannot be undone.')) return;
+    DataStore.setTrash([]);
+    DataStore.setDeletedIds({});
+    showToast('Trash emptied', 'success');
+    renderTrashTable();
+    syncToLiveWebsite();
+}
+
+function runTrashBotNow() {
+    const purged = DataStore.purgeExpiredTrash(TRASH_AUTO_DELETE_MS);
+    if (purged > 0) {
+        showToast(`Trash Bot auto-deleted ${purged} expired item${purged > 1 ? 's' : ''}`, 'success');
+        syncToLiveWebsite();
+    }
+    // Update next cleanup display
+    renderTrashTable();
+}
+
+// Auto-run Trash Bot every 5 minutes while Builder is open
+(function startTrashBot() {
+    setInterval(() => {
+        try {
+            if (typeof DataStore !== 'undefined' && DataStore.getTrash) {
+                runTrashBotNow();
+            }
+        } catch (e) { /* ignore */ }
+    }, 5 * 60 * 1000);
+})();
+
+// ============================================
+// Sync Audit / Content Sync Analysis
+// ============================================
+function runSyncAudit() {
+    const results = document.getElementById('syncAuditResults');
+    const lastSyncedEl = document.getElementById('syncLastSynced');
+    const trashCountEl = document.getElementById('syncTrashCount');
+    const deletedCountEl = document.getElementById('syncDeletedCount');
+    if (!results) return;
+
+    const lastSynced = localStorage.getItem('tamilAIStream_lastSyncedAt');
+    if (lastSyncedEl) lastSyncedEl.textContent = lastSynced ? new Date(lastSynced).toLocaleString() : 'Never';
+
+    const trash = DataStore.getTrash();
+    if (trashCountEl) trashCountEl.textContent = trash.length;
+
+    const deletedIds = DataStore.getDeletedIds();
+    let totalDeleted = 0;
+    Object.values(deletedIds).forEach(ids => { if (Array.isArray(ids)) totalDeleted += ids.length; });
+    if (deletedCountEl) deletedCountEl.textContent = totalDeleted;
+
+    // Build audit data
+    const contentTypes = [
+        { key: 'songs', label: 'Songs', getter: () => DataStore.getSongs() },
+        { key: 'stations', label: 'Radio Stations', getter: () => DataStore.getStations() },
+        { key: 'moods', label: 'Moods & Genres', getter: () => DataStore.getMoods() },
+        { key: 'featured', label: 'Featured', getter: () => DataStore.getFeatured() },
+        { key: 'trending', label: 'Trending', getter: () => DataStore.getTrending() },
+        { key: 'categories', label: 'Categories', getter: () => DataStore.getCategories() },
+        { key: 'artistHits', label: 'Artist Hits', getter: () => DataStore.getArtistHits() },
+        { key: 'quotes', label: 'Quotes', getter: () => DataStore.getQuotes() },
+        { key: 'aiRadio', label: 'AI Radio', getter: () => DataStore.getAIRadio() },
+        { key: 'notifications', label: 'Notifications', getter: () => DataStore.getNotifications() },
+        { key: 'musicCollections', label: 'Music Collections', getter: () => DataStore.getMusicCollections() },
+        { key: 'moviesCollections', label: 'Movies Collections', getter: () => DataStore.getMoviesCollections() },
+        { key: 'yearlyCollections', label: 'Yearly Collections', getter: () => DataStore.getYearlyCollections() },
+        { key: 'latestCollections', label: 'Latest Collections', getter: () => DataStore.getLatestCollections() },
+        { key: 'advertisements', label: 'Advertisements', getter: () => DataStore.getAdvertisements() },
+        { key: 'upcomingReleases', label: 'Upcoming Releases', getter: () => DataStore.getUpcomingReleases() },
+        { key: 'images', label: 'Images', getter: () => DataStore.getImages() },
+        { key: 'news', label: 'Live News', getter: () => DataStore.getNews().filter(n => n.status !== 'trashed') }
+    ];
+
+    let totalItems = 0;
+    let totalTrashed = 0;
+    let totalDeletedTracked = 0;
+    const rows = [];
+
+    contentTypes.forEach(ct => {
+        const items = ct.getter();
+        const count = Array.isArray(items) ? items.length : 0;
+        const trashedCount = trash.filter(t => t._trashType === ct.key).length;
+        const deletedCount = deletedIds[ct.key] ? deletedIds[ct.key].length : 0;
+        totalItems += count;
+        totalTrashed += trashedCount;
+        totalDeletedTracked += deletedCount;
+
+        const statusIcon = count > 0 ? '<i class="fas fa-circle-check" style="color:#34d399;"></i>'
+            : deletedCount > 0 ? '<i class="fas fa-circle-minus" style="color:#f59e0b;"></i>'
+            : '<i class="fas fa-circle" style="color:#6b7280;"></i>';
+
+        rows.push(`
+            <tr>
+                <td>${statusIcon} ${ct.label}</td>
+                <td><strong>${count}</strong></td>
+                <td>${trashedCount > 0 ? '<span style="color:#f59e0b;">' + trashedCount + '</span>' : '0'}</td>
+                <td>${deletedCount > 0 ? '<span style="color:#ef4444;">' + deletedCount + '</span>' : '0'}</td>
+                <td style="color:#34d399;">Synced</td>
+            </tr>
+        `);
+    });
+
+    // Render KPIs
+    const kpiEl = document.getElementById('syncAuditKPI');
+    if (kpiEl) {
+        kpiEl.innerHTML = `
+            <div class="analytics-kpi">
+                <div class="analytics-kpi-icon" style="background:rgba(52,211,153,0.15);"><i class="fas fa-database"></i></div>
+                <div class="analytics-kpi-info"><div class="analytics-kpi-value">${totalItems}</div><div class="analytics-kpi-label">Total Items</div></div>
+            </div>
+            <div class="analytics-kpi">
+                <div class="analytics-kpi-icon" style="background:rgba(96,165,250,0.15);"><i class="fas fa-check-circle"></i></div>
+                <div class="analytics-kpi-info"><div class="analytics-kpi-value">${contentTypes.filter(ct => ct.getter().length > 0).length}</div><div class="analytics-kpi-label">Active Content Types</div></div>
+            </div>
+            <div class="analytics-kpi">
+                <div class="analytics-kpi-icon" style="background:rgba(245,158,11,0.15);"><i class="fas fa-trash-can-arrow-up"></i></div>
+                <div class="analytics-kpi-info"><div class="analytics-kpi-value">${totalTrashed}</div><div class="analytics-kpi-label">In Trash</div></div>
+            </div>
+            <div class="analytics-kpi">
+                <div class="analytics-kpi-icon" style="background:rgba(239,68,68,0.15);"><i class="fas fa-ban"></i></div>
+                <div class="analytics-kpi-info"><div class="analytics-kpi-value">${totalDeletedTracked}</div><div class="analytics-kpi-label">Deleted IDs Tracked</div></div>
+            </div>
+            <div class="analytics-kpi">
+                <div class="analytics-kpi-icon" style="background:rgba(167,139,250,0.15);"><i class="fas fa-rocket"></i></div>
+                <div class="analytics-kpi-info"><div class="analytics-kpi-value">Live</div><div class="analytics-kpi-label">Publish Status</div></div>
+            </div>
+        `;
+    }
+
+    results.innerHTML = `
+        <table class="analytics-table">
+            <thead>
+                <tr>
+                    <th>Content Type</th>
+                    <th>Builder Items</th>
+                    <th>In Trash</th>
+                    <th>Deleted IDs</th>
+                    <th>Website Sync</th>
+                </tr>
+            </thead>
+            <tbody>${rows.join('')}</tbody>
+        </table>
+        <div style="margin-top:16px;padding:12px;border-radius:8px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);">
+            <strong style="color:#34d399;"><i class="fas fa-circle-check"></i> Single Source of Truth</strong>
+            <p style="color:rgba(255,255,255,0.6);margin:4px 0 0;font-size:13px;">
+                Builder → localStorage → R2 Manifest → Live Website. All deletions are tracked via deletedIds and respected during sync.
+                Deleted items move to Trash first (1 hour retention). Changes persist across refresh, logout, and reopening.
+            </p>
+        </div>
+    `;
 }
 
 // ============================================

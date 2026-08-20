@@ -2750,3 +2750,75 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     overflow: hidden;
     background: #1a1a2e;
 }
+
+/* ============================================
+   Trash Page Styles
+   ============================================ */
+#trashPage .content-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 0 24px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+#trashPage .content-tab {
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    background: var(--bg-glass);
+    border: 1px solid var(--border-glass);
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+#trashPage .content-tab:hover {
+    background: var(--bg-glass-hover);
+    color: var(--text-primary);
+}
+
+#trashPage .content-tab.active {
+    background: var(--gradient-brand);
+    color: #fff;
+    border-color: var(--emerald-500);
+}
+
+#trashPage .builder-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+/* Sync Audit Tab Styles */
+#analyticsSync .analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#analyticsSync .analytics-table th,
+#analyticsSync .analytics-table td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-glass);
+    font-size: 13px;
+}
+
+#analyticsSync .analytics-table th {
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+}
+
+#analyticsSync .analytics-table td {
+    color: var(--text-secondary);
+}
+
+#analyticsSync .analytics-table tr:hover td {
+    background: var(--bg-glass-hover);
+}

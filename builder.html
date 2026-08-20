@@ -268,6 +268,9 @@
                     <div class="builder-sidebar-section">
                         <div class="builder-sidebar-title">Tools</div>
                         <div class="builder-sidebar-menu">
+                            <button class="builder-sidebar-item" data-page="trash">
+                                <i class="fas fa-trash-can-arrow-up"></i> Trash
+                            </button>
                             <button class="builder-sidebar-item" data-page="visualeditor">
                                 <i class="fas fa-wand-magic-sparkles"></i> Visual Editor
                             </button>
@@ -2597,6 +2600,7 @@
             <button class="analytics-tab" data-atab="sections">Sections</button>
             <button class="analytics-tab" data-atab="flow">Flow</button>
             <button class="analytics-tab" data-atab="realtime">Real-Time</button>
+            <button class="analytics-tab" data-atab="sync">Sync Audit</button>
         </div>
 
         <!-- Date Filter Bar -->
@@ -2722,6 +2726,46 @@
             <div class="analytics-charts-row">
                 <div class="analytics-chart-card"><h3>Currently Active Users</h3><div id="analyticsActiveUsers"></div></div>
                 <div class="analytics-chart-card"><h3>Currently Playing</h3><div id="analyticsNowPlaying"></div></div>
+            </div>
+        </div>
+
+        <!-- Sync Audit Tab -->
+        <div class="analytics-panel" id="analyticsSync">
+            <div class="analytics-kpi-grid" id="syncAuditKPI"></div>
+            <div class="analytics-charts-row">
+                <div class="analytics-chart-card" style="flex:2;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <h3>Content Sync Audit</h3>
+                        <button class="builder-btn primary" onclick="runSyncAudit()"><i class="fas fa-arrows-rotate"></i> Run Audit</button>
+                    </div>
+                    <div id="syncAuditResults" style="max-height:400px;overflow-y:auto;">
+                        <div style="text-align:center;padding:30px;color:rgba(255,255,255,0.4);">
+                            <i class="fas fa-clipboard-check" style="font-size:2rem;margin-bottom:8px;display:block;"></i>
+                            Click "Run Audit" to compare Builder content with the live website
+                        </div>
+                    </div>
+                </div>
+                <div class="analytics-chart-card">
+                    <h3>Sync Status</h3>
+                    <div id="syncStatusInfo" style="padding:8px;">
+                        <div style="margin-bottom:12px;">
+                            <span style="color:rgba(255,255,255,0.5);">Last Synced:</span><br>
+                            <strong id="syncLastSynced">--</strong>
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <span style="color:rgba(255,255,255,0.5);">Source of Truth:</span><br>
+                            <strong style="color:#34d399;">Builder → R2 Manifest → Live Website</strong>
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <span style="color:rgba(255,255,255,0.5);">Items in Trash:</span><br>
+                            <strong id="syncTrashCount" style="color:#f59e0b;">0</strong>
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <span style="color:rgba(255,255,255,0.5);">Deleted IDs Tracked:</span><br>
+                            <strong id="syncDeletedCount" style="color:#ef4444;">0</strong>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2944,6 +2988,75 @@
     </div>
 
     <!-- Song Preview Player -->
+    <!-- ========== TRASH PAGE ========== -->
+    <div class="builder-page" id="trashPage" style="display:none;">
+        <div class="builder-page-header">
+            <h1 class="builder-page-title"><i class="fas fa-trash-can-arrow-up"></i> Trash</h1>
+            <p class="builder-page-subtitle">Deleted items are kept here for 1 hour before permanent auto-deletion</p>
+        </div>
+
+        <!-- Trash Bot Status -->
+        <div class="content-card">
+            <div class="content-card-header">
+                <h2 class="content-card-title"><i class="fas fa-robot"></i> Trash Bot Status</h2>
+                <button class="builder-btn" onclick="runTrashBotNow()"><i class="fas fa-play"></i> Run Now</button>
+            </div>
+            <div style="padding:16px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="color:rgba(255,255,255,0.6);">Auto-delete after:</span>
+                    <strong style="color:#34d399;">1 Hour</strong>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="color:rgba(255,255,255,0.6);">Items in Trash:</span>
+                    <strong style="color:#f59e0b;" id="trashTotalCount">0</strong>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="color:rgba(255,255,255,0.6);">Next cleanup:</span>
+                    <strong style="color:#60a5fa;" id="trashNextCleanup">--</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trash Content Tabs -->
+        <div class="content-tabs">
+            <button class="content-tab active" data-trashtab="all" onclick="filterTrash('all')">All</button>
+            <button class="content-tab" data-trashtab="songs" onclick="filterTrash('songs')">Songs</button>
+            <button class="content-tab" data-trashtab="stations" onclick="filterTrash('stations')">Stations</button>
+            <button class="content-tab" data-trashtab="moods" onclick="filterTrash('moods')">Moods</button>
+            <button class="content-tab" data-trashtab="featured" onclick="filterTrash('featured')">Featured</button>
+            <button class="content-tab" data-trashtab="collections" onclick="filterTrash('collections')">Collections</button>
+            <button class="content-tab" data-trashtab="other" onclick="filterTrash('other')">Other</button>
+        </div>
+
+        <!-- Trash Table -->
+        <div class="content-card">
+            <div class="content-card-header">
+                <h2 class="content-card-title">Deleted Items</h2>
+                <button class="builder-btn danger" onclick="emptyTrash()"><i class="fas fa-trash-alt"></i> Empty Trash</button>
+            </div>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Type</th>
+                            <th>Deleted At</th>
+                            <th>Remaining</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trashTableBody">
+                    </tbody>
+                </table>
+                <div id="trashEmptyState" style="display:none;text-align:center;padding:40px;color:rgba(255,255,255,0.4);">
+                    <i class="fas fa-trash-can-arrow-up" style="font-size:3rem;margin-bottom:12px;display:block;"></i>
+                    <p>Trash is empty</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ========== END TRASH PAGE ========== -->
+
     <div class="preview-player" id="previewPlayer" style="display:none;">
         <div class="preview-player-info">
             <div class="preview-player-thumb" id="previewThumb"></div>

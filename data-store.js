@@ -38,7 +38,9 @@ const DataStore = {
         ADVERTISEMENTS: 'tamilAIStream_advertisements',
         UPCOMING_RELEASES: 'tamilAIStream_upcomingReleases',
         NEWS: 'tamilAIStream_news',
-        FAVORITES: 'tamilAIStream_favorites'
+        FAVORITES: 'tamilAIStream_favorites',
+        TRASH: 'tamilAIStream_trash',
+        DELETED_IDS: 'tamilAIStream_deletedIds'
     },
 
     get(key) {
@@ -51,7 +53,7 @@ const DataStore = {
         
         // Trigger storage event for cross-tab sync
         window.dispatchEvent(new StorageEvent('storage', {
-            key: actualKey,
+            key: key,
             newValue: JSON.stringify(value)
         }));
     },
@@ -170,6 +172,94 @@ const DataStore = {
 
     getFavorites() { return this.get(this.KEYS.FAVORITES) || []; },
     setFavorites(data) { this.set(this.KEYS.FAVORITES, data); },
+
+    getTrash() { return this.get(this.KEYS.TRASH) || []; },
+    setTrash(data) { this.set(this.KEYS.TRASH, data); },
+
+    getDeletedIds() { return this.get(this.KEYS.DELETED_IDS) || {}; },
+    setDeletedIds(data) { this.set(this.KEYS.DELETED_IDS, data); },
+
+    // Move an item to Trash instead of permanently deleting it
+    moveToTrash(item, type) {
+        const trash = this.getTrash();
+        const deletedIds = this.getDeletedIds();
+
+        const trashEntry = {
+            ...item,
+            _trashType: type,
+            _trashedAt: new Date().toISOString(),
+            _originalId: item.id
+        };
+        trash.push(trashEntry);
+        this.setTrash(trash);
+
+        // Track the deleted ID so sync never re-adds it
+        if (!deletedIds[type]) deletedIds[type] = [];
+        if (!deletedIds[type].includes(item.id)) {
+            deletedIds[type].push(item.id);
+        }
+        this.setDeletedIds(deletedIds);
+
+        return trashEntry;
+    },
+
+    // Restore an item from Trash back to its content type
+    restoreFromTrash(originalId, type) {
+        const trash = this.getTrash();
+        const item = trash.find(t => t._originalId === originalId && t._trashType === type);
+        if (!item) return null;
+
+        const deletedIds = this.getDeletedIds();
+        if (deletedIds[type]) {
+            deletedIds[type] = deletedIds[type].filter(id => id !== originalId);
+            this.setDeletedIds(deletedIds);
+        }
+
+        const cleanItem = { ...item };
+        delete cleanItem._trashType;
+        delete cleanItem._trashedAt;
+        delete cleanItem._originalId;
+        return cleanItem;
+    },
+
+    // Permanently delete from Trash
+    permanentDeleteFromTrash(originalId, type) {
+        let trash = this.getTrash();
+        trash = trash.filter(t => !(t._originalId === originalId && t._trashType === type));
+        this.setTrash(trash);
+    },
+
+    // Check if an ID is in the deleted list for a content type
+    isDeleted(type, id) {
+        const deletedIds = this.getDeletedIds();
+        return deletedIds[type] && deletedIds[type].includes(id);
+    },
+
+    // Purge expired trash items (older than given ms)
+    purgeExpiredTrash(maxAgeMs) {
+        const trash = this.getTrash();
+        const deletedIds = this.getDeletedIds();
+        const now = Date.now();
+        const remaining = [];
+        let purged = 0;
+
+        trash.forEach(item => {
+            const trashedAt = item._trashedAt ? new Date(item._trashedAt).getTime() : 0;
+            if (now - trashedAt > maxAgeMs) {
+                purged++;
+                // Remove from deletedIds so it could be re-added if still on server
+                if (deletedIds[item._trashType]) {
+                    deletedIds[item._trashType] = deletedIds[item._trashType].filter(id => id !== item._originalId);
+                }
+            } else {
+                remaining.push(item);
+            }
+        });
+
+        this.setTrash(remaining);
+        this.setDeletedIds(deletedIds);
+        return purged;
+    },
     toggleFavorite(song) {
         const favs = this.getFavorites();
         const idx = favs.findIndex(f => f.id === song.id);
@@ -287,6 +377,12 @@ init() {
         }
         if (!localStorage.getItem(this.KEYS.UPCOMING_RELEASES)) {
             this.setUpcomingReleases([]);
+        }
+        if (!localStorage.getItem(this.KEYS.TRASH)) {
+            this.setTrash([]);
+        }
+        if (!localStorage.getItem(this.KEYS.DELETED_IDS)) {
+            this.setDeletedIds({});
         }
     },
 
