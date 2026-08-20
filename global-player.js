@@ -488,12 +488,12 @@ const GlobalPlayer = (() => {
             }, 50);
         };
         wrap.addEventListener('click', (e) => { clickSeek(e); e.preventDefault(); e.stopPropagation(); });
-        wrap.addEventListener('mousedown', (e) => { isDragging = true; previewSeek(e); e.preventDefault(); e.stopPropagation(); });
+        wrap.addEventListener('mousedown', (e) => { isDragging = true; wrap.classList.add('dragging'); previewSeek(e); e.preventDefault(); e.stopPropagation(); });
         document.addEventListener('mousemove', (e) => { if (isDragging) previewSeek(e); });
-        document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; commitSeek(); } });
-        wrap.addEventListener('touchstart', (e) => { isDragging = true; previewSeek(e); e.preventDefault(); e.stopPropagation(); }, { passive: false });
+        document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; wrap.classList.remove('dragging'); commitSeek(); } });
+        wrap.addEventListener('touchstart', (e) => { isDragging = true; wrap.classList.add('dragging'); previewSeek(e); e.preventDefault(); e.stopPropagation(); }, { passive: false });
         wrap.addEventListener('touchmove', (e) => { if (isDragging) { e.preventDefault(); previewSeek(e); } }, { passive: false });
-        document.addEventListener('touchend', () => { if (isDragging) { isDragging = false; commitSeek(); } });
+        document.addEventListener('touchend', () => { if (isDragging) { isDragging = false; wrap.classList.remove('dragging'); commitSeek(); } });
     }
 
     function hookAudioSources() {
@@ -729,6 +729,8 @@ const GlobalPlayer = (() => {
         const expIcon = document.querySelector('#gpExpPlay i');
         if (miniIcon) miniIcon.className = playing ? 'fas fa-pause' : 'fas fa-play';
         if (expIcon) expIcon.className = playing ? 'fas fa-pause' : 'fas fa-play';
+        const expPlay = document.getElementById('gpExpPlay');
+        if (expPlay) expPlay.classList.toggle('playing', playing);
         updateEqBars(playing);
         if (typeof updatePlayPauseButton === 'function') updatePlayPauseButton(playing);
         
