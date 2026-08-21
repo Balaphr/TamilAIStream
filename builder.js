@@ -485,7 +485,7 @@ function navigateTo(page) {
 
     if (!_pageLoaded[page]) {
         _pageLoaded[page] = true;
-        if (page === 'dashboard') { loadDashboardStats(); loadDashboardAnalytics(); }
+        if (page === 'dashboard') { loadDashboardStats(); loadDashboardAnalytics(); refreshDashboardSyncStatus(); }
         if (page === 'stations') loadAllStations();
         if (page === 'songs') loadAllSongs();
         if (page === 'content') { loadFeatured(); loadTrending(); loadCategories(); loadArtistHits(); loadCollectionsTable('movies'); loadCollectionsTable('yearly'); loadCollectionsTable('latest'); loadAllSongs(); loadQuotes(); loadContentSectionStats(); }
@@ -602,6 +602,114 @@ function loadContentSectionStats() {
         if (el('csQuotes')) el('csQuotes').textContent = (DataStore.getQuotes() || []).length;
         if (el('csStations')) el('csStations').textContent = (DataStore.getStations() || []).length;
     } catch (e) {}
+}
+
+function refreshDashboardSyncStatus() {
+    const container = document.getElementById('dashboardSyncStatus');
+    if (!container) return;
+    try {
+        const songs = DataStore.getSongs() || [];
+        const stations = DataStore.getStations() || [];
+        const featured = DataStore.getFeatured() || [];
+        const trending = DataStore.getTrending() || [];
+        const categories = DataStore.getCategories() || [];
+        const artistHits = DataStore.getArtistHits() || [];
+        const moods = DataStore.getMoods() || [];
+        const quotes = DataStore.getQuotes() || [];
+        const images = DataStore.getImages() || [];
+        const aiRadio = DataStore.getAIRadio() || [];
+        const notifications = DataStore.getNotifications() || [];
+        const advertisements = DataStore.getAdvertisements() || [];
+        const musicCollections = DataStore.getMusicCollections() || [];
+        const trash = DataStore.getTrash() || [];
+        const deletedIds = DataStore.getDeletedIds() || {};
+        const lastSynced = localStorage.getItem('tamilAIStream_lastSyncedAt');
+        const lastPublished = localStorage.getItem('builderLastPublished');
+
+        let totalDeleted = 0;
+        Object.values(deletedIds).forEach(ids => { if (Array.isArray(ids)) totalDeleted += ids.length; });
+
+        const totalItems = songs.length + stations.length + featured.length + trending.length +
+            categories.length + artistHits.length + moods.length + quotes.length + images.length +
+            aiRadio.length + notifications.length + advertisements.length + musicCollections.length;
+
+        const contentTypes = [
+            { label: 'Songs', count: songs.length, icon: 'fa-music', color: '#34d399' },
+            { label: 'Stations', count: stations.length, icon: 'fa-radio', color: '#60a5fa' },
+            { label: 'Featured', count: featured.length, icon: 'fa-star', color: '#f59e0b' },
+            { label: 'Trending', count: trending.length, icon: 'fa-fire', color: '#ef4444' },
+            { label: 'Categories', count: categories.length, icon: 'fa-folder', color: '#a78bfa' },
+            { label: 'Artist Hits', count: artistHits.length, icon: 'fa-user', color: '#f472b6' },
+            { label: 'Moods', count: moods.length, icon: 'fa-face-smile', color: '#38bdf8' },
+            { label: 'Quotes', count: quotes.length, icon: 'fa-quote-left', color: '#fb923c' },
+            { label: 'Images', count: images.length, icon: 'fa-images', color: '#34d399' },
+            { label: 'AI Radio', count: aiRadio.length, icon: 'fa-robot', color: '#a78bfa' },
+            { label: 'Notifications', count: notifications.length, icon: 'fa-bell', color: '#f59e0b' },
+            { label: 'Ads', count: advertisements.length, icon: 'fa-ad', color: '#ef4444' },
+            { label: 'Music Collections', count: musicCollections.length, icon: 'fa-compact-disc', color: '#60a5fa' }
+        ];
+
+        const syncStatus = lastSynced ? 'synced' : 'never';
+        const publishStatus = lastPublished ? 'published' : 'draft';
+        const syncColor = syncStatus === 'synced' ? '#34d399' : '#f59e0b';
+        const pubColor = publishStatus === 'published' ? '#34d399' : '#60a5fa';
+
+        let html = `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+                <div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:10px;padding:14px;text-align:center;">
+                    <div style="font-size:1.5rem;font-weight:800;color:#34d399;">${totalItems}</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">Total Items</div>
+                </div>
+                <div style="background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);border-radius:10px;padding:14px;text-align:center;">
+                    <div style="font-size:1.5rem;font-weight:800;color:#60a5fa;">${trash.length}</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">In Trash</div>
+                </div>
+                <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:14px;text-align:center;">
+                    <div style="font-size:1.5rem;font-weight:800;color:#ef4444;">${totalDeleted}</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">Deleted IDs</div>
+                </div>
+                <div style="background:rgba(${syncColor}15,0.08);border:1px solid rgba(${syncColor},0.2);border-radius:10px;padding:14px;text-align:center;">
+                    <div style="font-size:1.5rem;font-weight:800;color:${syncColor};">${syncStatus === 'synced' ? 'Synced' : 'Never'}</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">Last Sync</div>
+                    ${lastSynced ? '<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:4px;">' + new Date(lastSynced).toLocaleString() + '</div>' : ''}
+                </div>
+                <div style="background:rgba(${pubColor}15,0.08);border:1px solid rgba(${pubColor},0.2);border-radius:10px;padding:14px;text-align:center;">
+                    <div style="font-size:1.5rem;font-weight:800;color:${pubColor};">${publishStatus === 'published' ? 'Live' : 'Draft'}</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">Publish Status</div>
+                    ${lastPublished ? '<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:4px;">' + new Date(parseInt(lastPublished)).toLocaleString() + '</div>' : ''}
+                </div>
+            </div>
+            <div style="margin-bottom:12px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);">Content Breakdown</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">
+        `;
+
+        contentTypes.forEach(ct => {
+            html += `
+                <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;">
+                    <i class="fas ${ct.icon}" style="color:${ct.color};font-size:12px;width:16px;text-align:center;"></i>
+                    <span style="font-size:12px;color:rgba(255,255,255,0.6);flex:1;">${ct.label}</span>
+                    <span style="font-size:13px;font-weight:700;color:${ct.count > 0 ? ct.color : 'rgba(255,255,255,0.3)'};">${ct.count}</span>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+
+        if (trash.length > 0) {
+            html += `
+                <div style="margin-top:16px;padding:12px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);">
+                    <div style="font-size:12px;font-weight:600;color:#f59e0b;margin-bottom:6px;"><i class="fas fa-trash-can"></i> Trash (${trash.length} items)</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.45);">
+                        Items auto-delete after 1 hour. Go to <strong>Trash</strong> page to restore or permanently delete.
+                    </div>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = '<div style="color:#ef4444;font-size:13px;">Error loading sync status: ' + e.message + '</div>';
+    }
 }
 
 async function loadAllSongs() {
@@ -1370,23 +1478,23 @@ async function uploadTrendingImage(input) {
 }
 
 async function deleteImage(imageId) {
-    if (!confirm('Are you sure you want to delete this image?')) return;
+    if (!confirm('Move this image to Trash?')) return;
     
     try {
         const images = DataStore.getImages();
         const imgData = images.find(i => i.id === imageId);
+        if (!imgData) { showToast('Image not found', 'error'); return; }
+        DataStore.moveToTrash(imgData, 'images');
         const filtered = images.filter(i => i.id !== imageId);
         DataStore.setImages(filtered);
         
-        showToast('Image deleted successfully!', 'success');
-        syncToLiveWebsite();
-        if (imgData) {
-            addActivity('Image Deleted', 'Deleted "' + imgData.title + '"');
-        }
+        showToast('Image moved to Trash', 'success');
+        await syncToLiveWebsite();
+        addActivity('Image Trashed', 'Moved "' + (imgData.title || 'Unknown') + '" to Trash');
         loadAllImages();
     } catch (error) {
-        console.error('Error deleting image:', error);
-        showToast('Error deleting image', 'error');
+        console.error('Error trashing image:', error);
+        showToast('Error moving image to trash', 'error');
     }
 }
 
@@ -3730,13 +3838,14 @@ function deleteArtistSong(collectionId, songIndex) {
     const artistHits = DataStore.getArtistHits();
     const hit = artistHits.find(h => h.id === collectionId);
     if (!hit || !hit.songs) return;
-    hit.songs.splice(songIndex, 1);
+    const removed = hit.songs.splice(songIndex, 1);
     hit.songCount = hit.songs.length;
     DataStore.setArtistHits(artistHits);
     showToast('Song removed from collection', 'success');
     loadArtistSongs(collectionId);
     loadArtistHits();
     loadArtistSongCollections();
+    syncToLiveWebsite();
 }
 
 // ============================================

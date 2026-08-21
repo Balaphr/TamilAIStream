@@ -461,6 +461,20 @@
                             </div>
                         </div>
 
+                        <!-- Sync Status & Analytics -->
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title"><i class="fas fa-chart-line" style="color:#34d399;margin-right:8px;"></i> Sync Status & Analytics</h2>
+                                <button class="action-btn" onclick="refreshDashboardSyncStatus()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+                            </div>
+                            <div id="dashboardSyncStatus" style="padding:16px;">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+                                    <span class="fas fa-circle-notch fa-spin" style="color:var(--text-secondary);"></span>
+                                    <span style="color:var(--text-secondary);font-size:13px;">Loading sync status...</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Builder Tools -->
                         <div class="content-card">
                             <div class="content-card-header">

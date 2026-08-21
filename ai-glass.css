@@ -635,7 +635,7 @@ body.ai-light .ai-dark-knob { left: 21px; }
 
 /* ---------- Now Playing Top Bar ---------- */
 .now-playing-bar {
-    position: sticky; top: 0; z-index: 900;
+    position: sticky; top: 0; z-index: 1600;
     background: linear-gradient(135deg, rgba(10, 15, 30, 0.96), rgba(15, 20, 40, 0.96));
     backdrop-filter: blur(20px) saturate(150%);
     -webkit-backdrop-filter: blur(20px) saturate(150%);

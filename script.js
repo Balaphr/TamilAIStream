@@ -2587,11 +2587,20 @@ function renderFeaturedSliderDynamic() {
                     <h3>${item.title || station.name || 'Station'}</h3>
                     <p>${item.subtitle || station.freq + ' â€¢ ' + station.city || ''}</p>
                     <span class="slide-listeners"><i class="fas fa-headphones"></i> ${(item.listeners || station.listeners || 0).toLocaleString()} listening</span>
-                    <button class="slide-play-btn" onclick="toggleStationFromCard(this, '${station.name || item.title}')"><i class="fas fa-play"></i> Listen Now</button>
+                    <button class="slide-play-btn" data-station="${escapeHtml(station.name || item.title || '')}"><i class="fas fa-play"></i> Listen Now</button>
                 </div>
             </div>
         `;
     }).join('');
+    
+    // Bind click events for featured slider play buttons
+    track.querySelectorAll('.slide-play-btn[data-station]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const name = this.dataset.station;
+            if (name) playStation(name);
+        });
+    });
     
     // Reinitialize slider
     if (window._featuredSlider) window._featuredSlider.destroy();
@@ -2615,19 +2624,31 @@ function renderTrendingDynamicStationsLegacy() {
         const station = stations.find(s => s.id === item.stationId) || {};
         const thumbSrc = station.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='50' fill='%2334d399' opacity='0.2'/%3E%3Ccircle cx='60' cy='60' r='30' fill='%2334d399' opacity='0.35'/%3E%3Cpath d='M50 45 L50 80 L80 62.5 Z' fill='%2334d399' opacity='0.5'/%3E%3C/svg%3E";
         return `
-            <div class="station-card" data-genre="${(station.genre || '').toLowerCase()}" onclick="toggleStationFromCard(this, '${station.name || ''}')">
+            <div class="station-card" data-genre="${(station.genre || '').toLowerCase()}" data-station="${escapeHtml(station.name || '')}">
                 <div class="station-art" style="background:${station.gradient || 'linear-gradient(135deg,#1e3a5f,#0d1f3c)'};">
                     <img src="${thumbSrc}" alt="${station.name || ''}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''}>
                     <div class="station-play-overlay"><i class="fas fa-play"></i></div>
                 </div>
                 <div class="station-info">
                     <h3>${station.name || 'Station'}</h3>
-                    <p>${station.genre || ''} â€¢ ${station.freq || ''}</p>
-                    <span class="station-listeners"><i class="fas fa-headphones"></i> ${((station.listeners || 0) / 1000).toFixed(1)}K</span>
+                    <p>${station.freq || ''} • ${station.genre || ''}</p>
                 </div>
             </div>
         `;
     }).join('');
+    // Bind click events for dynamically rendered trending cards
+    container.querySelectorAll('.station-card[data-station]').forEach(card => {
+        card.addEventListener('click', function() {
+            const name = this.dataset.station;
+            if (name) playStation(name);
+        });
+        const overlay = card.querySelector('.station-play-overlay');
+        if (overlay) overlay.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const name = card.dataset.station;
+            if (name) playStation(name);
+        });
+    });
 }
 
 // Render Categories from DataStore
@@ -3614,7 +3635,7 @@ function renderAIRecommendedStationsLegacy() {
     container.innerHTML = recommended.map((station, i) => {
         const thumbSrc = station.thumbnail || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Ccircle cx='60' cy='60' r='50' fill='%2334d399' opacity='0.2'/%3E%3Ccircle cx='60' cy='60' r='30' fill='%2334d399' opacity='0.35'/%3E%3Cpath d='M50 45 L50 80 L80 62.5 Z' fill='%2334d399' opacity='0.5'/%3E%3C/svg%3E";
         return `
-        <div class="station-card recommended" data-genre="${(station.genre || '').toLowerCase()}" onclick="toggleStationFromCard(this, '${station.name}')">
+        <div class="station-card recommended" data-genre="${(station.genre || '').toLowerCase()}" data-station="${escapeHtml(station.name || '')}">
             <div class="station-art" style="background:${station.gradient || 'linear-gradient(135deg,#0f3b2e,#064e3b)'};">
                 <img src="${thumbSrc}" alt="${station.name}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''}>
                 <div class="station-play-overlay"><i class="fas fa-play"></i></div>
@@ -3628,6 +3649,19 @@ function renderAIRecommendedStationsLegacy() {
         </div>
         `;
     }).join('');
+    // Bind click events for dynamically rendered recommended cards
+    container.querySelectorAll('.station-card[data-station]').forEach(card => {
+        card.addEventListener('click', function() {
+            const name = this.dataset.station;
+            if (name) playStation(name);
+        });
+        const overlay = card.querySelector('.station-play-overlay');
+        if (overlay) overlay.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const name = card.dataset.station;
+            if (name) playStation(name);
+        });
+    });
 }
 
 // Apply Site Settings to page

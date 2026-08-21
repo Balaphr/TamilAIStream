@@ -152,7 +152,33 @@
             const localValue = localData[key];
 
             if (sharedKeys.includes(key)) {
-                if (Array.isArray(remoteValue)) {
+                // CRITICAL FIX: deletedIds and trash must be deep-merged so that
+                // deletions from multiple devices are all preserved.
+                if (key === 'deletedIds') {
+                    const merged = {};
+                    const allTypes = new Set([...Object.keys(localValue || {}), ...Object.keys(remoteValue || {})]);
+                    allTypes.forEach(type => {
+                        const localIds = Array.isArray(localValue?.[type]) ? localValue[type] : [];
+                        const remoteIds = Array.isArray(remoteValue?.[type]) ? remoteValue[type] : [];
+                        merged[type] = [...new Set([...localIds, ...remoteIds])];
+                    });
+                    mergedData[key] = merged;
+                } else if (key === 'trash') {
+                    // Union-merge trash by _originalId + _trashType
+                    const trashMap = new Map();
+                    const addTrash = (arr) => {
+                        if (!Array.isArray(arr)) return;
+                        arr.forEach(item => {
+                            if (item && item._originalId && item._trashType) {
+                                const tKey = item._trashType + ':' + item._originalId;
+                                if (!trashMap.has(tKey)) trashMap.set(tKey, item);
+                            }
+                        });
+                    };
+                    addTrash(remoteValue);
+                    addTrash(localValue);
+                    mergedData[key] = Array.from(trashMap.values());
+                } else if (Array.isArray(remoteValue)) {
                     // Remote arrays carry authoritative items by ID.
                     const mergedMap = new Map();
                     remoteValue.forEach(item => {

@@ -742,6 +742,8 @@ const GlobalPlayer = (() => {
         if (playing) {
             if (!eqRAF) startEqAnimation();
             if (!_lyricsRAF) drawMiniWaveform();
+            // Restart the expanded visualizer if the player is open
+            if (isExpanded && !waveformRAF) startVisualizer();
         } else {
             if (eqRAF) { cancelAnimationFrame(eqRAF); eqRAF = null; }
             if (_lyricsRAF) { cancelAnimationFrame(_lyricsRAF); _lyricsRAF = null; }

@@ -227,6 +227,12 @@ const DataStore = {
         let trash = this.getTrash();
         trash = trash.filter(t => !(t._originalId === originalId && t._trashType === type));
         this.setTrash(trash);
+        // Also remove from deletedIds to prevent stale tracking
+        const deletedIds = this.getDeletedIds();
+        if (deletedIds[type]) {
+            deletedIds[type] = deletedIds[type].filter(id => id !== originalId);
+            this.setDeletedIds(deletedIds);
+        }
     },
 
     // Check if an ID is in the deleted list for a content type
