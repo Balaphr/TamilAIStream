@@ -133,7 +133,9 @@ const PlayerEngine = (() => {
             audio = new Audio();
             window.audioPlayer = audio;
         }
-        audio.preload = 'metadata';
+        // Use 'auto' to let the browser pre-buffer audio data — 'metadata' only
+        // fetches duration/headers, leaving playback starved on slower connections.
+        audio.preload = 'auto';
         audio.volume = state.volume;
         audio.playbackRate = state.speed;
 
@@ -317,7 +319,7 @@ const PlayerEngine = (() => {
 
     async function playTrack(track, queue, index) {
         if (window.__BUILDER_PREVIEW__) return;
-        initAudio();
+        initAudioPlayer();
         if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
 
         if (queue) state.queue = [...queue];
@@ -326,6 +328,9 @@ const PlayerEngine = (() => {
 
         const url = track.streamUrl || track.audioUrl || track.url;
         if (!url) { emit('error', new Error('No audio URL')); return; }
+
+        // Reset pre-buffered URL so script.js can pre-buffer the next song
+        if (typeof window._prebufferedUrl !== 'undefined') window._prebufferedUrl = null;
 
         // CRITICAL FIX: If the same track is already loaded and playing/paused,
         // do NOT reset the audio source or position. Just resume if paused.
@@ -347,7 +352,9 @@ const PlayerEngine = (() => {
             await crossfadeTo(url);
         } else {
             audio.src = url;
-            audio.load();
+            // Don't call audio.load() — with preload='auto', the browser
+            // will start fetching data immediately when src is set.
+            // Calling load() can cause a double-fetch on some browsers.
             await audio.play().catch(() => {});
         }
 
@@ -369,7 +376,6 @@ const PlayerEngine = (() => {
         
         if (!audioCtx) {
             audio.src = newUrl;
-            audio.load();
             await audio.play().catch(() => {});
             return;
         }
@@ -384,7 +390,6 @@ const PlayerEngine = (() => {
         });
 
         audio.src = newUrl;
-        audio.load();
         await audio.play().catch(() => {});
 
         gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
@@ -454,7 +459,7 @@ const PlayerEngine = (() => {
         var dur = (audio && audio.duration) || 0;
         var target = Math.max(0, Math.min(time, dur));
         window._isSeeking = true;
-        window._seekingUntil = Date.now() + 1500;
+        window._seekingUntil = Date.now() + 800;
         if (audio && dur && isFinite(dur)) {
             try { audio.currentTime = target; } catch (e) {}
         }

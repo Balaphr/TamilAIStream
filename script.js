@@ -569,7 +569,9 @@ function initAudioPlayer() {
     if (!audioPlayer) {
         audioPlayer = new Audio();
         window.audioPlayer = audioPlayer;
-        audioPlayer.preload = 'metadata';
+        // Use 'auto' to let the browser pre-buffer audio data — 'metadata' only
+        // fetches duration/headers, leaving playback starved on slower connections.
+        audioPlayer.preload = 'auto';
         audioPlayer.volume = playbackVolume;
 
         try {
@@ -684,6 +686,8 @@ function initAudioPlayer() {
                 MiniAudioPlayer.updateProgressUI();
             }
             updateNowPlayingBarPause();
+            // Pre-buffer next song in queue when current song is near end
+            _prebufferNextSong();
         });
         audioPlayer.addEventListener('durationchange', () => {
             if (typeof YTMusic !== 'undefined') {
@@ -700,6 +704,30 @@ function initAudioPlayer() {
         });
         audioPlayer.addEventListener('error', (e) => {
             streamConnecting = false;
+            const errCode = audioPlayer.error?.code;
+            const errMsg = audioPlayer.error?.message;
+            console.error('[TamilAI FM] Audio error:', errCode, errMsg, '| src:', audioPlayer.src);
+            // For FM live streams, attempt auto-reconnection on transient errors
+            if (currentPlaybackMode === 'station' && isStreamPlaying && currentStation) {
+                if (errCode === 3 || errCode === 4) { // MEDIA_ERR_DECODE or MEDIA_ERR_SRC_NOT_SUPPORTED
+                    // Fatal — don't reconnect for decode/source errors
+                    isStreamPlaying = false;
+                    updatePlayPauseButton(false);
+                    showLiveStatus(false);
+                    hideLoadingSpinner();
+                    updateStationCardStates(false);
+                    if (typeof GlobalPlayer !== 'undefined') GlobalPlayer.updatePlayUI(false);
+                    if (typeof YTMusic !== 'undefined') { YTMusic.isPlaying = false; YTMusic.updatePlayerUI(); }
+                    showToast(`Stream ended. Tap to reconnect.`, 'error');
+                    stopFMBufferMonitor();
+                    return;
+                }
+                // Transient network error — attempt reconnection
+                console.warn('[TamilAI FM] Transient error, attempting reconnect...');
+                _attemptFMReconnect();
+                return;
+            }
+            // For songs: show error and stop
             isStreamPlaying = false;
             userPaused = false;
             updatePlayPauseButton(false);
@@ -707,54 +735,75 @@ function initAudioPlayer() {
             hideLoadingSpinner();
             updateStationCardStates(false);
             updateNowPlayingBarPause();
-            if (typeof GlobalPlayer !== 'undefined') {
-                GlobalPlayer.updatePlayUI(false);
-            }
+            if (typeof GlobalPlayer !== 'undefined') GlobalPlayer.updatePlayUI(false);
             if (typeof YTMusic !== 'undefined') {
                 YTMusic.isPlaying = false;
                 YTMusic.updatePlayerUI();
                 YTMusic.updateFullscreenPlayerUI();
                 YTMusic.updateMiniPlayerUI();
             }
-            if (typeof MiniAudioPlayer !== 'undefined') {
-                MiniAudioPlayer.syncPausedUI();
-            }
-            const stationName = currentStation || currentPlaybackTrack?.title || 'Station';
-            const errCode = audioPlayer.error?.code;
-            const errMsg = audioPlayer.error?.message;
-            console.error('[TamilAI FM] Audio error:', errCode, errMsg, '| src:', audioPlayer.src);
-            showToast(`Unable to connect to ${stationName}. Stream currently unavailable. (Error ${errCode})`, 'error');
+            if (typeof MiniAudioPlayer !== 'undefined') MiniAudioPlayer.syncPausedUI();
+            showToast(`Unable to play. Check your connection and try again. (Error ${errCode})`, 'error');
         });
         let _waitingTimer = null;
         let _stalledCount = 0;
         audioPlayer.addEventListener('waiting', () => {
             if (window._isSeeking || Date.now() < window._seekingUntil) return;
             clearTimeout(_waitingTimer);
+            // Only show buffering toast after a longer delay (3s) to avoid
+            // false positives from short buffering gaps that resolve quickly
             _waitingTimer = setTimeout(() => {
                 if (!audioPlayer || audioPlayer.paused) return;
+                // Double-check: if audio has advanced since waiting started, skip toast
+                if (audioPlayer.buffered.length > 0) {
+                    const buffEnd = audioPlayer.buffered.end(audioPlayer.buffered.length - 1);
+                    if (buffEnd - (audioPlayer.currentTime || 0) > 2) return;
+                }
                 showToast('Buffering... Please wait.', 'info');
-            }, 2000);
+            }, 3000);
         });
         audioPlayer.addEventListener('canplay', () => {
             clearTimeout(_waitingTimer);
             hideLoadingSpinner();
             _stalledCount = 0;
-            if (Date.now() >= window._seekingUntil) window._isSeeking = false;
+            // Clear seeking flag when enough data is available — don't
+            // wait for the full 800ms window if playback is ready
+            if (Date.now() >= window._seekingUntil - 400) {
+                window._isSeeking = false;
+                window._seekingUntil = 0;
+            }
         });
         audioPlayer.addEventListener('playing', () => {
             clearTimeout(_waitingTimer);
             _stalledCount = 0;
             hideLoadingSpinner();
+            // Clear seeking flag immediately when audio starts playing —
+            // this resumes normal UI progress updates without delay
+            if (window._isSeeking) {
+                window._isSeeking = false;
+                window._seekingUntil = 0;
+            }
         });
         audioPlayer.addEventListener('loadstart', () => {
             streamConnecting = true;
         });
         audioPlayer.addEventListener('stalled', () => {
             if (window._isSeeking || Date.now() < window._seekingUntil) return;
-            _stalledCount++;
-            if (_stalledCount >= 3) {
-                showToast('Connection stalled. Retrying...', 'info');
-                _stalledCount = 0;
+            // For FM live streams, stall often means the CDN connection dropped.
+            // Attempt proactive reconnection instead of just showing a toast.
+            if (currentPlaybackMode === 'station' && isStreamPlaying && currentStation) {
+                _stalledCount++;
+                if (_stalledCount >= 2) {
+                    console.warn('[TamilAI FM] Stream stalled, attempting reconnect...');
+                    _stalledCount = 0;
+                    _attemptFMReconnect();
+                }
+            } else {
+                _stalledCount++;
+                if (_stalledCount >= 3) {
+                    showToast('Connection stalled. Retrying...', 'info');
+                    _stalledCount = 0;
+                }
             }
         });
         audioPlayer.addEventListener('ended', () => {
@@ -838,18 +887,164 @@ function initAudioPlayer() {
                 }
             });
         }
+
+        // Network quality detection — adapt buffer strategy based on connection
+        if ('connection' in navigator) {
+            try {
+                const conn = navigator.connection;
+                window._networkEffectiveType = conn.effectiveType || '';
+                window._networkDownlink = conn.downlink || 0;
+                conn.addEventListener('change', () => {
+                    window._networkEffectiveType = conn.effectiveType || '';
+                    window._networkDownlink = conn.downlink || 0;
+                });
+            } catch (e) {}
+        }
     }
+}
+
+// ============================================
+// FM Buffer Health Monitor & Auto-Reconnection
+// ============================================
+let _fmBufferMonitorInterval = null;
+let _fmLastBufferEnd = 0;
+let _fmReconnectCount = 0;
+const _FM_MAX_RECONNECT_ATTEMPTS = 5;
+
+function startFMBufferMonitor() {
+    stopFMBufferMonitor();
+    _fmReconnectCount = 0;
+    _fmLastBufferEnd = 0;
+    _fmBufferMonitorInterval = setInterval(() => {
+        if (!audioPlayer || !isStreamPlaying || currentPlaybackMode !== 'station') {
+            stopFMBufferMonitor();
+            return;
+        }
+        // Check buffer health: how far ahead is buffered data?
+        try {
+            if (audioPlayer.buffered.length > 0) {
+                const buffEnd = audioPlayer.buffered.end(audioPlayer.buffered.length - 1);
+                const pos = audioPlayer.currentTime || 0;
+                const bufferedAhead = buffEnd - pos;
+                // If buffer is less than 2 seconds ahead and not advancing, stream may be stuck
+                if (bufferedAhead < 2 && !_fmLastBufferEnd) {
+                    _fmLastBufferEnd = buffEnd;
+                } else if (bufferedAhead < 2 && buffEnd === _fmLastBufferEnd) {
+                    // Buffer hasn't advanced in 3 seconds (interval) — likely stalled
+                    console.warn('[TamilAI FM] Buffer not advancing, attempting reconnect...');
+                    _attemptFMReconnect();
+                    return;
+                } else {
+                    _fmLastBufferEnd = buffEnd;
+                    _fmReconnectCount = 0; // Reset on healthy buffer
+                }
+                // If buffer is critically low (<0.5s) and we're not seeking, show warning
+                if (bufferedAhead < 0.5 && !window._isSeeking) {
+                    console.warn('[TamilAI FM] Buffer critically low:', bufferedAhead.toFixed(2), 's');
+                }
+            }
+        } catch (e) {}
+    }, 3000);
+}
+
+function stopFMBufferMonitor() {
+    if (_fmBufferMonitorInterval) {
+        clearInterval(_fmBufferMonitorInterval);
+        _fmBufferMonitorInterval = null;
+    }
+}
+
+function _attemptFMReconnect() {
+    if (!currentStation || !isStreamPlaying || currentPlaybackMode !== 'station') return;
+    if (_fmReconnectCount >= _FM_MAX_RECONNECT_ATTEMPTS) {
+        console.error('[TamilAI FM] Max reconnect attempts reached, giving up.');
+        stopFMBufferMonitor();
+        isStreamPlaying = false;
+        updatePlayPauseButton(false);
+        showLiveStatus(false);
+        hideLoadingSpinner();
+        if (typeof GlobalPlayer !== 'undefined') GlobalPlayer.updatePlayUI(false);
+        showToast('Stream connection lost. Tap to reconnect.', 'error');
+        return;
+    }
+    _fmReconnectCount++;
+    const delay = Math.min(1000 * Math.pow(1.5, _fmReconnectCount - 1), 8000);
+    console.log(`[TamilAI FM] Reconnect attempt ${_fmReconnectCount} in ${delay}ms`);
+    setTimeout(() => {
+        if (!currentStation || currentPlaybackMode !== 'station') return;
+        const url = getStationStreamUrl(currentStation);
+        if (!url) return;
+        // Re-set src and play — this re-establishes the CDN connection
+        // without calling load() which would reset the media element state
+        audioPlayer.src = url;
+        audioPlayer.preload = 'auto';
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+        audioPlayer.play().then(() => {
+            _fmReconnectCount = 0;
+            console.log('[TamilAI FM] Reconnected successfully');
+        }).catch((err) => {
+            console.warn('[TamilAI FM] Reconnect failed:', err?.name);
+        });
+    }, delay);
+}
+
+// ============================================
+// Next Song Pre-Buffering
+// ============================================
+let _prebufferedUrl = null;
+let _prebufferEl = null;
+
+function _prebufferNextSong() {
+    // Only pre-buffer for songs (not FM streams)
+    if (currentPlaybackMode !== 'song' || !audioPlayer) return;
+    // Don't pre-buffer if we're less than 30s from start or more than 15s from end
+    const cur = audioPlayer.currentTime || 0;
+    const dur = audioPlayer.duration || 0;
+    if (dur <= 0 || !isFinite(dur)) return;
+    if (cur < 30 || (dur - cur) > 30) return;
+    // Don't re-buffer the same URL
+    const nextIdx = currentPlaybackQueueIndex + 1;
+    if (nextIdx < 0 || nextIdx >= currentPlaybackQueue.length) return;
+    const nextTrack = currentPlaybackQueue[nextIdx];
+    if (!nextTrack) return;
+    const nextUrl = nextTrack.audioUrl || nextTrack.url;
+    if (!nextUrl || nextUrl === _prebufferedUrl) return;
+    // Create a hidden audio element to pre-buffer the next song's data
+    // This uses the browser's HTTP cache so the main player won't re-fetch
+    try {
+        if (_prebufferEl) {
+            _prebufferEl.removeAttribute('src');
+            _prebufferEl.load();
+        }
+        _prebufferEl = new Audio();
+        _prebufferEl.preload = 'auto';
+        _prebufferEl.src = nextUrl;
+        _prebufferedUrl = nextUrl;
+        console.log('[TamilAI] Pre-buffering next song:', nextTrack.title || nextUrl);
+    } catch (e) {}
 }
 
 function stopCurrentStream() {
     if (window.__BUILDER_PREVIEW__) return;
+    stopFMBufferMonitor();
+    // Cleanup pre-buffered audio
+    if (_prebufferEl) {
+        _prebufferEl.removeAttribute('src');
+        _prebufferEl.load();
+        _prebufferEl = null;
+        _prebufferedUrl = null;
+    }
     if (audioPlayer) {
         audioPlayer.pause();
-        audioPlayer.removeAttribute('src');
-        // NOTE: Do NOT call audioPlayer.load() here — it resets the media
-        // element state and can prevent the next play() from succeeding.
-        // Removing src is enough to stop playback. The next playSong/playStation
-        // call will set a new src and call load() + play() explicitly.
+        // Only remove src for song-to-song transitions. For FM, removing src
+        // forces a full CDN reconnection which is expensive on mobile networks.
+        if (currentPlaybackMode === 'station') {
+            // For station switches, just pause — the new playStation call
+            // will set a new src and the browser will reuse the connection pool.
+            // Don't remove src or call load() — that kills the CDN connection.
+        } else {
+            audioPlayer.removeAttribute('src');
+        }
         isStreamPlaying = false;
         streamConnecting = false;
         playbackHasLoaded = false;
@@ -943,6 +1138,8 @@ function playStation(stationName) {
     stopCurrentStream();
     userPaused = false;
     currentPlaybackMode = 'station';
+    // Reset pre-buffer — not needed for live streams
+    _prebufferedUrl = null;
     currentPlaybackQueue = [];
     currentPlaybackQueueIndex = -1;
     currentPlaybackTrack = null;
@@ -972,6 +1169,10 @@ function playStation(stationName) {
     const streamUrlsToTry = [streamUrl];
     let currentUrlIndex = 0;
     let playAttemptTimeout = null;
+    // FM stream auto-reconnection state
+    let _fmReconnectAttempts = 0;
+    const _FM_MAX_RECONNECT = 5;
+    let _fmReconnectTimer = null;
     function tryNextStream() {
         if (currentUrlIndex >= streamUrlsToTry.length) {
             streamConnecting = false;
@@ -983,20 +1184,23 @@ function playStation(stationName) {
         console.log('[TamilAI FM] Playing stream:', streamUrl);
         audioPlayer.src = streamUrl;
         audioPlayer.volume = playbackVolume;
-        audioPlayer.load();
+        // For live streams, use 'auto' preload so the browser buffers ahead
+        audioPlayer.preload = 'auto';
         clearTimeout(playAttemptTimeout);
+        // Increase timeout to 15s for slower mobile networks
         playAttemptTimeout = setTimeout(() => {
             if (streamConnecting && !isStreamPlaying) {
                 clearTimeout(playAttemptTimeout);
                 currentUrlIndex++;
                 tryNextStream();
             }
-        }, 8000);
+        }, 15000);
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
         const playPromise = audioPlayer.play();
         if (playPromise !== undefined) {
             playPromise.then(() => {
                 clearTimeout(playAttemptTimeout);
+                _fmReconnectAttempts = 0;
                 currentStation = stationName;
                 currentPlaybackTrack = {
                     id: 'station_' + stationName,
@@ -1035,11 +1239,13 @@ function playStation(stationName) {
                         GlobalPlayer.state.isLive = true;
                     }
                 }
+                // Start FM buffer health monitoring
+                startFMBufferMonitor();
             }).catch((err) => {
                 clearTimeout(playAttemptTimeout);
                 console.error('[TamilAI FM] Play promise rejected:', err?.name, err?.message, '| URL:', streamUrl);
                 currentUrlIndex++;
-                setTimeout(tryNextStream, 300);
+                setTimeout(tryNextStream, 500);
             });
         }
     }
@@ -1061,6 +1267,8 @@ async function playSong(song, playlist = []) {
     stopCurrentStream();
     userPaused = false;
     currentPlaybackMode = 'song';
+    // Reset pre-buffer so next song gets fresh buffer
+    _prebufferedUrl = null;
     currentPlaylist = Array.isArray(playlist) ? playlist : [];
     currentSongIndex = currentPlaylist.findIndex(s => s.id === song.id);
     currentPlaybackQueue = currentPlaylist;
@@ -1079,7 +1287,9 @@ async function playSong(song, playlist = []) {
         streamConnecting = true;
         audioPlayer.src = song.audioUrl;
         audioPlayer.volume = playbackVolume;
-        audioPlayer.load();
+        // Use 'auto' so the browser pre-buffers audio data — prevents
+        // stuttering when playback starts on slower connections
+        audioPlayer.preload = 'auto';
         try {
             if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume().catch(() => {});
             await audioPlayer.play();
@@ -1243,6 +1453,9 @@ let _pendingSeekTimer = null;
 // Use window globals so all player scripts can check/set these
 window._isSeeking = false;
 window._seekingUntil = 0;
+// Network quality hint — used to adapt buffer strategy
+window._networkEffectiveType = '';
+window._networkDownlink = 0;
 function getPlaybackDuration() {
     if (audioPlayer && typeof audioPlayer.duration === 'number' && isFinite(audioPlayer.duration) && audioPlayer.duration > 0) {
         return audioPlayer.duration;

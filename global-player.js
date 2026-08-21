@@ -702,7 +702,7 @@ const GlobalPlayer = (() => {
         const targetTime = derived * (state.duration || 0);
         state.currentTime = targetTime;
         window._isSeeking = true;
-        window._seekingUntil = Date.now() + 1500;
+        window._seekingUntil = Date.now() + 800;
         updateProgressUI();
         if (window.audioPlayer && window.audioPlayer.duration && isFinite(window.audioPlayer.duration)) {
             window.audioPlayer.currentTime = derived * window.audioPlayer.duration;
@@ -719,7 +719,7 @@ const GlobalPlayer = (() => {
         const target = Math.max(0, Math.min(time, (window.audioPlayer && window.audioPlayer.duration) || (state.duration || 0)));
         state.currentTime = target;
         window._isSeeking = true;
-        window._seekingUntil = Date.now() + 1500;
+        window._seekingUntil = Date.now() + 800;
         updateProgressUI();
         if (window.audioPlayer && window.audioPlayer.duration && isFinite(window.audioPlayer.duration)) {
             window.audioPlayer.currentTime = target;
