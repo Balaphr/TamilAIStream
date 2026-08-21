@@ -11,5 +11,8 @@
   "devDependencies": {
     "vite": "^5.0.0"
   },
-  "allowScripts": {}
+  "allowScripts": {},
+  "dependencies": {
+    "firebase": "^12.18.0"
+  }
 }
