@@ -1846,21 +1846,27 @@ window.AIHome = (() => {
     }
 
     /* ---------------- Refresh + init ---------------- */
+    let _raScrollRaf = null;
+    let _raPaused = false;
+    let _raSpeed = 0.4; // pixels per frame (~24px/sec at 60fps)
+    let _raTrackBound = false; // prevent duplicate event listeners
+
     function renderRecentlyAdded() {
         const section = document.getElementById('recentlyAddedSection');
         const track = document.getElementById('recentlyAddedTrack');
         if (!section || !track) return;
 
+        // Stop any existing scroll animation
+        if (_raScrollRaf) { cancelAnimationFrame(_raScrollRaf); _raScrollRaf = null; }
+
         let songs = [];
         try { songs = DataStore.getSongs() || []; } catch (e) { return; }
-        // Filter published, sort by newest, take top 12
         songs = songs.filter(s => s && (s.status === 'published' || s.status === 'active'));
         songs.sort((a, b) => new Date(b.createdAt || b.uploadedAt || 0) - new Date(a.createdAt || a.uploadedAt || 0));
         const recent = songs.slice(0, 12);
         if (!recent.length) { section.style.display = 'none'; return; }
 
         section.style.display = 'block';
-        // Double the items for seamless infinite scroll illusion
         const items = recent.concat(recent);
         track.innerHTML = items.map((s, i) => {
             const art = s.albumCover || s.thumbnail || s.artwork || '';
@@ -1875,6 +1881,48 @@ window.AIHome = (() => {
                 <div class="ra-song-artist">${artist}</div>
             </div>`;
         }).join('');
+
+        // Reset scroll position
+        track.scrollLeft = 0;
+        _raPaused = false;
+
+        // Bind pause/resume events only once
+        if (!_raTrackBound) {
+            _raTrackBound = true;
+            // Pause on touch
+            track.addEventListener('touchstart', () => { _raPaused = true; }, { passive: true });
+            track.addEventListener('touchend', () => { setTimeout(() => { _raPaused = false; }, 800); }, { passive: true });
+            track.addEventListener('touchcancel', () => { setTimeout(() => { _raPaused = false; }, 800); }, { passive: true });
+
+            // Pause on mouse hover
+            track.addEventListener('mouseenter', () => { _raPaused = true; });
+            track.addEventListener('mouseleave', () => { _raPaused = false; });
+
+            // Pause when user manually drags
+            let dragging = false;
+            track.addEventListener('mousedown', () => { dragging = true; _raPaused = true; });
+            track.addEventListener('mouseup', () => { dragging = false; setTimeout(() => { _raPaused = false; }, 1200); });
+            track.addEventListener('mousemove', (e) => { if (dragging) e.preventDefault(); });
+
+            // Pause when tab is hidden (save CPU/battery)
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) _raPaused = true;
+                else setTimeout(() => { _raPaused = false; }, 500);
+            });
+        }
+
+        // Auto-scroll loop
+        const tick = () => {
+            if (!track || !track.isConnected) { _raScrollRaf = null; return; }
+            if (!_raPaused) {
+                track.scrollLeft += _raSpeed;
+                if (track.scrollLeft >= track.scrollWidth / 2) {
+                    track.scrollLeft = 0;
+                }
+            }
+            _raScrollRaf = requestAnimationFrame(tick);
+        };
+        _raScrollRaf = requestAnimationFrame(tick);
     }
 
     function refreshHome() {

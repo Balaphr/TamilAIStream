@@ -785,17 +785,11 @@ body.ai-light .ai-dark-knob { left: 21px; }
     padding: 6px 20px 14px;
     overflow-x: auto;
     overflow-y: hidden;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    animation: recentlyAddedScroll 30s linear infinite;
 }
 .recently-added-track::-webkit-scrollbar { display: none; }
-.recently-added-track:hover { animation-play-state: paused; }
-@keyframes recentlyAddedScroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-}
 .ra-song-card {
     flex: 0 0 auto;
     width: 140px;
