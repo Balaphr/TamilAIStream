@@ -1643,9 +1643,7 @@ window.AIHome = (() => {
         stopHeroTimer();
         // Clear decade song cache so newly assigned songs appear
         _decadeSongCache = {};
-        // Greeting hero bar sits at the top of Home. Idempotent â€” builds once,
-        // then only updates greeting/date/quote text in place.
-        if (typeof renderGreetingSection === 'function') renderGreetingSection();
+        // Greeting section removed per design — home starts with One Tap Radio.
         renderOneTapRadio();
         renderRecentlyAdded();
         renderMusicHero();
