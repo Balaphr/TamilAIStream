@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 // Website Builder - localStorage-based
 
@@ -25,7 +25,7 @@ function debounce(key, fn, delay) {
     _syncTimers[key] = setTimeout(fn, delay);
 }
 
-// Debounced sync — batches rapid-fire calls into one sync per 400ms
+// Debounced sync â€” batches rapid-fire calls into one sync per 400ms
 let _syncDebounceTimer = null;
 function scheduleSync() {
     if (_syncDebounceTimer) clearTimeout(_syncDebounceTimer);
@@ -72,7 +72,7 @@ function checkAuth() {
         if (session) {
             try {
                 const data = JSON.parse(session);
-                // Validate admin email — non-admin sessions are rejected
+                // Validate admin email â€” non-admin sessions are rejected
                 const email = (data.email || data.username || '').toLowerCase();
                 const isAdmin = email === 'admin@tamilaistream.com' || email.startsWith('admin');
                 if (data.expiry > Date.now() && isAdmin) {
@@ -465,7 +465,7 @@ function _filterDeletedItems(items, type) {
 const _rightPanelPages = [
     'settings', 'moods', 'decades', 'navigation', 'sections',
     'player', 'miniplayersettings', 'splash', 'ads', 'upcomingReleases',
-    'news', 'notifications', 'airadio', 'trash', 'analytics', 'site360',
+    'notifications', 'airadio', 'trash', 'analytics', 'site360',
     'aiwebflow', 'visualeditor', 'musiccollections'
 ];
 
@@ -526,7 +526,6 @@ function navigateTo(page) {
         'sections': 'sectionsPage',
         'ads': 'adsPage',
         'upcomingReleases': 'upcomingReleasesPage',
-        'news': 'newsPage',
         'visualeditor': 'visualeditorPage',
         'miniplayersettings': 'miniplayersettingsPage',
         'preview': 'previewPage',
@@ -570,7 +569,6 @@ function _loadPageData(page) {
     if (page === 'sections') loadSectionsOrder();
     if (page === 'ads') loadAdsTable();
     if (page === 'upcomingReleases') loadUpcomingReleasesTable();
-    if (page === 'news') loadNewsTable();
     if (page === 'visualeditor') initVisualEditor();
     if (page === 'miniplayersettings') loadPlayerSettings();
     if (page === 'preview') updatePreview();
@@ -621,7 +619,7 @@ function _openTrashInRightPanel() {
             html += `<tr data-type="${type}">
                 <td style="padding:8px 4px;"><strong>${name}</strong></td>
                 <td style="padding:8px 4px;"><span class="builder-badge" style="background:${badgeColor}22;color:${badgeColor};">${type}</span></td>
-                <td style="padding:8px 4px;font-size:12px;color:rgba(255,255,255,0.5);">${trashedAt ? trashedAt.toLocaleString() : '—'}</td>
+                <td style="padding:8px 4px;font-size:12px;color:rgba(255,255,255,0.5);">${trashedAt ? trashedAt.toLocaleString() : 'â€”'}</td>
                 <td style="padding:8px 4px;">
                     <button class="action-btn" onclick="restoreFromTrash('${item._originalId}','${type}')" title="Restore"><i class="fas fa-undo"></i></button>
                     <button class="action-btn delete-btn" onclick="permanentDeleteFromTrash('${item._originalId}','${type}')" title="Delete Permanently"><i class="fas fa-trash"></i></button>
@@ -845,8 +843,8 @@ async function loadAllSongs() {
         // Show loading state
         const tableBody = document.getElementById('allSongsTable');
         const contentTableBody = document.getElementById('contentSongsTable');
-        if (tableBody) tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-secondary);"><i class="fas fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading songs…</td></tr>';
-        if (contentTableBody) contentTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-secondary);"><i class="fas fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading songs…</td></tr>';
+        if (tableBody) tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-secondary);"><i class="fas fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading songsâ€¦</td></tr>';
+        if (contentTableBody) contentTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-secondary);"><i class="fas fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading songsâ€¦</td></tr>';
 
         let songs = DataStore.getSongs();
         // Filter out any songs that are in the deleted IDs list
@@ -876,22 +874,22 @@ async function syncR2Songs() {
     buttons.forEach(btn => {
         originals.set(btn, btn.innerHTML);
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Scanning R2…';
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Scanning R2â€¦';
     });
 
     try {
         if (typeof ContentSync === 'undefined' || typeof ContentSync.discoverR2Songs !== 'function') {
-            showToast('R2 sync is unavailable — ContentSync not loaded', 'error');
+            showToast('R2 sync is unavailable â€” ContentSync not loaded', 'error');
             return;
         }
 
         AIUploadOverlay.show();
-        AIUploadOverlay.update(5, 'Starting', 'Connecting to Cloudflare R2…');
+        AIUploadOverlay.update(5, 'Starting', 'Connecting to Cloudflare R2â€¦');
 
         const result = await Promise.race([
             ContentSync.discoverR2Songs((pct, phase, status) => {
                 if (pct !== null && pct !== undefined) {
-                    AIUploadOverlay.update(pct, phase || 'Syncing', status || 'Scanning R2…');
+                    AIUploadOverlay.update(pct, phase || 'Syncing', status || 'Scanning R2â€¦');
                 } else if (status) {
                     AIUploadOverlay.update(null, null, status);
                 }
@@ -899,15 +897,15 @@ async function syncR2Songs() {
             new Promise((_, reject) => setTimeout(() => reject(new Error('R2 sync timed out after 120 seconds')), 120000))
         ]);
 
-        AIUploadOverlay.update(95, 'Updating', 'Reloading song list…');
+        AIUploadOverlay.update(95, 'Updating', 'Reloading song listâ€¦');
         await loadAllSongs();
 
         if (result.added > 0) {
             AIUploadOverlay.success(result.added + ' song(s) imported from R2');
             showToast(result.added + ' song(s) detected in Cloudflare R2 and added to Content', 'success');
         } else {
-            AIUploadOverlay.success('Already in sync — ' + result.total + ' song(s)');
-            showToast('Already in sync — ' + result.total + ' song(s) available', 'info');
+            AIUploadOverlay.success('Already in sync â€” ' + result.total + ' song(s)');
+            showToast('Already in sync â€” ' + result.total + ' song(s) available', 'info');
         }
 
         if (typeof syncToLiveWebsite === 'function') await syncToLiveWebsite();
@@ -933,22 +931,22 @@ async function restoreAllR2Songs() {
     buttons.forEach(btn => {
         originals.set(btn, btn.innerHTML);
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Restoring…';
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Restoringâ€¦';
     });
 
     try {
         if (typeof ContentSync === 'undefined' || typeof ContentSync.discoverR2Songs !== 'function') {
-            showToast('R2 restore is unavailable — ContentSync not loaded', 'error');
+            showToast('R2 restore is unavailable â€” ContentSync not loaded', 'error');
             return;
         }
 
         AIUploadOverlay.show();
-        AIUploadOverlay.update(3, 'Preparing', 'Scanning all R2 audio files for full restore…');
+        AIUploadOverlay.update(3, 'Preparing', 'Scanning all R2 audio files for full restoreâ€¦');
 
         const result = await Promise.race([
             ContentSync.discoverR2Songs((pct, phase, status) => {
                 if (pct !== null && pct !== undefined) {
-                    AIUploadOverlay.update(pct, phase || 'Restoring', status || 'Scanning R2…');
+                    AIUploadOverlay.update(pct, phase || 'Restoring', status || 'Scanning R2â€¦');
                 } else if (status) {
                     AIUploadOverlay.update(null, null, status);
                 }
@@ -956,7 +954,7 @@ async function restoreAllR2Songs() {
             new Promise((_, reject) => setTimeout(() => reject(new Error('R2 restore timed out after 120 seconds')), 120000))
         ]);
 
-        AIUploadOverlay.update(92, 'Verifying', 'Checking audio URLs and metadata…');
+        AIUploadOverlay.update(92, 'Verifying', 'Checking audio URLs and metadataâ€¦');
 
         // Verify all songs have correct audio URLs and metadata
         const songs = DataStore.getSongs() || [];
@@ -992,13 +990,13 @@ async function restoreAllR2Songs() {
             localStorage.setItem('tamilAIStream_songs', JSON.stringify(updatedSongs));
         }
 
-        AIUploadOverlay.update(96, 'Syncing', 'Updating song list and live website…');
+        AIUploadOverlay.update(96, 'Syncing', 'Updating song list and live websiteâ€¦');
         await loadAllSongs();
 
         const total = result ? result.total : updatedSongs.length;
         const added = result ? result.added : 0;
         AIUploadOverlay.success('Restored ' + total + ' song(s) from R2 (' + added + ' new, ' + fixedCount + ' metadata fixed)');
-        showToast(total + ' song(s) restored from R2 — ' + added + ' newly added', 'success');
+        showToast(total + ' song(s) restored from R2 â€” ' + added + ' newly added', 'success');
 
         if (typeof syncToLiveWebsite === 'function') await syncToLiveWebsite();
         addActivity('R2 Restore', 'Full restore of ' + total + ' song(s) from Cloudflare R2');
@@ -1080,16 +1078,16 @@ async function saveSong(e) {
 
     try {
         AIUploadOverlay.show();
-        AIUploadOverlay.update(2, 'Preparing', 'Validating song data…');
+        AIUploadOverlay.update(2, 'Preparing', 'Validating song dataâ€¦');
         showToast('Saving song...', 'info');
 
         const albumFile = document.getElementById('albumImage').files[0];
         if (albumFile) {
             const albumSizeMB = (albumFile.size / (1024 * 1024)).toFixed(1);
-            AIUploadOverlay.update(3, 'Album cover', 'Uploading ' + albumFile.name + ' (' + albumSizeMB + ' MB)…');
+            AIUploadOverlay.update(3, 'Album cover', 'Uploading ' + albumFile.name + ' (' + albumSizeMB + ' MB)â€¦');
             try {
                 const albumResult = await R2Uploader.uploadImage(albumFile, 'tamil-ai-stream/albums', (pct) => {
-                    AIUploadOverlay.update(3 + pct * 0.3, 'Album cover', 'Uploading cover… ' + pct + '% (' + albumSizeMB + ' MB)');
+                    AIUploadOverlay.update(3 + pct * 0.3, 'Album cover', 'Uploading coverâ€¦ ' + pct + '% (' + albumSizeMB + ' MB)');
                 });
                 songData.albumCover = albumResult.url;
                 songData.albumPublicId = albumResult.publicId;
@@ -1097,17 +1095,17 @@ async function saveSong(e) {
             } catch (err) {
                 console.warn('Album upload failed:', err);
                 showToast('Album cover upload failed: ' + err.message, 'error');
-                AIUploadOverlay.update(33, 'Album cover', 'Cover upload failed — continuing without cover');
+                AIUploadOverlay.update(33, 'Album cover', 'Cover upload failed â€” continuing without cover');
             }
         }
 
         const audioFile = document.getElementById('audioFile').files[0];
         if (audioFile) {
             const audioSizeMB = (audioFile.size / (1024 * 1024)).toFixed(1);
-            AIUploadOverlay.update(35, 'Audio', 'Uploading ' + audioFile.name + ' (' + audioSizeMB + ' MB)…');
+            AIUploadOverlay.update(35, 'Audio', 'Uploading ' + audioFile.name + ' (' + audioSizeMB + ' MB)â€¦');
             try {
                 const audioResult = await R2Uploader.uploadAudio(audioFile, 'tamil-ai-stream/audio', (pct) => {
-                    AIUploadOverlay.update(35 + pct * 0.6, 'Audio', 'Uploading audio… ' + pct + '% (' + audioSizeMB + ' MB)');
+                    AIUploadOverlay.update(35 + pct * 0.6, 'Audio', 'Uploading audioâ€¦ ' + pct + '% (' + audioSizeMB + ' MB)');
                 });
                 songData.audioUrl = audioResult.url;
                 songData.audioPublicId = audioResult.publicId;
@@ -1123,7 +1121,7 @@ async function saveSong(e) {
             }
         }
 
-        AIUploadOverlay.update(96, 'Saving', 'Saving to database…');
+        AIUploadOverlay.update(96, 'Saving', 'Saving to databaseâ€¦');
 
         const songs = DataStore.getSongs();
 
@@ -1148,7 +1146,7 @@ async function saveSong(e) {
                     );
                     if (!proceed) {
                         AIUploadOverlay.hide();
-                        showToast('Save cancelled — duplicate detected', 'info');
+                        showToast('Save cancelled â€” duplicate detected', 'info');
                         return;
                     }
                 } else if (top.score >= 70) {
@@ -1176,7 +1174,7 @@ async function saveSong(e) {
 
         DataStore.setSongs(songs);
 
-        AIUploadOverlay.update(98, 'Publishing', 'Syncing to live website…');
+        AIUploadOverlay.update(98, 'Publishing', 'Syncing to live websiteâ€¦');
         await syncToLiveWebsite();
 
         AIUploadOverlay.success('Song saved and published!');
@@ -1273,7 +1271,7 @@ async function previewSong(songId) {
         const playBtn = document.getElementById('previewPlayPause');
         
         document.getElementById('previewTitle').textContent = song.title || 'Untitled';
-        document.getElementById('previewArtist').textContent = (song.artist || '') + ' • ' + (song.movie || '');
+        document.getElementById('previewArtist').textContent = (song.artist || '') + ' â€¢ ' + (song.movie || '');
         document.getElementById('previewThumb').style.backgroundImage = song.albumCover ? 'url(' + song.albumCover + ')' : '';
         
         playerEl.style.display = 'flex';
@@ -1842,7 +1840,7 @@ async function _syncToLiveWebsiteActual() {
     }
 }
 
-// Debounced wrapper — batches rapid-fire sync calls into one per 400ms
+// Debounced wrapper â€” batches rapid-fire sync calls into one per 400ms
 function syncToLiveWebsite() {
     if (_syncDebounceTimer) clearTimeout(_syncDebounceTimer);
     _syncDebounceTimer = setTimeout(() => {
@@ -2490,7 +2488,7 @@ function initBuilder() {
         }
         });
 
-    // Music collection form – prevent page reload (fixes auto-logout bug)
+    // Music collection form â€“ prevent page reload (fixes auto-logout bug)
     const collectionForm = document.getElementById('newCollectionForm');
     if (collectionForm) {
         collectionForm.addEventListener('submit', (e) => {
@@ -2499,7 +2497,7 @@ function initBuilder() {
         });
     }
 
-    // Thumbnail preview – auto-update when a URL is typed/pasted
+    // Thumbnail preview â€“ auto-update when a URL is typed/pasted
     const thumbInput = document.getElementById('collectionThumbnail');
     if (thumbInput) {
         thumbInput.addEventListener('input', () => {
@@ -2515,7 +2513,7 @@ function initBuilder() {
         });
     }
 
-    // Audio / folder upload – click on the styled drop zone
+    // Audio / folder upload â€“ click on the styled drop zone
     const audioUploadZone = document.getElementById('collectionAudioUpload');
     const audioFileInput = document.getElementById('collectionAudioFiles');
     if (audioUploadZone && audioFileInput) {
@@ -2596,7 +2594,7 @@ function initBuilder() {
         });
     });
 
-    // Content page — Song Library search
+    // Content page â€” Song Library search
     document.getElementById('contentSongSearch')?.addEventListener('input', (e) => {
         debounce('contentSongSearch', () => {
             const query = e.target.value.toLowerCase();
@@ -2628,9 +2626,7 @@ function initBuilder() {
 
     // Settings form
     document.getElementById('settingsForm')?.addEventListener('submit', saveSettings);
-    // Live Tamil News settings form (shares saveSettings — both persist via siteSettings)
-    document.getElementById('newsSettingsForm')?.addEventListener('submit', saveSettings);
-    // Brand Identity form (shares saveSettings — persists logo/favicon via siteSettings)
+    // Brand Identity form (shares saveSettings â€” persists logo/favicon via siteSettings)
     document.getElementById('brandSettingsForm')?.addEventListener('submit', saveSettings);
 
     // Station search
@@ -2654,7 +2650,7 @@ function initBuilder() {
     // Load dashboard by default
     navigateTo('dashboard');
 
-    console.log('%c🎙️ Tamil AI Stream Admin Panel', 'font-size:20px;font-weight:bold;color:#34d399;');
+    console.log('%cðŸŽ™ï¸ Tamil AI Stream Admin Panel', 'font-size:20px;font-weight:bold;color:#34d399;');
     console.log('%cAdmin Ready - Logged in as: ' + (currentUser?.displayName || currentUser?.email || 'Admin'), 'font-size:12px;color:#6ee7b7;');
 }
 
@@ -3717,7 +3713,7 @@ function updateArtistName(hitId) {
     hit.name = newName;
     
     DataStore.setArtistHits(artistHits);
-    showToast(`Artist updated: ${oldName} → ${newArtist}`, 'success');
+    showToast(`Artist updated: ${oldName} â†’ ${newArtist}`, 'success');
     loadArtistHits();
     syncToLiveWebsite();
     
@@ -4015,7 +4011,7 @@ function renderEditArtistSongsTable(hitId) {
         <tr>
             <td style="text-align:center;"><input type="checkbox" class="song-select-cb" data-index="${idx}" onchange="updateBulkRemoveBtn()"></td>
             <td style="text-align:center;font-weight:bold;">
-                <span class="drag-handle" style="cursor:move;color:#888;margin-right:5px;">≡</span>
+                <span class="drag-handle" style="cursor:move;color:#888;margin-right:5px;">â‰¡</span>
                 ${idx + 1}
             </td>
             <td>${song.title || 'Untitled'}</td>
@@ -4390,7 +4386,7 @@ function loadMusicCollections() {
                 <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
                     ${col.thumbnail
                         ? `<img src="${col.thumbnail}" alt="" style="width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">`
-                        : '<div style="width: 56px; height: 56px; border-radius: 8px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 22px;">🎵</div>'}
+                        : '<div style="width: 56px; height: 56px; border-radius: 8px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 22px;">ðŸŽµ</div>'}
                     <div>
                         <h3 style="margin: 0; font-size: 16px; color: #fff;">${col.name}</h3>
                         <p style="margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.6);">${col.description || ''}</p>
@@ -4438,7 +4434,7 @@ function openAddCollectionModalMusic() {
                 </div>
                 <div class="form-group">
                     <label class="form-label">Cover / Poster Image URL</label>
-                    <input type="text" class="form-input" id="colMusicThumbnail" placeholder="https://… or /uploads/cover.jpg (optional)">
+                    <input type="text" class="form-input" id="colMusicThumbnail" placeholder="https://â€¦ or /uploads/cover.jpg (optional)">
                     <div id="colMusicThumbPreview" style="margin-top:8px;display:none;"><img src="" alt="Preview" style="max-width:140px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);"></div>
                 </div>
                 <div class="form-group">
@@ -4505,7 +4501,7 @@ function saveMusicCollection() {
 }
 
 // ------------------------------------------------------------------
-// Inline Music Collection Form (builder.html – "Create New Collection")
+// Inline Music Collection Form (builder.html â€“ "Create New Collection")
 // ------------------------------------------------------------------
 
 /**
@@ -4637,7 +4633,7 @@ async function handleCollectionAudioUpload(e) {
         const row = document.createElement('div');
         row.className = 'file-upload-item';
         row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:rgba(255,255,255,0.7);';
-        row.innerHTML = '<span style="flex:1;"><i class="fas fa-music"></i> ' + file.name + ' (' + formatFileSize(file.size) + ')</span><span class="status">Uploading…</span>';
+        row.innerHTML = '<span style="flex:1;"><i class="fas fa-music"></i> ' + file.name + ' (' + formatFileSize(file.size) + ')</span><span class="status">Uploadingâ€¦</span>';
         if (filesList) filesList.appendChild(row);
 
         try {
@@ -4709,7 +4705,7 @@ function populateCollectionSongs() {
 
     select.innerHTML = songs.map(s => {
         const value = s.id + '||' + (s.title || '') + '||' + (s.artist || '') + '||' + (s.movie || '') + '||' + (s.thumbnail || '');
-        const label = (s.title || 'Untitled') + (s.artist ? ' — ' + s.artist : '') + (s.movie ? ' (' + s.movie + ')' : '');
+        const label = (s.title || 'Untitled') + (s.artist ? ' â€” ' + s.artist : '') + (s.movie ? ' (' + s.movie + ')' : '');
         return '<option value="' + value + '">' + label + '</option>';
         }).join('');
 }
@@ -5166,7 +5162,7 @@ function openAddMoodModal() {
     modal.className = 'builder-modal-overlay';
     modal.innerHTML = `<div class="builder-modal"><div class="builder-modal-header"><h3>Add Mood</h3><button class="builder-modal-close" onclick="this.closest('.builder-modal-overlay').remove()">&times;</button></div>
         <form onsubmit="return saveMood(event)"><div class="builder-modal-body">
-            <div class="form-group"><label class="form-label">Emoji</label><input type="text" class="form-input" id="moodEmoji" placeholder="🎵" required></div>
+            <div class="form-group"><label class="form-label">Emoji</label><input type="text" class="form-input" id="moodEmoji" placeholder="ðŸŽµ" required></div>
             <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="moodName" required></div>
             <div class="form-group"><label class="form-label">Gradient</label><input type="text" class="form-input" id="moodGradient" placeholder="linear-gradient(135deg,#6366f1,#8b5cf6)"></div>
         </div><div class="builder-modal-footer"><button type="button" class="builder-btn" onclick="this.closest('.builder-modal-overlay').remove()">Cancel</button><button type="submit" class="builder-btn primary">Save</button></div></form></div>`;
@@ -5710,7 +5706,7 @@ function loadAdsTable() {
         <tr>
             <td data-label="Preview"><img src="${thumbSrc}" alt="${ad.title || ''}" style="width:120px;height:60px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);"></td>
             <td data-label="Title"><strong>${ad.title || 'Untitled'}</strong><br><small style="color:#888;">${ad.description || ''}</small></td>
-            <td data-label="Position"><span style="background:rgba(52,211,153,0.15);color:#6ee7b7;padding:3px 10px;border-radius:12px;font-size:12px;">Position ${ad.position || '?'} — ${AD_POSITIONS[ad.position] || 'Unknown'}</span></td>
+            <td data-label="Position"><span style="background:rgba(52,211,153,0.15);color:#6ee7b7;padding:3px 10px;border-radius:12px;font-size:12px;">Position ${ad.position || '?'} â€” ${AD_POSITIONS[ad.position] || 'Unknown'}</span></td>
             <td data-label="Status"><span class="status-badge ${ad.enabled !== false ? 'active' : 'inactive'}" style="cursor:pointer;" onclick="toggleAd('${ad.id}')">${ad.enabled !== false ? 'Enabled' : 'Disabled'}</span></td>
             <td data-label="Actions">
                 <div style="display:flex;gap:6px;">
@@ -5873,7 +5869,7 @@ function loadUpcomingReleasesTable() {
                 '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#555;"><i class="fas fa-image"></i></div>'}
             </div></td>
             <td><strong>${r.title || 'Untitled'}</strong></td>
-            <td style="color:rgba(255,255,255,0.6);font-size:13px;">${r.subtitle || '—'}</td>
+            <td style="color:rgba(255,255,255,0.6);font-size:13px;">${r.subtitle || 'â€”'}</td>
             <td><span class="builder-badge info">${r.order || 0}</span></td>
             <td><span class="builder-badge ${r.enabled !== false ? 'success' : 'warning'}">${r.enabled !== false ? 'Enabled' : 'Disabled'}</span></td>
             <td>
@@ -6034,421 +6030,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ============================================
-// Live Tamil News Management
-// ============================================
-function getNewsRetentionHours() {
-    const settings = DataStore.getSiteSettings();
-    const ns = (settings && settings.newsSettings) || {};
-    return ns.retentionHours > 0 ? ns.retentionHours : 24;
-}
-
-function getNewsAutoDelete() {
-    const settings = DataStore.getSiteSettings();
-    const ns = (settings && settings.newsSettings) || {};
-    return ns.autoDelete !== false;
-}
-
-function loadNewsTable() {
-    const news = DataStore.getNews();
-    const tbody = document.getElementById('newsTableBody');
-    const emptyState = document.getElementById('newsEmptyState');
-    if (!tbody) return;
-
-    const active = news.filter(n => n.status !== 'trashed');
-    const trashed = news.filter(n => n.status === 'trashed');
-
-    if (!active.length) {
-        tbody.innerHTML = '';
-        if (emptyState) emptyState.style.display = 'block';
-    } else {
-        if (emptyState) emptyState.style.display = 'none';
-        tbody.innerHTML = active.map(n => `
-            <tr>
-                <td><div style="width:80px;height:45px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,0.05);">
-                    ${n.image ? `<img src="${n.image}" alt="" style="width:100%;height:100%;object-fit:cover;">` :
-                    '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#555;"><i class="fas fa-image"></i></div>'}
-                </div></td>
-                <td style="max-width:320px;"><strong>${n.title || 'Untitled'}</strong>
-                    <div style="color:rgba(255,255,255,0.4);font-size:12px;margin-top:2px;">${n.publishedAt ? new Date(n.publishedAt).toLocaleString() : '—'}</div>
-                </td>
-                <td>${n.tnPriority ? '<span class="builder-badge" style="background:rgba(139,92,246,0.2);color:#a78bfa;">TN</span>' : '<span style="color:#555;">—</span>'}</td>
-                <td>${n.highlighted ? '<span class="builder-badge" style="background:rgba(34,197,94,0.2);color:#4ade80;">NEW</span>' : '<span style="color:#555;">—</span>'}</td>
-                <td><span class="builder-badge ${n.published ? 'success' : 'warning'}">${n.published ? 'Published' : 'Draft'}</span></td>
-                <td><span class="builder-badge info">${n.source === 'rcc' ? 'RCC' : 'Manual'}</span></td>
-                <td>
-                    <div style="display:flex;gap:6px;">
-                        <button class="builder-btn small" onclick="openNewsModal('${n.id}')" title="Edit"><i class="fas fa-pen"></i></button>
-                        <button class="builder-btn small" onclick="toggleNewsPublish('${n.id}')" title="Publish/Unpublish">${n.published ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>'}</button>
-                        <button class="builder-btn small" onclick="toggleNewsTn('${n.id}')" title="Toggle Tamil Nadu priority">${n.tnPriority ? '<i class="fas fa-map-marker-alt" style="color:#a78bfa;"></i>' : '<i class="fas fa-map-marker-alt"></i>'}</button>
-                        <button class="builder-btn small" onclick="toggleNewsHighlight('${n.id}')" title="Toggle NEW highlight">${n.highlighted ? '<i class="fas fa-star" style="color:#fbbf24;"></i>' : '<i class="fas fa-star"></i>'}</button>
-                        <button class="builder-btn small" onclick="moveNews('${n.id}', -1)" title="Move Up"><i class="fas fa-arrow-up"></i></button>
-                        <button class="builder-btn small" onclick="moveNews('${n.id}', 1)" title="Move Down"><i class="fas fa-arrow-down"></i></button>
-                        <button class="builder-btn small danger" onclick="trashNews('${n.id}')" title="Move to Trash"><i class="fas fa-trash"></i></button>
-                    </div>
-                </td>
-            </tr>`).join('');
-    }
-
-    loadNewsTrashTable(trashed);
-}
-
-function loadNewsTrashTable(trashed) {
-    const tbody = document.getElementById('newsTrashTableBody');
-    const emptyState = document.getElementById('newsTrashEmptyState');
-    const countEl = document.getElementById('newsTrashCount');
-    if (!tbody) return;
-    const trash = trashed || DataStore.getNews().filter(n => n.status === 'trashed');
-    if (countEl) countEl.textContent = trash.length;
-
-    if (!trash.length) {
-        tbody.innerHTML = '';
-        if (emptyState) emptyState.style.display = 'block';
-        return;
-    }
-    if (emptyState) emptyState.style.display = 'none';
-    tbody.innerHTML = trash.map(n => `
-        <tr>
-            <td><div style="width:80px;height:45px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,0.05);">
-                ${n.image ? `<img src="${n.image}" alt="" style="width:100%;height:100%;object-fit:cover;">` :
-                '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#555;"><i class="fas fa-image"></i></div>'}
-            </div></td>
-            <td style="max-width:320px;"><strong>${n.title || 'Untitled'}</strong>
-                <div style="color:rgba(255,255,255,0.4);font-size:12px;margin-top:2px;">${n.trashedAt ? 'Trashed ' + new Date(n.trashedAt).toLocaleString() : 'Trashed by AI News Bot'}</div>
-            </td>
-            <td><span class="builder-badge warning">${n.expired ? 'Expired' : 'Trashed'}</span></td>
-            <td>
-                <div style="display:flex;gap:6px;">
-                    <button class="builder-btn small" onclick="restoreNews('${n.id}')" title="Restore"><i class="fas fa-undo"></i></button>
-                    <button class="builder-btn small danger" onclick="permanentDeleteNews('${n.id}')" title="Delete forever"><i class="fas fa-trash-alt"></i></button>
-                </div>
-            </td>
-        </tr>`).join('');
-}
-
-function openNewsModal(editId) {
-    const overlay = document.getElementById('newsModalOverlay');
-    const titleEl = document.getElementById('newsModalTitle');
-    const form = document.getElementById('newsForm');
-
-    if (editId) {
-        const news = DataStore.getNews();
-        const n = news.find(x => x.id === editId);
-        if (!n) return;
-        titleEl.textContent = 'Edit News';
-        document.getElementById('newsEditId').value = n.id;
-        document.getElementById('newsTitle').value = n.title || '';
-        document.getElementById('newsContent').value = n.content || '';
-        document.getElementById('newsImageUrl').value = n.image || '';
-        document.getElementById('newsStatus').value = n.published ? 'published' : 'draft';
-        document.getElementById('newsTnPriority').checked = !!n.tnPriority;
-        document.getElementById('newsHighlighted').checked = !!n.highlighted;
-        const preview = document.getElementById('newsImagePreview');
-        if (n.image) { preview.style.display = 'block'; preview.querySelector('img').src = n.image; }
-        else { preview.style.display = 'none'; }
-        const dt = document.getElementById('newsPublishedAt');
-        if (n.publishedAt) {
-            const d = new Date(n.publishedAt);
-            const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-            dt.value = local;
-        } else { dt.value = ''; }
-    } else {
-        titleEl.textContent = 'Add News';
-        form.reset();
-        document.getElementById('newsEditId').value = '';
-        document.getElementById('newsTnPriority').checked = true;
-        document.getElementById('newsPublishedAt').value = '';
-        document.getElementById('newsImagePreview').style.display = 'none';
-    }
-    overlay.style.display = 'flex';
-}
-
-function closeNewsModal() {
-    document.getElementById('newsModalOverlay').style.display = 'none';
-}
-
-async function saveNews(event) {
-    event.preventDefault();
-    const editId = document.getElementById('newsEditId').value;
-    const title = document.getElementById('newsTitle').value.trim();
-    const content = document.getElementById('newsContent').value.trim();
-    const imageUrlInput = document.getElementById('newsImageUrl').value.trim();
-    const imageFile = document.getElementById('newsImageFile').files[0];
-    const published = document.getElementById('newsStatus').value === 'published';
-    const tnPriority = document.getElementById('newsTnPriority').checked;
-    const highlighted = document.getElementById('newsHighlighted').checked;
-    const dtVal = document.getElementById('newsPublishedAt').value;
-
-    if (!title) { showToast('Headline is required', 'warning'); return; }
-    if (!content) { showToast('News content is required', 'warning'); return; }
-
-    let imageUrl = imageUrlInput;
-    if (imageFile) {
-        try {
-            const result = await R2Uploader.uploadImage(imageFile, 'tamil-ai-stream/news', (pct) => {
-                console.log('Upload progress:', pct + '%');
-            });
-            if (result && result.url) imageUrl = result.url;
-        } catch (err) {
-            console.error('Upload failed:', err);
-            showToast('Image upload failed', 'error');
-            return;
-        }
-    }
-
-    const now = new Date().toISOString();
-    let publishedAt = now;
-    if (dtVal) publishedAt = new Date(dtVal).toISOString();
-    let news = DataStore.getNews();
-
-    if (editId) {
-        const n = news.find(x => x.id === editId);
-        if (n) {
-            Object.assign(n, {
-                title, content, image: imageUrl, published,
-                tnPriority, highlighted, publishedAt, updatedAt: now
-            });
-        }
-    } else {
-        const order = news.filter(x => x.status !== 'trashed').length;
-        news.push({
-            id: 'news_' + Date.now(),
-            title, content, image: imageUrl || '', published,
-            tnPriority, highlighted, publishedAt, order,
-            source: 'manual', status: 'active',
-            createdAt: now, updatedAt: now
-        });
-    }
-
-    DataStore.setNews(news);
-    closeNewsModal();
-    loadNewsTable();
-    showToast(editId ? 'News updated' : 'News added', 'success');
-    syncToLiveWebsite();
-}
-
-function toggleNewsPublish(id) {
-    const news = DataStore.getNews();
-    const n = news.find(x => x.id === id);
-    if (n) {
-        n.published = !n.published;
-        n.updatedAt = new Date().toISOString();
-        DataStore.setNews(news);
-        loadNewsTable();
-        showToast(n.published ? 'News published' : 'News unpublished', 'info');
-        syncToLiveWebsite();
-    }
-}
-
-function toggleNewsTn(id) {
-    const news = DataStore.getNews();
-    const n = news.find(x => x.id === id);
-    if (n) {
-        n.tnPriority = !n.tnPriority;
-        n.updatedAt = new Date().toISOString();
-        DataStore.setNews(news);
-        loadNewsTable();
-        showToast(n.tnPriority ? 'Tamil Nadu priority ON' : 'Tamil Nadu priority OFF', 'info');
-        syncToLiveWebsite();
-    }
-}
-
-function toggleNewsHighlight(id) {
-    const news = DataStore.getNews();
-    const n = news.find(x => x.id === id);
-    if (n) {
-        n.highlighted = !n.highlighted;
-        n.updatedAt = new Date().toISOString();
-        DataStore.setNews(news);
-        loadNewsTable();
-        showToast(n.highlighted ? 'Highlighted as NEW' : 'Highlight removed', 'info');
-        syncToLiveWebsite();
-    }
-}
-
-function moveNews(id, dir) {
-    const news = DataStore.getNews().filter(n => n.status !== 'trashed').sort((a, b) => (a.order || 0) - (b.order || 0));
-    const idx = news.findIndex(n => n.id === id);
-    if (idx < 0) return;
-    const swapIdx = idx + dir;
-    if (swapIdx < 0 || swapIdx >= news.length) return;
-    const tmp = news[idx].order;
-    news[idx].order = news[swapIdx].order;
-    news[swapIdx].order = tmp;
-    const all = DataStore.getNews();
-    news.forEach(moved => {
-        const target = all.find(x => x.id === moved.id);
-        if (target) target.order = moved.order;
-    });
-    DataStore.setNews(all);
-    loadNewsTable();
-    showToast('Order updated', 'info');
-    syncToLiveWebsite();
-}
-
-function trashNews(id) {
-    if (!confirm('Move this news to the Trash?')) return;
-    const news = DataStore.getNews();
-    const n = news.find(x => x.id === id);
-    if (n) {
-        n.status = 'trashed';
-        n.trashedAt = new Date().toISOString();
-        DataStore.setNews(news);
-        loadNewsTable();
-        showToast('Moved to Trash', 'success');
-        syncToLiveWebsite();
-    }
-}
-
-function restoreNews(id) {
-    const news = DataStore.getNews();
-    const n = news.find(x => x.id === id);
-    if (n) {
-        n.status = 'active';
-        n.expired = false;
-        delete n.trashedAt;
-        DataStore.setNews(news);
-        loadNewsTable();
-        showToast('News restored', 'success');
-        syncToLiveWebsite();
-    }
-}
-
-function permanentDeleteNews(id) {
-    if (!confirm('Permanently delete this news item? This cannot be undone.')) return;
-    DataStore.setNews(DataStore.getNews().filter(n => n.id !== id));
-    loadNewsTable();
-    showToast('News permanently deleted', 'success');
-    syncToLiveWebsite();
-}
-
-async function syncRCCNews() {
-    const btn = document.getElementById('newsSyncBtn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...'; }
-    try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 20000);
-        let res;
-        try {
-            res = await fetch('/api/news', { cache: 'no-store', signal: controller.signal });
-        } finally { clearTimeout(timer); }
-        if (!res.ok) throw new Error('Sync failed: ' + res.status);
-        const data = await res.json();
-        const items = (data && data.items) || [];
-        if (!items.length) { showToast('No news found from RCC', 'warning'); return; }
-
-        let news = DataStore.getNews();
-        const byTitle = new Map(news.map(n => [n.title.toLowerCase(), n]));
-        let added = 0;
-        items.forEach(item => {
-            const key = (item.title || '').toLowerCase();
-            if (byTitle.has(key)) {
-                const existing = byTitle.get(key);
-                if (!existing.content || item.content) existing.content = item.content || existing.content;
-                if (!existing.image && item.image) existing.image = item.image;
-                if (!existing.tnPriority && item.priority === 'tamil-nadu') existing.tnPriority = true;
-                existing.updatedAt = new Date().toISOString();
-            } else {
-                news.push({
-                    id: 'news_' + Date.now() + '_' + added,
-                    title: item.title || '',
-                    content: item.content || '',
-                    image: item.image || '',
-                    publishedAt: item.publishedAt ? new Date(item.publishedAt).toISOString() : new Date().toISOString(),
-                    published: true,
-                    tnPriority: item.priority === 'tamil-nadu',
-                    highlighted: false,
-                    order: 0,
-                    source: 'rcc',
-                    status: 'active',
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                });
-                added++;
-            }
-        });
-
-        DataStore.setNews(news);
-        loadNewsTable();
-        showToast(`Synced ${items.length} news items from RCC (${added} new)`, 'success');
-        syncToLiveWebsite();
-    } catch (err) {
-        console.error('RCC sync failed:', err);
-        showToast('RCC sync failed: ' + err.message, 'error');
-    } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync"></i> Sync from RCC'; }
-    }
-}
-
-function runNewsAICheck() {
-    const settings = DataStore.getSiteSettings();
-    const ns = (settings && settings.newsSettings) || {};
-    const autoDelete = ns.autoDelete !== false;
-    const retentionHours = ns.retentionHours > 0 ? ns.retentionHours : 24;
-    const news = DataStore.getNews();
-    const now = Date.now();
-    let moved = 0;
-
-    news.forEach(n => {
-        if (n.status !== 'trashed' && n.published && autoDelete && n.publishedAt) {
-            const ageMs = now - new Date(n.publishedAt).getTime();
-            if (ageMs > retentionHours * 3600000) {
-                n.status = 'trashed';
-                n.expired = true;
-                n.trashedAt = new Date().toISOString();
-                moved++;
-            }
-        }
-    });
-
-    if (moved > 0) {
-        DataStore.setNews(news);
-        loadNewsTable();
-        showToast(`AI News Bot moved ${moved} expired item${moved > 1 ? 's' : ''} to Trash`, 'success');
-        syncToLiveWebsite();
-    } else {
-        showToast('AI News Bot checked all news — nothing expired', 'info');
-    }
-
-    const lastEl = document.getElementById('newsAILastCheck');
-    if (lastEl) lastEl.textContent = 'Last checked: ' + new Date().toLocaleTimeString();
-}
-
-// Auto-run AI News Bot every 2 hours while Builder is open
-(function startNewsAIBot() {
-    const runBot = () => {
-        try {
-            if (typeof DataStore !== 'undefined' && DataStore && DataStore.getNews) {
-                const settings = DataStore.getSiteSettings();
-                const ns = (settings && settings.newsSettings) || {};
-                const autoDelete = ns.autoDelete !== false;
-                if (autoDelete) runNewsAICheck();
-            }
-        } catch (e) { /* ignore */ }
-    };
-    setInterval(runBot, 2 * 60 * 60 * 1000);
-})();
-
-// Image preview for News modal
+// Brand logo upload + preview
 document.addEventListener('DOMContentLoaded', function() {
-    const newsImageFile = document.getElementById('newsImageFile');
-    if (newsImageFile) {
-        newsImageFile.addEventListener('change', function() {
-            const file = this.files[0];
-            const preview = document.getElementById('newsImagePreview');
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => { preview.style.display = 'block'; preview.querySelector('img').src = e.target.result; };
-                reader.readAsDataURL(file);
-            } else {
-                const url = document.getElementById('newsImageUrl').value.trim();
-                if (url) { preview.style.display = 'block'; preview.querySelector('img').src = url; }
-                else { preview.style.display = 'none'; }
-            }
-        });
-    }
-
-    // Brand logo upload + preview
     const brandLogoFile = document.getElementById('brandLogoFile');
     if (brandLogoFile) {
         brandLogoFile.addEventListener('change', async function() {
@@ -6504,19 +6087,6 @@ function loadSettings() {
         if (settings.logo) { brandPreview.style.display = 'block'; brandPreview.querySelector('img').src = settings.logo; }
         else { brandPreview.style.display = 'none'; }
     }
-    const newsSettings = settings.newsSettings || {};
-    const autoDeleteEl = document.getElementById('newsAutoDelete');
-    if (autoDeleteEl) autoDeleteEl.checked = newsSettings.autoDelete !== false;
-    const retentionEl = document.getElementById('newsRetentionHours');
-    if (retentionEl) retentionEl.value = newsSettings.retentionHours || 24;
-    const tnEl = document.getElementById('newsTnPriority');
-    if (tnEl) tnEl.checked = newsSettings.tamilNaduPriority !== false;
-    const playerEl = document.getElementById('newsShowPlayer');
-    if (playerEl) playerEl.checked = newsSettings.showPlayerOnDetail !== false;
-    const maxEl = document.getElementById('newsMaxItems');
-    if (maxEl) maxEl.value = newsSettings.maxItems || 6;
-    const hlEl = document.getElementById('newsHighlightHours');
-    if (hlEl) hlEl.value = newsSettings.highlightHours || 6;
 }
 
 function saveSettings(e) {
@@ -6535,25 +6105,6 @@ function saveSettings(e) {
     const faviconEl = document.getElementById('settingsFavicon');
     if (brandLogoEl) settings.logo = brandLogoEl.value.trim();
     if (faviconEl) settings.favicon = faviconEl.value.trim();
-    const autoDeleteEl = document.getElementById('newsAutoDelete');
-    const retentionEl = document.getElementById('newsRetentionHours');
-    const tnEl = document.getElementById('newsTnPriority');
-    const playerEl = document.getElementById('newsShowPlayer');
-    const maxEl = document.getElementById('newsMaxItems');
-    const hlEl = document.getElementById('newsHighlightHours');
-    if (autoDeleteEl || retentionEl || tnEl || playerEl || maxEl || hlEl) {
-        const retentionHours = parseInt(retentionEl ? retentionEl.value : '24', 10);
-        const maxItems = parseInt(maxEl ? maxEl.value : '6', 10);
-        const highlightHours = parseInt(hlEl ? hlEl.value : '6', 10);
-        settings.newsSettings = {
-            autoDelete: autoDeleteEl ? autoDeleteEl.checked : true,
-            retentionHours: (retentionHours > 0) ? retentionHours : 24,
-            tamilNaduPriority: tnEl ? tnEl.checked : true,
-            showPlayerOnDetail: playerEl ? playerEl.checked : true,
-            maxItems: (maxItems > 0) ? maxItems : 6,
-            highlightHours: (highlightHours > 0) ? highlightHours : 6
-        };
-    }
     DataStore.setSiteSettings(settings);
     showToast('Settings saved!', 'success');
     syncToLiveWebsite();
@@ -6633,7 +6184,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ============================================
-// Visual Editor � Comprehensive Implementation
+// Visual Editor ï¿½ Comprehensive Implementation
 // ============================================
 let veInitialized = false;
 let veIframe = null;
@@ -6762,13 +6313,13 @@ function setVEEditMode(editMode) {
         if (veIframeDoc && veIframeDoc.body) {
             veIframeDoc.body.style.cursor = '';
         }
-        document.getElementById('veStatusElement').textContent = 'Preview mode — website interactions active';
+        document.getElementById('veStatusElement').textContent = 'Preview mode â€” website interactions active';
     } else {
         // Edit mode: set crosshair cursor
         if (veIframeDoc && veIframeDoc.body) {
             veIframeDoc.body.style.cursor = 'crosshair';
         }
-        document.getElementById('veStatusElement').textContent = 'Edit mode — click elements to select and edit';
+        document.getElementById('veStatusElement').textContent = 'Edit mode â€” click elements to select and edit';
     }
 }
 
@@ -8210,7 +7761,7 @@ function previewPlayerSettings() {
         fs: { bgColor: g('fsBgColor'), bgOpacity: n('fsBgOpacity'), blur: n('fsBlur'), glow: b('fsGlow'), glowIntensity: n('fsGlowIntensity'), animation: g('fsAnimation'), artSize: n('fsArtSize'), artRadius: n('fsArtRadius'), artFloat: b('fsArtFloat'), artGlow: b('fsArtGlow'), aiRing: b('fsAIRing'), particles: b('fsParticles'), visualizer: b('fsVisualizer'), titleSize: n('fsTitleSize'), titleWeight: g('fsTitleWeight'), titleColor: g('fsTitleColor'), artistSize: n('fsArtistSize'), artistColor: g('fsArtistColor'), showMovie: b('fsShowMovie'), showBadge: b('fsShowBadge'), showNowPlaying: b('fsShowNowPlaying'), playBtnSize: n('fsPlayBtnSize'), playBtnColor: g('fsPlayBtnColor'), btnSize: n('fsBtnSize'), btnColor: g('fsBtnColor'), showShuffle: b('fsShowShuffle'), showRepeat: b('fsShowRepeat'), progressH: n('fsProgressH'), progressColor: g('fsProgressColor'), progressBg: g('fsProgressBg'), showThumb: b('fsShowThumb'), thumbSize: n('fsThumbSize'), showTime: b('fsShowTime'), showFav: b('fsShowFav'), showLyrics: b('fsShowLyrics'), showQueue: b('fsShowQueue'), showShare: b('fsShowShare'), showAddPlaylist: b('fsShowAddPlaylist'), secBtnSize: n('fsSecBtnSize'), secBtnColor: g('fsSecBtnColor'), showVolume: b('fsShowVolume'), volumeWidth: n('fsVolumeWidth'), volumeColor: g('fsVolumeColor'), showMute: b('fsShowMute'), queueBg: g('fsQueueBg'), queueActive: g('fsQueueActive'), lyricsBg: g('fsLyricsBg'), lyricsActive: g('fsLyricsActive'), lyricsSize: n('fsLyricsSize'), showEq: b('fsShowEq'), eqCount: n('fsEqCount'), eqColor: g('fsEqColor'), eqWidth: n('fsEqWidth'), eqGap: n('fsEqGap'), showAIBot: b('fsShowAIBot'), mobileArtSize: n('fsMobileArtSize'), mobilePlayBtn: n('fsMobilePlayBtn'), mobileWave: b('fsMobileWave'), safeArea: n('fsSafeArea') }
     };
     applyPlayerSettings(preview);
-    showToast('Preview applied — open live site to see changes', 'info');
+    showToast('Preview applied â€” open live site to see changes', 'info');
 }
 
 function applyPlayerSettings(s) {
@@ -8501,7 +8052,7 @@ function renderTrashTable(filter) {
             const mins = Math.ceil((nextCleanup - now) / 60000);
             nextCleanupEl.textContent = mins + ' min';
         } else if (trash.length > 0) {
-            nextCleanupEl.textContent = 'Overdue — cleaning now';
+            nextCleanupEl.textContent = 'Overdue â€” cleaning now';
         } else {
             nextCleanupEl.textContent = '--';
         }
@@ -8551,7 +8102,7 @@ function renderTrashTable(filter) {
         return `<tr>
             <td><strong>${name}</strong></td>
             <td><span class="builder-badge" style="background:${badgeColor}22;color:${badgeColor};">${type}</span></td>
-            <td style="font-size:12px;color:rgba(255,255,255,0.5);">${trashedAt ? trashedAt.toLocaleString() : '—'}</td>
+            <td style="font-size:12px;color:rgba(255,255,255,0.5);">${trashedAt ? trashedAt.toLocaleString() : 'â€”'}</td>
             <td style="font-size:12px;${urgencyClass}"><strong>${remainingStr}</strong></td>
             <td>
                 <div style="display:flex;gap:6px;">
@@ -8689,8 +8240,7 @@ function runSyncAudit() {
         { key: 'latestCollections', label: 'Latest Collections', getter: () => DataStore.getLatestCollections() },
         { key: 'advertisements', label: 'Advertisements', getter: () => DataStore.getAdvertisements() },
         { key: 'upcomingReleases', label: 'Upcoming Releases', getter: () => DataStore.getUpcomingReleases() },
-        { key: 'images', label: 'Images', getter: () => DataStore.getImages() },
-        { key: 'news', label: 'Live News', getter: () => DataStore.getNews().filter(n => n.status !== 'trashed') }
+        { key: 'images', label: 'Images', getter: () => DataStore.getImages() }
     ];
 
     let totalItems = 0;
@@ -8765,7 +8315,7 @@ function runSyncAudit() {
         <div style="margin-top:16px;padding:12px;border-radius:8px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);">
             <strong style="color:#34d399;"><i class="fas fa-circle-check"></i> Single Source of Truth</strong>
             <p style="color:rgba(255,255,255,0.6);margin:4px 0 0;font-size:13px;">
-                Builder → localStorage → R2 Manifest → Live Website. All deletions are tracked via deletedIds and respected during sync.
+                Builder â†’ localStorage â†’ R2 Manifest â†’ Live Website. All deletions are tracked via deletedIds and respected during sync.
                 Deleted items move to Trash first (1 hour retention). Changes persist across refresh, logout, and reopening.
             </p>
         </div>
@@ -8815,7 +8365,7 @@ const AIDuplicateScan = {
 
         let msg = 'Found ' + dupes.length + ' duplicate pairs:\n\n';
         for (const d of dupes.slice(0, 8)) {
-            msg += '- "' + d.a.title + '" by ' + d.a.artist + '  ↔  "' + d.b.title + '" by ' + d.b.artist + ' (' + d.score + '% match)\n';
+            msg += '- "' + d.a.title + '" by ' + d.a.artist + '  â†”  "' + d.b.title + '" by ' + d.b.artist + ' (' + d.score + '% match)\n';
         }
         if (dupes.length > 8) msg += '\n... and ' + (dupes.length - 8) + ' more';
 

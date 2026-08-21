@@ -103,10 +103,10 @@
                     </svg>
                 </div>
             </div>
-            <div class="splash-title">
+            <div class="splash-title" data-brand-text>
                 <span class="highlight">Tamil AI</span> Stream
             </div>
-            <div class="splash-subtitle">AI-Powered Tamil Radio</div>
+            <div class="splash-subtitle" data-brand-tagline>AI-Powered Tamil Radio</div>
             <div class="splash-equalizer">
                 <div class="splash-eq-bar" style="--eq-min:5px;--eq-max:28px;--eq-duration:0.7s;--eq-delay:0s"></div>
                 <div class="splash-eq-bar" style="--eq-min:8px;--eq-max:36px;--eq-duration:0.55s;--eq-delay:0.1s"></div>
@@ -257,10 +257,7 @@
                             </defs>
                         </svg>
                     </div>
-                    <div class="ai-sidebar-logo-text">
-                        <span>TAMIL</span>
-                        <span>AI STREAM</span>
-                    </div>
+                    <div class="ai-sidebar-logo-text" data-brand-text>Tamil AI Stream</div>
                 </a>
                 <nav class="ai-sidebar-nav">
                     <div class="ai-sidebar-label">Menu</div>
@@ -268,7 +265,7 @@
                     <button class="ai-sidebar-item" data-ai-page="explore"><i class="fas fa-compass"></i><span>Explore</span></button>
                     <button class="ai-sidebar-item" data-ai-page="music"><i class="fas fa-music"></i><span>Music</span></button>
                     <button class="ai-sidebar-item" data-ai-page="live-fm"><i class="fas fa-tower-broadcast"></i><span>Live FM</span></button>
-                    <button class="ai-sidebar-item" data-ai-page="news"><i class="fas fa-newspaper"></i><span>News</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="evergreen"><i class="fas fa-gem"></i><span>Evergreen</span></button>
                     <button class="ai-sidebar-item" data-ai-page="assistant"><i class="fas fa-robot"></i><span>AI Assistant</span></button>
                     <div class="ai-sidebar-divider"></div>
                     <div class="ai-sidebar-label">Library</div>
@@ -539,6 +536,21 @@
                     <!-- Good Morning Section (top of Home) -->
                     <div class="greeting-section" data-section="greeting"></div>
 
+                    <!-- One Tap Radio -->
+                    <section class="ai-panel one-tap-radio" data-section="ai-one-tap-radio">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-tower-cell"></i> One Tap Radio</h2>
+                            <span class="otr-now" id="otrNowChip" style="display:none;"><span class="ai-live-dot"></span><span id="otrNowText"></span></span>
+                        </div>
+                        <div class="otr-row" id="otrRow">
+                            <button class="otr-card" data-otr="love"><span class="otr-icon">&#10084;&#65039;</span><span class="otr-name">Love Radio</span></button>
+                            <button class="otr-card" data-otr="melody"><span class="otr-icon">&#127925;</span><span class="otr-name">Melody Radio</span></button>
+                            <button class="otr-card" data-otr="90s"><span class="otr-icon">&#128252;</span><span class="otr-name">90s Radio</span></button>
+                            <button class="otr-card" data-otr="evergreen"><span class="otr-icon">&#127807;</span><span class="otr-name">Evergreen Radio</span></button>
+                            <button class="otr-card" data-otr="latest"><span class="otr-icon">&#128293;</span><span class="otr-name">Latest Radio</span></button>
+                        </div>
+                    </section>
+
                     <!-- Recently Added Songs (auto-populated from builder) -->
                     <section class="ai-panel recently-added-section" data-section="ai-recently-added" id="recentlyAddedSection" style="display:none;">
                         <div class="ai-sec-head">
@@ -560,13 +572,12 @@
                                 <div class="ai-hero-art" id="aiHeroBackdrop"></div>
                                 <div class="ai-hero-art-ring"></div>
                             </div>
-                            <div class="ai-hero-body">
-                                <div class="ai-hero-eyebrow">TAMIL AI STREAM</div>
-                                <h2 class="ai-hero-title" id="aiHeroTitle">Tamil Music</h2>
-                                <div class="ai-hero-artist" id="aiHeroArtist">Select a song to play</div>
+                            <div class="ai-hero-info-row" id="aiHeroInfoRow" style="display:none;">
+                                <div class="ai-hero-song-name" id="aiHeroSongName">—</div>
                                 <button class="ai-play-now" id="aiHeroPlayBtn"><i class="fas fa-play"></i> Play Now</button>
-                                <div class="ai-hero-dots" id="aiHeroDotsWrap"></div>
+                                <div class="ai-hero-movie-name" id="aiHeroMovieName">—</div>
                             </div>
+                            <div class="ai-hero-dots" id="aiHeroDotsWrap"></div>
                         </section>
 
                         <section class="ai-panel ai-trending" data-section="ai-trending">
@@ -578,7 +589,7 @@
                         </section>
                     </div>
 
-                    <!-- Row 2: Live FM + Live News -->
+                    <!-- Row 2: Live FM + Evergreen Classics -->
                     <div class="ai-home-row">
                         <section class="ai-panel ai-live-fm" data-section="ai-live-fm">
                             <div class="ai-sec-head">
@@ -588,15 +599,12 @@
                             <div class="ai-fm-grid" id="aiLiveFmGrid"></div>
                         </section>
 
-                        <section class="ai-panel ai-live-news" data-section="ai-live-news">
+                        <section class="ai-panel ai-evergreen" data-section="ai-evergreen">
                             <div class="ai-sec-head">
-                                <h2 class="ai-sec-title"><span class="ai-live-dot"></span> Live Tamil News</h2>
-                                <div class="ai-news-head-right">
-                                    <span class="ai-news-refresh-indicator" id="aiNewsRefreshIndicator" style="display:none;"><i class="fas fa-sync-alt"></i> Loading...</span>
-                                    <button class="ai-see-all" data-ai-seeall="news">See All</button>
-                                </div>
+                                <h2 class="ai-sec-title"><i class="fas fa-gem"></i> Evergreen Classics</h2>
+                                <button class="ai-see-all" data-ai-seeall="evergreen">See All</button>
                             </div>
-                            <div class="ai-news-list" id="aiNewsList"></div>
+                            <div class="ai-evergreen-grid" id="aiEvergreenGrid"></div>
                         </section>
                     </div>
 

@@ -474,7 +474,7 @@ const AICommandBot = (() => {
                     { key: 'recentlyPlayed', name: 'Recently Played', icon: 'fa-clock-rotate-left' },
                     { key: 'recommendations', name: 'AI Recommendations', icon: 'fa-wand-magic-sparkles' },
                     { key: 'stations', name: 'Live FM', icon: 'fa-broadcast-tower' },
-                    { key: 'news', name: 'Live Tamil News', icon: 'fa-newspaper' },
+                    { key: 'evergreen', name: 'Evergreen Classics', icon: 'fa-gem' },
                     { key: 'decades', name: 'Decades', icon: 'fa-calendar' },
                     { key: 'quotes', name: 'Tamil Quotes', icon: 'fa-quote-left' }
                 ];

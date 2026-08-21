@@ -495,7 +495,9 @@ function getStationStreamUrl(stationNameOrId) {
     if (!station) station = stations.find(s => (s.name || '').toLowerCase() === (stationNameOrId || '').toLowerCase());
     // Fall back to partial name match
     if (!station && stationNameOrId) station = stations.find(s => (s.name || '').includes(stationNameOrId) || stationNameOrId.includes(s.name || ''));
-    return station?.streamUrl || station?.url || '';
+    if (!station) return '';
+    // Support multiple possible field names for stream URL
+    return station.streamUrl || station.url || station.audioUrl || station.stream_url || station.stream || '';
 }
 
 // ============================================
@@ -1132,7 +1134,7 @@ function playStation(stationName, stationId) {
         // Check if station exists but has no URL
         const stations = DataStore.getStations() || [];
         const found = stations.find(s => s.id === stationId || s.name === stationName);
-        if (found && !found.streamUrl && !found.url) {
+        if (found && !found.streamUrl && !found.url && !found.audioUrl && !found.stream_url && !found.stream) {
             showToast(`${stationName} has no stream URL configured. Add it in the Builder.`, 'error');
         } else {
             showToast(`${stationName} stream is currently unavailable.`, 'error');

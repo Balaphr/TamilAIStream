@@ -1,10 +1,10 @@
-'use strict';
+﻿'use strict';
 /* ============================================================
-   AIHome — Reference-Based Premium Home Page
+   AIHome â€” Reference-Based Premium Home Page
    Renders all new Home sections from EXISTING production data
    (DataStore / ListeningHistory / PlaylistManager / AI systems)
    and wires the sidebar, header and full-width bottom player.
-   Never replaces the audio engine — it drives the same
+   Never replaces the audio engine â€” it drives the same
    window.playSong / window.playStation / PlayerEngine path.
    ============================================================ */
 window.AIHome = (() => {
@@ -103,12 +103,14 @@ window.AIHome = (() => {
     function renderMusicHero() {
         const body = $('aiHeroBackdrop');
         const dots = $('aiHeroDotsWrap');
+        const infoRow = $('aiHeroInfoRow');
         if (!body) return;
         const songs = publishedSongs();
         heroSlides = songs.length ? songs.slice(0, 10) : [];
         if (!heroSlides.length) {
             body.style.background = stationColorFallback();
             body.innerHTML = '<i class="fa-solid fa-music"></i>';
+            if (infoRow) infoRow.style.display = 'none';
             return;
         }
         dots.innerHTML = heroSlides.map((_, i) =>
@@ -134,7 +136,7 @@ window.AIHome = (() => {
         const layerInactive = $('aiHeroBg' + (heroBgActive === 'A' ? 'B' : 'A'));
         if (!layerActive || !layerInactive) return;
 
-        // Skip if same image — avoids re-downloading
+        // Skip if same image â€” avoids re-downloading
         const currentArt = layerActive.style.backgroundImage || '';
         if (art && currentArt.includes(art)) return;
 
@@ -183,10 +185,23 @@ window.AIHome = (() => {
                 body.innerHTML = '<i class="fa-solid fa-music"></i>';
             }
         }
-        const titleEl = $('aiHeroTitle');
-        if (titleEl) titleEl.textContent = song.title || 'Tamil Music';
-        const artistEl = $('aiHeroArtist');
-        if (artistEl) artistEl.textContent = song.artist || song.singer || 'Tamil AI Stream';
+        // Update new hero info row
+        const infoRow = $('aiHeroInfoRow');
+        const songNameEl = $('aiHeroSongName');
+        const movieNameEl = $('aiHeroMovieName');
+        const playBtn = $('aiHeroPlayBtn');
+        if (infoRow) infoRow.style.display = 'flex';
+        if (songNameEl) songNameEl.textContent = song.title || 'Tamil Music';
+        if (movieNameEl) movieNameEl.textContent = song.movie || song.album || 'â€”';
+        if (playBtn) {
+            playBtn.onclick = () => {
+                const songs = publishedSongs();
+                if (!songs.length) { showToastSafe('No songs available yet', 'info'); return; }
+                const start = Math.min(heroIdx, songs.length - 1);
+                if (typeof window.playSong === 'function') window.playSong(songs[start], songs);
+                else showToastSafe('Ready to play: ' + songs[start].title, 'info');
+            };
+        }
         const dots = $('aiHeroDotsWrap');
         if (dots) Array.from(dots.children).forEach((d, i) => d.classList.toggle('active', i === heroIdx));
     }
@@ -404,7 +419,7 @@ window.AIHome = (() => {
         }
         grid.innerHTML = stations.map((s, i) => {
             const name = (s.name || 'FM Station');
-            const displayName = name.length > 26 ? name.slice(0, 26) + '…' : name;
+            const displayName = name.length > 26 ? name.slice(0, 26) + 'â€¦' : name;
             const freq = s.freq ? s.freq + ' FM' : 'FM';
             const lc = s.city || 'Chennai';
             const listeners = s.listeners || 0;
@@ -485,544 +500,207 @@ window.AIHome = (() => {
         window.addEventListener('ytm:resumeTrack', () => setTimeout(syncFmPlaying, 100));
     }
 
-    /* ---------------- Live Tamil News ---------------- */
-    // Loads the latest Tamil news from the worker /api/news endpoint (which
-    // pulls from the RCC Tamil RSS feed, filters to Tamil-only content, dedupes,
-    // prioritizes Tamil Nadu news first and applies the retention window from
-    // Site Settings). Clicking a card opens an in-app detail view (never an
-    // external URL) with the thumbnail shown prominently at the top. The list
-    // auto-refreshes in place so the audio player is never disturbed.
-    let newsItems = [];
-    let newsTimer = null;
-    let newsLoading = false;
-    let newsLastLoaded = 0;
-    let _newsCurrentIndex = -1;
-    let _newsRefreshCount = 0;
-    let _newsLastRefreshTime = 0;
 
-    // News display config lives in Builder Site Settings (tamilAIStream_siteSettings.newsSettings).
-    function newsDisplayConfig() {
-        const cfg = { maxItems: 4, highlightHours: 6, showPlayerOnDetail: true, seeAllMax: 25, refreshInterval: 300000, retainHours: 1, showNavButtons: true, showViewButton: true, showRefreshIndicator: true };
-        try {
-            if (window.DataStore) {
-                const s = DataStore.getSiteSettings() || {};
-                const ns = s.newsSettings || {};
-                // Read from nested newsSettings (legacy)
-                if (ns.maxItems && ns.maxItems > 0) cfg.maxItems = Math.min(ns.maxItems, 40);
-                if (ns.highlightHours && ns.highlightHours > 0) cfg.highlightHours = ns.highlightHours;
-                if (typeof ns.showPlayerOnDetail === 'boolean') cfg.showPlayerOnDetail = ns.showPlayerOnDetail;
-                if (ns.seeAllMax && ns.seeAllMax > 0) cfg.seeAllMax = Math.min(ns.seeAllMax, 50);
-                if (ns.refreshInterval && ns.refreshInterval >= 30000) cfg.refreshInterval = ns.refreshInterval;
-                if (ns.retainHours && ns.retainHours > 0) cfg.retainHours = ns.retainHours;
-                if (typeof ns.showNavButtons === 'boolean') cfg.showNavButtons = ns.showNavButtons;
-                if (typeof ns.showViewButton === 'boolean') cfg.showViewButton = ns.showViewButton;
-                if (typeof ns.showRefreshIndicator === 'boolean') cfg.showRefreshIndicator = ns.showRefreshIndicator;
-                // Read from flat liveNews* keys (Builder registry)
-                if (s.liveNewsMax && s.liveNewsMax > 0) cfg.maxItems = Math.min(s.liveNewsMax, 40);
-                if (s.liveNewsHighlightHours && s.liveNewsHighlightHours > 0) cfg.highlightHours = s.liveNewsHighlightHours;
-                if (typeof s.liveNewsShowDetail === 'boolean') cfg.showPlayerOnDetail = s.liveNewsShowDetailPlayer !== false;
-                if (s.liveNewsSeeAllMax && s.liveNewsSeeAllMax > 0) cfg.seeAllMax = Math.min(s.liveNewsSeeAllMax, 50);
-                if (s.liveNewsAutoRefreshInterval && s.liveNewsAutoRefreshInterval >= 30000) cfg.refreshInterval = s.liveNewsAutoRefreshInterval;
-                if (s.liveNewsRetainHours && s.liveNewsRetainHours > 0) cfg.retainHours = s.liveNewsRetainHours;
-                if (typeof s.liveNewsShowNavButtons === 'boolean') cfg.showNavButtons = s.liveNewsShowNavButtons;
-                if (typeof s.liveNewsShowViewButton === 'boolean') cfg.showViewButton = s.liveNewsShowViewButton;
-                if (typeof s.liveNewsShowRefreshIndicator === 'boolean') cfg.showRefreshIndicator = s.liveNewsShowRefreshIndicator;
+    /* ---------------- Evergreen Classics ---------------- */
+    function renderEvergreen() {
+        const grid = $('aiEvergreenGrid');
+        if (!grid) return;
+        const songs = publishedSongs();
+        // Filter for evergreen songs (older songs, or songs tagged as evergreen/classic)
+        const evergreen = songs
+            .filter(s => s && (s.status === 'published' || s.status === 'active'))
+            .filter(s => {
+                // Consider songs as evergreen if they have mood/genre like 'classic', 'old', 'evergreen', 'retro'
+                // or if they are from older movies (pre-2010) - we'll use a simple heuristic
+                const genre = (s.genre || s.mood || '').toLowerCase();
+                const isClassicTag = genre.includes('classic') || genre.includes('evergreen') || genre.includes('retro') || genre.includes('old');
+                // Also include songs from older eras (pre-2010) based on movie/year if available
+                return isClassicTag;
+            })
+            .sort((a, b) => (b.plays || 0) - (a.plays || 0)) // Sort by popularity
+            .slice(0, 12);
+
+        if (!evergreen.length) {
+            // Fallback: show oldest published songs as evergreen classics
+            const fallback = songs
+                .filter(s => s && (s.status === 'published' || s.status === 'active'))
+                .sort((a, b) => new Date(a.createdAt || a.uploadedAt || 0) - new Date(b.createdAt || b.uploadedAt || 0))
+                .slice(0, 12);
+            if (!fallback.length) {
+                grid.innerHTML = emptyHTML('fa-solid fa-gem', 'No Evergreen Classics yet',
+                    'Add classic Tamil songs from the Builder and they will appear here.');
+                return;
             }
-        } catch (e) { /* ignore */ }
-        return cfg;
-    }
-
-    function timeAgo(iso) {
-        if (!iso) return '';
-        try {
-            const diff = Date.now() - new Date(iso).getTime();
-            if (diff < 60000) return 'Just now';
-            if (diff < 3600000) return Math.floor(diff / 60000) + ' min ago';
-            if (diff < 86400000) return Math.floor(diff / 3600000) + ' hr ago';
-            return Math.floor(diff / 86400000) + 'd ago';
-        } catch (e) { return ''; }
-    }
-
-    // Tamil Nadu priority flag comes from the worker (priority:'tamil-nadu').
-    function isTnNews(n) { return n && (n.priority === 'tamil-nadu' || n.tamilNadu === true); }
-
-    // Track the currently open detail's Escape handler so we can clean it up
-    let _newsDetailEscHandler = null;
-    let _newsDetailClosing = false;
-
-    function newsDetailOpen(id, skipIndex) {
-        const idx = (newsItems || []).findIndex(n => String(n.id) === String(id));
-        if (idx < 0) return;
-        const item = newsItems[idx];
-        _newsCurrentIndex = idx;
-        try {
-            // Guard: if a detail is already open, close it first (prevents stacking)
-            const existing = document.getElementById('aiNewsDetail');
-            if (existing) {
-                existing.remove();
-                if (_newsDetailEscHandler) {
-                    document.removeEventListener('keydown', _newsDetailEscHandler);
-                    _newsDetailEscHandler = null;
-                }
-            }
-            // Guard: if a close animation is in progress, don't open yet
-            if (_newsDetailClosing) return;
-
-            const cfg = newsDisplayConfig();
-            const total = newsItems.length;
-            const pubTime = item.publishedAt ? new Date(item.publishedAt) : null;
-            const timeText = pubTime ? pubTime.toLocaleString('ta-IN', {
-                day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
-            }) : '';
-            if (cfg.showPlayerOnDetail) {
-                document.body.classList.add('ai-news-player-visible');
-            }
-
-            const tnBadge = isTnNews(item) ? '<span class="ai-news-detail-tn"><i class="fa-solid fa-location-dot"></i> Tamil Nadu</span>' : '';
-
-            // Nav buttons
-            let navHtml = '';
-            if (cfg.showNavButtons && total > 1) {
-                const hasPrev = idx > 0;
-                const hasNext = idx < total - 1;
-                navHtml =
-                    '<div class="ai-news-detail-nav">' +
-                    '<button class="ai-news-nav-btn ai-news-nav-prev" type="button"' + (!hasPrev ? ' disabled' : '') + ' data-dir="prev"><i class="fa-solid fa-chevron-left"></i> Prev</button>' +
-                    '<span class="ai-news-nav-counter">' + (idx + 1) + ' / ' + total + '</span>' +
-                    '<button class="ai-news-nav-btn ai-news-nav-next" type="button"' + (!hasNext ? ' disabled' : '') + ' data-dir="next">Next <i class="fa-solid fa-chevron-right"></i></button>' +
-                    '</div>';
-            }
-
-            // View button
-            let viewHtml = '';
-            if (cfg.showViewButton && item.url) {
-                viewHtml = '<a class="ai-news-detail-view-btn" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-up-right-from-square"></i> View Full Article</a>';
-            }
-
-            const wrap = document.createElement('div');
-            wrap.className = 'ai-news-detail';
-            wrap.id = 'aiNewsDetail';
-            wrap.setAttribute('role', 'dialog');
-            wrap.setAttribute('aria-modal', 'true');
-            wrap.innerHTML =
-                '<div class="ai-news-detail-overlay"></div>' +
-                '<div class="ai-news-detail-panel">' +
-                '<div class="ai-news-detail-topbar">' +
-                '<button class="ai-news-detail-back" type="button"><i class="fa-solid fa-arrow-left"></i> Back</button>' +
-                navHtml +
-                '</div>' +
-                (item.image ? '<div class="ai-news-detail-img"><img src="' + escapeHtml(item.image) + '" alt="" loading="lazy"></div>' : '') +
-                '<div class="ai-news-detail-body">' +
-                (tnBadge ? '<div class="ai-news-detail-flags">' + tnBadge + '</div>' : '') +
-                '<h3 class="ai-news-detail-title">' + escapeHtml(item.title) + '</h3>' +
-                '<div class="ai-news-detail-meta">' +
-                (timeText ? '<span class="ai-news-detail-time"><i class="fa-regular fa-clock"></i> ' + escapeHtml(timeText) + '</span>' : '') +
-                '</div>' +
-                '<div class="ai-news-detail-content">' + escapeHtml(item.content || '') + '</div>' +
-                viewHtml +
-                '</div></div>';
-            document.body.appendChild(wrap);
-            document.body.classList.add('ai-news-detail-open');
-            requestAnimationFrame(() => wrap.classList.add('open'));
-
-            // Unified close function
-            const removeDetail = () => {
-                if (_newsDetailClosing) return;
-                _newsDetailClosing = true;
-                wrap.classList.remove('open');
-                if (_newsDetailEscHandler) {
-                    document.removeEventListener('keydown', _newsDetailEscHandler);
-                    _newsDetailEscHandler = null;
-                }
-                setTimeout(() => {
-                    if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
-                    document.body.classList.remove('ai-news-detail-open');
-                    document.body.classList.remove('ai-news-player-visible');
-                    _newsDetailClosing = false;
-                    _newsCurrentIndex = -1;
-                    // Force re-enable touch on news cards
-                    document.querySelectorAll('.ai-news-card').forEach(c => {
-                        c.style.pointerEvents = '';
-                        c.style.webkitTapHighlightColor = '';
-                    });
-                }, 220);
-            };
-
-            // Navigation function
-            const navigateTo = (dir) => {
-                const newIdx = dir === 'next' ? _newsCurrentIndex + 1 : _newsCurrentIndex - 1;
-                if (newIdx < 0 || newIdx >= newsItems.length) return;
-                removeDetail();
-                setTimeout(() => {
-                    newsDetailOpen(newsItems[newIdx].id);
-                }, 260);
-            };
-
-            wrap.querySelector('.ai-news-detail-back').addEventListener('click', removeDetail);
-            wrap.querySelector('.ai-news-detail-overlay').addEventListener('click', removeDetail);
-
-            // Nav button handlers
-            const prevBtn = wrap.querySelector('.ai-news-nav-prev');
-            const nextBtn = wrap.querySelector('.ai-news-nav-next');
-            if (prevBtn) prevBtn.addEventListener('click', () => navigateTo('prev'));
-            if (nextBtn) nextBtn.addEventListener('click', () => navigateTo('next'));
-
-            // Swipe support for mobile
-            let touchStartX = 0;
-            wrap.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
-            wrap.addEventListener('touchend', (e) => {
-                const diff = e.changedTouches[0].screenX - touchStartX;
-                if (Math.abs(diff) > 60) {
-                    if (diff > 0) navigateTo('prev');
-                    else navigateTo('next');
-                }
-            }, { passive: true });
-
-            // Escape key
-            _newsDetailEscHandler = (e) => {
-                if (e.key === 'Escape') removeDetail();
-            };
-            document.addEventListener('keydown', _newsDetailEscHandler);
-        } catch (e) { /* ignore */ }
-    }
-
-    function renderNewsList() {
-        const list = $('aiNewsList');
-        if (!list) return;
-        if (!newsItems.length) {
-            if (!newsLoading) list.innerHTML = emptyHTML('fa-solid fa-newspaper', 'Loading Tamil news…',
-                'Fetching the latest headlines from the Tamil news feed.');
+            grid.innerHTML = fallback.map((s, i) => songCardHTML(s, i)).join('');
+            grid.querySelectorAll('.ai-song-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const i = parseInt(card.dataset.idx, 10);
+                    const song = fallback[i];
+                    if (!song) return;
+                    if (song.streamUrl && !song.audioUrl && typeof window.playStation === 'function') {
+                        window.playStation(song.title || song.name || '');
+                    } else if (song.audioUrl && typeof window.playSong === 'function') {
+                        window.playSong(song, fallback);
+                    } else {
+                        showToastSafe('This track has no audio attached yet', 'info');
+                    }
+                });
+            });
             return;
         }
-        const cfg = newsDisplayConfig();
-        const now = Date.now();
-        // Auto-trash news older than retainHours (default 1 hour)
-        const maxAge = cfg.retainHours * 3600000;
-        newsItems = newsItems.filter(n => {
-            if (!n.publishedAt) return true;
-            const pub = new Date(n.publishedAt).getTime();
-            return !isNaN(pub) && (now - pub) < maxAge;
-        });
-        const visible = newsItems.slice(0, cfg.maxItems);
-        list.innerHTML = visible.map((n) => {
-            const pub = n.publishedAt ? new Date(n.publishedAt).getTime() : 0;
-            const isFresh = !isNaN(pub) && (now - pub) < cfg.highlightHours * 3600000;
-            const isHighlighted = !!n.highlighted || isFresh;
-            const tn = isTnNews(n);
-            return '<div class="ai-news-card' + (tn ? ' ai-news-card-tn' : '') + '" role="button" tabindex="0" data-news-id="' + escapeHtml(String(n.id)) + '">' +
-                '<div class="ai-news-img">' +
-                (n.image ? '<img src="' + escapeHtml(n.image) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-newspaper"></i>') +
-                (isHighlighted ? '<span class="ai-news-live"><span class="ai-live-dot" style="box-shadow:none;animation:none;width:5px;height:5px;"></span>NEW</span>' : '') +
-                (tn ? '<span class="ai-news-tn-badge">TAMIL NADU</span>' : '') +
-                '</div>' +
-                '<div class="ai-news-info">' +
-                '<div class="ai-news-headline">' + escapeHtml(n.title) + '</div>' +
-                '<div class="ai-news-meta">' +
-                (n.publishedAt ? '<span>' + timeAgo(n.publishedAt) + '</span>' : '') +
-                '</div></div></div>';
-        }).join('');
-        list.querySelectorAll('.ai-news-card').forEach(card => {
-            const open = () => newsDetailOpen(card.dataset.newsId);
-            card.addEventListener('click', open);
-            card.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+
+        grid.innerHTML = evergreen.map((s, i) => songCardHTML(s, i)).join('');
+        grid.querySelectorAll('.ai-song-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const i = parseInt(card.dataset.idx, 10);
+                const song = evergreen[i];
+                if (!song) return;
+                if (song.streamUrl && !song.audioUrl && typeof window.playStation === 'function') {
+                    window.playStation(song.title || song.name || '');
+                } else if (song.audioUrl && typeof window.playSong === 'function') {
+                    window.playSong(song, evergreen);
+                } else {
+                    showToastSafe('This track has no audio attached yet', 'info');
+                }
             });
         });
     }
 
-    async function loadNews() {
-        const list = $('aiNewsList');
-        if (!list) return;
-        if (newsLoading) return;
-        const nowMs = Date.now();
-        if (newsItems.length && (nowMs - newsLastLoaded) < 10000) return;
-        newsLoading = true;
-        try {
-            const resp = await fetch('/api/news', { cache: 'no-store' });
-            if (!resp.ok) throw new Error('news fetch failed ' + resp.status);
-            const data = await resp.json();
-            if (data && Array.isArray(data.items)) {
-                newsItems = data.items;
-                newsLastLoaded = Date.now();
-                renderNewsList();
-            }
-        } catch (e) {
-            // Keep whatever we rendered last time (or cached). Only show an
-            // error state if we've never successfully loaded anything.
-            if (!newsItems.length) {
-                list.innerHTML = emptyHTML('fa-solid fa-newspaper', 'News is temporarily unavailable',
-                    'Please check your connection and try again shortly.');
-            }
-        } finally {
-            newsLoading = false;
+    /* ---------------- One Tap Radio ---------------- */
+    // Lightweight radio engine. Builds a category queue from the LOCAL
+    // DataStore (zero network on load), shuffles it, and hands it to the
+    // existing window.playSong() engine — script.js auto-advances the queue
+    // on 'ended' and loops infinitely via playNextTrack(). No new audio
+    // element, no polling, no playlist downloads.
+    const OTR_MODES = {
+        love: {
+            label: 'Love Radio',
+            match: (s) => /love|romance|romantic|kadhal|kadhalik|kaadhal/.test(((s.genre || '') + ' ' + (s.mood || '') + ' ' + (s.title || '')).toLowerCase())
+        },
+        melody: {
+            label: 'Melody Radio',
+            match: (s) => /melody|melodious|soft/.test(((s.genre || '') + ' ' + (s.mood || '')).toLowerCase())
+        },
+        '90s': {
+            label: '90s Radio',
+            match: (s) => s.decade === '90s' || /^199\d$/.test(String(s.year || '')) || /\b(199[0-9])\b/.test(String(s.movie || '') + ' ' + String(s.album || ''))
+        },
+        evergreen: {
+            label: 'Evergreen Radio',
+            match: (s) => /classic|evergreen|retro|old(?:\s|$|-)/.test(((s.genre || '') + ' ' + (s.mood || '')).toLowerCase()) || s.decade === '80s' || /^19[5-8]\d$/.test(String(s.year || ''))
+        },
+        latest: { label: 'Latest Radio', match: null } // sorted newest-first
+    };
+
+    let _otrActive = false;
+    let _otrMode = '';
+    let _otrQueueRef = null;
+    let _otrHooked = false;
+
+    function otrShuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
         }
+        return arr;
     }
 
-    let newsVisibilityBound = false;
-    function startNewsAutoRefresh() {
-        const cfg = newsDisplayConfig();
-        if (newsTimer) clearInterval(newsTimer);
-        // Check if auto-refresh bot is enabled
-        let botEnabled = true;
-        let botInterval = cfg.refreshInterval;
-        let botOnFocus = true;
-        try {
-            if (window.DataStore) {
-                const s = DataStore.getSiteSettings() || {};
-                const ns = s.newsSettings || {};
-                if (typeof ns.liveNewsAutoRefreshEnabled === 'boolean') botEnabled = ns.liveNewsAutoRefreshEnabled;
-                if (ns.liveNewsAutoRefreshInterval && ns.liveNewsAutoRefreshInterval >= 30000) botInterval = ns.liveNewsAutoRefreshInterval;
-                if (typeof ns.liveNewsAutoRefreshOnFocus === 'boolean') botOnFocus = ns.liveNewsAutoRefreshOnFocus;
-            }
-        } catch (e) { /* ignore */ }
-
-        if (!botEnabled) {
-            updateNewsRefreshIndicator();
-            return;
+    function otrBuildQueue(mode) {
+        const cfg = OTR_MODES[mode];
+        if (!cfg) return [];
+        // Only songs with real audio — metadata comes from local DataStore,
+        // so building the queue costs zero network requests.
+        let pool = publishedSongs().filter(s => s && (s.audioUrl || s.src));
+        let matched = cfg.match ? pool.filter(cfg.match) : [];
+        if (mode === 'latest') {
+            matched = pool.slice().sort((a, b) =>
+                new Date(b.createdAt || b.uploadedAt || 0) - new Date(a.createdAt || a.uploadedAt || 0));
         }
-
-        newsTimer = setInterval(() => {
-            // Only fetch news if the news section is actually visible in viewport
-            const newsSection = document.querySelector('[data-section="ai-news"]') || document.getElementById('aiNewsGrid');
-            if (newsSection) {
-                const rect = newsSection.getBoundingClientRect();
-                const isVisible = rect.top < window.innerHeight + 200 && rect.bottom > -200;
-                if (!isVisible && !document.hasFocus()) return; // skip if off-screen AND tab unfocused
-            }
-            if (document.hidden) return;
-            _newsRefreshCount++;
-            _newsLastRefreshTime = Date.now();
-            updateNewsRefreshIndicator();
-            loadNews();
-        }, botInterval);
-
-        if (!newsVisibilityBound) {
-            newsVisibilityBound = true;
-            document.addEventListener('visibilitychange', () => {
-                if (!document.hidden && botOnFocus) {
-                    _newsRefreshCount++;
-                    _newsLastRefreshTime = Date.now();
-                    updateNewsRefreshIndicator();
-                    loadNews();
-                }
-            });
-        }
-        updateNewsRefreshIndicator();
+        // Fallback: never leave a tap dead — relax to full library shuffled
+        if (!matched.length) matched = pool;
+        return otrShuffle(matched.slice(0, 60)); // cap queue size — light on RAM
     }
 
-    function updateNewsRefreshIndicator() {
-        const indicator = $('aiNewsRefreshIndicator');
-        if (!indicator) return;
-        const cfg = newsDisplayConfig();
-        if (!cfg.showRefreshIndicator) { indicator.style.display = 'none'; return; }
-        indicator.style.display = '';
-        const timeText = _newsLastRefreshTime ? timeAgo(new Date(_newsLastRefreshTime).toISOString()) : 'Never';
-        indicator.innerHTML = '<i class="fas fa-sync-alt"></i> Updated ' + timeText + ' (#' + _newsRefreshCount + ')';
+    function startRadio(mode) {
+        const cfg = OTR_MODES[mode];
+        if (!cfg) return;
+        const queue = otrBuildQueue(mode);
+        if (!queue.length) { showToastSafe('No playable songs in the library yet', 'info'); return; }
+        _otrActive = true;
+        _otrMode = mode;
+        _otrQueueRef = queue;
+        ensureOtrHooks();
+        // Existing global engine handles playback, queue advance, Next/Prev,
+        // GlobalPlayer/mini-player sync and MediaSession — one audio element.
+        if (typeof window.playSong === 'function') {
+            window.playSong(queue[0], queue);
+        }
+        updateOtrUI();
     }
 
-    function renderLiveNews() {
-        const list = $('aiNewsList');
-        if (!list) return;
-        if (!newsItems.length) {
-            list.innerHTML = emptyHTML('fa-solid fa-newspaper', 'Loading Tamil news…',
-                'Fetching the latest headlines from the Tamil news feed.');
-        } else {
-            renderNewsList();
-        }
-        loadNews();
-        startNewsAutoRefresh();
+    function stopRadioState() {
+        _otrActive = false;
+        _otrMode = '';
+        _otrQueueRef = null;
+        updateOtrUI();
     }
 
-    /* ---------------- News See All Overlay ---------------- */
-    // Opens a full-page overlay showing ALL news items. Clicking an item opens
-    // the detail view inside the same overlay. Back returns to the list. This
-    // avoids the broken "See All → radio page" redirect and lets users browse
-    // multiple articles seamlessly.
-    let _newsSeeAllEl = null;
-    let _newsSeeAllEscHandler = null;
+    // Returns the live playback queue (script.js declares it as a top-level
+    // let — a global lexical binding, not a window property).
+    function otrLiveQueue() {
+        try { return typeof currentPlaybackQueue !== 'undefined' ? currentPlaybackQueue : null; }
+        catch (e) { return null; }
+    }
 
-    function newsSeeAllOpen() {
-        // Close any existing overlay first
-        newsSeeAllClose();
-        if (!newsItems.length) {
-            showToastSafe('No news loaded yet', 'info');
-            return;
-        }
-        const wrap = document.createElement('div');
-        wrap.className = 'ai-news-seeall';
-        wrap.id = 'aiNewsSeeAll';
-        const cfg = newsDisplayConfig();
-        const now = Date.now();
-        const seeAllItems = newsItems.slice(0, cfg.seeAllMax || 25);
-        const allHTML = seeAllItems.map((n) => {
-            const pub = n.publishedAt ? new Date(n.publishedAt).getTime() : 0;
-            const isFresh = !isNaN(pub) && (now - pub) < cfg.highlightHours * 3600000;
-            const isHighlighted = !!n.highlighted || isFresh;
-            const tn = isTnNews(n);
-            return '<div class="ai-news-card' + (tn ? ' ai-news-card-tn' : '') + '" role="button" tabindex="0" data-news-id="' + escapeHtml(String(n.id)) + '">' +
-                '<div class="ai-news-img">' +
-                (n.image ? '<img src="' + escapeHtml(n.image) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-newspaper"></i>') +
-                (isHighlighted ? '<span class="ai-news-live"><span class="ai-live-dot" style="box-shadow:none;animation:none;width:5px;height:5px;"></span>NEW</span>' : '') +
-                (tn ? '<span class="ai-news-tn-badge">TAMIL NADU</span>' : '') +
-                '</div>' +
-                '<div class="ai-news-info">' +
-                '<div class="ai-news-headline">' + escapeHtml(n.title) + '</div>' +
-                '<div class="ai-news-meta">' +
-                (n.publishedAt ? '<span>' + timeAgo(n.publishedAt) + '</span>' : '') +
-                '</div></div></div>';
-        }).join('');
-
-        wrap.innerHTML =
-            '<div class="ai-news-seeall-overlay"></div>' +
-            '<div class="ai-news-seeall-panel">' +
-            '<div class="ai-news-seeall-header">' +
-            '<button class="ai-news-seeall-close" type="button"><i class="fa-solid fa-xmark"></i></button>' +
-            '<h3><span class="ai-live-dot"></span> All Tamil News</h3>' +
-            '<span class="ai-news-seeall-count">' + seeAllItems.length + ' articles</span>' +
-            '</div>' +
-            '<div class="ai-news-seeall-list">' + allHTML + '</div>' +
-            '</div>';
-
-        document.body.appendChild(wrap);
-        _newsSeeAllEl = wrap;
-        document.body.classList.add('ai-news-detail-open');
-        requestAnimationFrame(() => wrap.classList.add('open'));
-
-        // Bind close
-        const closeOverlay = () => newsSeeAllClose();
-        wrap.querySelector('.ai-news-seeall-close').addEventListener('click', closeOverlay);
-        wrap.querySelector('.ai-news-seeall-overlay').addEventListener('click', closeOverlay);
-
-        // Bind news card clicks — open detail inside the overlay
-        wrap.querySelectorAll('.ai-news-card').forEach(card => {
-            const openDetail = () => {
-                const id = card.dataset.newsId;
-                // Open detail inside the see-all overlay
-                newsDetailOpenInline(id, wrap);
-            };
-            card.addEventListener('click', openDetail);
-            card.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(); }
-            });
+    function updateOtrUI() {
+        // Radio is only "active" while its own queue is still the live queue
+        if (_otrActive && otrLiveQueue() !== _otrQueueRef) stopRadioState();
+        const chip = $('otrNowChip');
+        const chipText = $('otrNowText');
+        const playing = !!(_otrActive && window.isStreamPlaying);
+        document.querySelectorAll('.otr-card').forEach(card => {
+            card.classList.toggle('active', playing && card.dataset.otr === _otrMode);
         });
-
-        // Escape key
-        _newsSeeAllEscHandler = (e) => {
-            if (e.key === 'Escape') {
-                // If a detail is open inside, close that first
-                const detail = wrap.querySelector('.ai-news-detail');
-                if (detail) { detail.remove(); return; }
-                newsSeeAllClose();
-            }
-        };
-        document.addEventListener('keydown', _newsSeeAllEscHandler);
+        if (chip) {
+            chip.style.display = playing ? '' : 'none';
+            if (playing && chipText) chipText.textContent = OTR_MODES[_otrMode]?.label + ' • Now Playing';
+        }
     }
 
-    function newsSeeAllClose() {
-        if (_newsSeeAllEscHandler) {
-            document.removeEventListener('keydown', _newsSeeAllEscHandler);
-            _newsSeeAllEscHandler = null;
-        }
-        if (_newsSeeAllEl) {
-            _newsSeeAllEl.classList.remove('open');
-            const el = _newsSeeAllEl;
-            setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 250);
-            _newsSeeAllEl = null;
-        }
-        document.body.classList.remove('ai-news-detail-open');
+    // Bind global hooks exactly once — error-skip + play-state sync
+    function ensureOtrHooks() {
+        if (_otrHooked) return;
+        _otrHooked = true;
+        // Skip failed tracks and keep the radio running
+        document.addEventListener('error', (e) => {
+            const ap = window.audioPlayer;
+            if (!ap || e.target !== ap) return;
+            if (!_otrActive || otrLiveQueue() !== _otrQueueRef) return;
+            showToastSafe('Skipping unavailable track…', 'warning');
+            setTimeout(() => {
+                if (_otrActive && typeof window.playNextTrack === 'function') window.playNextTrack();
+            }, 120);
+        }, true);
+        // Keep card highlight + Now Playing chip in sync with real playback
+        document.addEventListener('play', (e) => {
+            if (e.target === window.audioPlayer) setTimeout(updateOtrUI, 80);
+        }, true);
+        document.addEventListener('pause', (e) => {
+            if (e.target === window.audioPlayer) setTimeout(updateOtrUI, 80);
+        }, true);
+        window.addEventListener('ytm:playTrack', () => setTimeout(updateOtrUI, 100));
     }
 
-    // Opens a news detail inline within the see-all overlay (not as a separate
-    // body-level dialog). This avoids the stacked-dialog bugs.
-    function newsDetailOpenInline(id, container) {
-        const idx = (newsItems || []).findIndex(n => String(n.id) === String(id));
-        if (idx < 0) return;
-        const item = newsItems[idx];
-        // Remove any existing inline detail first
-        const existing = container.querySelector('.ai-news-detail');
-        if (existing) existing.remove();
-
-        const cfg = newsDisplayConfig();
-        const total = newsItems.length;
-        const pubTime = item.publishedAt ? new Date(item.publishedAt) : null;
-        const timeText = pubTime ? pubTime.toLocaleString('ta-IN', {
-            day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
-        }) : '';
-        const tnBadge = isTnNews(item) ? '<span class="ai-news-detail-tn"><i class="fa-solid fa-location-dot"></i> Tamil Nadu</span>' : '';
-
-        let navHtml = '';
-        if (cfg.showNavButtons && total > 1) {
-            const hasPrev = idx > 0;
-            const hasNext = idx < total - 1;
-            navHtml =
-                '<div class="ai-news-detail-nav">' +
-                '<button class="ai-news-nav-btn ai-news-nav-prev" type="button"' + (!hasPrev ? ' disabled' : '') + ' data-dir="prev"><i class="fa-solid fa-chevron-left"></i> Prev</button>' +
-                '<span class="ai-news-nav-counter">' + (idx + 1) + ' / ' + total + '</span>' +
-                '<button class="ai-news-nav-btn ai-news-nav-next" type="button"' + (!hasNext ? ' disabled' : '') + ' data-dir="next">Next <i class="fa-solid fa-chevron-right"></i></button>' +
-                '</div>';
-        }
-
-        let viewHtml = '';
-        if (cfg.showViewButton && item.url) {
-            viewHtml = '<a class="ai-news-detail-view-btn" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-up-right-from-square"></i> View Full Article</a>';
-        }
-
-        const detail = document.createElement('div');
-        detail.className = 'ai-news-detail ai-news-detail-inline';
-        detail.innerHTML =
-            '<div class="ai-news-detail-overlay"></div>' +
-            '<div class="ai-news-detail-panel">' +
-            '<div class="ai-news-detail-topbar">' +
-            '<button class="ai-news-detail-back" type="button"><i class="fa-solid fa-arrow-left"></i> Back</button>' +
-            navHtml +
-            '</div>' +
-            (item.image ? '<div class="ai-news-detail-img"><img src="' + escapeHtml(item.image) + '" alt="" loading="lazy"></div>' : '') +
-            '<div class="ai-news-detail-body">' +
-            (tnBadge ? '<div class="ai-news-detail-flags">' + tnBadge + '</div>' : '') +
-            '<h3 class="ai-news-detail-title">' + escapeHtml(item.title) + '</h3>' +
-            '<div class="ai-news-detail-meta">' +
-            (timeText ? '<span class="ai-news-detail-time"><i class="fa-regular fa-clock"></i> ' + escapeHtml(timeText) + '</span>' : '') +
-            '</div>' +
-            '<div class="ai-news-detail-content">' + escapeHtml(item.content || '') + '</div>' +
-            viewHtml +
-            '</div></div>';
-
-        container.appendChild(detail);
-        requestAnimationFrame(() => detail.classList.add('open'));
-
-        const removeDetail = () => {
-            detail.classList.remove('open');
-            setTimeout(() => { if (detail.parentNode) detail.parentNode.removeChild(detail); }, 220);
-        };
-
-        const navigateInline = (dir) => {
-            const newIdx = dir === 'next' ? idx + 1 : idx - 1;
-            if (newIdx < 0 || newIdx >= newsItems.length) return;
-            removeDetail();
-            setTimeout(() => newsDetailOpenInline(newsItems[newIdx].id, container), 260);
-        };
-
-        detail.querySelector('.ai-news-detail-back').addEventListener('click', removeDetail);
-        detail.querySelector('.ai-news-detail-overlay').addEventListener('click', removeDetail);
-
-        const prevBtn = detail.querySelector('.ai-news-nav-prev');
-        const nextBtn = detail.querySelector('.ai-news-nav-next');
-        if (prevBtn) prevBtn.addEventListener('click', () => navigateInline('prev'));
-        if (nextBtn) nextBtn.addEventListener('click', () => navigateInline('next'));
-
-        // Swipe support
-        let touchStartX = 0;
-        detail.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
-        detail.addEventListener('touchend', (e) => {
-            const diff = e.changedTouches[0].screenX - touchStartX;
-            if (Math.abs(diff) > 60) {
-                if (diff > 0) navigateInline('prev');
-                else navigateInline('next');
-            }
-        }, { passive: true });
+    function renderOneTapRadio() {
+        const row = $('otrRow');
+        if (!row || row.dataset.bound === '1') return;
+        row.dataset.bound = '1';
+        row.querySelectorAll('.otr-card').forEach(card => {
+            card.addEventListener('click', () => startRadio(card.dataset.otr));
+        });
+        ensureOtrHooks();
+        updateOtrUI();
     }
-
-    function emptyHtml(icon, title, text) { return emptyHTML(icon, title, text); }
 
     /* ---------------- Recently Played ---------------- */
     function getRecentlyPlayedSongs() {
@@ -1092,7 +770,7 @@ window.AIHome = (() => {
 
     /* ---------------- AI Recommendations ---------------- */
     // Cache the AI picks by content signature. Re-renders (e.g. storage-sync
-    // or playback state events) must NOT reshuffle the section — it only
+    // or playback state events) must NOT reshuffle the section â€” it only
     // changes when the underlying library actually changes (admin publish).
     let _aiRecCacheSig = '';
     let _aiRecCache = null;
@@ -1167,14 +845,14 @@ window.AIHome = (() => {
             } else if (window.AIMusicAssistant && typeof AIMusicAssistant.generateAIPlaylist === 'function') {
                 try { AIMusicAssistant.generateAIPlaylist({}); } catch (e) { /* ignore */ }
             } else {
-                showToastSafe('AI playlist builder is loading…', 'info');
+                showToastSafe('AI playlist builder is loadingâ€¦', 'info');
             }
         });
     }
 
     /* ---------------- Sidebar ---------------- */
     const PAGE_TO_AI = { home: 'home', explore: 'explore', library: 'library', liked: 'liked', playlists: 'playlists', radio: 'live-fm', stations: 'live-fm', history: 'history' };
-    const AI_TO_PAGE = { 'home': 'home', 'explore': 'explore', 'music': 'explore', 'live-fm': 'radio', 'news': 'radio', 'library': 'library', 'liked': 'liked', 'playlists': 'playlists' };
+    const AI_TO_PAGE = { 'home': 'home', 'explore': 'explore', 'music': 'explore', 'live-fm': 'radio', 'evergreen': 'explore', 'library': 'library', 'liked': 'liked', 'playlists': 'playlists' };
 
     function bindSidebar() {
         const items = document.querySelectorAll('.ai-sidebar-item[data-ai-page]');
@@ -1190,8 +868,6 @@ window.AIHome = (() => {
                 if (page && typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {
                     YTMusic.navigateTo(page);
                     requestAnimationFrame(() => { try { window.scrollTo({ top: 0 }); } catch (e) { /* ignore */ } });
-                } else if (target === 'news') {
-                    newsSeeAllOpen();
                 }
                 setSidebarActive(target);
             });
@@ -1220,8 +896,6 @@ window.AIHome = (() => {
         document.querySelectorAll('.ai-see-all[data-ai-seeall]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const target = btn.dataset.aiSeeall;
-                // News "See All" opens a dedicated overlay with all news items
-                if (target === 'news') { newsSeeAllOpen(); return; }
                 const page = AI_TO_PAGE[target] || target;
                 if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {
                     YTMusic.navigateTo(page);
@@ -1316,7 +990,7 @@ window.AIHome = (() => {
             if (photo) avatarEl.innerHTML = '<img src="' + escapeHtml(photo) + '" alt="' + escapeHtml(name) + '">';
             else avatarEl.textContent = initials;
         }
-        // Admin → show builder in menu
+        // Admin â†’ show builder in menu
         let isAdmin = false;
         try { isAdmin = !!(user && (user.role === 'admin' || user.isAdmin)); } catch (e) { /* ignore */ }
         const builtBtn = document.getElementById('aiMenuBuilder');
@@ -1356,7 +1030,7 @@ window.AIHome = (() => {
                         '<div><div class="ai-notif-item-title">' + escapeHtml(t) + '</div>' +
                         (body ? '<div class="ai-notif-item-time">' + escapeHtml(body) + '</div>' : '') +
                         '<div class="ai-notif-item-time">' + (n.time ? escapeHtml(n.time) : 'Now') + '</div></div></div>';
-                }).join('') : '<div class="ai-notif-empty">No notifications yet.<br>You are all caught up! 🎉</div>');
+                }).join('') : '<div class="ai-notif-empty">No notifications yet.<br>You are all caught up! ðŸŽ‰</div>');
         }
     }
 
@@ -1373,7 +1047,7 @@ window.AIHome = (() => {
         btn.addEventListener('click', async () => {
             if (beforeInstallPrompt) {
                 beforeInstallPrompt.prompt();
-                try { const r = await beforeInstallPrompt.userChoice; if (r.outcome === 'accepted') showToastSafe('App installed! 🎉', 'success'); } catch (e) { /* ignore */ }
+                try { const r = await beforeInstallPrompt.userChoice; if (r.outcome === 'accepted') showToastSafe('App installed! ðŸŽ‰', 'success'); } catch (e) { /* ignore */ }
                 beforeInstallPrompt = null;
             } else {
                 showToastSafe('Bookmark this page or use your browser menu to install the app', 'info');
@@ -1941,14 +1615,15 @@ window.AIHome = (() => {
         stopHeroTimer();
         // Clear decade song cache so newly assigned songs appear
         _decadeSongCache = {};
-        // Greeting hero bar sits at the top of Home. Idempotent — builds once,
+        // Greeting hero bar sits at the top of Home. Idempotent â€” builds once,
         // then only updates greeting/date/quote text in place.
         if (typeof renderGreetingSection === 'function') renderGreetingSection();
+        renderOneTapRadio();
         renderRecentlyAdded();
         renderMusicHero();
         renderTrendingPlaylists();
         renderLiveFm();
-        renderLiveNews();
+        renderEvergreen();
         renderRecentlyPlayed();
         renderAIRecommendations();
         renderFavoritesSection();

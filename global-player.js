@@ -842,16 +842,24 @@ const GlobalPlayer = (() => {
         const title = track.title || track.name || 'Unknown';
         const artist = track.artist || track.subtitle || 'Tamil AI Stream';
         const artwork = track.thumbnail || track.cover || track.image || track.albumCover || '';
+        const movie = track.movie || track.album || track.movieName || '';
         setText('gpMiniTitle', title);
         setText('gpMiniArtist', artist);
         setArtwork('gpMiniArtImg', artwork);
         setText('gpExpTitle', title);
         setText('gpExpArtist', artist);
-        setText('gpExpMovie', track.movie || track.album || track.movieName || '');
+        setText('gpExpMovie', movie);
         const movieEl = document.getElementById('gpExpMovie');
-        if (movieEl) movieEl.style.display = (track.movie || track.album || track.movieName) ? '' : 'none';
+        if (movieEl) {
+            movieEl.style.display = movie ? '' : 'none';
+            // Fallback: if no movie but has artist, show a label
+            if (!movie && artist && artist !== 'Tamil AI Stream') {
+                movieEl.textContent = artist;
+                movieEl.style.display = '';
+            }
+        }
         setArtwork('gpExpArtImg', artwork);
-        setText('gpExpSource', track.movie || 'Tamil AI Stream');
+        setText('gpExpSource', movie || 'Tamil AI Stream');
         // Blurred artwork background for polished visual effect
         const bg = document.getElementById('gpExpBg');
         if (bg) {
