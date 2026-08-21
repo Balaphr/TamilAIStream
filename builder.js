@@ -5558,6 +5558,41 @@ function loadPlayerPrefs() {
     document.getElementById('prefStereoBalance').value = p.stereoBalance || 0;
     document.getElementById('prefLoudnessNorm').value = p.loudnessNorm ? 'true' : 'false';
     document.getElementById('prefSurroundEffect').value = p.surroundEffect ? 'true' : 'false';
+    loadPlayerSections();
+}
+
+// ---- Player Sections (visibility of player components on the live site) ----
+function loadPlayerSections() {
+    const s = DataStore.getPlayerPrefs().sections || {};
+    const oneTap = document.getElementById('psecOneTapRadio');
+    if (oneTap) oneTap.checked = s.oneTapRadio !== false;
+    const heroRot = document.getElementById('psecHeroAutoRotate');
+    if (heroRot) heroRot.checked = s.heroAutoRotate !== false;
+    const heroInt = document.getElementById('psecHeroInterval');
+    if (heroInt) heroInt.value = s.heroInterval || 20;
+    const recent = document.getElementById('psecRecentlyAdded');
+    if (recent) recent.checked = s.recentlyAdded !== false;
+    const npb = document.getElementById('psecNowPlayingBar');
+    if (npb) npb.checked = s.nowPlayingBar !== false;
+    const mini = document.getElementById('psecMiniPlayer');
+    if (mini) mini.checked = s.miniPlayer !== false;
+}
+
+function savePlayerSections(e) {
+    e.preventDefault();
+    const prefs = DataStore.getPlayerPrefs();
+    prefs.sections = {
+        oneTapRadio: document.getElementById('psecOneTapRadio').checked,
+        heroAutoRotate: document.getElementById('psecHeroAutoRotate').checked,
+        heroInterval: parseInt(document.getElementById('psecHeroInterval').value, 10) || 20,
+        recentlyAdded: document.getElementById('psecRecentlyAdded').checked,
+        nowPlayingBar: document.getElementById('psecNowPlayingBar').checked,
+        miniPlayer: document.getElementById('psecMiniPlayer').checked
+    };
+    DataStore.setPlayerPrefs(prefs);
+    showToast('Player sections saved', 'success');
+    syncToLiveWebsite();
+    return false;
 }
 
 function savePlayerPrefs(e) {

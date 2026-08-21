@@ -1033,6 +1033,11 @@ const GlobalPlayer = (() => {
     }
 
     function showMiniPlayer() {
+        // Builder toggle: Player Settings → Player Sections → Bottom mini player
+        try {
+            const p = window.DataStore && DataStore.getPlayerPrefs();
+            if (p && p.sections && p.sections.miniPlayer === false) return;
+        } catch (e) { /* default: show */ }
         miniEl?.classList.add('visible');
         document.body.classList.add('gp-visible');
     }

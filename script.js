@@ -648,6 +648,14 @@ function initAudioPlayer() {
             }
             updateNowPlayingBarPause();
             if (typeof GlobalPlayer !== 'undefined') {
+                // Immediate full sync: push the CURRENT track into GlobalPlayer
+                // and refresh thumbnail/title/movie in mini + full-screen player
+                // on every track change, regardless of which section started it.
+                if (currentPlaybackTrack && GlobalPlayer.state) {
+                    GlobalPlayer.state.track = currentPlaybackTrack;
+                    GlobalPlayer.state.isLive = !!(currentPlaybackTrack.streamUrl && !currentPlaybackTrack.audioUrl);
+                }
+                GlobalPlayer.updateTrackUI();
                 GlobalPlayer.updatePlayUI(true);
                 GlobalPlayer.updateLiveUI();
             }
@@ -4477,6 +4485,18 @@ function initPWAHomeHeader() {
     });
 }
 
+// Apply Builder "Player Sections" visibility to global player chrome.
+// Runs on every content render so published changes apply without reload.
+function applyPlayerSectionVisibility() {
+    let s = {};
+    try { s = (DataStore.getPlayerPrefs().sections) || {}; } catch (e) { return; }
+    const npb = document.getElementById('nowPlayingBar');
+    if (npb) {
+        if (s.nowPlayingBar === false) npb.style.display = 'none';
+        else if (npb.style.display === 'none' && !npb.dataset.hiddenByPlayer) npb.style.display = '';
+    }
+}
+
 function renderAllDynamicContent() {
     if (_isRenderingAll) return;
     _isRenderingAll = true;
@@ -4484,6 +4504,7 @@ function renderAllDynamicContent() {
     // Light synchronous renders
     renderAdBanners();
     applySiteSettings();
+    applyPlayerSectionVisibility();
 
     // Heavy renders batched in animation frame
     requestAnimationFrame(() => {

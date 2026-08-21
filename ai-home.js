@@ -89,6 +89,15 @@ window.AIHome = (() => {
         try { if (typeof window.showToast === 'function') window.showToast(msg, type || 'info'); } catch (e) { /* ignore */ }
     }
 
+    // Player-section visibility/rotation config from Builder
+    // (Player Settings → Player Sections → saved in playerPrefs.sections).
+    function playerSections() {
+        try {
+            const p = window.DataStore ? DataStore.getPlayerPrefs() : {};
+            return (p && p.sections) || {};
+        } catch (e) { return {}; }
+    }
+
     /* ---------------- Music Hero ---------------- */
     let heroSlides = [];
     let heroIdx = 0;
@@ -231,9 +240,17 @@ window.AIHome = (() => {
     function startHeroTimer() {
         stopHeroTimer();
         if (heroSlides.length < 2) return;
+        // Rotation is Builder-configurable (Player Settings → Player Sections).
+        // Default: every 20s. Skips hidden/unfocused tabs — zero wasted battery/data.
+        let secs = 20;
+        try {
+            const sec = playerSections();
+            if (sec.heroAutoRotate === false) return;
+            if (sec.heroInterval >= 5) secs = sec.heroInterval;
+        } catch (e) { /* defaults */ }
         heroTimer = setInterval(() => {
             if (!document.hidden && document.hasFocus()) transitionHeroSlide(heroIdx + 1);
-        }, 30000); // 30 seconds between rotations (reduced data usage)
+        }, secs * 1000);
     }
     function stopHeroTimer() { if (heroTimer) { clearInterval(heroTimer); heroTimer = null; } }
     function restartHeroTimer() { startHeroTimer(); }
@@ -692,6 +709,8 @@ window.AIHome = (() => {
     }
 
     function renderOneTapRadio() {
+        const section = document.querySelector('.one-tap-radio');
+        if (section && playerSections().oneTapRadio === false) { section.style.display = 'none'; return; }
         const row = $('otrRow');
         if (!row || row.dataset.bound === '1') return;
         row.dataset.bound = '1';
@@ -1541,6 +1560,7 @@ window.AIHome = (() => {
         const section = document.getElementById('recentlyAddedSection');
         const track = document.getElementById('recentlyAddedTrack');
         if (!section || !track) return;
+        if (playerSections().recentlyAdded === false) { section.style.display = 'none'; return; }
 
         // Stop any existing scroll animation
         if (_raScrollRaf) { cancelAnimationFrame(_raScrollRaf); _raScrollRaf = null; }

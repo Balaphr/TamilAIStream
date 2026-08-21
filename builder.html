@@ -1546,6 +1546,55 @@
                                 </form>
                             </div>
                         </div>
+
+                        <div class="builder-content-card">
+                            <div class="builder-card-header"><h3><i class="fas fa-sliders" style="margin-right:8px;color:#8b5cf6;"></i>Player Sections</h3></div>
+                            <div class="builder-card-body">
+                                <p style="color:#888;font-size:13px;margin:0 0 14px;line-height:1.6;">Show, hide or tune the player components that appear on the live website. All of them use the site's single global audio engine — publishing applies instantly on the next visit.</p>
+                                <form id="playerSectionsForm" onsubmit="return savePlayerSections(event)">
+                                    <div class="form-grid">
+                                        <div class="form-group full-width">
+                                            <label class="form-label">
+                                                <input type="checkbox" id="psecOneTapRadio" class="builder-checkbox" checked>
+                                                One Tap Radio (Love / Melody / 90s / Evergreen / Latest quick-play cards)
+                                            </label>
+                                        </div>
+                                        <div class="form-group full-width">
+                                            <label class="form-label">
+                                                <input type="checkbox" id="psecHeroAutoRotate" class="builder-checkbox" checked>
+                                                Music section auto-rotates to next content
+                                            </label>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Music rotation interval (seconds)</label>
+                                            <input type="number" class="form-input" id="psecHeroInterval" min="5" max="120" step="1" value="20">
+                                            <p class="form-hint">How often the Music hero slides to the next song. Default is 20 seconds.</p>
+                                        </div>
+                                        <div class="form-group full-width">
+                                            <label class="form-label">
+                                                <input type="checkbox" id="psecRecentlyAdded" class="builder-checkbox" checked>
+                                                Recently Added songs ticker
+                                            </label>
+                                        </div>
+                                        <div class="form-group full-width">
+                                            <label class="form-label">
+                                                <input type="checkbox" id="psecNowPlayingBar" class="builder-checkbox" checked>
+                                                Now Playing top bar
+                                            </label>
+                                        </div>
+                                        <div class="form-group full-width">
+                                            <label class="form-label">
+                                                <input type="checkbox" id="psecMiniPlayer" class="builder-checkbox" checked>
+                                                Bottom mini player bar
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="builder-btn primary"><i class="fas fa-save"></i> Save Player Sections</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Navigation Settings Page -->
