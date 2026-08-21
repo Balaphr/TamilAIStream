@@ -1160,6 +1160,9 @@ function playStation(stationName, stationId) {
         streamUrl = streamUrlsToTry[currentUrlIndex];
         console.log('[TamilAI FM] Playing stream:', streamUrl);
         audioPlayer.src = streamUrl;
+        // Explicit load(): guarantees the new source is selected on all
+        // browsers, especially after preload mode was switched at runtime.
+        try { audioPlayer.load(); } catch (e) { /* ignore */ }
         audioPlayer.volume = playbackVolume;
         // For live streams, use 'auto' preload so the browser buffers ahead
         audioPlayer.preload = 'auto';
@@ -1261,6 +1264,9 @@ async function playSong(song, playlist = []) {
         showLoadingSpinner();
         streamConnecting = true;
         audioPlayer.src = song.audioUrl;
+        // Explicit load(): guarantees the new source is selected on all
+        // browsers, especially after preload mode was switched at runtime.
+        try { audioPlayer.load(); } catch (e) { /* ignore */ }
         audioPlayer.volume = playbackVolume;
         // Use 'metadata' to reduce data usage — the browser streams on demand
         audioPlayer.preload = 'metadata';

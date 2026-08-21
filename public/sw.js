@@ -124,8 +124,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3b. Static assets (JS / CSS / images / fonts served from same origin)
-  // Strategy: stale-while-revalidate for instant loading, background update
+  // 3b. Static assets.
+  //   - JS / CSS: NETWORK-FIRST with cache fallback. Guarantees HTML and
+  //     scripts always come from the SAME deploy — stale-while-revalidate
+  //     could pair fresh HTML with an old cached script and break playback.
+  //   - Images / fonts: stale-while-revalidate for instant loads.
+  const isCodeAsset = /\.(js|mjs|css)(\?|$)/i.test(url.pathname) ||
+    (request.destination === 'script' || request.destination === 'style');
+
+  if (isCodeAsset) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.open(CACHE_NAME).then((c) => c.match(request)))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.match(request).then((cached) => {

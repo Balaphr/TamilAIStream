@@ -486,6 +486,12 @@
             return { payload: localPayload, source: 'local', changed: false };
         }
 
+        // 304 Not Modified — remote is unchanged. NEVER touch local content.
+        // Treating null as "empty remote" would wipe the user's library.
+        if (remotePayload === null || remotePayload === undefined) {
+            return { payload: localPayload, source: 'local', changed: false };
+        }
+
         const hasRemoteData = remotePayload && remotePayload.data &&
             Object.keys(remotePayload.data).length > 0 &&
             (Array.isArray(remotePayload.data.songs) ? remotePayload.data.songs.length > 0 : false);
@@ -496,6 +502,12 @@
                 await uploadManifest(localPayload);
                 persistLocalContent(localPayload);
                 return { payload: localPayload, source: 'seeded', changed: true };
+            }
+            // SAFETY: never wipe a non-empty local library just because the
+            // remote manifest came back empty (transient glitch / unseeded).
+            const localSongCount = Array.isArray(localPayload.data.songs) ? localPayload.data.songs.length : 0;
+            if (localSongCount > 0) {
+                return { payload: localPayload, source: 'local', changed: false };
             }
             // Readers start with an empty list until a writer seeds R2.
             const empty = { ...localPayload, data: { ...localPayload.data, songs: [] } };
