@@ -424,6 +424,13 @@ let playbackEndedByUser = false;
 let playbackHasLoaded = false;
 
 function persistPlaybackState() {
+    // Expose live playback globals — other modules (and debugging) read these.
+    try {
+        window.currentPlaybackTrack = currentPlaybackTrack || null;
+        window.currentStation = currentStation || null;
+        window.currentPlaybackQueue = currentPlaybackQueue || [];
+        window.currentPlaybackQueueIndex = currentPlaybackQueueIndex;
+    } catch (e) { /* ignore */ }
     try {
         const state = {
             currentStation,

@@ -710,9 +710,9 @@ const YTMusic = {
 
         const stations = DataStore.getStations();
         results.stations = stations.filter(s =>
-            s.name.toLowerCase().includes(query) ||
-            s.genre.toLowerCase().includes(query) ||
-            s.city.toLowerCase().includes(query)
+            ((s.name || '').toLowerCase().includes(query)) ||
+            ((s.genre || '').toLowerCase().includes(query)) ||
+            ((s.city || '').toLowerCase().includes(query))
         );
 
         const songs = DataStore.getSongs();
@@ -739,8 +739,8 @@ const YTMusic = {
 
         const artistHits = DataStore.getArtistHits();
         results.artists = artistHits.filter(a =>
-            a.name.toLowerCase().includes(query) ||
-            a.artist.toLowerCase().includes(query)
+            ((a.name || '').toLowerCase().includes(query)) ||
+            ((a.artist || '').toLowerCase().includes(query))
         );
 
         // If NL query has "play" intent and exactly one song matches, play it immediately

@@ -1235,7 +1235,12 @@ const GlobalPlayer = (() => {
     }
 
     function getCurrentTrackFromScript() {
-        if (typeof window.currentPlaybackTrack !== 'undefined') return window.currentPlaybackTrack;
+        // Prefer the live lexical binding from script.js (top-level let is a
+        // global binding across classic scripts, but NOT a window property).
+        try {
+            if (typeof currentPlaybackTrack !== 'undefined' && currentPlaybackTrack) return currentPlaybackTrack;
+        } catch (e) { /* not loaded yet */ }
+        if (window.currentPlaybackTrack) return window.currentPlaybackTrack;
         return null;
     }
 
