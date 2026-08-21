@@ -139,38 +139,17 @@ const PlayerEngine = (() => {
         audio.volume = state.volume;
         audio.playbackRate = state.speed;
 
-        try {
-            audioCtx = window.audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-            window.audioCtx = audioCtx;
-            analyser = window.analyserNode || audioCtx.createAnalyser();
-            window.analyserNode = analyser;
-            analyser.fftSize = 512;
-            analyser.smoothingTimeConstant = 0.82;
-            gainNode = audioCtx.createGain();
-            try { sourceNode = audioCtx.createMediaElementSource(audio); } catch(e) { sourceNode = null; }
-
-            eqFilters = EQ_BANDS.map((freq, i) => {
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = i === 0 ? 'lowshelf' : i === EQ_BANDS.length - 1 ? 'highshelf' : 'peaking';
-                filter.frequency.value = freq;
-                filter.Q.value = 1.4;
-                filter.gain.value = 0;
-                return filter;
-            });
-
-            if (sourceNode) {
-                sourceNode.connect(eqFilters[0]);
-                for (let i = 0; i < eqFilters.length - 1; i++) eqFilters[i].connect(eqFilters[i + 1]);
-                eqFilters[eqFilters.length - 1].connect(gainNode);
-                gainNode.connect(analyser);
-                analyser.connect(audioCtx.destination);
-            }
-
-            freqData = new Uint8Array(analyser.frequencyBinCount);
-            timeData = new Uint8Array(analyser.fftSize);
-        } catch (e) {
-            console.warn('Web Audio API unavailable:', e);
-        }
+        // CRITICAL: Do NOT route the shared element through Web Audio.
+        // A suspended AudioContext (common on Android autoplay policy) makes
+        // tracks play SILENTLY while still consuming data/CPU. The audio
+        // element outputs directly to the hardware path instead. EQ band
+        // filters are therefore inert — visualizers use random fallbacks.
+        audioCtx = null;
+        analyser = null;
+        sourceNode = null;
+        gainNode = null;
+        eqFilters = [];
+        window.analyserNode = null;
 
         audio.addEventListener('play', () => {
             state.isPlaying = true;

@@ -1553,6 +1553,8 @@ window.AIHome = (() => {
     /* ---------------- Refresh + init ---------------- */
     let _raScrollRaf = null;
     let _raPaused = false;
+    let _raInView = true; // IntersectionObserver: only animate when visible
+    let _raIoBound = false;
     let _raSpeed = 0.4; // pixels per frame (~24px/sec at 60fps)
     let _raTrackBound = false; // prevent duplicate event listeners
 
@@ -1595,6 +1597,12 @@ window.AIHome = (() => {
         // Bind pause/resume events only once
         if (!_raTrackBound) {
             _raTrackBound = true;
+            // Battery/CPU: only run the RAF loop while the section is on screen
+            if (typeof IntersectionObserver !== 'undefined') {
+                new IntersectionObserver((entries) => {
+                    _raInView = entries[0] && entries[0].isIntersecting;
+                }, { rootMargin: '80px' }).observe(section);
+            }
             // Pause on touch
             track.addEventListener('touchstart', () => { _raPaused = true; }, { passive: true });
             track.addEventListener('touchend', () => { setTimeout(() => { _raPaused = false; }, 800); }, { passive: true });
@@ -1620,7 +1628,7 @@ window.AIHome = (() => {
         // Auto-scroll loop
         const tick = () => {
             if (!track || !track.isConnected) { _raScrollRaf = null; return; }
-            if (!_raPaused) {
+            if (!_raPaused && _raInView) {
                 track.scrollLeft += _raSpeed;
                 if (track.scrollLeft >= track.scrollWidth / 2) {
                     track.scrollLeft = 0;

@@ -48,6 +48,28 @@ function showToast(message, type = 'info') {
 }
 
 // Playback notification — slides in from left with AI recommendation
+// Autoplay-policy safety net: if the browser blocks play() (no user gesture),
+// retry once on the very next tap anywhere instead of silently failing.
+function safePlay(el) {
+    if (!el) return Promise.resolve();
+    const p = el.play();
+    if (p && p.catch) {
+        p.catch((err) => {
+            if (err && err.name === 'NotAllowedError') {
+                showToast('Tap anywhere to start audio', 'info');
+                const kick = () => {
+                    document.removeEventListener('touchend', kick, true);
+                    document.removeEventListener('click', kick, true);
+                    el.play().catch(() => {});
+                };
+                document.addEventListener('touchend', kick, true);
+                document.addEventListener('click', kick, true);
+            }
+        });
+    }
+    return p || Promise.resolve();
+}
+
 function showPlaybackNotification(track, isStation) {
     const existing = document.querySelector('.playback-notification');
     if (existing) existing.remove();
@@ -590,27 +612,18 @@ function initAudioPlayer() {
         audioPlayer.preload = 'metadata';
         audioPlayer.volume = playbackVolume;
 
-        try {
-            // Reuse existing AudioContext if PlayerEngine already created one
-            audioCtx = window.audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-            window.audioCtx = audioCtx;
-            analyserNode = window.analyserNode || audioCtx.createAnalyser();
-            window.analyserNode = analyserNode;
-            analyserNode.fftSize = 256;
-            analyserNode.smoothingTimeConstant = 0.8;
-            audioFreqData = new Uint8Array(analyserNode.frequencyBinCount);
-            window.audioFreqData = audioFreqData;
-            try {
-                // Only create source if not already connected
-                if (!audioSourceNode) {
-                    audioSourceNode = audioCtx.createMediaElementSource(audioPlayer);
-                }
-                audioSourceNode.connect(analyserNode);
-                analyserNode.connect(audioCtx.destination);
-            } catch(e) {}
-        } catch (e) {
-            console.warn('Web Audio API not available:', e);
-        }
+        // CRITICAL: Do NOT route this element through Web Audio.
+        // createMediaElementSource() permanently reroutes output through an
+        // AudioContext; on Android PWA that context is often 'suspended' by
+        // autoplay policy, so songs "play" with NO sound while still burning
+        // data and CPU (decoding into a dead graph). The element now outputs
+        // directly to the hardware path — sound always works.
+        // Visualizers use their lightweight random fallbacks instead (the EQ
+        // bars were already random), which also costs less CPU.
+        audioCtx = null;
+        analyserNode = null;
+        window.analyserNode = null;
+        audioSourceNode = null;
 
         // Guard: only attach the primary ended handler once
         if (!audioPlayer._primaryEndedHandlerAttached) {
@@ -1178,6 +1191,7 @@ function playStation(stationName, stationId) {
         // Explicit load(): guarantees the new source is selected on all
         // browsers, especially after preload mode was switched at runtime.
         try { audioPlayer.load(); } catch (e) { /* ignore */ }
+        audioPlayer.muted = false;
         audioPlayer.volume = playbackVolume;
         // For live streams, use 'auto' preload so the browser buffers ahead
         audioPlayer.preload = 'auto';
@@ -1190,59 +1204,57 @@ function playStation(stationName, stationId) {
                 tryNextStream();
             }
         }, 15000);
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
-        const playPromise = audioPlayer.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                clearTimeout(playAttemptTimeout);
-                _fmReconnectAttempts = 0;
-                currentStation = stationName;
-                currentPlaybackTrack = {
-                    id: 'station_' + stationName,
-                    title: stationName,
-                    artist: 'Live FM Station',
-                    thumbnail: '',
-                    streamUrl
-                };
-                const stationInfo = getStationInfo(stationName);
-                updateNowPlayingBar(stationInfo.name, stationInfo.freq);
-                updateMediaSessionMetadata(stationInfo.name, stationInfo.freq, currentPlaybackTrack.thumbnail);
-                updateStationCardStates(true);
-                document.body.classList.add('gp-active');
-                if (typeof GlobalPlayer !== 'undefined') {
-                    GlobalPlayer.updateTrackUI();
-                    GlobalPlayer.updateLiveUI();
+        safePlay(audioPlayer).then(() => {
+            clearTimeout(playAttemptTimeout);
+            _fmReconnectAttempts = 0;
+            currentStation = stationName;
+            currentPlaybackTrack = {
+                id: 'station_' + stationName,
+                title: stationName,
+                artist: 'Live FM Station',
+                thumbnail: '',
+                streamUrl
+            };
+            const stationInfo = getStationInfo(stationName);
+            updateNowPlayingBar(stationInfo.name, stationInfo.freq);
+            updateMediaSessionMetadata(stationInfo.name, stationInfo.freq, currentPlaybackTrack.thumbnail);
+            updateStationCardStates(true);
+            document.body.classList.add('gp-active');
+            if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.updateTrackUI();
+                GlobalPlayer.updateLiveUI();
+            }
+            if (typeof ListeningHistory !== 'undefined') {
+                ListeningHistory.trackPlayback(currentPlaybackTrack, 'station');
+            }
+            if (typeof YTMusic !== 'undefined') {
+                YTMusic.currentTrack = currentPlaybackTrack;
+                YTMusic.isPlaying = true;
+                YTMusic.updatePlayerUI();
+                YTMusic.updateFullscreenPlayerUI();
+                YTMusic.updateMiniPlayerUI();
+            }
+            hideLoadingSpinner();
+            showPlaybackNotification(currentPlaybackTrack, true);
+            if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.showMiniPlayer();
+                if (GlobalPlayer.state) {
+                    GlobalPlayer.state.track = currentPlaybackTrack;
+                    GlobalPlayer.state.queue = [];
+                    GlobalPlayer.state.queueIndex = -1;
+                    GlobalPlayer.state.isLive = true;
                 }
-                if (typeof ListeningHistory !== 'undefined') {
-                    ListeningHistory.trackPlayback(currentPlaybackTrack, 'station');
-                }
-                if (typeof YTMusic !== 'undefined') {
-                    YTMusic.currentTrack = currentPlaybackTrack;
-                    YTMusic.isPlaying = true;
-                    YTMusic.updatePlayerUI();
-                    YTMusic.updateFullscreenPlayerUI();
-                    YTMusic.updateMiniPlayerUI();
-                }
-                hideLoadingSpinner();
-                showPlaybackNotification(currentPlaybackTrack, true);
-                if (typeof GlobalPlayer !== 'undefined') {
-                    GlobalPlayer.showMiniPlayer();
-                    if (GlobalPlayer.state) {
-                        GlobalPlayer.state.track = currentPlaybackTrack;
-                        GlobalPlayer.state.queue = [];
-                        GlobalPlayer.state.queueIndex = -1;
-                        GlobalPlayer.state.isLive = true;
-                    }
-                }
-                // Start FM buffer health monitoring
-                startFMBufferMonitor();
-            }).catch((err) => {
-                clearTimeout(playAttemptTimeout);
-                console.error('[TamilAI FM] Play promise rejected:', err?.name, err?.message, '| URL:', streamUrl);
-                currentUrlIndex++;
-                setTimeout(tryNextStream, 500);
-            });
-        }
+            }
+            // Start FM buffer health monitoring
+            startFMBufferMonitor();
+        }).catch((err) => {
+            clearTimeout(playAttemptTimeout);
+            console.error('[TamilAI FM] Play promise rejected:', err?.name, err?.message, '| URL:', streamUrl);
+            // Autoplay rejection is handled by safePlay's tap-to-start retry.
+            if (err && err.name === 'NotAllowedError') return;
+            currentUrlIndex++;
+            setTimeout(tryNextStream, 500);
+        });
     }
     tryNextStream();
 }
@@ -1282,12 +1294,17 @@ async function playSong(song, playlist = []) {
         // Explicit load(): guarantees the new source is selected on all
         // browsers, especially after preload mode was switched at runtime.
         try { audioPlayer.load(); } catch (e) { /* ignore */ }
+        audioPlayer.muted = false;
         audioPlayer.volume = playbackVolume;
         // Use 'metadata' to reduce data usage — the browser streams on demand
         audioPlayer.preload = 'metadata';
         try {
-            if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume().catch(() => {});
-            await audioPlayer.play();
+            // NotAllowedError (autoplay block) is handled inside safePlay via a
+            // one-tap retry — don't surface it as a playback failure here.
+            await safePlay(audioPlayer).catch((err) => {
+                if (err && err.name === 'NotAllowedError') return;
+                throw err;
+            });
             // State is set by the 'playing' event handler (initAudioPlayer) to
             // avoid race conditions. Only update non-state UI here.
             currentStation = song.title;

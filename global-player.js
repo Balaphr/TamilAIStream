@@ -1132,18 +1132,17 @@ const GlobalPlayer = (() => {
             const w = canvas.offsetWidth;
             const h = canvas.offsetHeight;
             ctx.clearRect(0, 0, w, h);
-            if (!freqData || !actuallyPlaying) { cancelAnimationFrame(waveformRAF); waveformRAF = null; return; }
             const bars = 64;
             const barW = w / bars;
-            const step = Math.floor(freqData.length / bars);
-            // Use a single gradient for all bars (cached per frame)
+            const step = freqData ? Math.floor(freqData.length / bars) : 0;
+            // Single cached gradient per frame; pseudo-bars when no analyser
             const grad = ctx.createLinearGradient(0, h, 0, 0);
             grad.addColorStop(0, 'rgba(52,211,153,0.8)');
             grad.addColorStop(0.5, 'rgba(59,130,246,0.6)');
             grad.addColorStop(1, 'rgba(168,85,247,0.4)');
             ctx.fillStyle = grad;
             for (let i = 0; i < bars; i++) {
-                const val = freqData[i * step] / 255;
+                const val = freqData ? freqData[i * step] / 255 : (0.2 + Math.random() * 0.5);
                 const barH = val * h * 0.8;
                 ctx.fillRect(i * barW + 1, h - barH, barW - 2, barH);
             }
@@ -1207,13 +1206,15 @@ const GlobalPlayer = (() => {
                 return;
             }
             ctx.clearRect(0, 0, 80, 32);
+            // Analyser data is unavailable (audio plays on the direct hardware
+            // path by design). Fall back to a cheap pseudo-waveform so the UI
+            // still feels alive while playing — same approach as EQ bars.
             const freqData = (typeof window.analyserNode !== 'undefined' && window.analyserNode) ? (() => { try { const d = new Uint8Array(window.analyserNode.frequencyBinCount); window.analyserNode.getByteFrequencyData(d); return d; } catch(e) { return null; } })() : null;
-            if (!freqData) { cancelAnimationFrame(_lyricsRAF); _lyricsRAF = null; return; }
             const bars = 16;
             const barW = 80 / bars;
-            const step = Math.floor(freqData.length / bars);
+            const step = freqData ? Math.floor(freqData.length / bars) : 0;
             for (let i = 0; i < bars; i++) {
-                const val = freqData[i * step] / 255;
+                const val = freqData ? freqData[i * step] / 255 : (0.25 + Math.random() * 0.55);
                 const barH = val * 28 + 2;
                 const hue = (i / bars) * 120 + 140;
                 ctx.fillStyle = 'hsla(' + hue + ', 80%, 60%, 0.8)';
