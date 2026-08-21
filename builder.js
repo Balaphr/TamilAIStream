@@ -581,28 +581,58 @@ function _loadPageData(page) {
 // Trash in Right Panel
 // ============================================
 function _openTrashInRightPanel() {
-    const trashPage = document.getElementById('trashPage');
-    if (!trashPage) return;
-
     const panelBody = document.getElementById('rightPanelBody');
-    if (panelBody) {
-        // Clone trash content into right panel
-        const clone = trashPage.cloneNode(true);
-        clone.style.display = 'block';
-        clone.style.margin = '0';
-        clone.style.padding = '0';
-        clone.style.background = 'transparent';
-        panelBody.innerHTML = '';
-        panelBody.appendChild(clone);
-        // Re-run trash loading to populate the cloned table
-        loadTrashPage();
+    if (!panelBody) return;
+
+    // Build trash content directly into the right panel
+    const trash = DataStore.getTrash();
+    const now = Date.now();
+
+    let html = `
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+            <button class="builder-btn btn-sm trash-filter-btn active" data-filter="all" onclick="filterTrash('all')">All (${trash.length})</button>
+            <button class="builder-btn btn-sm trash-filter-btn" data-filter="songs" onclick="filterTrash('songs')">Songs</button>
+            <button class="builder-btn btn-sm trash-filter-btn" data-filter="images" onclick="filterTrash('images')">Images</button>
+            <button class="builder-btn btn-sm trash-filter-btn" data-filter="stations" onclick="filterTrash('stations')">Stations</button>
+            <button class="builder-btn btn-sm trash-filter-btn" data-filter="other" onclick="filterTrash('other')">Other</button>
+            <button class="builder-btn btn-sm" style="margin-left:auto;color:#ef4444;" onclick="emptyTrash()"><i class="fas fa-trash-can"></i> Empty All</button>
+        </div>`;
+
+    if (!trash.length) {
+        html += '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.4);"><i class="fas fa-trash-can" style="font-size:48px;margin-bottom:12px;display:block;"></i>Trash is empty</div>';
+    } else {
+        html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+        html += '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1);"><th style="text-align:left;padding:8px 4px;">Name</th><th style="text-align:left;padding:8px 4px;">Type</th><th style="text-align:left;padding:8px 4px;">Deleted</th><th style="text-align:left;padding:8px 4px;">Actions</th></tr></thead><tbody id="trashTableBody">';
+        trash.forEach(item => {
+            const name = item.name || item.title || item.text || item._originalId || 'Unknown';
+            const type = item._trashType || 'unknown';
+            const trashedAt = item._trashedAt ? new Date(item._trashedAt) : null;
+            const ageMs = trashedAt ? now - trashedAt.getTime() : 0;
+            const typeBadgeColors = {
+                songs: '#34d399', stations: '#60a5fa', moods: '#a78bfa', featured: '#f472b6',
+                musicCollections: '#fbbf24', artistHits: '#fb923c', categories: '#38bdf8',
+                quotes: '#94a3b8', aiRadio: '#c084fc', notifications: '#f97316',
+                advertisements: '#ef4444', upcomingReleases: '#2dd4bf', images: '#67e8f9', trending: '#f59e0b'
+            };
+            const badgeColor = typeBadgeColors[type] || '#6b7280';
+            html += `<tr data-type="${type}">
+                <td style="padding:8px 4px;"><strong>${name}</strong></td>
+                <td style="padding:8px 4px;"><span class="builder-badge" style="background:${badgeColor}22;color:${badgeColor};">${type}</span></td>
+                <td style="padding:8px 4px;font-size:12px;color:rgba(255,255,255,0.5);">${trashedAt ? trashedAt.toLocaleString() : '—'}</td>
+                <td style="padding:8px 4px;">
+                    <button class="action-btn" onclick="restoreFromTrash('${item._originalId}','${type}')" title="Restore"><i class="fas fa-undo"></i></button>
+                    <button class="action-btn delete-btn" onclick="permanentDeleteFromTrash('${item._originalId}','${type}')" title="Delete Permanently"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
     }
 
+    panelBody.innerHTML = html;
     openRightPanel('<i class="fas fa-trash-can-arrow-up"></i> Trash', '');
 
-    // Update trash count badge in sidebar
+    // Update trash count badge
     try {
-        const trash = DataStore.getTrash();
         const badge = document.querySelector('[data-page="trash"] .trash-count');
         if (badge) badge.textContent = trash.length || '';
     } catch (e) {}
@@ -1195,13 +1225,14 @@ async function deleteSong(songId) {
     if (!confirm('Move this song to Trash?')) return;
     
     try {
-        const songs = DataStore.getSongs();
-        const song = songs.find(s => s.id === songId);
+        // Use RAW data to find the song (getSongs() now filters deleted items)
+        const rawSongs = DataStore._getRaw(DataStore.KEYS.SONGS) || [];
+        const song = rawSongs.find(s => s.id === songId);
         if (!song) { showToast('Song not found', 'error'); return; }
         
         DataStore.moveToTrash(song, 'songs');
-        const filtered = songs.filter(s => s.id !== songId);
-        DataStore.setSongs(filtered);
+        const filtered = rawSongs.filter(s => s.id !== songId);
+        localStorage.setItem(DataStore.KEYS.SONGS, JSON.stringify(filtered));
         showToast('Song moved to Trash', 'success');
         loadAllSongs();
         await syncToLiveWebsite();
@@ -1579,12 +1610,12 @@ async function deleteImage(imageId) {
     if (!confirm('Move this image to Trash?')) return;
     
     try {
-        const images = DataStore.getImages();
-        const imgData = images.find(i => i.id === imageId);
+        const rawImages = DataStore._getRaw(DataStore.KEYS.IMAGES) || [];
+        const imgData = rawImages.find(i => i.id === imageId);
         if (!imgData) { showToast('Image not found', 'error'); return; }
         DataStore.moveToTrash(imgData, 'images');
-        const filtered = images.filter(i => i.id !== imageId);
-        DataStore.setImages(filtered);
+        const filtered = rawImages.filter(i => i.id !== imageId);
+        localStorage.setItem(DataStore.KEYS.IMAGES, JSON.stringify(filtered));
         
         showToast('Image moved to Trash', 'success');
         await syncToLiveWebsite();
@@ -2762,13 +2793,13 @@ function cancelEditStation() {
 
 function deleteStation(id) {
     if (!confirm('Move this station to Trash?')) return;
-    const stations = DataStore.getStations();
+    const stations = DataStore._getRaw(DataStore.KEYS.STATIONS) || [];
     const station = stations.find(s => s.id === id);
     if (station) {
         DataStore.moveToTrash(station, 'stations');
     }
     const filtered = stations.filter(s => s.id !== id);
-    DataStore.setStations(filtered);
+    localStorage.setItem(DataStore.KEYS.STATIONS, JSON.stringify(filtered));
     showToast('Station moved to Trash', 'success');
     loadAllStations();
     syncToLiveWebsite();
@@ -2968,10 +2999,10 @@ function editFeatured(id) {
 
 function deleteFeatured(id) {
     if (!confirm('Move this featured item to Trash?')) return;
-    const featured = DataStore.getFeatured();
+    const featured = DataStore._getRaw(DataStore.KEYS.FEATURED) || [];
     const item = featured.find(f => f.id === id);
     if (item) DataStore.moveToTrash(item, 'featured');
-    DataStore.setFeatured(featured.filter(f => f.id !== id));
+    localStorage.setItem(DataStore.KEYS.FEATURED, JSON.stringify(featured.filter(f => f.id !== id)));
     showToast('Featured moved to Trash', 'success');
     loadFeatured();
     syncToLiveWebsite();
@@ -3069,10 +3100,10 @@ function openAddTrendingModal() {
 
 function deleteTrending(id) {
     if (!confirm('Move from trending to Trash?')) return;
-    const trending = DataStore.getTrending();
+    const trending = DataStore._getRaw(DataStore.KEYS.TRENDING) || [];
     const item = trending.find(t => t.id === id);
     if (item) DataStore.moveToTrash(item, 'trending');
-    DataStore.setTrending(trending.filter(t => t.id !== id));
+    localStorage.setItem(DataStore.KEYS.TRENDING, JSON.stringify(trending.filter(t => t.id !== id)));
     showToast('Moved to Trash', 'success');
     loadTrending();
     syncToLiveWebsite();
@@ -3275,10 +3306,10 @@ function editCategory(id) {
 
 function deleteCategory(id) {
     if (!confirm('Move this category to Trash?')) return;
-    const categories = DataStore.getCategories();
+    const categories = DataStore._getRaw(DataStore.KEYS.CATEGORIES) || [];
     const cat = categories.find(c => c.id === id);
     if (cat) DataStore.moveToTrash(cat, 'categories');
-    DataStore.setCategories(categories.filter(c => c.id !== id));
+    localStorage.setItem(DataStore.KEYS.CATEGORIES, JSON.stringify(categories.filter(c => c.id !== id)));
     showToast('Category moved to Trash', 'success');
     loadCategories();
     syncToLiveWebsite();
@@ -3656,10 +3687,10 @@ function openEditArtistSongsModal(hitId) {
 
 function deleteArtistHit(id) {
     if (!confirm('Move this artist hit to Trash?')) return;
-    const artistHits = DataStore.getArtistHits();
+    const artistHits = DataStore._getRaw(DataStore.KEYS.ARTIST_HITS) || [];
     const hit = artistHits.find(h => h.id === id);
     if (hit) DataStore.moveToTrash(hit, 'artistHits');
-    DataStore.setArtistHits(artistHits.filter(h => h.id !== id));
+    localStorage.setItem(DataStore.KEYS.ARTIST_HITS, JSON.stringify(artistHits.filter(h => h.id !== id)));
     showToast('Artist hit moved to Trash', 'success');
     loadArtistHits();
     syncToLiveWebsite();
@@ -3942,12 +3973,12 @@ function loadArtistSongs(collectionId) {
 }
 
 function deleteArtistSong(collectionId, songIndex) {
-    const artistHits = DataStore.getArtistHits();
+    const artistHits = DataStore._getRaw(DataStore.KEYS.ARTIST_HITS) || [];
     const hit = artistHits.find(h => h.id === collectionId);
     if (!hit || !hit.songs) return;
     const removed = hit.songs.splice(songIndex, 1);
     hit.songCount = hit.songs.length;
-    DataStore.setArtistHits(artistHits);
+    localStorage.setItem(DataStore.KEYS.ARTIST_HITS, JSON.stringify(artistHits));
     showToast('Song removed from collection', 'success');
     loadArtistSongs(collectionId);
     loadArtistHits();
@@ -4733,11 +4764,11 @@ function pickGalleryImage(url, inputId, previewId, imgId) {
 
 function deleteMusicCollection(id) {
     if (confirm('Move this collection to Trash?')) {
-        let collections = DataStore.getMusicCollections();
+        let collections = DataStore._getRaw(DataStore.KEYS.MUSIC_COLLECTIONS) || [];
         const col = collections.find(c => c.id === id);
         if (col) DataStore.moveToTrash(col, 'musicCollections');
         collections = collections.filter(c => c.id !== id);
-        DataStore.setMusicCollections(collections);
+        localStorage.setItem(DataStore.KEYS.MUSIC_COLLECTIONS, JSON.stringify(collections));
         showToast('Collection moved to Trash', 'info');
         loadMusicCollections();
         syncToLiveWebsite();
@@ -4975,11 +5006,12 @@ function saveCollection(type, editId) {
 
 function deleteCollection(type, colId) {
     if (!confirm('Move this collection to Trash?')) return;
-    let collections = getCollectionsByType(type);
+    const rawKey = type === 'movies' ? DataStore.KEYS.MOVIES_COLLECTIONS : type === 'yearly' ? DataStore.KEYS.YEARLY_COLLECTIONS : DataStore.KEYS.LATEST_COLLECTIONS;
+    const collections = DataStore._getRaw(rawKey) || [];
     const col = collections.find(c => c.id === colId);
     if (col) DataStore.moveToTrash({ ...col, _collectionType: type }, 'collections');
-    collections = collections.filter(c => c.id !== colId);
-    setCollectionsByType(type, collections);
+    const filtered = collections.filter(c => c.id !== colId);
+    localStorage.setItem(rawKey, JSON.stringify(filtered));
     loadCollectionsTable(type);
     showToast('Collection moved to Trash', 'success');
     syncToLiveWebsite();
@@ -5096,10 +5128,10 @@ function editQuote(id) {
 
 function deleteQuote(id) {
     if (!confirm('Move this quote to Trash?')) return;
-    const quotes = DataStore.getQuotes();
+    const quotes = DataStore._getRaw(DataStore.KEYS.QUOTES) || [];
     const q = quotes.find(x => x.id === id);
     if (q) DataStore.moveToTrash(q, 'quotes');
-    DataStore.setQuotes(quotes.filter(q => q.id !== id));
+    localStorage.setItem(DataStore.KEYS.QUOTES, JSON.stringify(quotes.filter(q => q.id !== id)));
     showToast('Quote moved to Trash', 'success');
     loadQuotes();
     syncToLiveWebsite();
@@ -5177,10 +5209,10 @@ function updateMood(e, id) {
 
 function deleteMood(id) {
     if (!confirm('Move this mood to Trash?')) return;
-    const moods = DataStore.getMoods();
+    const moods = DataStore._getRaw(DataStore.KEYS.MOODS) || [];
     const mood = moods.find(m => m.id === id);
     if (mood) DataStore.moveToTrash(mood, 'moods');
-    DataStore.setMoods(moods.filter(m => m.id !== id));
+    localStorage.setItem(DataStore.KEYS.MOODS, JSON.stringify(moods.filter(m => m.id !== id)));
     showToast('Mood moved to Trash', 'success'); loadMoods(); syncToLiveWebsite();
 }
 
@@ -5391,10 +5423,10 @@ function updateAIRadio(e, id) {
 
 function deleteAIRadio(id) {
     if (!confirm('Move this AI Radio card to Trash?')) return;
-    const items = DataStore.getAIRadio();
+    const items = DataStore._getRaw(DataStore.KEYS.AI_RADIO) || [];
     const item = items.find(a => a.id === id);
     if (item) DataStore.moveToTrash(item, 'aiRadio');
-    DataStore.setAIRadio(items.filter(a => a.id !== id));
+    localStorage.setItem(DataStore.KEYS.AI_RADIO, JSON.stringify(items.filter(a => a.id !== id)));
     showToast('AI Radio card moved to Trash', 'success'); loadAIRadio(); syncToLiveWebsite();
 }
 
@@ -5470,10 +5502,10 @@ function updateNotification(e, id) {
 
 function deleteNotification(id) {
     if (!confirm('Move this notification to Trash?')) return;
-    const items = DataStore.getNotifications();
+    const items = DataStore._getRaw(DataStore.KEYS.NOTIFICATIONS) || [];
     const item = items.find(n => n.id === id);
     if (item) DataStore.moveToTrash(item, 'notifications');
-    DataStore.setNotifications(items.filter(n => n.id !== id));
+    localStorage.setItem(DataStore.KEYS.NOTIFICATIONS, JSON.stringify(items.filter(n => n.id !== id)));
     showToast('Notification moved to Trash', 'success'); loadNotifications(); syncToLiveWebsite();
 }
 
@@ -5791,11 +5823,11 @@ async function saveAd(event) {
 
 function deleteAd(adId) {
     if (!confirm('Move this advertisement to Trash?')) return;
-    let ads = DataStore.getAdvertisements();
+    let ads = DataStore._getRaw(DataStore.KEYS.ADVERTISEMENTS) || [];
     const ad = ads.find(a => a.id === adId);
     if (ad) DataStore.moveToTrash(ad, 'advertisements');
     ads = ads.filter(a => a.id !== adId);
-    DataStore.setAdvertisements(ads);
+    localStorage.setItem(DataStore.KEYS.ADVERTISEMENTS, JSON.stringify(ads));
     loadAdsTable();
     showToast('Advertisement moved to Trash', 'success');
     syncToLiveWebsite();
@@ -5940,11 +5972,11 @@ async function saveUpcomingRelease(event) {
 
 function deleteUpcomingRelease(id) {
     if (!confirm('Move this release to Trash?')) return;
-    let releases = DataStore.getUpcomingReleases();
+    let releases = DataStore._getRaw(DataStore.KEYS.UPCOMING_RELEASES) || [];
     const rel = releases.find(r => r.id === id);
     if (rel) DataStore.moveToTrash(rel, 'upcomingReleases');
     releases = releases.filter(r => r.id !== id);
-    DataStore.setUpcomingReleases(releases);
+    localStorage.setItem(DataStore.KEYS.UPCOMING_RELEASES, JSON.stringify(releases));
     loadUpcomingReleasesTable();
     showToast('Release moved to Trash', 'success');
     syncToLiveWebsite();
@@ -8426,6 +8458,9 @@ let _trashCurrentFilter = 'all';
 
 function loadTrashPage() {
     runTrashBotNow();
+    // If right panel is available, render there
+    const panelBody = document.getElementById('rightPanelBody');
+    if (panelBody) { _openTrashInRightPanel(); return; }
     renderTrashTable();
 }
 
@@ -8514,104 +8549,45 @@ function renderTrashTable(filter) {
 }
 
 function filterTrash(type) {
-    document.querySelectorAll('[data-trashtab]').forEach(t => t.classList.remove('active'));
-    const tab = document.querySelector(`[data-trashtab="${type}"]`);
-    if (tab) tab.classList.add('active');
-    renderTrashTable(type);
+    // Update active tab styling
+    document.querySelectorAll('.trash-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === type);
+    });
+    // Filter right panel trash table rows
+    const tbody = document.querySelector('#rightPanelBody #trashTableBody') || document.getElementById('trashTableBody');
+    if (!tbody) return;
+    tbody.querySelectorAll('tr[data-type]').forEach(row => {
+        row.style.display = (type === 'all' || row.dataset.type === type) ? '' : 'none';
+    });
 }
 
 function restoreFromTrash(originalId, type) {
     const cleanItem = DataStore.restoreFromTrash(originalId, type);
     if (!cleanItem) { showToast('Item not found in Trash', 'error'); return; }
 
-    // Re-add to the appropriate content store
-    switch (type) {
-        case 'songs': {
-            const songs = DataStore.getSongs();
-            if (!songs.find(s => s.id === originalId)) { songs.push(cleanItem); DataStore.setSongs(songs); }
-            break;
-        }
-        case 'stations': {
-            const stations = DataStore.getStations();
-            if (!stations.find(s => s.id === originalId)) { stations.push(cleanItem); DataStore.setStations(stations); }
-            break;
-        }
-        case 'moods': {
-            const moods = DataStore.getMoods();
-            if (!moods.find(m => m.id === originalId)) { moods.push(cleanItem); DataStore.setMoods(moods); }
-            break;
-        }
-        case 'featured': {
-            const featured = DataStore.getFeatured();
-            if (!featured.find(f => f.id === originalId)) { featured.push(cleanItem); DataStore.setFeatured(featured); }
-            break;
-        }
-        case 'trending': {
-            const trending = DataStore.getTrending();
-            if (!trending.find(t => t.id === originalId)) { trending.push(cleanItem); DataStore.setTrending(trending); }
-            break;
-        }
-        case 'categories': {
-            const cats = DataStore.getCategories();
-            if (!cats.find(c => c.id === originalId)) { cats.push(cleanItem); DataStore.setCategories(cats); }
-            break;
-        }
-        case 'artistHits': {
-            const hits = DataStore.getArtistHits();
-            if (!hits.find(h => h.id === originalId)) { hits.push(cleanItem); DataStore.setArtistHits(hits); }
-            break;
-        }
-        case 'quotes': {
-            const quotes = DataStore.getQuotes();
-            if (!quotes.find(q => q.id === originalId)) { quotes.push(cleanItem); DataStore.setQuotes(quotes); }
-            break;
-        }
-        case 'aiRadio': {
-            const items = DataStore.getAIRadio();
-            if (!items.find(a => a.id === originalId)) { items.push(cleanItem); DataStore.setAIRadio(items); }
-            break;
-        }
-        case 'notifications': {
-            const items = DataStore.getNotifications();
-            if (!items.find(n => n.id === originalId)) { items.push(cleanItem); DataStore.setNotifications(items); }
-            break;
-        }
-        case 'musicCollections': {
-            const cols = DataStore.getMusicCollections();
-            if (!cols.find(c => c.id === originalId)) { cols.push(cleanItem); DataStore.setMusicCollections(cols); }
-            break;
-        }
-        case 'advertisements': {
-            const ads = DataStore.getAdvertisements();
-            if (!ads.find(a => a.id === originalId)) { ads.push(cleanItem); DataStore.setAdvertisements(ads); }
-            break;
-        }
-        case 'upcomingReleases': {
-            const releases = DataStore.getUpcomingReleases();
-            if (!releases.find(r => r.id === originalId)) { releases.push(cleanItem); DataStore.setUpcomingReleases(releases); }
-            break;
-        }
-        case 'images': {
-            const images = DataStore.getImages();
-            if (!images.find(i => i.id === originalId)) { images.push(cleanItem); DataStore.setImages(images); }
-            break;
-        }
-        default: {
-            if (cleanItem._collectionType) {
-                const cType = cleanItem._collectionType;
-                delete cleanItem._collectionType;
-                const collections = getCollectionsByType(cType);
-                if (!collections.find(c => c.id === originalId)) {
-                    collections.push(cleanItem);
-                    setCollectionsByType(cType, collections);
-                }
-            }
-            break;
+    // Re-add to the appropriate content store using RAW data
+    const rawKeyMap = {
+        songs: 'tamilAIStream_songs', stations: 'tamilAIStream_stations',
+        categories: 'tamilAIStream_categories', featured: 'tamilAIStream_featured',
+        trending: 'tamilAIStream_trending', artistHits: 'tamilAIStream_artistHits',
+        quotes: 'tamilAIStream_quotes', moods: 'tamilAIStream_moods',
+        aiRadio: 'tamilAIStream_aiRadio', notifications: 'tamilAIStream_notifications',
+        images: 'tamilAIStream_images', musicCollections: 'tamilAIStream_musicCollections',
+        advertisements: 'tamilAIStream_advertisements', upcomingReleases: 'tamilAIStream_upcomingReleases'
+    };
+    const rawKey = rawKeyMap[type];
+    if (rawKey) {
+        const raw = DataStore._getRaw(rawKey) || [];
+        if (!raw.find(s => s.id === originalId)) {
+            raw.push(cleanItem);
+            localStorage.setItem(rawKey, JSON.stringify(raw));
         }
     }
 
     showToast('Item restored from Trash', 'success');
-    renderTrashTable();
+    // Refresh right panel if open
+    const panel = document.getElementById('rightPanelBody');
+    if (panel && panel.querySelector('#trashTableBody')) _openTrashInRightPanel();
     syncToLiveWebsite();
 }
 
@@ -8619,7 +8595,10 @@ function permanentDeleteFromTrash(originalId, type) {
     if (!confirm('Permanently delete this item? This cannot be undone.')) return;
     DataStore.permanentDeleteFromTrash(originalId, type);
     showToast('Item permanently deleted', 'success');
-    renderTrashTable();
+    // Refresh right panel if open
+    const panel = document.getElementById('rightPanelBody');
+    if (panel && panel.querySelector('#trashTableBody')) { _openTrashInRightPanel(); }
+    else { renderTrashTable(); }
     syncToLiveWebsite();
 }
 
@@ -8628,7 +8607,10 @@ function emptyTrash() {
     DataStore.setTrash([]);
     DataStore.setDeletedIds({});
     showToast('Trash emptied', 'success');
-    renderTrashTable();
+    // Refresh right panel if open
+    const panel = document.getElementById('rightPanelBody');
+    if (panel && panel.querySelector('#trashTableBody')) { _openTrashInRightPanel(); }
+    else { renderTrashTable(); }
     syncToLiveWebsite();
 }
 

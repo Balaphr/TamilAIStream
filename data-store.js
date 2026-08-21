@@ -75,6 +75,13 @@ const DataStore = {
         } catch (e) { return items; }
     },
 
+    // Raw (unfiltered) access — used internally by delete operations,
+    // R2 discovery, and sync to prevent deleted items from re-appearing.
+    _getRaw(key) {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+    },
+
     publishToLive() {
         const keys = Object.values(this.KEYS);
         let count = 0;

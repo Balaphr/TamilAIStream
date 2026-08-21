@@ -676,8 +676,23 @@
         const pct = (val, phase, status) => { if (onProgress) onProgress(val, phase, status); };
         try {
             pct(5, 'Preparing', 'Reading existing songs…');
-            const existing = safeGet(global.DataStore.getSongs?.bind(global.DataStore), []) || [];
+            // Use RAW unfiltered songs so deleted songs' keys are still recognized
+            // as "existing" and discoverR2Songs never re-imports them.
+            const rawSongsKey = global.DataStore?.KEYS?.SONGS || 'tamilAIStream_songs';
+            const existing = (safeGet(global.DataStore._getRaw?.bind(global.DataStore, rawSongsKey), null) || safeGet(global.DataStore.getSongs?.bind(global.DataStore), [])) || [];
+            const deletedIds = safeGet(global.DataStore.getDeletedIds?.bind(global.DataStore), {}) || {};
+            // Collect audio keys from trash entries so deleted songs are never re-added
+            const trash = safeGet(global.DataStore.getTrash?.bind(global.DataStore), []) || [];
+            const deletedKeys = new Set();
+            trash.forEach(t => {
+                if (t && t.audioPublicId) deletedKeys.add(t.audioPublicId);
+                if (t && t.r2Key) deletedKeys.add(t.r2Key);
+                const k = keyFromUrl(t?.audioUrl || t?.src || t?.streamUrl || '');
+                if (k) deletedKeys.add(k);
+            });
             const existingByKey = new Set();
+            // Include deleted songs' keys so they are never re-imported
+            deletedKeys.forEach(k => existingByKey.add(k));
             existing.forEach((s) => {
                 if (!s) return;
                 if (s.audioPublicId) existingByKey.add(s.audioPublicId);
