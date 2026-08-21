@@ -111,7 +111,7 @@
         if (audioPlayer) return;
         audioPlayer = new Audio();
         window.audioPlayer = audioPlayer;
-        audioPlayer.preload = 'auto';
+        audioPlayer.preload = 'metadata';
         audioPlayer.volume = playbackVolume;
 
         audioPlayer.addEventListener('playing', () => {

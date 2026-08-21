@@ -488,9 +488,14 @@ function openMusicPlayer(track, playlist = [], queueIndex = -1) {
 
 function getStationStreamUrl(stationNameOrId) {
     const stations = DataStore.getStations();
+    if (!stations || !stations.length) return '';
+    // Try exact ID match first
     let station = stations.find(s => s.id === stationNameOrId);
-    if (!station) station = stations.find(s => s.name === stationNameOrId);
-    return station?.streamUrl || '';
+    // Fall back to name match (case-insensitive)
+    if (!station) station = stations.find(s => (s.name || '').toLowerCase() === (stationNameOrId || '').toLowerCase());
+    // Fall back to partial name match
+    if (!station && stationNameOrId) station = stations.find(s => (s.name || '').includes(stationNameOrId) || stationNameOrId.includes(s.name || ''));
+    return station?.streamUrl || station?.url || '';
 }
 
 // ============================================
@@ -1124,7 +1129,14 @@ function playStation(stationName, stationId) {
     let streamUrl = getStationStreamUrl(stationId || stationName);
     if (!streamUrl || streamUrl.trim() === '') {
         hideLoadingSpinner();
-        showToast(`${stationName} stream is currently unavailable.`, 'error');
+        // Check if station exists but has no URL
+        const stations = DataStore.getStations() || [];
+        const found = stations.find(s => s.id === stationId || s.name === stationName);
+        if (found && !found.streamUrl && !found.url) {
+            showToast(`${stationName} has no stream URL configured. Add it in the Builder.`, 'error');
+        } else {
+            showToast(`${stationName} stream is currently unavailable.`, 'error');
+        }
         return;
     }
     showLoadingSpinner();
@@ -2342,7 +2354,7 @@ function displaySongs(songs) {
         <div class="song-card" data-song-id="${song.id}" style="animation-delay: ${index * 0.05}s">
             <div class="song-card-header">
                 <div class="song-thumbnail">
-                    <img src="${song.albumCover || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"%3E%3Ccircle cx="40" cy="40" r="30" fill="%2334d399" opacity="0.3"/%3E%3C/svg%3E'}" alt="${song.title || 'Song'}">
+                    <img src="${song.albumCover || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"%3E%3Ccircle cx="40" cy="40" r="30" fill="%2334d399" opacity="0.3"/%3E%3C/svg%3E'}" alt="${song.title || 'Song'}" loading="lazy">
                     <div class="song-eq-bars"><span></span><span></span><span></span><span></span></div>
                     <div class="song-play-overlay" data-song-id="${song.id}">
                         <i class="fas fa-play"></i>
@@ -2758,7 +2770,7 @@ function renderFeaturedSliderDynamic() {
         return `
             <div class="slide-card" style="--slide-bg: ${item.gradient || station.gradient || 'linear-gradient(135deg, #0f3b2e, #064e3b)'};">
                 <div class="slide-art">
-                    <img src="${thumbSrc}" alt="${item.title || station.name || ''}" ${isRealImage ? 'style="width:100%;height:100%;object-fit:cover;"' : ''}>
+                    <img src="${thumbSrc}" alt="${item.title || station.name || ''}" ${isRealImage ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy">
                 </div>
                 <div class="slide-info">
                     <span class="slide-badge"><i class="fas fa-signal"></i> Live</span>
@@ -2804,7 +2816,7 @@ function renderTrendingDynamicStationsLegacy() {
         return `
             <div class="station-card" data-genre="${(station.genre || '').toLowerCase()}" data-station="${escapeHtml(station.name || '')}">
                 <div class="station-art" style="background:${station.gradient || 'linear-gradient(135deg,#1e3a5f,#0d1f3c)'};">
-                    <img src="${thumbSrc}" alt="${station.name || ''}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''}>
+                    <img src="${thumbSrc}" alt="${station.name || ''}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy">
                     <div class="station-play-overlay"><i class="fas fa-play"></i></div>
                 </div>
                 <div class="station-info">
@@ -2884,7 +2896,7 @@ function renderArtistHitsDynamic() {
             <div class="hit-card-bg" style="background:${hit.gradient || 'linear-gradient(135deg,#1e3a5f,#0d1f3c)'};"></div>
             <div class="hit-card-content">
                 <div class="hit-artist-image">
-                    <img src="${thumbSrc}" alt="${hit.name}" ${hit.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''}>
+                    <img src="${thumbSrc}" alt="${hit.name}" ${hit.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy">
                     <div class="hit-play-overlay"><i class="fas fa-play"></i></div>
                 </div>
                 <div class="hit-info">
@@ -2957,7 +2969,7 @@ function renderRoundCollectionCard(item) {
     return `
     <div class="round-collection-card" data-id="${item.id}" onclick="playCollectionSongs('${item.id}', '${item.type || ''}')">
         <div class="round-collection-thumb">
-            <img src="${thumbSrc}" alt="${item.name}">
+            <img src="${thumbSrc}" alt="${item.name}" loading="lazy">
             <div class="round-collection-play"><i class="fas fa-play"></i></div>
         </div>
         <div class="round-collection-info">
@@ -3018,7 +3030,7 @@ function renderMusicCollectionCard(item) {
     return `
     <div class="music-collection-card" data-id="${item.id}" onclick="playCollectionSongs('${item.id}', 'music')">
         <div class="music-collection-thumb">
-            <img src="${thumbSrc}" alt="${item.name}">
+            <img src="${thumbSrc}" alt="${item.name}" loading="lazy">
             <div class="music-collection-play"><i class="fas fa-play"></i></div>
         </div>
         <div class="music-collection-info">
@@ -3751,7 +3763,7 @@ function renderAllStationsDynamic() {
             <div class="sg-card-content">
                 <div class="sg-card-top">
                     <div class="sg-logo" style="background:${station.gradient || 'linear-gradient(135deg,#0f3b2e,#064e3b)'};">
-                        <img src="${thumbSrc}" alt="${station.name}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''}>
+                        <img src="${thumbSrc}" alt="${station.name}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy">
                     </div>
                     <div class="sg-badges">
                         <span class="sg-live-badge"><i class="fas fa-signal"></i> Live</span>
@@ -3815,7 +3827,7 @@ function renderAIRecommendedStationsLegacy() {
         return `
         <div class="station-card recommended" data-genre="${(station.genre || '').toLowerCase()}" data-station="${escapeHtml(station.name || '')}">
             <div class="station-art" style="background:${station.gradient || 'linear-gradient(135deg,#0f3b2e,#064e3b)'};">
-                <img src="${thumbSrc}" alt="${station.name}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''}>
+                <img src="${thumbSrc}" alt="${station.name}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy">
                 <div class="station-play-overlay"><i class="fas fa-play"></i></div>
                 <div class="ai-recommend-badge"><i class="fas fa-brain"></i> ${98 - i * 3}% Match</div>
             </div>
@@ -4662,19 +4674,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Render all dynamic content from DataStore
     renderAllDynamicContent();
     
-    // Pull latest content from R2 (Cloudflare) and re-render.
-    // This ensures "Made For You", "Recently Added", and all other sections
-    // show the latest published content from the Builder, not stale localStorage.
-    if (typeof ContentSync !== 'undefined' && typeof ContentSync.bootstrapSharedContent === 'function') {
-        ContentSync.bootstrapSharedContent().then(function() {
-            _isRenderingAll = false;
-            // Clear hash caches so all sections re-render with fresh data
-            Object.keys(_homeSectionHashes).forEach(function(k) { _homeSectionHashes[k] = ''; });
-            renderAllDynamicContent();
-        }).catch(function() {
-            // R2 unavailable — local data is already rendered, no action needed
-        });
-    }
+    // R2 content sync is handled by r2-content-sync.js DOMContentLoaded listener.
+    // Do NOT call bootstrapSharedContent() here — it would duplicate the network request.
     
     // Analytics: track page view
     if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.trackPageView(window.location.pathname);

@@ -134,6 +134,10 @@ window.AIHome = (() => {
         const layerInactive = $('aiHeroBg' + (heroBgActive === 'A' ? 'B' : 'A'));
         if (!layerActive || !layerInactive) return;
 
+        // Skip if same image — avoids re-downloading
+        const currentArt = layerActive.style.backgroundImage || '';
+        if (art && currentArt.includes(art)) return;
+
         if (animate) {
             // Crossfade: set new image on inactive layer, fade it in, fade old out
             heroTransitioning = true;
@@ -213,8 +217,8 @@ window.AIHome = (() => {
         stopHeroTimer();
         if (heroSlides.length < 2) return;
         heroTimer = setInterval(() => {
-            if (!document.hidden) transitionHeroSlide(heroIdx + 1);
-        }, 20000); // 20 seconds between rotations
+            if (!document.hidden && document.hasFocus()) transitionHeroSlide(heroIdx + 1);
+        }, 30000); // 30 seconds between rotations (reduced data usage)
     }
     function stopHeroTimer() { if (heroTimer) { clearInterval(heroTimer); heroTimer = null; } }
     function restartHeroTimer() { startHeroTimer(); }
@@ -498,7 +502,7 @@ window.AIHome = (() => {
 
     // News display config lives in Builder Site Settings (tamilAIStream_siteSettings.newsSettings).
     function newsDisplayConfig() {
-        const cfg = { maxItems: 4, highlightHours: 6, showPlayerOnDetail: true, seeAllMax: 25, refreshInterval: 60000, retainHours: 1, showNavButtons: true, showViewButton: true, showRefreshIndicator: true };
+        const cfg = { maxItems: 4, highlightHours: 6, showPlayerOnDetail: true, seeAllMax: 25, refreshInterval: 300000, retainHours: 1, showNavButtons: true, showViewButton: true, showRefreshIndicator: true };
         try {
             if (window.DataStore) {
                 const s = DataStore.getSiteSettings() || {};
@@ -778,6 +782,14 @@ window.AIHome = (() => {
         }
 
         newsTimer = setInterval(() => {
+            // Only fetch news if the news section is actually visible in viewport
+            const newsSection = document.querySelector('[data-section="ai-news"]') || document.getElementById('aiNewsGrid');
+            if (newsSection) {
+                const rect = newsSection.getBoundingClientRect();
+                const isVisible = rect.top < window.innerHeight + 200 && rect.bottom > -200;
+                if (!isVisible && !document.hasFocus()) return; // skip if off-screen AND tab unfocused
+            }
+            if (document.hidden) return;
             _newsRefreshCount++;
             _newsLastRefreshTime = Date.now();
             updateNewsRefreshIndicator();

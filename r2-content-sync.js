@@ -365,18 +365,33 @@
         writeLocalStorage('tamilAIStream_lastSyncedAt', payload?.updatedAt || new Date().toISOString());
     }
 
+    let _lastEtag = '';
+    let _lastRemoteUpdatedAt = '';
     async function loadRemoteContent() {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 15000);
         try {
+            const headers = { 'Accept': 'application/json' };
+            // Conditional request: only download if content actually changed
+            if (_lastRemoteUpdatedAt) {
+                headers['If-None-Match'] = _lastEtag || _lastRemoteUpdatedAt;
+            }
             const response = await fetch('/api/manifest', {
                 cache: 'default',
+                headers,
                 signal: controller.signal
             });
+            // 304 Not Modified — no data transfer needed
+            if (response.status === 304) {
+                return null;
+            }
             if (!response.ok) {
                 throw new Error(`Manifest fetch failed with status ${response.status}`);
             }
-            return await response.json();
+            _lastEtag = response.headers.get('etag') || '';
+            const data = await response.json();
+            if (data?.updatedAt) _lastRemoteUpdatedAt = data.updatedAt;
+            return data;
         } finally {
             clearTimeout(timer);
         }
@@ -550,13 +565,15 @@
 
     async function pollForChanges() {
         try {
-            const localPayload = buildContentPayload();
             const remotePayload = await loadRemoteContent();
-            if (!remotePayload || !remotePayload.updatedAt) return null;
+            // null means 304 Not Modified — nothing to do
+            if (!remotePayload) return null;
+            if (!remotePayload.updatedAt) return null;
             const localUpdatedAt = readLocalStorage('tamilAIStream_lastSyncedAt', '');
-            if (remotePayload.updatedAt && remotePayload.updatedAt === localUpdatedAt) {
+            if (remotePayload.updatedAt === localUpdatedAt) {
                 return null; // nothing new
             }
+            const localPayload = buildContentPayload();
             const isWriter = isWriterPage();
             const mergedPayload = mergePayloads(localPayload, remotePayload, isWriter);
             applyDeletedIdsFilter(mergedPayload);
@@ -571,7 +588,7 @@
         }
     }
 
-    function startSyncing(intervalMs = 120000) {
+    function startSyncing(intervalMs = 600000) {
         if (_syncTimer) return;
         _syncTimer = setInterval(() => {
             if (!document.hidden) pollForChanges();
@@ -831,18 +848,14 @@
     global.addEventListener?.('DOMContentLoaded', () => {
         // Pull the authoritative R2 manifest once on load.
         global.ContentSync?.bootstrapSharedContent?.().then(() => {
-            // Defer R2 discovery to avoid heavy network requests on initial load.
-            // Only scan R2 if user has no songs locally (first visit) or on idle.
+            // Only scan R2 if user has NO songs locally (first visit).
+            // Users with existing songs get their data from the manifest sync.
             const hasLocalSongs = (global.DataStore?.getSongs?.() || []).length > 0;
             if (!hasLocalSongs) {
                 global.ContentSync?.discoverR2Songs?.().catch(() => {});
-            } else if (typeof requestIdleCallback !== 'undefined') {
-                requestIdleCallback(() => { global.ContentSync?.discoverR2Songs?.().catch(() => {}); }, { timeout: 30000 });
-            } else {
-                setTimeout(() => { global.ContentSync?.discoverR2Songs?.().catch(() => {}); }, 10000);
             }
-            // Sync every 2 minutes (was 30s — excessive for data savings on mobile)
-            global.ContentSync?.startSyncing?.(120000);
+            // Sync every 10 minutes (304 Not Modified avoids data transfer when unchanged)
+            global.ContentSync?.startSyncing?.(600000);
         }).catch(() => {});
     });
 
