@@ -651,8 +651,10 @@ function refreshDashboardSyncStatus() {
 
         const syncStatus = lastSynced ? 'synced' : 'never';
         const publishStatus = lastPublished ? 'published' : 'draft';
-        const syncColor = syncStatus === 'synced' ? '#34d399' : '#f59e0b';
-        const pubColor = publishStatus === 'published' ? '#34d399' : '#60a5fa';
+        const syncRGB = lastSynced ? '52,211,153' : '245,158,11';
+        const pubRGB = lastPublished ? '52,211,153' : '96,165,250';
+        const syncColor = lastSynced ? '#34d399' : '#f59e0b';
+        const pubColor = lastPublished ? '#34d399' : '#60a5fa';
 
         let html = `
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
@@ -668,12 +670,12 @@ function refreshDashboardSyncStatus() {
                     <div style="font-size:1.5rem;font-weight:800;color:#ef4444;">${totalDeleted}</div>
                     <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">Deleted IDs</div>
                 </div>
-                <div style="background:rgba(${syncColor}15,0.08);border:1px solid rgba(${syncColor},0.2);border-radius:10px;padding:14px;text-align:center;">
+                <div style="background:rgba(${syncRGB},0.08);border:1px solid rgba(${syncRGB},0.2);border-radius:10px;padding:14px;text-align:center;">
                     <div style="font-size:1.5rem;font-weight:800;color:${syncColor};">${syncStatus === 'synced' ? 'Synced' : 'Never'}</div>
                     <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">Last Sync</div>
                     ${lastSynced ? '<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:4px;">' + new Date(lastSynced).toLocaleString() + '</div>' : ''}
                 </div>
-                <div style="background:rgba(${pubColor}15,0.08);border:1px solid rgba(${pubColor},0.2);border-radius:10px;padding:14px;text-align:center;">
+                <div style="background:rgba(${pubRGB},0.08);border:1px solid rgba(${pubRGB},0.2);border-radius:10px;padding:14px;text-align:center;">
                     <div style="font-size:1.5rem;font-weight:800;color:${pubColor};">${publishStatus === 'published' ? 'Live' : 'Draft'}</div>
                     <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">Publish Status</div>
                     ${lastPublished ? '<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:4px;">' + new Date(parseInt(lastPublished)).toLocaleString() + '</div>' : ''}
