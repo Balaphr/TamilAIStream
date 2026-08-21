@@ -474,6 +474,23 @@
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof PlayerEngine !== 'undefined') PlayerEngine.init();
             if (typeof GlobalPlayer !== 'undefined') GlobalPlayer.init();
+
+            // Hide admin quick access (including Open Builder button) for non-admin users.
+            // If a user is logged in but NOT admin, the admin section is hidden.
+            // If nobody is logged in, it stays visible so admins can use it.
+            try {
+                if (typeof Auth !== 'undefined' && Auth.isAuthenticated()) {
+                    const user = Auth.currentUser();
+                    const isAdmin = user && (
+                        user.email === 'admin@tamilaistream.com' ||
+                        (user.email || '').toLowerCase().startsWith('admin')
+                    );
+                    if (!isAdmin) {
+                        const adminSection = document.querySelector('.admin-quick-access');
+                        if (adminSection) adminSection.style.display = 'none';
+                    }
+                }
+            } catch (e) {}
         });
     </script>
 </body>

@@ -946,10 +946,10 @@ async function openBuilderFromLogin() {
             console.warn('Unable to sync website session:', e);
         }
 
-        showToast('Opening Command Center...', 'success');
+        showToast('Opening Builder...', 'success');
 
         setTimeout(() => {
-            window.location.href = 'dashboard.html';
+            window.location.href = 'builder.html?auto=1';
         }, 600);
     } catch (error) {
         btn.innerHTML = originalHTML;

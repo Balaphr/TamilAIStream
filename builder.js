@@ -72,7 +72,10 @@ function checkAuth() {
         if (session) {
             try {
                 const data = JSON.parse(session);
-                if (data.expiry > Date.now()) {
+                // Validate admin email — non-admin sessions are rejected
+                const email = (data.email || data.username || '').toLowerCase();
+                const isAdmin = email === 'admin@tamilaistream.com' || email.startsWith('admin');
+                if (data.expiry > Date.now() && isAdmin) {
                     if (!isAutoLoginRequest()) {
                         showAccessGate(data);
                     }
@@ -6563,14 +6566,26 @@ function saveSettings(e) {
 // Main Initialization
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
-    // Require a valid session before allowing access to the Builder.
-    // (A user with NO session is sent to login.html; admins/logged-in users
-    //  continue to the builder's own admin login screen if needed.)
+    // ============================================
+    // ADMIN-ONLY ACCESS GUARD
+    // Builder is restricted to admin users only.
+    // Non-admin users are redirected to the main site.
+    // ============================================
+    const ADMIN_EMAILS = ['admin@tamilaistream.com'];
+
     setupLoginScreen();
     
     const user = await checkAuth();
     
     if (user) {
+        // Verify the user is actually an admin
+        const email = (user.email || user.username || '').toLowerCase();
+        const isAdmin = ADMIN_EMAILS.includes(email) || email.startsWith('admin');
+        if (!isAdmin) {
+            showToast('Access denied. Admins only.', 'error');
+            setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+            return;
+        }
         showBuilderDashboard(user);
     } else {
         showLoginScreen();
