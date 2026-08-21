@@ -455,6 +455,7 @@ function navigateTo(page) {
         'images': 'imagesPage',
         'settings': 'settingsPage',
         'moods': 'moodsPage',
+        'decades': 'decadesPage',
         'airadio': 'airadioPage',
         'notifications': 'notificationsPage',
         'splash': 'splashPage',
@@ -492,6 +493,7 @@ function navigateTo(page) {
         if (page === 'images') loadAllImages();
         if (page === 'settings') loadSettings();
         if (page === 'moods') loadMoods();
+        if (page === 'decades') loadDecadesAdmin();
         if (page === 'airadio') loadAIRadio();
         if (page === 'notifications') loadNotifications();
         if (page === 'splash') loadSplashSettings();
@@ -4982,6 +4984,137 @@ function loadAIRadio() {
                 <button class="builder-btn small danger" onclick="deleteAIRadio('${a.id}')"><i class="fas fa-trash"></i></button>
             </div></td>
         </tr>`).join('');
+}
+
+// ============================================
+// Music by Era (Decades) Admin Page
+// ============================================
+const DECADE_CONFIGS = [
+    { id: '80s', label: "80's Hits", range: [1980, 1989], icon: 'fa-compact-disc', color: '#f43f5e', grad: 'linear-gradient(135deg,#f43f5e,#fb923c)' },
+    { id: '90s', label: "90's Hits", range: [1990, 1999], icon: 'fa-record-vinyl', color: '#a855f7', grad: 'linear-gradient(135deg,#a855f7,#6366f1)' },
+    { id: '2k',  label: '2K Hits',  range: [2000, 2009], icon: 'fa-compact-disc', color: '#3b82f6', grad: 'linear-gradient(135deg,#3b82f6,#06b6d4)' },
+    { id: 'new', label: 'New Hits', range: [2010, 2099], icon: 'fa-headphones',    color: '#34d399', grad: 'linear-gradient(135deg,#34d399,#10b981)' }
+];
+
+function loadDecadesAdmin() {
+    const grid = document.getElementById('decadesAdminGrid');
+    if (!grid) return;
+    const songs = DataStore.getSongs() || [];
+    const published = songs.filter(s => s.status === 'published' || !s.status);
+
+    grid.innerHTML = DECADE_CONFIGS.map(d => {
+        const decadeSongs = published.filter(s => {
+            if (s.decade === d.id) return true;
+            const y = parseInt(s.year, 10);
+            return !isNaN(y) && y >= d.range[0] && y <= d.range[1];
+        });
+        const unassigned = published.filter(s => !s.decade && !s.year);
+        return `
+        <div class="builder-content-card" style="overflow:hidden;">
+            <div style="background:${d.grad};padding:16px 20px;display:flex;align-items:center;gap:12px;">
+                <i class="fas ${d.icon}" style="font-size:24px;color:#fff;"></i>
+                <div>
+                    <h3 style="margin:0;color:#fff;font-size:1.1rem;">${d.label}</h3>
+                    <span style="color:rgba(255,255,255,0.8);font-size:0.85rem;">${decadeSongs.length} song${decadeSongs.length !== 1 ? 's' : ''}</span>
+                </div>
+            </div>
+            <div class="builder-card-body" style="max-height:300px;overflow-y:auto;">
+                ${decadeSongs.length === 0 ? '<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:0.85rem;"><i class="fas fa-inbox" style="font-size:24px;display:block;margin-bottom:8px;opacity:0.4;"></i>No songs assigned yet.<br>Set "Music Era" in the song form.</div>' :
+                decadeSongs.map(s => `
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-glass);">
+                        <div style="width:36px;height:36px;border-radius:6px;background:var(--bg-glass);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+                            ${s.thumbnail || s.albumCover ? `<img src="${s.thumbnail || s.albumCover}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-music\\' style=\\'font-size:14px;color:var(--text-secondary)\\'></i>'">` : '<i class="fas fa-music" style="font-size:14px;color:var(--text-secondary);"></i>'}
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:0.85rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${(s.title || s.name || 'Untitled')}</div>
+                            <div style="font-size:0.75rem;color:var(--text-secondary);">${s.artist || 'Unknown'}</div>
+                        </div>
+                        <button class="builder-btn small" onclick="removeSongDecade('${s.id}')" title="Remove from era"><i class="fas fa-times"></i></button>
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
+    }).join('');
+
+    // Unassigned songs section
+    const unassigned = published.filter(s => !s.decade);
+    if (unassigned.length > 0) {
+        grid.innerHTML += `
+        <div class="builder-content-card" style="grid-column:1/-1;overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#64748b,#475569);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <i class="fas fa-inbox" style="font-size:24px;color:#fff;"></i>
+                    <div>
+                        <h3 style="margin:0;color:#fff;font-size:1.1rem;">Unassigned Songs</h3>
+                        <span style="color:rgba(255,255,255,0.8);font-size:0.85rem;">${unassigned.length} song${unassigned.length !== 1 ? 's' : ''} without an era</span>
+                    </div>
+                </div>
+                <button class="builder-btn" onclick="bulkAssignDecade()" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);"><i class="fas fa-magic"></i> Auto-Assign by Year</button>
+            </div>
+            <div class="builder-card-body" style="max-height:250px;overflow-y:auto;">
+                ${unassigned.slice(0, 50).map(s => `
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-glass);">
+                        <div style="width:36px;height:36px;border-radius:6px;background:var(--bg-glass);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+                            ${s.thumbnail || s.albumCover ? `<img src="${s.thumbnail || s.albumCover}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-music\\' style=\\'font-size:14px;color:var(--text-secondary)\\'></i>'">` : '<i class="fas fa-music" style="font-size:14px;color:var(--text-secondary);"></i>'}
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:0.85rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${(s.title || s.name || 'Untitled')}</div>
+                            <div style="font-size:0.75rem;color:var(--text-secondary);">${s.artist || 'Unknown'}${s.year ? ' (' + s.year + ')' : ''}</div>
+                        </div>
+                        <select class="form-select" style="width:auto;padding:4px 8px;font-size:0.8rem;" onchange="assignSongDecade('${s.id}', this.value)">
+                            <option value="">Assign Era</option>
+                            <option value="80s">80's</option>
+                            <option value="90s">90's</option>
+                            <option value="2k">2K</option>
+                            <option value="new">New</option>
+                        </select>
+                    </div>
+                `).join('')}
+                ${unassigned.length > 50 ? '<div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:0.85rem;">Showing 50 of ' + unassigned.length + ' unassigned songs.</div>' : ''}
+            </div>
+        </div>`;
+    }
+}
+
+function assignSongDecade(songId, decade) {
+    const songs = DataStore.getSongs() || [];
+    const song = songs.find(s => s.id === songId);
+    if (song) {
+        song.decade = decade;
+        DataStore.setSongs(songs);
+        loadDecadesAdmin();
+    }
+}
+
+function removeSongDecade(songId) {
+    const songs = DataStore.getSongs() || [];
+    const song = songs.find(s => s.id === songId);
+    if (song) {
+        song.decade = '';
+        DataStore.setSongs(songs);
+        loadDecadesAdmin();
+    }
+}
+
+function bulkAssignDecade() {
+    const songs = DataStore.getSongs() || [];
+    let changed = 0;
+    songs.forEach(s => {
+        if (s.decade) return;
+        const y = parseInt(s.year, 10);
+        if (isNaN(y)) return;
+        if (y >= 1980 && y <= 1989) { s.decade = '80s'; changed++; }
+        else if (y >= 1990 && y <= 1999) { s.decade = '90s'; changed++; }
+        else if (y >= 2000 && y <= 2009) { s.decade = '2k'; changed++; }
+        else if (y >= 2010) { s.decade = 'new'; changed++; }
+    });
+    if (changed) {
+        DataStore.setSongs(songs);
+        loadDecadesAdmin();
+        alert('Auto-assigned ' + changed + ' song(s) to their eras based on year.');
+    } else {
+        alert('No songs could be auto-assigned. Make sure songs have a Year field set.');
+    }
 }
 
 function openAddAIRadioModal() {

@@ -82,7 +82,7 @@
         <div class="splash-content">
             <div class="splash-logo-wrap">
                 <div class="splash-logo-glow"></div>
-                <div class="splash-logo">
+                <div class="splash-logo" data-brand-logo>
                     <svg width="48" height="48" viewBox="0 0 40 40" fill="none">
                         <circle cx="20" cy="20" r="18" fill="url(#splashGrad)"/>
                         <path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/>
@@ -237,9 +237,16 @@
         <aside class="ai-sidebar" aria-label="Main navigation">
             <div class="ai-sidebar-inner">
                 <a class="ai-sidebar-logo" id="aiSidebarLogo" href="#" aria-label="Tamil AI Stream Home">
-                    <div class="ai-sidebar-logo-icon">
+                    <div class="ai-sidebar-logo-icon" data-brand-logo>
                         <svg viewBox="0 0 40 40" fill="none">
+                            <circle cx="20" cy="20" r="18" fill="url(#sidebarGrad)"/>
                             <path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/>
+                            <defs>
+                                <linearGradient id="sidebarGrad" x1="0" y1="0" x2="40" y2="40">
+                                    <stop stop-color="#34d399"/>
+                                    <stop offset="1" stop-color="#10b981"/>
+                                </linearGradient>
+                            </defs>
                         </svg>
                     </div>
                     <div class="ai-sidebar-logo-text">

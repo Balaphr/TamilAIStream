@@ -1847,6 +1847,8 @@ window.AIHome = (() => {
     /* ---------------- Refresh + init ---------------- */
     function refreshHome() {
         stopHeroTimer();
+        // Clear decade song cache so newly assigned songs appear
+        _decadeSongCache = {};
         // Greeting hero bar sits at the top of Home. Idempotent — builds once,
         // then only updates greeting/date/quote text in place.
         if (typeof renderGreetingSection === 'function') renderGreetingSection();

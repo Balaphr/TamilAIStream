@@ -164,9 +164,9 @@
                         <i class="fas fa-bars"></i>
                     </button>
                     <div class="builder-nav-logo">
-                        <div class="logo-icon"><i class="fas fa-microphone-alt"></i></div>
+                        <div class="logo-icon" data-brand-logo><i class="fas fa-microphone-alt"></i></div>
                         <div>
-                            <h1>Tamil AI Stream</h1>
+                            <h1 data-brand-text>Tamil AI Stream</h1>
                             <span>Admin Panel</span>
                         </div>
                     </div>
@@ -230,6 +230,9 @@
                             </button>
                             <button class="builder-sidebar-item" data-page="moods">
                                 <i class="fas fa-smile"></i> Moods & Genres
+                            </button>
+                            <button class="builder-sidebar-item" data-page="decades">
+                                <i class="fas fa-clock"></i> Music by Era
                             </button>
                             <button class="builder-sidebar-item" data-page="musiccollections">
                                 <i class="fas fa-folder-tree"></i> Music Collections
@@ -1385,6 +1388,26 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Music by Era (Decades) Page -->
+                    <div class="builder-page" id="decadesPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title"><i class="fas fa-clock" style="color:var(--accent);margin-right:8px;"></i>Music by Era</h1>
+                            <p class="builder-page-subtitle">Manage songs for each decade (80's, 90's, 2K, New). Assign songs to eras using the "Music Era" field when adding/editing songs.</p>
+                        </div>
+                        <div class="builder-content-card" style="margin-bottom:20px;">
+                            <div class="builder-card-header">
+                                <h3>How to Assign Songs to Eras</h3>
+                            </div>
+                            <div class="builder-card-body">
+                                <p style="color:var(--text-secondary);font-size:0.9rem;line-height:1.6;">
+                                    Go to <strong>Add Songs</strong> or edit any song and set the <strong>"Music Era"</strong> dropdown to assign it to a decade.
+                                    Songs are automatically grouped by their era field. You can also bulk-assign songs below.
+                                </p>
+                            </div>
+                        </div>
+                        <div id="decadesAdminGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;"></div>
                     </div>
 
                     <!-- AI Radio Page -->

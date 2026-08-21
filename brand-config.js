@@ -72,8 +72,21 @@
           const img = document.createElement('img');
           img.src = logo;
           img.alt = name;
-          img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+          img.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:50%;';
+          img.loading = 'lazy';
           el.appendChild(img);
+          // Update PWA manifest icons to use the brand logo
+          try {
+            const manifestLink = document.querySelector('link[rel="manifest"]');
+            if (manifestLink) {
+              fetch(manifestLink.href).then(r => r.json()).then(manifest => {
+                if (manifest.icons) {
+                  manifest.icons.forEach(icon => { icon.src = logo; });
+                  // Note: manifest is only updatable via server-side for installed PWAs
+                }
+              }).catch(() => {});
+            }
+          } catch (e) {}
         }
       });
 
