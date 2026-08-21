@@ -49,12 +49,21 @@ const DataStore = {
     },
 
     set(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
-        
-        // Trigger storage event for cross-tab sync
+        // Skip unchanged writes entirely: re-saving identical content used to
+        // fire synthetic storage events that triggered full section re-renders
+        // (the "blinking" storm) for zero benefit.
+        let serialized;
+        try { serialized = JSON.stringify(value); } catch (e) { return; }
+        try {
+            if (localStorage.getItem(key) === serialized) return;
+        } catch (e) { /* storage unavailable — still attempt set below */ }
+
+        localStorage.setItem(key, serialized);
+
+        // Trigger storage event for cross-tab sync (only on real changes)
         window.dispatchEvent(new StorageEvent('storage', {
             key: key,
-            newValue: JSON.stringify(value)
+            newValue: serialized
         }));
     },
 

@@ -2512,35 +2512,44 @@ function toggleFavorite(button, event) {
 // ============================================
 // Website Layout Sync from Builder (localStorage)
 // ============================================
+let _layoutApplied = false;
 function setupLayoutSync() {
+    if (_layoutApplied) return;
     const saved = localStorage.getItem('websiteLayout');
-    if (!saved) return;
-    
+    if (!saved) { _layoutApplied = true; return; }
+
     try {
         const sections = JSON.parse(saved);
-        if (!sections || !sections.length) return;
-        
+        if (!sections || !sections.length) { _layoutApplied = true; return; }
+
         console.log('Layout loaded from localStorage:', sections.length, 'sections');
-        
+
         const allSections = document.querySelectorAll('[data-section]');
         const sectionOrder = sections.map(s => s.type);
-        
+
         const mainContent = allSections[0]?.parentElement;
         if (!mainContent) return;
-        
-        // Reorder sections that are in the saved layout
-        sectionOrder.forEach(type => {
-            const section = mainContent.querySelector(`[data-section="${type}"]`);
-            if (section) mainContent.appendChild(section);
-        });
-        
+
+        // Reorder ONLY when the DOM order actually differs. appendChild moves an
+        // existing node, forcing a repaint of that subtree — running this on
+        // every call visibly blinked every section.
+        const ordered = sectionOrder
+            .map(type => mainContent.querySelector(`[data-section="${type}"]`))
+            .filter(Boolean);
+        const inOrder = ordered.every((el, i) =>
+            i === 0 || (ordered[i - 1].compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING));
+        if (!inOrder) {
+            ordered.forEach(section => mainContent.appendChild(section));
+        }
+        _layoutApplied = true;
+
         // Show/hide sections based on saved layout
         // New sections not in saved layout are shown by default (additive approach)
         allSections.forEach(section => {
             const type = section.dataset.section;
             if (sectionOrder.includes(type)) {
                 section.style.display = '';
-            } else if (type.startsWith('made-for-') || type.startsWith('new-releases') || 
+            } else if (type.startsWith('made-for-') || type.startsWith('new-releases') ||
                        type.startsWith('top-charts') || type.startsWith('curated-playlists') ||
                        type.startsWith('recently-played') || type.startsWith('artist-essentials')) {
                 // Premium sections: show by default
@@ -4610,30 +4619,21 @@ document.addEventListener('click', function(e) {
 // This runs on a live site tab whenever the Builder publishes — no full-page
 // reload, no duplicate records, and the audio player is left completely alone
 // (no playback interruption / reset).
+// Coalesced content refresh. NOTE: this must NOT call bootstrapSharedContent()
+// — that persists content → fires storage events → triggers this again,
+// creating an infinite render/fetch storm that visibly blinks every section.
+// R2 sync is owned by r2-content-sync.js (one bootstrap on load + 10-min poll).
+let _rlcTimer = null;
 function refreshLiveContent() {
-    const render = () => {
+    if (_rlcTimer) clearTimeout(_rlcTimer);
+    _rlcTimer = setTimeout(() => {
+        _rlcTimer = null;
         _isRenderingAll = false;
         renderAllDynamicContent();
         if (typeof YTMusic !== 'undefined' && typeof YTMusic.renderAllPages === 'function') {
             try { YTMusic.renderAllPages(); } catch (e) { /* ignore */ }
         }
-    };
-
-    if (typeof ContentSync !== 'undefined' && typeof ContentSync.bootstrapSharedContent === 'function') {
-        ContentSync.bootstrapSharedContent().then(function() {
-            // After R2 sync, force re-render all sections including personalized
-            _isRenderingAll = false;
-            _homeSectionHashes.personalized = ''; // clear hash cache for Made For You
-            _homeSectionHashes.recentlyAdded = ''; // clear hash cache for Recently Added
-            _homeSectionHashes.upcomingReleases = ''; // clear hash cache for Upcoming Releases
-            _homeSectionHashes.trending = ''; // clear hash cache for Trending
-            _homeSectionHashes.aiRecommended = ''; // clear hash cache for AI Recommended
-            _homeSectionHashes.albums = ''; // clear hash cache for Albums
-            render();
-        }).catch(render);
-    } else {
-        render();
-    }
+    }, 250);
 }
 
 function setupRealtimeSync() {
