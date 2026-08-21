@@ -583,13 +583,17 @@ const GlobalPlayer = (() => {
         PlayerEngine.on('colorTheme', (idx) => { themeIdx = idx; applyTheme(); });
     }
 
+    let _persistTimer = null;
     function persistState() {
-        try {
-            localStorage.setItem('gp_current_state', JSON.stringify({
-                isPlaying: state.isPlaying, track: state.track, currentTime: state.currentTime,
-                duration: state.duration, volume: state.volume, timestamp: Date.now()
-            }));
-        } catch (e) {}
+        if (_persistTimer) clearTimeout(_persistTimer);
+        _persistTimer = setTimeout(() => {
+            try {
+                localStorage.setItem('gp_current_state', JSON.stringify({
+                    isPlaying: state.isPlaying, track: state.track, currentTime: state.currentTime,
+                    duration: state.duration, volume: state.volume, timestamp: Date.now()
+                }));
+            } catch (e) {}
+        }, 1500);
     }
 
     function syncStateFromScript() {
@@ -859,28 +863,30 @@ const GlobalPlayer = (() => {
                 bg.style.transform = '';
             }
         }
-        // Dynamic gradient from artwork
-        try {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.src = artwork;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = 50;
-                canvas.height = 50;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, 50, 50);
-                const data = ctx.getImageData(10, 10, 1, 1).data;
-                const r = data[0], g = data[1], b = data[2];
-                const glowColor = `rgba(${r},${g},${b},0.2)`;
-                const gradientColor = `rgba(${r},${g},${b},0.12)`;
-                const expandedEl = document.getElementById('gp-expanded');
-                if (expandedEl) {
-                    expandedEl.style.setProperty('--gp-glow', glowColor);
-                    expandedEl.style.setProperty('--gp-dynamic-gradient', `radial-gradient(ellipse at 50% 0%, ${gradientColor} 0%, transparent 70%)`);
-                }
-            };
-        } catch(e) {}
+        // Dynamic gradient from artwork — only when expanded player is open
+        if (isExpanded) {
+            try {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.src = artwork;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 50;
+                    canvas.height = 50;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, 50, 50);
+                    const data = ctx.getImageData(10, 10, 1, 1).data;
+                    const r = data[0], g = data[1], b = data[2];
+                    const glowColor = `rgba(${r},${g},${b},0.2)`;
+                    const gradientColor = `rgba(${r},${g},${b},0.12)`;
+                    const expandedEl = document.getElementById('gp-expanded');
+                    if (expandedEl) {
+                        expandedEl.style.setProperty('--gp-glow', glowColor);
+                        expandedEl.style.setProperty('--gp-dynamic-gradient', `radial-gradient(ellipse at 50% 0%, ${gradientColor} 0%, transparent 70%)`);
+                    }
+                };
+            } catch(e) {}
+        }
         updateFavUI();
     }
 

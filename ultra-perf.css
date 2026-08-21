@@ -821,32 +821,6 @@ body.gp-visible .tamilai-bottom-nav {
 }
 
 /* ============================================
-   28. LOW-MOTION ACCESSIBILITY
-   ============================================ */
-@media (prefers-reduced-motion: reduce) {
-    .premium-particles-canvas,
-    .hero-particles-canvas,
-    .neural-bg-canvas,
-    .splash-particles {
-        display: none !important;
-    }
-    .ambient-glow,
-    .ambient-light::after {
-        animation: none !important;
-        opacity: 0 !important;
-    }
-    .vinyl-disc.spinning,
-    .artwork-float,
-    .gp-art-float,
-    .card-pulse,
-    .now-playing-glow::before,
-    .glass-player.playing::before,
-    .progress-shimmer::before {
-        animation: none !important;
-    }
-}
-
-/* ============================================
    29. REDUCE GPU COMPOSITING LAYERS
    ============================================ */
 /* Remove excessive will-change on mobile to reduce layer count */
@@ -1051,6 +1025,16 @@ body.gp-visible .tamilai-bottom-nav {
     .ai-news-card {
         contain: layout style paint;
     }
+    /* Content-visibility for below-fold sections on mobile */
+    .ytm-page:not(.ytm-page-home),
+    .ai-favorites-section,
+    .ai-news-section,
+    .ai-artist-hits-section,
+    .ai-movies-section,
+    .ai-yearly-section {
+        content-visibility: auto;
+        contain-intrinsic-size: 0 400px;
+    }
 }
 
 /* Lazy image rendering */
@@ -1240,14 +1224,4 @@ img[src=""] {
 @keyframes slideUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
-}
-
-/* Reduce motion for accessibility */
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-    html { scroll-behavior: auto; }
 }

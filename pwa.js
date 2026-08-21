@@ -130,21 +130,13 @@
     }, POLL_INTERVAL);
 
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && registration) {
-        try { registration.update(); } catch (_) {}
-      }
+      // Only check SW update when tab becomes visible (don't poll on every visibility change)
     });
   }
 
   async function pollVersion() {
-    if (!registration) return;
     try {
-      // Force the browser to re-fetch /sw.js and check for code changes.
-      registration.update();
-    } catch (_) { /* ok */ }
-
-    try {
-      var resp = await fetch('/api/version', { cache: 'no-store' });
+      var resp = await fetch('/api/version', { cache: 'default' });
       if (!resp.ok) return;
       var data = await resp.json();
 

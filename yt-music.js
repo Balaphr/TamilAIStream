@@ -505,16 +505,14 @@ const YTMusic = {
                 }
                 ctx.globalAlpha = 1;
             } else {
+                // Idle state — draw a static flat line (no animation, saves CPU)
                 ctx.strokeStyle = gradient;
                 ctx.lineWidth = 2;
-                ctx.globalAlpha = 0.4;
+                ctx.globalAlpha = 0.25;
                 ctx.beginPath();
                 const mid = height / 2;
-                for (let i = 0; i <= width; i += 6) {
-                    const wave = Math.sin((i / width) * Math.PI * 2 + Date.now() / 1500) * 8;
-                    if (i === 0) ctx.moveTo(i, mid + wave);
-                    else ctx.lineTo(i, mid + wave);
-                }
+                ctx.moveTo(0, mid);
+                ctx.lineTo(width, mid);
                 ctx.stroke();
                 ctx.globalAlpha = 1;
             }
@@ -526,11 +524,11 @@ const YTMusic = {
                     const idx = Math.floor((index / barsList.length) * freqData.length);
                     amplitude = freqData[idx] / 255;
                 } else {
-                    amplitude = 0.15 + Math.sin(Date.now() / 2000 + index * 0.5) * 0.1;
+                    amplitude = 0;
                 }
-                const value = Math.max(8, amplitude * 100);
+                const value = Math.max(4, amplitude * 100);
                 bar.style.height = `${value}%`;
-                bar.style.opacity = isActive ? (0.5 + amplitude * 0.5) : 0.3;
+                bar.style.opacity = isActive ? (0.5 + amplitude * 0.5) : 0.15;
             });
 
             this.visualizerFrame = requestAnimationFrame(draw);

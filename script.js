@@ -136,7 +136,7 @@ class ParticleSystem {
     init() { this.resize(); this.createParticles(); this.createNeuralNodes(); this.bindEvents(); this.animate(); }
     resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
     createParticles() {
-        const count = Math.min(Math.floor((this.canvas.width * this.canvas.height) / 8000), 80);
+        const count = Math.min(Math.floor((this.canvas.width * this.canvas.height) / 20000), 40);
         this.particles = [];
         for (let i = 0; i < count; i++) {
             this.particles.push({
@@ -157,7 +157,7 @@ class ParticleSystem {
         }
     }
     createNeuralNodes() {
-        const count = Math.min(Math.floor((this.canvas.width * this.canvas.height) / 15000), 12);
+        const count = Math.min(Math.floor((this.canvas.width * this.canvas.height) / 40000), 6);
         this.neuralNodes = [];
         for (let i = 0; i < count; i++) {
             this.neuralNodes.push({
@@ -199,28 +199,14 @@ class ParticleSystem {
         this.neuralNodes = [];
     }
     drawGlassParticle(p) {
-        const gradient = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
-        gradient.addColorStop(0, `hsla(${p.hue}, ${p.saturation}%, ${p.lightness}%, ${p.opacity * p.glassIntensity})`);
-        gradient.addColorStop(0.3, `hsla(${p.hue}, ${p.saturation}%, ${p.lightness}%, ${p.opacity * p.glassIntensity * 0.4})`);
-        gradient.addColorStop(1, `hsla(${p.hue}, ${p.saturation}%, ${p.lightness}%, 0)`);
-        this.ctx.beginPath();
-        this.ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2);
-        this.ctx.fillStyle = gradient;
-        this.ctx.fill();
+        const alpha = p.opacity * p.glassIntensity;
+        if (alpha < 0.02) return; // Skip nearly invisible particles
         this.ctx.beginPath();
         this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        this.ctx.fillStyle = `hsla(${p.hue}, ${p.saturation}%, ${Math.min(p.lightness + 30, 90)}%, ${p.opacity * 0.9})`;
+        this.ctx.fillStyle = `hsla(${p.hue}, ${p.saturation}%, ${p.lightness}%, ${alpha})`;
         this.ctx.fill();
     }
     drawNeuralNode(node) {
-        const glow = this.ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.radius * 6);
-        glow.addColorStop(0, `rgba(100, 200, 255, ${node.opacity * 0.6})`);
-        glow.addColorStop(0.5, `rgba(100, 200, 255, ${node.opacity * 0.15})`);
-        glow.addColorStop(1, `rgba(100, 200, 255, 0)`);
-        this.ctx.beginPath();
-        this.ctx.arc(node.x, node.y, node.radius * 6, 0, Math.PI * 2);
-        this.ctx.fillStyle = glow;
-        this.ctx.fill();
         this.ctx.beginPath();
         this.ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
         this.ctx.fillStyle = `rgba(180, 220, 255, ${node.opacity})`;
@@ -240,6 +226,7 @@ class ParticleSystem {
         this.ctx.stroke();
     }
     animate() {
+        if (document.hidden) { this._rafId = null; return; }
         this.time += 0.01;
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.particles.forEach((p, i) => {
@@ -265,7 +252,7 @@ class ParticleSystem {
             const pulseOpacity = p.opacity + Math.sin(p.pulse) * 0.15;
             p.opacity = Math.max(0.05, Math.min(0.8, pulseOpacity));
             this.drawGlassParticle(p);
-            for (let j = i + 1; j < this.particles.length; j++) {
+            for (let j = i + 1; j < Math.min(i + 8, this.particles.length); j++) {
                 const p2 = this.particles[j];
                 const dx = p.x - p2.x, dy = p.y - p2.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -342,7 +329,7 @@ class FeaturedSlider {
             if (Math.abs(diff) > 50) { diff > 0 ? this.next() : this.prev(); this.resetAutoplay(); }
         });
     }
-    startAutoplay() { this.autoplayInterval = setInterval(() => { if (!document.hidden) this.next(); }, 5000); }
+    startAutoplay() { this.autoplayInterval = setInterval(() => { if (!document.hidden && !document.querySelector('.slider:hover')) this.next(); }, 5000); }
     resetAutoplay() { clearInterval(this.autoplayInterval); this.startAutoplay(); }
     destroy() { clearInterval(this.autoplayInterval); }
 }
@@ -577,20 +564,24 @@ function initAudioPlayer() {
     if (!audioPlayer) {
         audioPlayer = new Audio();
         window.audioPlayer = audioPlayer;
-        audioPlayer.preload = 'auto';
+        audioPlayer.preload = 'metadata';
         audioPlayer.volume = playbackVolume;
 
         try {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            analyserNode = audioCtx.createAnalyser();
+            // Reuse existing AudioContext if PlayerEngine already created one
+            audioCtx = window.audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+            window.audioCtx = audioCtx;
+            analyserNode = window.analyserNode || audioCtx.createAnalyser();
+            window.analyserNode = analyserNode;
             analyserNode.fftSize = 256;
             analyserNode.smoothingTimeConstant = 0.8;
             audioFreqData = new Uint8Array(analyserNode.frequencyBinCount);
-            window.analyserNode = analyserNode;
             window.audioFreqData = audioFreqData;
-            window.audioCtx = audioCtx;
             try {
-                audioSourceNode = audioCtx.createMediaElementSource(audioPlayer);
+                // Only create source if not already connected
+                if (!audioSourceNode) {
+                    audioSourceNode = audioCtx.createMediaElementSource(audioPlayer);
+                }
                 audioSourceNode.connect(analyserNode);
                 analyserNode.connect(audioCtx.destination);
             } catch(e) {}

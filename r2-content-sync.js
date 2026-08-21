@@ -343,7 +343,7 @@
         const timer = setTimeout(() => controller.abort(), 15000);
         try {
             const response = await fetch('/api/manifest', {
-                cache: 'no-store',
+                cache: 'default',
                 signal: controller.signal
             });
             if (!response.ok) {
@@ -595,7 +595,7 @@
 
     // List objects in the R2 bucket under a prefix (paginated via cursors).
     // Accepts an optional onProgress(percent, message) callback for UI updates.
-    async function listR2Objects(prefix = '', limit = 1000, onProgress = null) {
+    async function listR2Objects(prefix = '', limit = 200, onProgress = null) {
         const objects = [];
         try {
             let cursor = undefined;
@@ -660,7 +660,8 @@
             });
 
             // Audio has been stored under several prefixes across the app's history.
-            const prefixes = ['audio/', 'songs/', 'music/', 'media/', ''];
+            // Reduced from 5 to 3 most common prefixes to cut network requests.
+            const prefixes = ['audio/', 'songs/', ''];
             const audioObjects = [];
             const seen = new Set();
             for (let i = 0; i < prefixes.length; i++) {
@@ -688,7 +689,7 @@
             // Best-effort album cover matching using the leading upload timestamp.
             pct(55, 'Matching covers', 'Scanning image files for album covers…');
             const imageByTs = new Map();
-            for (const prefix of ['albums/', 'images/', 'thumbnails/', '']) {
+            for (const prefix of ['albums/', 'images/']) {
                 const objs = await listR2Objects(prefix, 1000, (p, msg) => {
                     if (msg) pct(null, null, msg);
                 });
@@ -788,10 +789,18 @@
     global.addEventListener?.('DOMContentLoaded', () => {
         // Pull the authoritative R2 manifest once on load.
         global.ContentSync?.bootstrapSharedContent?.().then(() => {
-            // Auto-import any existing R2 media not yet tracked locally.
-            global.ContentSync?.discoverR2Songs?.().catch(() => {});
-            // Keep open sessions in sync in near real-time.
-            global.ContentSync?.startSyncing?.(30000);
+            // Defer R2 discovery to avoid heavy network requests on initial load.
+            // Only scan R2 if user has no songs locally (first visit) or on idle.
+            const hasLocalSongs = (global.DataStore?.getSongs?.() || []).length > 0;
+            if (!hasLocalSongs) {
+                global.ContentSync?.discoverR2Songs?.().catch(() => {});
+            } else if (typeof requestIdleCallback !== 'undefined') {
+                requestIdleCallback(() => { global.ContentSync?.discoverR2Songs?.().catch(() => {}); }, { timeout: 30000 });
+            } else {
+                setTimeout(() => { global.ContentSync?.discoverR2Songs?.().catch(() => {}); }, 10000);
+            }
+            // Sync every 2 minutes (was 30s — excessive for data savings on mobile)
+            global.ContentSync?.startSyncing?.(120000);
         }).catch(() => {});
     });
 

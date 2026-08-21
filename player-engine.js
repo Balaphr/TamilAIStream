@@ -133,7 +133,7 @@ const PlayerEngine = (() => {
             audio = new Audio();
             window.audioPlayer = audio;
         }
-        audio.preload = 'auto';
+        audio.preload = 'metadata';
         audio.volume = state.volume;
         audio.playbackRate = state.speed;
 
@@ -637,7 +637,7 @@ const PlayerEngine = (() => {
         if (_saveInterval) return;
         _saveInterval = setInterval(() => {
             if (state.isPlaying) saveStateImmediate();
-        }, 30000);
+        }, 60000);
     }
 
     function stopSaveInterval() {
