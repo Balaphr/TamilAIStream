@@ -63,6 +63,18 @@ const DataStore = {
         return data ? JSON.parse(data) : null;
     },
 
+    // Internal: filter out items whose IDs appear in deletedIds[type]
+    _filterDeleted(items, type) {
+        if (!Array.isArray(items) || items.length === 0) return items;
+        try {
+            const deletedIds = this.get(this.KEYS.DELETED_IDS) || {};
+            const ids = deletedIds[type];
+            if (!Array.isArray(ids) || ids.length === 0) return items;
+            const set = new Set(ids);
+            return items.filter(item => item && item.id != null && !set.has(item.id));
+        } catch (e) { return items; }
+    },
+
     publishToLive() {
         const keys = Object.values(this.KEYS);
         let count = 0;
@@ -77,31 +89,31 @@ const DataStore = {
         return count;
     },
 
-    getSongs() { return this.get(this.KEYS.SONGS) || []; },
+    getSongs() { return this._filterDeleted(this.get(this.KEYS.SONGS) || [], 'songs'); },
     setSongs(songs) { this.set(this.KEYS.SONGS, songs); },
     
-    getStations() { return this.get(this.KEYS.STATIONS) || []; },
+    getStations() { return this._filterDeleted(this.get(this.KEYS.STATIONS) || [], 'stations'); },
     setStations(stations) { this.set(this.KEYS.STATIONS, stations); },
     
-    getCategories() { return this.get(this.KEYS.CATEGORIES) || []; },
+    getCategories() { return this._filterDeleted(this.get(this.KEYS.CATEGORIES) || [], 'categories'); },
     setCategories(categories) { this.set(this.KEYS.CATEGORIES, categories); },
     
-    getFeatured() { return this.get(this.KEYS.FEATURED) || []; },
+    getFeatured() { return this._filterDeleted(this.get(this.KEYS.FEATURED) || [], 'featured'); },
     setFeatured(featured) { this.set(this.KEYS.FEATURED, featured); },
     
-    getTrending() { return this.get(this.KEYS.TRENDING) || []; },
+    getTrending() { return this._filterDeleted(this.get(this.KEYS.TRENDING) || [], 'trending'); },
     setTrending(trending) { this.set(this.KEYS.TRENDING, trending); },
     
-    getImages() { return this.get(this.KEYS.IMAGES) || []; },
+    getImages() { return this._filterDeleted(this.get(this.KEYS.IMAGES) || [], 'images'); },
     setImages(images) { this.set(this.KEYS.IMAGES, images); },
     
-    getMoods() { return this.get(this.KEYS.MOODS) || []; },
+    getMoods() { return this._filterDeleted(this.get(this.KEYS.MOODS) || [], 'moods'); },
     setMoods(moods) { this.set(this.KEYS.MOODS, moods); },
     
-    getAIRadio() { return this.get(this.KEYS.AI_RADIO) || []; },
+    getAIRadio() { return this._filterDeleted(this.get(this.KEYS.AI_RADIO) || [], 'aiRadio'); },
     setAIRadio(radio) { this.set(this.KEYS.AI_RADIO, radio); },
     
-    getQuotes() { return this.get(this.KEYS.QUOTES) || []; },
+    getQuotes() { return this._filterDeleted(this.get(this.KEYS.QUOTES) || [], 'quotes'); },
     setQuotes(quotes) { this.set(this.KEYS.QUOTES, quotes); },
     
     getSiteSettings() { return this.get(this.KEYS.SITE_SETTINGS) || {}; },
@@ -125,10 +137,10 @@ const DataStore = {
     getYTSettings() { return this.get(this.KEYS.SETTINGS) || {}; },
     setYTSettings(settings) { this.set(this.KEYS.SETTINGS, settings); },
 
-    getNotifications() { return this.get(this.KEYS.NOTIFICATIONS) || []; },
+    getNotifications() { return this._filterDeleted(this.get(this.KEYS.NOTIFICATIONS) || [], 'notifications'); },
     setNotifications(notifications) { this.set(this.KEYS.NOTIFICATIONS, notifications); },
 
-    getArtistHits() { return this.get(this.KEYS.ARTIST_HITS) || []; },
+    getArtistHits() { return this._filterDeleted(this.get(this.KEYS.ARTIST_HITS) || [], 'artistHits'); },
     setArtistHits(hits) { this.set(this.KEYS.ARTIST_HITS, hits); },
 
     getSplash() { return this.get('tamilAIStream_splash') || {}; },
@@ -158,13 +170,13 @@ const DataStore = {
     getLatestCollections() { return this.get(this.KEYS.LATEST_COLLECTIONS) || []; },
     setLatestCollections(data) { this.set(this.KEYS.LATEST_COLLECTIONS, data); },
 
-    getMusicCollections() { return this.get(this.KEYS.MUSIC_COLLECTIONS) || []; },
+    getMusicCollections() { return this._filterDeleted(this.get(this.KEYS.MUSIC_COLLECTIONS) || [], 'musicCollections'); },
     setMusicCollections(data) { this.set(this.KEYS.MUSIC_COLLECTIONS, data); },
 
-    getAdvertisements() { return this.get(this.KEYS.ADVERTISEMENTS) || []; },
+    getAdvertisements() { return this._filterDeleted(this.get(this.KEYS.ADVERTISEMENTS) || [], 'advertisements'); },
     setAdvertisements(ads) { this.set(this.KEYS.ADVERTISEMENTS, ads); },
 
-    getUpcomingReleases() { return this.get(this.KEYS.UPCOMING_RELEASES) || []; },
+    getUpcomingReleases() { return this._filterDeleted(this.get(this.KEYS.UPCOMING_RELEASES) || [], 'upcomingReleases'); },
     setUpcomingReleases(data) { this.set(this.KEYS.UPCOMING_RELEASES, data); },
 
     getNews() { return this.get(this.KEYS.NEWS) || []; },

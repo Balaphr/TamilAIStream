@@ -265,6 +265,7 @@
                 latestCollections: 'latestCollections',
                 musicCollections: 'musicCollections',
                 advertisements: 'advertisements',
+                upcomingReleases: 'upcomingReleases',
                 news: 'news'
             };
 

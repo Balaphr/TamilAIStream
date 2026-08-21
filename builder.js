@@ -440,12 +440,71 @@ function setupLoginScreen() {
 // ============================================
 let _currentPage = null;
 const _pageLoaded = {};
+
+// ============================================
+// Universal Deleted Items Filter
+// Filters out items whose IDs are in deletedIds
+// ============================================
+function _filterDeletedItems(items, type) {
+    if (!Array.isArray(items)) return items;
+    try {
+        const deletedIds = DataStore.getDeletedIds();
+        const typeIds = deletedIds?.[type];
+        if (!Array.isArray(typeIds) || typeIds.length === 0) return items;
+        const deletedSet = new Set(typeIds);
+        return items.filter(item => item && item.id && !deletedSet.has(item.id));
+    } catch (e) { return items; }
+}
+
+// ============================================
+// Right Panel (Settings/Properties)
+// ============================================
+const _rightPanelPages = [
+    'settings', 'moods', 'decades', 'navigation', 'sections',
+    'player', 'miniplayersettings', 'splash', 'ads', 'upcomingReleases',
+    'news', 'notifications', 'airadio', 'trash', 'analytics', 'site360',
+    'aiwebflow', 'visualeditor', 'musiccollections'
+];
+
+function openRightPanel(title, html) {
+    const panel = document.getElementById('builderRightPanel');
+    const titleEl = document.getElementById('rightPanelTitle');
+    const body = document.getElementById('rightPanelBody');
+    const overlay = document.getElementById('rightPanelOverlay');
+    if (!panel) return;
+    if (titleEl) titleEl.innerHTML = title;
+    if (body) body.innerHTML = html;
+    panel.classList.add('open');
+    if (overlay) overlay.classList.add('active');
+}
+
+function closeRightPanel() {
+    const panel = document.getElementById('builderRightPanel');
+    const overlay = document.getElementById('rightPanelOverlay');
+    if (panel) panel.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function isRightPanelPage(page) {
+    return _rightPanelPages.includes(page);
+}
+
 function navigateTo(page) {
     if (_currentPage === page) return;
     _currentPage = page;
 
     document.querySelectorAll('.builder-page').forEach(p => p.style.display = 'none');
     document.querySelectorAll('.builder-sidebar-item').forEach(i => i.classList.remove('active'));
+
+    // Trash opens in right panel, not center
+    if (page === 'trash') {
+        document.querySelectorAll(`[data-page="trash"]`).forEach(el => el.classList.add('active'));
+        _openTrashInRightPanel();
+        return;
+    }
+
+    // Close right panel when navigating to a center page
+    closeRightPanel();
 
     const pageMap = {
         'dashboard': 'dashboardPage',
@@ -471,8 +530,7 @@ function navigateTo(page) {
         'analytics': 'analyticsPage',
         'musiccollections': 'musicCollectionsPage',
         'site360': 'site360Page',
-        'aiwebflow': 'aiwebflowPage',
-        'trash': 'trashPage'
+        'aiwebflow': 'aiwebflowPage'
     };
 
     const pageId = pageMap[page];
@@ -485,34 +543,69 @@ function navigateTo(page) {
 
     if (!_pageLoaded[page]) {
         _pageLoaded[page] = true;
-        if (page === 'dashboard') { loadDashboardStats(); loadDashboardAnalytics(); refreshDashboardSyncStatus(); }
-        if (page === 'stations') loadAllStations();
-        if (page === 'songs') loadAllSongs();
-        if (page === 'content') { loadFeatured(); loadTrending(); loadCategories(); loadArtistHits(); loadCollectionsTable('movies'); loadCollectionsTable('yearly'); loadCollectionsTable('latest'); loadAllSongs(); loadQuotes(); loadContentSectionStats(); }
-        if (page === 'musiccollections') loadMusicCollections();
-        if (page === 'images') loadAllImages();
-        if (page === 'settings') loadSettings();
-        if (page === 'moods') loadMoods();
-        if (page === 'decades') loadDecadesAdmin();
-        if (page === 'airadio') loadAIRadio();
-        if (page === 'notifications') loadNotifications();
-        if (page === 'splash') loadSplashSettings();
-        if (page === 'player') loadPlayerPrefs();
-        if (page === 'navigation') loadNavigation();
-        if (page === 'sections') loadSectionsOrder();
-        if (page === 'ads') loadAdsTable();
-        if (page === 'upcomingReleases') loadUpcomingReleasesTable();
-        if (page === 'news') loadNewsTable();
-        if (page === 'visualeditor') initVisualEditor();
-        if (page === 'miniplayersettings') loadPlayerSettings();
-        if (page === 'preview') updatePreview();
-        if (page === 'analytics') { loadAnalyticsData(); initAnalyticsTabs(); }
-        if (page === 'site360' && typeof Site360 !== 'undefined') Site360.init();
-        if (page === 'aiwebflow' && typeof AIWebflow !== 'undefined') AIWebflow.activate();
-        if (page === 'trash') loadTrashPage();
+        _loadPageData(page);
     } else if (page === 'dashboard') {
         loadDashboardStats();
     }
+}
+
+function _loadPageData(page) {
+    if (page === 'dashboard') { loadDashboardStats(); loadDashboardAnalytics(); refreshDashboardSyncStatus(); }
+    if (page === 'stations') loadAllStations();
+    if (page === 'songs') loadAllSongs();
+    if (page === 'content') { loadFeatured(); loadTrending(); loadCategories(); loadArtistHits(); loadCollectionsTable('movies'); loadCollectionsTable('yearly'); loadCollectionsTable('latest'); loadAllSongs(); loadQuotes(); loadContentSectionStats(); }
+    if (page === 'musiccollections') loadMusicCollections();
+    if (page === 'images') loadAllImages();
+    if (page === 'settings') loadSettings();
+    if (page === 'moods') loadMoods();
+    if (page === 'decades') loadDecadesAdmin();
+    if (page === 'airadio') loadAIRadio();
+    if (page === 'notifications') loadNotifications();
+    if (page === 'splash') loadSplashSettings();
+    if (page === 'player') loadPlayerPrefs();
+    if (page === 'navigation') loadNavigation();
+    if (page === 'sections') loadSectionsOrder();
+    if (page === 'ads') loadAdsTable();
+    if (page === 'upcomingReleases') loadUpcomingReleasesTable();
+    if (page === 'news') loadNewsTable();
+    if (page === 'visualeditor') initVisualEditor();
+    if (page === 'miniplayersettings') loadPlayerSettings();
+    if (page === 'preview') updatePreview();
+    if (page === 'analytics') { loadAnalyticsData(); initAnalyticsTabs(); }
+    if (page === 'site360' && typeof Site360 !== 'undefined') Site360.init();
+    if (page === 'aiwebflow' && typeof AIWebflow !== 'undefined') AIWebflow.activate();
+    if (page === 'trash') loadTrashPage();
+}
+
+// ============================================
+// Trash in Right Panel
+// ============================================
+function _openTrashInRightPanel() {
+    const trashPage = document.getElementById('trashPage');
+    if (!trashPage) return;
+
+    const panelBody = document.getElementById('rightPanelBody');
+    if (panelBody) {
+        // Clone trash content into right panel
+        const clone = trashPage.cloneNode(true);
+        clone.style.display = 'block';
+        clone.style.margin = '0';
+        clone.style.padding = '0';
+        clone.style.background = 'transparent';
+        panelBody.innerHTML = '';
+        panelBody.appendChild(clone);
+        // Re-run trash loading to populate the cloned table
+        loadTrashPage();
+    }
+
+    openRightPanel('<i class="fas fa-trash-can-arrow-up"></i> Trash', '');
+
+    // Update trash count badge in sidebar
+    try {
+        const trash = DataStore.getTrash();
+        const badge = document.querySelector('[data-page="trash"] .trash-count');
+        if (badge) badge.textContent = trash.length || '';
+    } catch (e) {}
 }
 
 // ============================================
@@ -722,7 +815,10 @@ async function loadAllSongs() {
         if (tableBody) tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-secondary);"><i class="fas fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading songs…</td></tr>';
         if (contentTableBody) contentTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-secondary);"><i class="fas fa-circle-notch fa-spin" style="margin-right:8px;"></i>Loading songs…</td></tr>';
 
-        const songs = DataStore.getSongs();
+        let songs = DataStore.getSongs();
+        // Filter out any songs that are in the deleted IDs list
+        // This prevents R2 sync from re-adding deleted songs
+        songs = _filterDeletedItems(songs, 'songs');
         songs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
         previewSongList = songs;
@@ -2334,6 +2430,10 @@ function initBuilder() {
         });
     });
 
+    // Right panel close button
+    document.getElementById('rightPanelClose')?.addEventListener('click', closeRightPanel);
+    document.getElementById('rightPanelOverlay')?.addEventListener('click', closeRightPanel);
+
     // Logout
     document.getElementById('builderLogout')?.addEventListener('click', signOut);
 
@@ -2528,7 +2628,8 @@ function initBuilder() {
 // Stations Management
 // ============================================
 function loadAllStations() {
-    const stations = DataStore.getStations();
+    let stations = DataStore.getStations();
+    stations = _filterDeletedItems(stations, 'stations');
     const tableBody = document.getElementById('stationsTable');
     if (!tableBody) return;
     
@@ -2689,7 +2790,8 @@ function resetStationForm() {
 // Featured Management
 // ============================================
 function loadFeatured() {
-    const featured = DataStore.getFeatured();
+    let featured = DataStore.getFeatured();
+    featured = _filterDeletedItems(featured, 'featured');
     const stations = DataStore.getStations();
     const tableBody = document.getElementById('featuredTable');
     if (!tableBody) return;
@@ -2879,7 +2981,8 @@ function deleteFeatured(id) {
 // Trending Management
 // ============================================
 function loadTrending() {
-    const trending = DataStore.getTrending();
+    let trending = DataStore.getTrending();
+    trending = _filterDeletedItems(trending, 'trending');
     const stations = DataStore.getStations();
     const tableBody = document.getElementById('trendingTable');
     if (!tableBody) return;
@@ -3040,7 +3143,8 @@ function editTrending(id) {
 // Categories Management
 // ============================================
 function loadCategories() {
-    const categories = DataStore.getCategories();
+    let categories = DataStore.getCategories();
+    categories = _filterDeletedItems(categories, 'categories');
     const tableBody = document.getElementById('categoriesTable');
     if (!tableBody) return;
     
@@ -3184,7 +3288,8 @@ function deleteCategory(id) {
 // Artist Hits Management
 // ============================================
 function loadArtistHits() {
-    const artistHits = DataStore.getArtistHits();
+    let artistHits = DataStore.getArtistHits();
+    artistHits = _filterDeletedItems(artistHits, 'artistHits');
     const tableBody = document.getElementById('artistHitsTable');
     if (!tableBody) return;
     
@@ -4233,7 +4338,8 @@ function loadCollectionsTable(type) {
 }
 
 function loadMusicCollections() {
-    const collections = DataStore.getMusicCollections();
+    let collections = DataStore.getMusicCollections();
+    collections = _filterDeletedItems(collections, 'musicCollections');
     const collectionsList = document.getElementById('musicCollectionsList');
     
     // Populate the "Select Songs" multi-select in the create-collection form
@@ -4883,7 +4989,8 @@ function deleteCollection(type, colId) {
 // Quotes Management
 // ============================================
 function loadQuotes() {
-    const quotes = DataStore.getQuotes();
+    let quotes = DataStore.getQuotes();
+    quotes = _filterDeletedItems(quotes, 'quotes');
     const tableBody = document.getElementById('quotesTable');
     if (!tableBody) return;
     
@@ -5002,7 +5109,8 @@ function deleteQuote(id) {
 // Moods & Genres Management
 // ============================================
 function loadMoods() {
-    const moods = DataStore.getMoods();
+    let moods = DataStore.getMoods();
+    moods = _filterDeletedItems(moods, 'moods');
     const tbody = document.getElementById('moodsTableBody');
     if (!tbody) return;
     tbody.innerHTML = moods.map(m => `
@@ -5080,7 +5188,8 @@ function deleteMood(id) {
 // AI Radio Management
 // ============================================
 function loadAIRadio() {
-    const items = DataStore.getAIRadio();
+    let items = DataStore.getAIRadio();
+    items = _filterDeletedItems(items, 'aiRadio');
     const tbody = document.getElementById('airadioTableBody');
     if (!tbody) return;
     tbody.innerHTML = items.map(a => `
@@ -5293,7 +5402,8 @@ function deleteAIRadio(id) {
 // Notifications Management
 // ============================================
 function loadNotifications() {
-    const items = DataStore.getNotifications();
+    let items = DataStore.getNotifications();
+    items = _filterDeletedItems(items, 'notifications');
     const tbody = document.getElementById('notificationsTableBody');
     if (!tbody) return;
     tbody.innerHTML = items.map(n => `
@@ -5546,7 +5656,8 @@ const AD_POSITIONS = {
 };
 
 function loadAdsTable() {
-    const ads = DataStore.getAdvertisements();
+    let ads = DataStore.getAdvertisements();
+    ads = _filterDeletedItems(ads, 'advertisements');
     const tbody = document.getElementById('adsTableBody');
     const emptyState = document.getElementById('adsEmptyState');
     if (!tbody) return;
@@ -5707,7 +5818,8 @@ function toggleAd(adId) {
 // Upcoming Releases Management
 // ============================================
 function loadUpcomingReleasesTable() {
-    const releases = DataStore.getUpcomingReleases();
+    let releases = DataStore.getUpcomingReleases();
+    releases = _filterDeletedItems(releases, 'upcomingReleases');
     const tbody = document.getElementById('upcomingReleasesTableBody');
     const emptyState = document.getElementById('upcomingReleasesEmptyState');
     if (!tbody) return;
