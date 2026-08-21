@@ -399,19 +399,20 @@ window.AIHome = (() => {
             return;
         }
         grid.innerHTML = stations.map((s, i) => {
-            const name = (s.name || 'FM Station').slice(0, 26);
+            const name = (s.name || 'FM Station');
+            const displayName = name.length > 26 ? name.slice(0, 26) + '…' : name;
             const freq = s.freq ? s.freq + ' FM' : 'FM';
             const lc = s.city || 'Chennai';
             const listeners = s.listeners || 0;
             const lText = listeners >= 1000 ? (listeners / 1000).toFixed(1) + 'K' : String(listeners);
             const thumb = stationThumb(s);
-            return '<div class="ai-fm-card" data-station="' + escapeHtml(name) + '">' +
+            return '<div class="ai-fm-card" data-station-id="' + escapeHtml(s.id || '') + '" data-station="' + escapeHtml(name) + '">' +
                 '<div class="ai-fm-art" style="background:' + stationColor(s, i) + ';">' +
                 '<span class="ai-fm-live-badge"><span class="ai-live-dot" style="box-shadow:none;animation:none;"></span>LIVE</span>' +
                 (thumb ? '<img src="' + escapeHtml(thumb) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-tower-broadcast"></i>') +
                 '</div>' +
                 '<div class="ai-fm-info">' +
-                '<div class="ai-fm-name">' + escapeHtml(name) + '</div>' +
+                '<div class="ai-fm-name">' + escapeHtml(displayName) + '</div>' +
                 '<div class="ai-fm-meta"><span class="ai-fm-freq">' + escapeHtml(freq) + '</span><span>' + escapeHtml(lc) + '</span></div>' +
                 '<div class="ai-fm-wave"><span></span><span></span><span></span><span></span><span></span></div>' +
                 '</div>' +
@@ -420,24 +421,24 @@ window.AIHome = (() => {
         }).join('');
         grid.querySelectorAll('.ai-fm-card').forEach(card => {
             const btn = card.querySelector('.ai-fm-play-btn');
+            const stationId = card.dataset.stationId;
+            const stationName = card.dataset.station;
             if (btn) btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const name = card.dataset.station;
-                if (!name) return;
+                if (!stationName) return;
                 if (typeof window.toggleStationFromCard === 'function') {
-                    window.toggleStationFromCard(card, name);
+                    window.toggleStationFromCard(card, stationName, stationId);
                 } else if (typeof window.playStation === 'function') {
-                    window.playStation(name);
+                    window.playStation(stationName, stationId);
                 }
                 setTimeout(syncFmPlaying, 120);
             });
             card.addEventListener('click', () => {
-                const name = card.dataset.station;
-                if (!name) return;
+                if (!stationName) return;
                 if (typeof window.toggleStationFromCard === 'function') {
-                    window.toggleStationFromCard(card, name);
+                    window.toggleStationFromCard(card, stationName, stationId);
                 } else if (typeof window.playStation === 'function') {
-                    window.playStation(name);
+                    window.playStation(stationName, stationId);
                 }
                 setTimeout(syncFmPlaying, 120);
             });
@@ -1845,6 +1846,37 @@ window.AIHome = (() => {
     }
 
     /* ---------------- Refresh + init ---------------- */
+    function renderRecentlyAdded() {
+        const section = document.getElementById('recentlyAddedSection');
+        const track = document.getElementById('recentlyAddedTrack');
+        if (!section || !track) return;
+
+        let songs = [];
+        try { songs = DataStore.getSongs() || []; } catch (e) { return; }
+        // Filter published, sort by newest, take top 12
+        songs = songs.filter(s => s && (s.status === 'published' || s.status === 'active'));
+        songs.sort((a, b) => new Date(b.createdAt || b.uploadedAt || 0) - new Date(a.createdAt || a.uploadedAt || 0));
+        const recent = songs.slice(0, 12);
+        if (!recent.length) { section.style.display = 'none'; return; }
+
+        section.style.display = 'block';
+        // Double the items for seamless infinite scroll illusion
+        const items = recent.concat(recent);
+        track.innerHTML = items.map((s, i) => {
+            const art = s.albumCover || s.thumbnail || s.artwork || '';
+            const name = (s.title || 'Untitled').slice(0, 30);
+            const artist = (s.artist || s.movie || '').slice(0, 28);
+            const artStyle = art ? `background-image:url('${art}')` : '';
+            const isNew = i < recent.length;
+            return `<div class="ra-song-card" data-song-id="${s.id}" onclick="if(typeof playSongById==='function')playSongById('${s.id}')">
+                <div class="ra-song-art" style="${artStyle}">${isNew ? '<span class="ra-song-new">NEW</span>' : ''}</div>
+                <button class="ra-song-play" onclick="event.stopPropagation();if(typeof playSongById==='function')playSongById('${s.id}')"><i class="fas fa-play"></i></button>
+                <div class="ra-song-name">${name}</div>
+                <div class="ra-song-artist">${artist}</div>
+            </div>`;
+        }).join('');
+    }
+
     function refreshHome() {
         stopHeroTimer();
         // Clear decade song cache so newly assigned songs appear
@@ -1852,6 +1884,7 @@ window.AIHome = (() => {
         // Greeting hero bar sits at the top of Home. Idempotent — builds once,
         // then only updates greeting/date/quote text in place.
         if (typeof renderGreetingSection === 'function') renderGreetingSection();
+        renderRecentlyAdded();
         renderMusicHero();
         renderTrendingPlaylists();
         renderLiveFm();

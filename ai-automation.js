@@ -28,7 +28,7 @@ const AIAutomation = (() => {
         try {
             const url = URL.createObjectURL(file);
             const audio = new Audio();
-            audio.preload = 'auto';
+            audio.preload = 'metadata';
 
             await new Promise((resolve, reject) => {
                 audio.addEventListener('loadedmetadata', resolve, { once: true });

@@ -772,6 +772,107 @@ body.ai-light .ai-dark-knob { left: 21px; }
     flex-shrink: 0;
     animation: aiLivePulse 1.6s infinite;
 }
+
+/* Recently Added Songs - Horizontal Scroll Track */
+.recently-added-section {
+    padding: 0;
+    margin: 4px 0 8px;
+    overflow: hidden;
+}
+.recently-added-track {
+    display: flex;
+    gap: 10px;
+    padding: 6px 20px 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    animation: recentlyAddedScroll 30s linear infinite;
+}
+.recently-added-track::-webkit-scrollbar { display: none; }
+.recently-added-track:hover { animation-play-state: paused; }
+@keyframes recentlyAddedScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+.ra-song-card {
+    flex: 0 0 auto;
+    width: 140px;
+    background: var(--ai-card);
+    border: 1px solid var(--ai-border);
+    border-radius: 12px;
+    padding: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+.ra-song-card:hover { transform: translateY(-2px); border-color: var(--ai-accent); }
+.ra-song-art {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    background: var(--ai-surface);
+    background-size: cover;
+    background-position: center;
+    margin-bottom: 8px;
+    position: relative;
+}
+.ra-song-new {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--ai-accent);
+    color: #000;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 5px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+}
+.ra-song-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ai-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+.ra-song-artist {
+    font-size: 10px;
+    color: var(--ai-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+.ra-song-play {
+    position: absolute;
+    bottom: 36px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--ai-accent);
+    color: #000;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.2s, transform 0.2s;
+    cursor: pointer;
+    z-index: 2;
+}
+.ra-song-card:hover .ra-song-play { opacity: 1; transform: translateY(0); }
+@media (max-width: 480px) {
+    .recently-added-track { padding: 6px 14px 14px; gap: 8px; }
+    .ra-song-card { width: 120px; padding: 8px; }
+}
 @keyframes aiLivePulse {
     0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.55); }
     70% { box-shadow: 0 0 0 9px rgba(244, 63, 94, 0); }

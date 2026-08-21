@@ -396,7 +396,7 @@ const YTMusic = {
             const stations = DataStore.getStations();
             const stationMatch = stations.find((s) => (s.name || '').toLowerCase().includes(lower.replace('play', '').trim()) || (s.genre || '').toLowerCase().includes(lower.replace('play', '').trim()));
             if (stationMatch) {
-                playStation(stationMatch.name);
+                playStation(stationMatch.name, stationMatch.id);
                 reply = `Playing ${stationMatch.name}.`;
             } else {
                 const songs = DataStore.getSongs() || [];
@@ -1402,7 +1402,7 @@ const YTMusic = {
         let html = '';
         if (results.stations.length) {
             html += `<div class="ytm-search-section"><div class="ytm-search-section-header"><h3 class="ytm-search-section-title">Stations</h3></div><div class="ytm-search-song-list">${results.stations.slice(0, 5).map(s => `
-                <div class="ytm-search-song-item" onclick="playStation('${s.name}')">
+                <div class="ytm-search-song-item" onclick="playStation('${s.name}','${s.id || ''}')">
                     <div class="ytm-search-song-thumb" style="background:${s.gradient || 'var(--ytm-surface-3)'}"></div>
                     <div class="ytm-search-song-info"><div class="ytm-search-song-title">${s.name}</div><div class="ytm-search-song-artist">${s.freq} • ${s.genre}</div></div>
                 </div>`).join('')}</div></div>`;
@@ -1530,7 +1530,7 @@ const YTMusic = {
             </div>
             <div class="ytm-playlist-tracks">
                 ${stations.filter(s => s.status === 'active').map(s => `
-                    <div class="ytm-playlist-track" onclick="playStation('${s.name}')">
+                    <div class="ytm-playlist-track" onclick="playStation('${s.name}','${s.id || ''}')">
                         <div class="ytm-playlist-track-num"><i class="fas fa-play"></i></div>
                         <div class="ytm-playlist-track-thumb" style="background:${s.gradient};border-radius:8px"></div>
                         <div class="ytm-playlist-track-info"><div class="ytm-playlist-track-title">${s.name}</div><div class="ytm-playlist-track-artist">${s.freq} • ${s.genre} • ${s.city}</div></div>

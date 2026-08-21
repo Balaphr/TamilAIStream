@@ -157,6 +157,7 @@ const TamilAIPremium = (function () {
         container.querySelectorAll('.premium-radio-card').forEach((card, i) => {
             card.style.animationDelay = Math.min(i * 0.045, 0.6) + 's';
             const name = stationName(card);
+            const stationId = card.dataset.name ? (activeStations().find(s => s.name === card.dataset.name)?.id || '') : '';
             const playState = () => {
                 if (!isPreview && window.isStreamPlaying && name === window.currentStation) {
                     card.classList.add('active-station', 'playing-station');
@@ -171,10 +172,10 @@ const TamilAIPremium = (function () {
             playState();
             card.addEventListener('click', () => {
                 if (typeof window.toggleStationFromCard === 'function') {
-                    window.toggleStationFromCard(card, name);
+                    window.toggleStationFromCard(card, name, stationId);
                     setTimeout(playState, 80);
                 } else if (typeof window.playStation === 'function') {
-                    window.playStation(name);
+                    window.playStation(name, stationId);
                     setTimeout(playState, 80);
                 }
             });
@@ -198,7 +199,7 @@ const TamilAIPremium = (function () {
                 return;
             }
             const pick = stations[Math.floor(Math.random() * stations.length)];
-            if (typeof window.playStation === 'function') window.playStation(pick.name);
+            if (typeof window.playStation === 'function') window.playStation(pick.name, pick.id);
         });
     }
 
@@ -309,7 +310,7 @@ const TamilAIPremium = (function () {
                     const target = featured
                         ? (DataStore.getStations().find(s => s.id === featured.stationId) || stations[0])
                         : stations[0];
-                    window.playStation(target.name);
+                    window.playStation(target.name, target.id);
                 } else {
                     try {
                         document.getElementById('featuredSlider').scrollIntoView({ behavior: 'smooth' });

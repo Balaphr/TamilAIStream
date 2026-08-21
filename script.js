@@ -486,8 +486,10 @@ function openMusicPlayer(track, playlist = [], queueIndex = -1) {
     }
 }
 
-function getStationStreamUrl(stationName) {
-    const station = DataStore.getStations().find(s => s.name === stationName);
+function getStationStreamUrl(stationNameOrId) {
+    const stations = DataStore.getStations();
+    let station = stations.find(s => s.id === stationNameOrId);
+    if (!station) station = stations.find(s => s.name === stationNameOrId);
     return station?.streamUrl || '';
 }
 
@@ -571,7 +573,7 @@ function initAudioPlayer() {
         window.audioPlayer = audioPlayer;
         // Use 'auto' to let the browser pre-buffer audio data — 'metadata' only
         // fetches duration/headers, leaving playback starved on slower connections.
-        audioPlayer.preload = 'auto';
+        audioPlayer.preload = 'metadata';
         audioPlayer.volume = playbackVolume;
 
         try {
@@ -686,8 +688,6 @@ function initAudioPlayer() {
                 MiniAudioPlayer.updateProgressUI();
             }
             updateNowPlayingBarPause();
-            // Pre-buffer next song in queue when current song is near end
-            _prebufferNextSong();
         });
         audioPlayer.addEventListener('durationchange', () => {
             if (typeof YTMusic !== 'undefined') {
@@ -989,51 +989,16 @@ function _attemptFMReconnect() {
 }
 
 // ============================================
-// Next Song Pre-Buffering
+// Next Song Pre-Buffering (removed)
 // ============================================
-let _prebufferedUrl = null;
-let _prebufferEl = null;
-
 function _prebufferNextSong() {
-    // Only pre-buffer for songs (not FM streams)
-    if (currentPlaybackMode !== 'song' || !audioPlayer) return;
-    // Don't pre-buffer if we're less than 30s from start or more than 15s from end
-    const cur = audioPlayer.currentTime || 0;
-    const dur = audioPlayer.duration || 0;
-    if (dur <= 0 || !isFinite(dur)) return;
-    if (cur < 30 || (dur - cur) > 30) return;
-    // Don't re-buffer the same URL
-    const nextIdx = currentPlaybackQueueIndex + 1;
-    if (nextIdx < 0 || nextIdx >= currentPlaybackQueue.length) return;
-    const nextTrack = currentPlaybackQueue[nextIdx];
-    if (!nextTrack) return;
-    const nextUrl = nextTrack.audioUrl || nextTrack.url;
-    if (!nextUrl || nextUrl === _prebufferedUrl) return;
-    // Create a hidden audio element to pre-buffer the next song's data
-    // This uses the browser's HTTP cache so the main player won't re-fetch
-    try {
-        if (_prebufferEl) {
-            _prebufferEl.removeAttribute('src');
-            _prebufferEl.load();
-        }
-        _prebufferEl = new Audio();
-        _prebufferEl.preload = 'auto';
-        _prebufferEl.src = nextUrl;
-        _prebufferedUrl = nextUrl;
-        console.log('[TamilAI] Pre-buffering next song:', nextTrack.title || nextUrl);
-    } catch (e) {}
+    /* Removed: was downloading entire next song in advance */
+    return;
 }
 
 function stopCurrentStream() {
     if (window.__BUILDER_PREVIEW__) return;
     stopFMBufferMonitor();
-    // Cleanup pre-buffered audio
-    if (_prebufferEl) {
-        _prebufferEl.removeAttribute('src');
-        _prebufferEl.load();
-        _prebufferEl = null;
-        _prebufferedUrl = null;
-    }
     if (audioPlayer) {
         audioPlayer.pause();
         // Only remove src for song-to-song transitions. For FM, removing src
@@ -1115,15 +1080,15 @@ function resumeActivePlaybackSession() {
     return true;
 }
 
-function toggleStationFromCard(btn, stationName) {
+function toggleStationFromCard(btn, stationName, stationId) {
     if (isStreamPlaying && currentStation === stationName) {
         pauseStation();
     } else {
-        playStation(stationName);
+        playStation(stationName, stationId);
     }
 }
 
-function playStation(stationName) {
+function playStation(stationName, stationId) {
     if (window.__BUILDER_PREVIEW__) return;
     // CRITICAL FIX: If the user clicks/touches the station that is ALREADY the
     // active playback source, do NOT stop, restart, or reset it. Preserve the
@@ -1138,8 +1103,6 @@ function playStation(stationName) {
     stopCurrentStream();
     userPaused = false;
     currentPlaybackMode = 'station';
-    // Reset pre-buffer — not needed for live streams
-    _prebufferedUrl = null;
     currentPlaybackQueue = [];
     currentPlaybackQueueIndex = -1;
     currentPlaybackTrack = null;
@@ -1158,7 +1121,7 @@ function playStation(stationName) {
         btn.classList.remove('wave-active', 'pulse-active');
     });
     
-    let streamUrl = getStationStreamUrl(stationName);
+    let streamUrl = getStationStreamUrl(stationId || stationName);
     if (!streamUrl || streamUrl.trim() === '') {
         hideLoadingSpinner();
         showToast(`${stationName} stream is currently unavailable.`, 'error');
@@ -1267,8 +1230,6 @@ async function playSong(song, playlist = []) {
     stopCurrentStream();
     userPaused = false;
     currentPlaybackMode = 'song';
-    // Reset pre-buffer so next song gets fresh buffer
-    _prebufferedUrl = null;
     currentPlaylist = Array.isArray(playlist) ? playlist : [];
     currentSongIndex = currentPlaylist.findIndex(s => s.id === song.id);
     currentPlaybackQueue = currentPlaylist;
@@ -1287,9 +1248,8 @@ async function playSong(song, playlist = []) {
         streamConnecting = true;
         audioPlayer.src = song.audioUrl;
         audioPlayer.volume = playbackVolume;
-        // Use 'auto' so the browser pre-buffers audio data — prevents
-        // stuttering when playback starts on slower connections
-        audioPlayer.preload = 'auto';
+        // Use 'metadata' to reduce data usage — the browser streams on demand
+        audioPlayer.preload = 'metadata';
         try {
             if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume().catch(() => {});
             await audioPlayer.play();

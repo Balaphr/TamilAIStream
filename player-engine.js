@@ -135,7 +135,7 @@ const PlayerEngine = (() => {
         }
         // Use 'auto' to let the browser pre-buffer audio data — 'metadata' only
         // fetches duration/headers, leaving playback starved on slower connections.
-        audio.preload = 'auto';
+        audio.preload = 'metadata';
         audio.volume = state.volume;
         audio.playbackRate = state.speed;
 
@@ -328,9 +328,6 @@ const PlayerEngine = (() => {
 
         const url = track.streamUrl || track.audioUrl || track.url;
         if (!url) { emit('error', new Error('No audio URL')); return; }
-
-        // Reset pre-buffered URL so script.js can pre-buffer the next song
-        if (typeof window._prebufferedUrl !== 'undefined') window._prebufferedUrl = null;
 
         // CRITICAL FIX: If the same track is already loaded and playing/paused,
         // do NOT reset the audio source or position. Just resume if paused.
