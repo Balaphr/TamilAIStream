@@ -269,7 +269,14 @@
                     <button class="ai-sidebar-item" data-ai-page="playlists"><i class="fas fa-list"></i><span>Playlists</span></button>
                 </nav>
                 <div class="ai-sidebar-divider"></div>
-                <div class="ai-sidebar-premium">
+                <nav class="ai-sidebar-nav">
+                    <div class="ai-sidebar-label">Account</div>
+                    <button class="ai-sidebar-item" data-ai-page="settings"><i class="fas fa-gear"></i><span>Settings</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="account"><i class="fas fa-user"></i><span>My Account</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="premium"><i class="fas fa-crown"></i><span>Premium</span></button>
+                </nav>
+                <div class="ai-sidebar-divider"></div>
+                <div class="ai-sidebar-premium" id="aiSidebarPremiumBox">
                     <div class="ai-premium-icon">👑</div>
                     <div class="ai-premium-title">Go Premium</div>
                     <div class="ai-premium-desc">Ad-free experience<br>Exclusive Content</div>
@@ -487,13 +494,17 @@
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-chart-line"></i></div>
                                 <span>Music Dashboard</span>
                             </button>
-                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-action="settings">
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="settings">
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-gear"></i></div>
                                 <span>Settings</span>
                             </button>
-                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-action="profile">
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="account">
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-user"></i></div>
-                                <span>Profile</span>
+                                <span>My Account</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="premium">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-crown"></i></div>
+                                <span>Premium</span>
                             </button>
                             <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item premium-sidebar-admin" id="premiumMobileNavBuilder" style="display:none;" data-action="builder">
                                 <div class="premium-sidebar-item-icon premium-sidebar-item-icon-admin"><i class="fas fa-tools"></i></div>
@@ -742,6 +753,283 @@
             <!-- ============ PAGE: MOVIE UNIVERSE ============ -->
             <div class="ytm-page ytm-page-movie-universe" id="page-movie-universe">
                 <div class="movie-universe-page" id="movieUniversePage"></div>
+            </div>
+
+            <!-- ============ PAGE: SETTINGS ============ -->
+            <div class="ytm-page ytm-page-settings" id="page-settings">
+                <div class="settings-page" id="settingsPage">
+                    <div class="settings-header">
+                        <h1><i class="fas fa-gear"></i> Settings</h1>
+                        <p>Manage your app preferences and account</p>
+                    </div>
+                    <div class="settings-grid">
+                        <!-- Appearance -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-palette"></i>
+                                <h3>Appearance</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Dark Mode</div>
+                                        <div class="settings-row-desc">Switch between dark and light theme</div>
+                                    </div>
+                                    <button class="ai-dark-toggle settings-toggle" id="settingsDarkToggle" aria-label="Toggle dark mode"><span class="ai-dark-knob"></span></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Compact Mode</div>
+                                        <div class="settings-row-desc">Show more content on screen</div>
+                                    </div>
+                                    <button class="settings-toggle" id="settingsCompactToggle" data-setting="compactMode"><span class="settings-toggle-knob"></span></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-user"></i>
+                                <h3>Account</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-account-info" id="settingsAccountInfo">
+                                    <div class="settings-avatar" id="settingsAvatar">G</div>
+                                    <div class="settings-account-meta">
+                                        <div class="settings-account-name" id="settingsAccountName">Guest User</div>
+                                        <div class="settings-account-email" id="settingsAccountEmail">Not signed in</div>
+                                        <div class="settings-account-plan" id="settingsAccountPlan"><i class="fas fa-crown"></i> Free Plan</div>
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Edit Profile</div>
+                                        <div class="settings-row-desc">Update your name, photo, and bio</div>
+                                    </div>
+                                    <button class="settings-action-btn" onclick="window.location.href='profile.html'"><i class="fas fa-arrow-right"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Audio -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-headphones"></i>
+                                <h3>Audio</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">High Quality Audio</div>
+                                        <div class="settings-row-desc">Stream in higher bitrate</div>
+                                    </div>
+                                    <button class="settings-toggle" id="settingsHiFiToggle" data-setting="hiFi"><span class="settings-toggle-knob"></span></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Autoplay</div>
+                                        <div class="settings-row-desc">Play next song automatically</div>
+                                    </div>
+                                    <button class="settings-toggle active" id="settingsAutoplayToggle" data-setting="autoplay"><span class="settings-toggle-knob"></span></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Crossfade</div>
+                                        <div class="settings-row-desc">Smooth transition between songs</div>
+                                    </div>
+                                    <button class="settings-toggle" id="settingsCrossfadeToggle" data-setting="crossfade"><span class="settings-toggle-knob"></span></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notifications -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-bell"></i>
+                                <h3>Notifications</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Push Notifications</div>
+                                        <div class="settings-row-desc">Get notified about new releases</div>
+                                    </div>
+                                    <button class="settings-toggle" id="settingsNotifToggle" data-setting="notifications"><span class="settings-toggle-knob"></span></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Now Playing Updates</div>
+                                        <div class="settings-row-desc">Show track change notifications</div>
+                                    </div>
+                                    <button class="settings-toggle active" id="settingsNowPlayingToggle" data-setting="nowPlayingNotif"><span class="settings-toggle-knob"></span></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Premium -->
+                        <div class="settings-card settings-card-premium">
+                            <div class="settings-card-header">
+                                <i class="fas fa-crown"></i>
+                                <h3>Premium</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-premium-status" id="settingsPremiumStatus">
+                                    <div class="settings-premium-badge free"><i class="fas fa-crown"></i> Free Plan</div>
+                                    <p>Upgrade to Premium for ad-free listening, exclusive content, and offline downloads.</p>
+                                </div>
+                                <div class="settings-premium-features">
+                                    <div class="settings-premium-feature"><i class="fas fa-check"></i> Ad-free experience</div>
+                                    <div class="settings-premium-feature"><i class="fas fa-check"></i> Exclusive content</div>
+                                    <div class="settings-premium-feature"><i class="fas fa-check"></i> Offline downloads</div>
+                                    <div class="settings-premium-feature"><i class="fas fa-check"></i> High quality audio</div>
+                                    <div class="settings-premium-feature"><i class="fas fa-check"></i> Unlimited playlists</div>
+                                </div>
+                                <button class="settings-premium-btn" id="settingsUpgradeBtn">Upgrade to Premium</button>
+                            </div>
+                        </div>
+
+                        <!-- Language -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-language"></i>
+                                <h3>Language</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">App Language</div>
+                                        <div class="settings-row-desc">Choose your preferred language</div>
+                                    </div>
+                                    <select class="settings-select" id="settingsLanguage">
+                                        <option value="en" selected>English</option>
+                                        <option value="ta">Tamil</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- About -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-circle-info"></i>
+                                <h3>About</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Version</div>
+                                        <div class="settings-row-desc">Tamil AI Stream v2.0</div>
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Help & Support</div>
+                                        <div class="settings-row-desc">Get help with the app</div>
+                                    </div>
+                                    <button class="settings-action-btn" onclick="window.open('https://tamilaistream.com/help','_blank')"><i class="fas fa-arrow-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Privacy Policy</div>
+                                        <div class="settings-row-desc">How we handle your data</div>
+                                    </div>
+                                    <button class="settings-action-btn" onclick="window.open('https://tamilaistream.com/privacy','_blank')"><i class="fas fa-arrow-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Logout</div>
+                                        <div class="settings-row-desc">Sign out of your account</div>
+                                    </div>
+                                    <button class="settings-action-btn settings-action-danger" id="settingsLogoutBtn"><i class="fas fa-right-from-bracket"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ PAGE: ACCOUNT ============ -->
+            <div class="ytm-page ytm-page-account" id="page-account">
+                <div class="account-page" id="accountPage">
+                    <div class="settings-header">
+                        <h1><i class="fas fa-user"></i> My Account</h1>
+                        <p>Manage your profile and account details</p>
+                    </div>
+                    <div class="account-profile-card" id="accountProfileCard">
+                        <div class="account-avatar" id="accountAvatar">G</div>
+                        <div class="account-info">
+                            <h2 id="accountName">Guest User</h2>
+                            <p id="accountEmail">Not signed in</p>
+                            <span class="account-plan-badge" id="accountPlanBadge"><i class="fas fa-crown"></i> Free</span>
+                        </div>
+                    </div>
+                    <div class="account-stats-grid" id="accountStatsGrid">
+                        <div class="account-stat"><div class="account-stat-value" id="accountFavCount">0</div><div class="account-stat-label">Favorites</div></div>
+                        <div class="account-stat"><div class="account-stat-value" id="accountPlayCount">0</div><div class="account-stat-label">Plays</div></div>
+                        <div class="account-stat"><div class="account-stat-value" id="accountPlaylistCount">0</div><div class="account-stat-label">Playlists</div></div>
+                        <div class="account-stat"><div class="account-stat-value" id="accountHistoryCount">0</div><div class="account-stat-label">History</div></div>
+                    </div>
+                    <div class="account-actions">
+                        <button class="account-action-btn" onclick="window.location.href='profile.html'"><i class="fas fa-pen"></i> Edit Profile</button>
+                        <button class="account-action-btn account-action-danger" id="accountLogoutBtn"><i class="fas fa-right-from-bracket"></i> Logout</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ PAGE: PREMIUM ============ -->
+            <div class="ytm-page ytm-page-premium" id="page-premium">
+                <div class="premium-page" id="premiumPage">
+                    <div class="premium-hero">
+                        <div class="premium-hero-icon">👑</div>
+                        <h1>Tamil AI Stream Premium</h1>
+                        <p>Unlock the full music experience</p>
+                    </div>
+                    <div class="premium-plans">
+                        <div class="premium-plan-card">
+                            <div class="premium-plan-header">
+                                <h3>Free</h3>
+                                <div class="premium-plan-price">₹0<span>/month</span></div>
+                            </div>
+                            <ul class="premium-plan-features">
+                                <li><i class="fas fa-check"></i> Ad-supported listening</li>
+                                <li><i class="fas fa-check"></i> Standard audio quality</li>
+                                <li><i class="fas fa-check"></i> Limited skips</li>
+                                <li><i class="fas fa-check"></i> Basic playlists</li>
+                            </ul>
+                            <button class="premium-plan-btn" id="premiumFreeBtn">Current Plan</button>
+                        </div>
+                        <div class="premium-plan-card premium-plan-featured">
+                            <div class="premium-plan-badge">Most Popular</div>
+                            <div class="premium-plan-header">
+                                <h3>Premium</h3>
+                                <div class="premium-plan-price">₹99<span>/month</span></div>
+                            </div>
+                            <ul class="premium-plan-features">
+                                <li><i class="fas fa-check"></i> Ad-free experience</li>
+                                <li><i class="fas fa-check"></i> High quality audio (320kbps)</li>
+                                <li><i class="fas fa-check"></i> Unlimited skips</li>
+                                <li><i class="fas fa-check"></i> Offline downloads</li>
+                                <li><i class="fas fa-check"></i> Exclusive content</li>
+                                <li><i class="fas fa-check"></i> Unlimited playlists</li>
+                            </ul>
+                            <button class="premium-plan-btn premium-plan-btn-primary" id="premiumUpgradeBtn">Upgrade Now</button>
+                        </div>
+                        <div class="premium-plan-card">
+                            <div class="premium-plan-header">
+                                <h3>Family</h3>
+                                <div class="premium-plan-price">₹149<span>/month</span></div>
+                            </div>
+                            <ul class="premium-plan-features">
+                                <li><i class="fas fa-check"></i> Everything in Premium</li>
+                                <li><i class="fas fa-check"></i> Up to 6 accounts</li>
+                                <li><i class="fas fa-check"></i> Family mix playlist</li>
+                                <li><i class="fas fa-check"></i> Parental controls</li>
+                            </ul>
+                            <button class="premium-plan-btn" id="premiumFamilyBtn">Coming Soon</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
         </div><!-- /ytm-main-content -->

@@ -620,6 +620,9 @@ const YTMusic = {
                 }
                 break;
             case 'artists': this.renderArtistsContent(); break;
+            case 'settings': this.renderSettingsPage(); break;
+            case 'account': this.renderAccountPage(); break;
+            case 'premium': this.renderPremiumPage(); break;
             case 'search':
                 const pageSI = document.getElementById('ytmSearchPageInput');
                 const mobileSI = document.getElementById('ytmMobileSearchInput');
@@ -1585,6 +1588,98 @@ const YTMusic = {
             <div class="ytm-settings-section"><div class="ytm-settings-section-title">Audio</div>
                 <div class="ytm-settings-item"><span class="ytm-settings-item-label">Volume</span><span class="ytm-settings-item-value">${Math.round(this.volume * 100)}%</span></div>
             </div>`;
+    },
+
+    renderSettingsPage() {
+        const user = (typeof Auth !== 'undefined' && Auth.currentUser) ? Auth.currentUser() : null;
+        const isLight = document.body.classList.contains('ai-light');
+        const darkToggle = document.getElementById('settingsDarkToggle');
+        if (darkToggle) {
+            darkToggle.classList.toggle('active', !isLight);
+            darkToggle.onclick = () => {
+                document.body.classList.toggle('ai-light');
+                const light = document.body.classList.contains('ai-light');
+                try { localStorage.setItem('ai_theme_light', light ? '1' : '0'); } catch (e) {}
+                darkToggle.classList.toggle('active', !light);
+            };
+        }
+        document.querySelectorAll('.settings-toggle[data-setting]').forEach(btn => {
+            const key = btn.dataset.setting;
+            const val = localStorage.getItem('settings_' + key) === 'true';
+            btn.classList.toggle('active', val);
+            btn.onclick = () => {
+                const newVal = !btn.classList.contains('active');
+                btn.classList.toggle('active', newVal);
+                try { localStorage.setItem('settings_' + key, String(newVal)); } catch (e) {}
+            };
+        });
+        if (user) {
+            const initial = (user.displayName || user.name || 'G').charAt(0).toUpperCase();
+            const el = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+            el('settingsAvatar', initial);
+            el('settingsAccountName', user.displayName || user.name || 'User');
+            el('settingsAccountEmail', user.email || '');
+            const planEl = document.getElementById('settingsAccountPlan');
+            if (planEl) {
+                const isPremium = user.premium || user.plan === 'premium';
+                planEl.innerHTML = isPremium
+                    ? '<i class="fas fa-crown" style="color:#f59e0b;"></i> Premium'
+                    : '<i class="fas fa-crown" style="color:rgba(255,255,255,0.4);"></i> Free Plan';
+            }
+            const premStatus = document.getElementById('settingsPremiumStatus');
+            if (premStatus) {
+                const isPremium = user.premium || user.plan === 'premium';
+                premStatus.innerHTML = isPremium
+                    ? '<div class="settings-premium-badge premium"><i class="fas fa-crown"></i> Premium Active</div><p>You have access to all premium features including ad-free listening, offline downloads, and exclusive content.</p>'
+                    : '<div class="settings-premium-badge free"><i class="fas fa-crown"></i> Free Plan</div><p>Upgrade to Premium for ad-free listening, exclusive content, and offline downloads.</p>';
+            }
+        }
+        const logoutBtn = document.getElementById('settingsLogoutBtn');
+        if (logoutBtn) logoutBtn.onclick = () => { if (typeof Auth !== 'undefined') Auth.logout(); else window.location.href = 'login.html'; };
+        const upgradeBtn = document.getElementById('settingsUpgradeBtn');
+        if (upgradeBtn) upgradeBtn.onclick = () => YTMusic.navigateTo('premium');
+    },
+
+    renderAccountPage() {
+        const user = (typeof Auth !== 'undefined' && Auth.currentUser) ? Auth.currentUser() : null;
+        if (user) {
+            const initial = (user.displayName || user.name || 'G').charAt(0).toUpperCase();
+            const el = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+            const avatar = document.getElementById('accountAvatar');
+            if (avatar) avatar.textContent = initial;
+            el('accountName', user.displayName || user.name || 'User');
+            el('accountEmail', user.email || '');
+            const badge = document.getElementById('accountPlanBadge');
+            if (badge) {
+                const isPremium = user.premium || user.plan === 'premium';
+                badge.innerHTML = isPremium
+                    ? '<i class="fas fa-crown" style="color:#f59e0b;"></i> Premium'
+                    : '<i class="fas fa-crown" style="color:rgba(255,255,255,0.4);"></i> Free';
+            }
+        }
+        try {
+            const favs = JSON.parse(localStorage.getItem('tamilAIStream_favorites') || '[]');
+            const history = JSON.parse(localStorage.getItem('tamilAIStream_history') || '[]');
+            const playlists = JSON.parse(localStorage.getItem('ytm_playlists') || '[]');
+            const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+            el('accountFavCount', Array.isArray(favs) ? favs.length : 0);
+            el('accountHistoryCount', Array.isArray(history) ? history.length : 0);
+            el('accountPlaylistCount', Array.isArray(playlists) ? playlists.length : 0);
+            el('accountPlayCount', history.length || 0);
+        } catch (e) {}
+        const logoutBtn = document.getElementById('accountLogoutBtn');
+        if (logoutBtn) logoutBtn.onclick = () => { if (typeof Auth !== 'undefined') Auth.logout(); else window.location.href = 'login.html'; };
+    },
+
+    renderPremiumPage() {
+        const user = (typeof Auth !== 'undefined' && Auth.currentUser) ? Auth.currentUser() : null;
+        const isPremium = user && (user.premium || user.plan === 'premium');
+        const freeBtn = document.getElementById('premiumFreeBtn');
+        const upgradeBtn = document.getElementById('premiumUpgradeBtn');
+        const familyBtn = document.getElementById('premiumFamilyBtn');
+        if (freeBtn) { freeBtn.textContent = isPremium ? 'Downgrade' : 'Current Plan'; freeBtn.disabled = !isPremium; }
+        if (upgradeBtn) { upgradeBtn.textContent = isPremium ? 'Active' : 'Upgrade Now'; }
+        if (familyBtn) { familyBtn.onclick = () => { if (typeof showToast === 'function') showToast('Family plan coming soon!', 'info'); }; }
     },
 
     renderNotificationsContent() {
