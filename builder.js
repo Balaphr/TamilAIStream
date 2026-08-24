@@ -5099,14 +5099,19 @@ function saveNewAlbum() {
 
     const songsSelect = document.getElementById('albumSongs');
     const selectedOptions = songsSelect ? Array.from(songsSelect.selectedOptions) : [];
+    const thumbInputs = document.querySelectorAll('.album-song-thumb-input');
+    const thumbMap = {};
+    thumbInputs.forEach(inp => { thumbMap[inp.dataset.songId] = inp.value.trim(); });
+
     const tracks = selectedOptions.map(opt => {
         const parts = opt.value.split('||');
+        const songId = parts[0] || '';
         return {
-            id: parts[0] || ('track_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
+            id: songId || ('track_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
             title: parts[1] || '',
             artist: parts[2] || '',
             movie: parts[3] || '',
-            thumbnail: parts[4] || thumbnail,
+            thumbnail: thumbMap[songId] || parts[4] || thumbnail,
             audioUrl: parts[5] || '',
             duration: parts[6] || 0
         };
@@ -5182,6 +5187,7 @@ function editNewAlbum(id) {
             const optId = opt.value.split('||')[0];
             opt.selected = albumTrackIds.includes(optId);
         });
+        setTimeout(() => refreshAlbumSongThumbnails(), 100);
     }
 
     document.getElementById('newAlbumForm')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -5217,6 +5223,56 @@ function resetAlbumForm() {
     if (preview) preview.style.display = 'none';
     const songsSelect = document.getElementById('albumSongs');
     if (songsSelect) Array.from(songsSelect.options).forEach(o => o.selected = false);
+    const thumbsContainer = document.getElementById('albumSongThumbs');
+    if (thumbsContainer) thumbsContainer.innerHTML = '<div style="font-size:12px;color:#888;">Select songs above, then click "Refresh Song Thumbnails"</div>';
+}
+
+function refreshAlbumSongThumbnails() {
+    const songsSelect = document.getElementById('albumSongs');
+    const container = document.getElementById('albumSongThumbs');
+    if (!songsSelect || !container) return;
+
+    const selectedOptions = Array.from(songsSelect.selectedOptions);
+    if (!selectedOptions.length) {
+        container.innerHTML = '<div style="font-size:12px;color:#888;">No songs selected</div>';
+        return;
+    }
+
+    const editId = document.getElementById('albumEditId')?.value || '';
+    let existingTracks = {};
+    if (editId) {
+        const albums = DataStore.getNewAlbums();
+        const album = albums.find(a => a.id === editId);
+        if (album && album.tracks) {
+            album.tracks.forEach(t => { existingTracks[t.id] = t; });
+        }
+    }
+
+    container.innerHTML = selectedOptions.map((opt, i) => {
+        const parts = opt.value.split('||');
+        const songId = parts[0] || '';
+        const title = parts[1] || 'Untitled';
+        const artist = parts[2] || '';
+        const existing = existingTracks[songId] || {};
+        const thumbVal = existing.thumbnail || parts[4] || '';
+        return `
+            <div style="display:flex;align-items:center;gap:10px;padding:8px;margin-bottom:6px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(255,255,255,0.08);">
+                <div style="flex:0 0 48px;height:48px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;">
+                    <img src="${thumbVal}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:6px;display:${thumbVal ? 'block' : 'none'};" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div style="width:48px;height:48px;display:${thumbVal ? 'none' : 'flex'};align-items:center;justify-content:center;color:#666;font-size:18px;"><i class="fas fa-music"></i></div>
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5);">${artist}</div>
+                </div>
+                <div style="flex:0 0 auto;">
+                    <input type="url" class="form-input album-song-thumb-input" data-song-id="${songId}" value="${thumbVal}" placeholder="Thumbnail URL" style="width:180px;font-size:11px;padding:4px 8px;">
+                    <button type="button" class="builder-btn small-btn" onclick="useGalleryImage('albumSongThumb_${songId}','albumSongThumbPrev_${songId}','albumSongThumbImg_${songId}')" style="font-size:10px;padding:3px 8px;margin-left:4px;">
+                        <i class="fas fa-images"></i>
+                    </button>
+                </div>
+            </div>`;
+    }).join('');
 }
 
 // ============================================
