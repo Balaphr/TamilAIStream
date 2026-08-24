@@ -883,8 +883,8 @@ window.AIHome = (() => {
     }
 
     /* ---------------- Sidebar ---------------- */
-    const PAGE_TO_AI = { home: 'home', explore: 'explore', library: 'library', liked: 'liked', playlists: 'playlists', radio: 'live-fm', stations: 'live-fm', history: 'history' };
-    const AI_TO_PAGE = { 'home': 'home', 'explore': 'explore', 'music': 'explore', 'live-fm': 'radio', 'evergreen': 'explore', 'library': 'library', 'liked': 'liked', 'playlists': 'playlists' };
+    const PAGE_TO_AI = { home: 'home', explore: 'explore', library: 'library', liked: 'liked', playlists: 'playlists', radio: 'live-fm', stations: 'live-fm', history: 'history', music: 'music', activity: 'activity', presets: 'presets', replays: 'replays', community: 'community', charts: 'charts', settings: 'settings' };
+    const AI_TO_PAGE = { 'home': 'home', 'explore': 'explore', 'music': 'explore', 'live-fm': 'radio', 'evergreen': 'explore', 'library': 'library', 'liked': 'liked', 'playlists': 'playlists', 'activity': 'home', 'presets': 'home', 'replays': 'home', 'community': 'home', 'charts': 'home', 'history': 'home', 'settings': 'home' };
 
     function bindSidebar() {
         const items = document.querySelectorAll('.ai-sidebar-item[data-ai-page]');
@@ -912,6 +912,16 @@ window.AIHome = (() => {
         // premium upgrade
         const up = $('aiPremiumBtn') || $('aiUpgradeBtn');
         if (up) up.addEventListener('click', () => {
+            try { window.location.href = 'profile.html'; } catch (e) { /* ignore */ }
+        });
+        // sidebar profile button
+        const profileBtn = $('aiSidebarProfileBtn');
+        if (profileBtn) profileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            try { window.location.href = 'profile.html'; } catch (e) { /* ignore */ }
+        });
+        const profileSection = document.querySelector('.ai-sidebar-profile');
+        if (profileSection) profileSection.addEventListener('click', () => {
             try { window.location.href = 'profile.html'; } catch (e) { /* ignore */ }
         });
     }
@@ -1027,6 +1037,20 @@ window.AIHome = (() => {
         try { isAdmin = !!(user && (user.role === 'admin' || user.isAdmin)); } catch (e) { /* ignore */ }
         const builtBtn = document.getElementById('aiMenuBuilder');
         if (builtBtn) builtBtn.style.display = isAdmin ? '' : 'none';
+        // Sync sidebar profile section
+        const sidebarName = $('aiSidebarProfileName');
+        const sidebarAvatar = $('aiSidebarAvatar');
+        const sidebarPlan = document.querySelector('.ai-sidebar-profile-plan');
+        if (sidebarName) sidebarName.textContent = name.split(' ')[0];
+        if (sidebarAvatar) {
+            const photo = (user && user.photoURL) || '';
+            if (photo) sidebarAvatar.innerHTML = '<img src="' + escapeHtml(photo) + '" alt="' + escapeHtml(name) + '" style="width:100%;height:100%;border-radius:10px;object-fit:cover;">';
+            else sidebarAvatar.textContent = initials;
+        }
+        if (sidebarPlan) {
+            const premium = !!(user && (user.premium || user.plan === 'premium'));
+            sidebarPlan.innerHTML = (premium ? '<i class="fa-solid fa-crown"></i> Premium' : '<i class="fa-solid fa-crown" style="color:#fbbf24;"></i> Free');
+        }
     }
 
     /* ---------------- Notifications + Install ---------------- */
