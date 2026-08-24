@@ -321,6 +321,44 @@ const Site360 = (function () {
                 { key: 'bottomNavActiveColor', label: 'Active Color', type: 'color' },
                 { key: 'bottomNavItems', label: 'Nav Items', type: 'text' }
             ]
+        },
+        'new-album': {
+            label: 'New Album',
+            icon: 'fa-record-vinyl',
+            section: 'home',
+            category: 'new-album',
+            source: 'siteSettings',
+            files: { css: 'ai-glass.css', js: 'ai-home.js', html: 'index.html' },
+            defaults: {
+                newAlbumVisible: true,
+                newAlbumTitle: 'New Album',
+                newAlbumHeight: 340,
+                newAlbumCardWidth: 340,
+                newAlbumCardRadius: 20,
+                newAlbumThumbSize: 90,
+                newAlbumThumbRadius: 14,
+                newAlbumPlayBtnPosition: 'center',
+                newAlbumShowSpatialBadge: true,
+                newAlbumShowAtmosBadge: true,
+                newAlbumShowMeta: true,
+                newAlbumSectionSpacing: 20,
+                newAlbumCardSpacing: 18
+            },
+            controls: [
+                { key: 'newAlbumVisible', label: 'Visible', type: 'toggle' },
+                { key: 'newAlbumTitle', label: 'Section Title', type: 'text' },
+                { key: 'newAlbumHeight', label: 'Card Height (px)', type: 'number', min: 200, max: 500 },
+                { key: 'newAlbumCardWidth', label: 'Card Width (px)', type: 'number', min: 260, max: 500 },
+                { key: 'newAlbumCardRadius', label: 'Card Border Radius (px)', type: 'number', min: 0, max: 40 },
+                { key: 'newAlbumThumbSize', label: 'Thumbnail Size (px)', type: 'number', min: 40, max: 160 },
+                { key: 'newAlbumThumbRadius', label: 'Thumbnail Radius (px)', type: 'number', min: 0, max: 40 },
+                { key: 'newAlbumPlayBtnPosition', label: 'Play Button Position', type: 'select', options: ['center', 'top-left', 'bottom-right'] },
+                { key: 'newAlbumShowSpatialBadge', label: 'Show Spatial Audio Badge', type: 'toggle' },
+                { key: 'newAlbumShowAtmosBadge', label: 'Show Dolby Atmos Badge', type: 'toggle' },
+                { key: 'newAlbumShowMeta', label: 'Show Meta Info (tracks, duration)', type: 'toggle' },
+                { key: 'newAlbumSectionSpacing', label: 'Section Spacing (px)', type: 'number', min: 0, max: 48 },
+                { key: 'newAlbumCardSpacing', label: 'Card Spacing (px)', type: 'number', min: 0, max: 48 }
+            ]
         }
     };
 
@@ -628,6 +666,29 @@ const Site360 = (function () {
                 { key: 'greetingShowQuote', label: 'Show Quote', type: 'toggle', value: site.greetingShowQuote !== false },
                 { key: 'greetingBg', label: 'Background Color', type: 'color', value: site.greetingBg || 'transparent' },
                 { key: 'greetingPadding', label: 'Padding (px)', type: 'number', value: site.greetingPadding ?? 16, min: 0, max: 48 }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
+        // SECTION 5b: NEW ALBUM
+        // ═══════════════════════════════════════════════
+        canvasElements.push({
+            id: 'el_new_album', section: 'home', label: 'New Album', icon: 'fa-record-vinyl',
+            category: 'new-album', source: 'siteSettings',
+            value: site,
+            controls: [
+                { key: 'newAlbumVisible', label: 'Visible', type: 'toggle', value: site.newAlbumVisible !== false },
+                { key: 'newAlbumTitle', label: 'Section Title', type: 'text', value: site.newAlbumTitle || 'New Album' },
+                { key: 'newAlbumCardWidth', label: 'Card Width (px)', type: 'number', value: site.newAlbumCardWidth ?? 340, min: 260, max: 500 },
+                { key: 'newAlbumCardRadius', label: 'Card Border Radius (px)', type: 'number', value: site.newAlbumCardRadius ?? 20, min: 0, max: 40 },
+                { key: 'newAlbumThumbSize', label: 'Thumbnail Size (px)', type: 'number', value: site.newAlbumThumbSize ?? 90, min: 40, max: 160 },
+                { key: 'newAlbumThumbRadius', label: 'Thumbnail Radius (px)', type: 'number', value: site.newAlbumThumbRadius ?? 14, min: 0, max: 40 },
+                { key: 'newAlbumPlayBtnPosition', label: 'Play Button Position', type: 'select', value: site.newAlbumPlayBtnPosition || 'center', options: ['center', 'top-left', 'bottom-right'] },
+                { key: 'newAlbumShowSpatialBadge', label: 'Show Spatial Audio Badge', type: 'toggle', value: site.newAlbumShowSpatialBadge !== false },
+                { key: 'newAlbumShowAtmosBadge', label: 'Show Dolby Atmos Badge', type: 'toggle', value: site.newAlbumShowAtmosBadge !== false },
+                { key: 'newAlbumShowMeta', label: 'Show Meta Info', type: 'toggle', value: site.newAlbumShowMeta !== false },
+                { key: 'newAlbumSectionSpacing', label: 'Section Spacing (px)', type: 'number', value: site.newAlbumSectionSpacing ?? 20, min: 0, max: 48 },
+                { key: 'newAlbumCardSpacing', label: 'Card Spacing (px)', type: 'number', value: site.newAlbumCardSpacing ?? 18, min: 0, max: 48 }
             ]
         });
 

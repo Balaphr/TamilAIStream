@@ -38,6 +38,7 @@ const DataStore = {
         ADVERTISEMENTS: 'tamilAIStream_advertisements',
         UPCOMING_RELEASES: 'tamilAIStream_upcomingReleases',
         NEWS: 'tamilAIStream_news',
+        NEW_ALBUMS: 'tamilAIStream_newAlbums',
         FAVORITES: 'tamilAIStream_favorites',
         TRASH: 'tamilAIStream_trash',
         DELETED_IDS: 'tamilAIStream_deletedIds'
@@ -197,6 +198,9 @@ const DataStore = {
 
     getNews() { return this.get(this.KEYS.NEWS) || []; },
     setNews(data) { this.set(this.KEYS.NEWS, data); },
+
+    getNewAlbums() { return this._filterDeleted(this.get(this.KEYS.NEW_ALBUMS) || [], 'newAlbums'); },
+    setNewAlbums(data) { this.set(this.KEYS.NEW_ALBUMS, data); },
 
     getFavorites() { return this.get(this.KEYS.FAVORITES) || []; },
     setFavorites(data) { this.set(this.KEYS.FAVORITES, data); },

@@ -557,6 +557,7 @@ function _loadPageData(page) {
     if (page === 'songs') loadAllSongs();
     if (page === 'content') { loadFeatured(); loadTrending(); loadCategories(); loadArtistHits(); loadCollectionsTable('movies'); loadCollectionsTable('yearly'); loadCollectionsTable('latest'); loadAllSongs(); loadQuotes(); loadContentSectionStats(); }
     if (page === 'musiccollections') loadMusicCollections();
+    if (page === 'newalbums') loadNewAlbums();
     if (page === 'images') loadAllImages();
     if (page === 'settings') loadSettings();
     if (page === 'moods') loadMoods();
@@ -5014,6 +5015,208 @@ function deleteCollection(type, colId) {
     loadCollectionsTable(type);
     showToast('Collection moved to Trash', 'success');
     syncToLiveWebsite();
+}
+
+// ============================================
+// New Albums Management
+// ============================================
+function loadNewAlbums() {
+    let albums = DataStore.getNewAlbums();
+    albums = _filterDeletedItems(albums, 'newAlbums');
+    const listEl = document.getElementById('newAlbumsList');
+    populateAlbumSongs();
+
+    if (!albums.length) {
+        listEl.innerHTML = '<div class="empty-state" style="padding: 40px; text-align: center; color: #888;"><i class="fas fa-record-vinyl"></i><p>No albums yet. Create your first featured album.</p></div>';
+        return;
+    }
+
+    listEl.innerHTML = albums.map(a => `
+        <div class="collection-card" style="border-left: 4px solid #a855f7; margin-bottom: 16px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="flex: 1; display: flex; align-items: center; gap: 12px;">
+                    ${a.thumbnail
+                        ? `<img src="${a.thumbnail}" alt="" style="width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">`
+                        : '<div style="width: 56px; height: 56px; border-radius: 8px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 22px;">🎵</div>'}
+                    <div>
+                        <h3 style="margin: 0; font-size: 16px; color: #fff;">${a.name || 'Untitled'}</h3>
+                        <p style="margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.6);">${a.artist || 'Unknown'}</p>
+                        <p style="margin: 2px 0 0; font-size: 11px; color: rgba(255,255,255,0.4);">${a.description ? a.description.substring(0, 80) + (a.description.length > 80 ? '…' : '') : ''}</p>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 12px; color: #a855f7;">${(a.tracks || []).length} track${(a.tracks || []).length !== 1 ? 's' : ''}</span>
+                    <div style="margin-top: 4px;">
+                        ${a.spatialAudio ? '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(34,211,238,0.2);color:#22d3ee;">Spatial</span>' : ''}
+                        ${a.dolbyAtmos ? '<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(168,85,247,0.2);color:#c084fc;margin-left:4px;">Atmos</span>' : ''}
+                    </div>
+                </div>
+            </div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.5);">${a.movie || ''} · Order: ${a.order || 0} · ${a.visible !== false ? 'Visible' : 'Hidden'}</div>
+            <div style="margin-top: 8px;">
+                <button class="small-btn" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 4px; font-size: 12px;" onclick="editNewAlbum('${a.id}')">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="small-btn" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 4px; font-size: 12px; margin-left: 8px;" onclick="deleteNewAlbum('${a.id}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function populateAlbumSongs() {
+    const songs = DataStore.getSongs();
+    const select = document.getElementById('albumSongs');
+    if (!select) return;
+    if (!songs.length) {
+        select.innerHTML = '<option value="">-- No songs in library --</option>';
+        return;
+    }
+    select.innerHTML = songs.map(s => {
+        const value = s.id + '||' + (s.title || '') + '||' + (s.artist || '') + '||' + (s.movie || '') + '||' + (s.thumbnail || '') + '||' + (s.audioUrl || s.streamUrl || '') + '||' + (s.duration || '');
+        const label = (s.title || 'Untitled') + (s.artist ? ' — ' + s.artist : '') + (s.movie ? ' (' + s.movie + ')' : '');
+        return '<option value="' + value + '">' + label + '</option>';
+    }).join('');
+}
+
+function saveNewAlbum() {
+    const editId = document.getElementById('albumEditId')?.value || '';
+    const name = document.getElementById('albumName')?.value.trim();
+    const artist = document.getElementById('albumArtist')?.value.trim();
+    const movie = document.getElementById('albumMovie')?.value.trim() || '';
+    const description = document.getElementById('albumDescription')?.value.trim() || '';
+    const thumbnail = document.getElementById('albumThumbnail')?.value.trim() || '';
+    const spatialAudio = document.getElementById('albumSpatialAudio')?.value === 'true';
+    const dolbyAtmos = document.getElementById('albumDolbyAtmos')?.value === 'true';
+    const playBtnPosition = document.getElementById('albumPlayBtnPos')?.value || 'center';
+    const status = document.getElementById('albumStatus')?.value || 'active';
+    const visible = document.getElementById('albumVisible')?.value !== 'false';
+    const order = parseInt(document.getElementById('albumOrder')?.value, 10) || 0;
+
+    if (!name) { showToast('Album name is required', 'error'); return; }
+    if (!artist) { showToast('Artist name is required', 'error'); return; }
+
+    const songsSelect = document.getElementById('albumSongs');
+    const selectedOptions = songsSelect ? Array.from(songsSelect.selectedOptions) : [];
+    const tracks = selectedOptions.map(opt => {
+        const parts = opt.value.split('||');
+        return {
+            id: parts[0] || ('track_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
+            title: parts[1] || '',
+            artist: parts[2] || '',
+            movie: parts[3] || '',
+            thumbnail: parts[4] || thumbnail,
+            audioUrl: parts[5] || '',
+            duration: parts[6] || 0
+        };
+    });
+
+    let albums = DataStore._getRaw(DataStore.KEYS.NEW_ALBUMS) || [];
+    albums = _filterDeletedItems(albums, 'newAlbums');
+
+    if (editId) {
+        const album = albums.find(a => a.id === editId);
+        if (album) {
+            album.name = name;
+            album.artist = artist;
+            album.movie = movie;
+            album.description = description;
+            album.thumbnail = thumbnail;
+            album.spatialAudio = spatialAudio;
+            album.dolbyAtmos = dolbyAtmos;
+            album.playBtnPosition = playBtnPosition;
+            album.status = status;
+            album.visible = visible;
+            album.order = order;
+            album.tracks = tracks;
+            album.updatedAt = new Date().toISOString();
+        }
+    } else {
+        albums.push({
+            id: 'album_' + Date.now(),
+            name, artist, movie, description, thumbnail,
+            spatialAudio, dolbyAtmos, playBtnPosition,
+            status, visible, order,
+            tracks,
+            createdAt: new Date().toISOString()
+        });
+    }
+
+    DataStore.setNewAlbums(albums);
+    resetAlbumForm();
+    loadNewAlbums();
+    showToast(editId ? 'Album updated!' : 'Album created!', 'success');
+    syncToLiveWebsite();
+}
+
+function editNewAlbum(id) {
+    const albums = DataStore.getNewAlbums();
+    const album = albums.find(a => a.id === id);
+    if (!album) return;
+
+    document.getElementById('albumEditId').value = album.id;
+    document.getElementById('albumName').value = album.name || '';
+    document.getElementById('albumArtist').value = album.artist || '';
+    document.getElementById('albumMovie').value = album.movie || '';
+    document.getElementById('albumDescription').value = album.description || '';
+    document.getElementById('albumThumbnail').value = album.thumbnail || '';
+    document.getElementById('albumSpatialAudio').value = album.spatialAudio ? 'true' : 'false';
+    document.getElementById('albumDolbyAtmos').value = album.dolbyAtmos ? 'true' : 'false';
+    document.getElementById('albumPlayBtnPos').value = album.playBtnPosition || 'center';
+    document.getElementById('albumStatus').value = album.status || 'active';
+    document.getElementById('albumVisible').value = album.visible !== false ? 'true' : 'false';
+    document.getElementById('albumOrder').value = album.order || 0;
+
+    if (album.thumbnail) {
+        const preview = document.getElementById('albumThumbPreview');
+        const img = document.getElementById('albumThumbImg');
+        if (img) img.src = album.thumbnail;
+        if (preview) preview.style.display = 'block';
+    }
+
+    const songsSelect = document.getElementById('albumSongs');
+    if (songsSelect && album.tracks) {
+        const albumTrackIds = album.tracks.map(t => t.id);
+        Array.from(songsSelect.options).forEach(opt => {
+            const optId = opt.value.split('||')[0];
+            opt.selected = albumTrackIds.includes(optId);
+        });
+    }
+
+    document.getElementById('newAlbumForm')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function deleteNewAlbum(id) {
+    if (confirm('Move this album to Trash?')) {
+        let albums = DataStore._getRaw(DataStore.KEYS.NEW_ALBUMS) || [];
+        const album = albums.find(a => a.id === id);
+        if (album) DataStore.moveToTrash(album, 'newAlbums');
+        albums = albums.filter(a => a.id !== id);
+        localStorage.setItem(DataStore.KEYS.NEW_ALBUMS, JSON.stringify(albums));
+        showToast('Album moved to Trash', 'info');
+        loadNewAlbums();
+        syncToLiveWebsite();
+    }
+}
+
+function resetAlbumForm() {
+    document.getElementById('albumEditId').value = '';
+    document.getElementById('albumName').value = '';
+    document.getElementById('albumArtist').value = '';
+    document.getElementById('albumMovie').value = '';
+    document.getElementById('albumDescription').value = '';
+    document.getElementById('albumThumbnail').value = '';
+    document.getElementById('albumSpatialAudio').value = 'false';
+    document.getElementById('albumDolbyAtmos').value = 'false';
+    document.getElementById('albumPlayBtnPos').value = 'center';
+    document.getElementById('albumStatus').value = 'active';
+    document.getElementById('albumVisible').value = 'true';
+    document.getElementById('albumOrder').value = '0';
+    const preview = document.getElementById('albumThumbPreview');
+    if (preview) preview.style.display = 'none';
+    const songsSelect = document.getElementById('albumSongs');
+    if (songsSelect) Array.from(songsSelect.options).forEach(o => o.selected = false);
 }
 
 // ============================================

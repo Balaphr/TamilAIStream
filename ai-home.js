@@ -721,6 +721,107 @@ window.AIHome = (() => {
         window.addEventListener('ytm:playTrack', () => setTimeout(updateOtrUI, 100));
     }
 
+    /* ---------------- New Albums ---------------- */
+    function renderNewAlbums() {
+        const section = $('newAlbumSection');
+        if (!section) return;
+        if (playerSections().newAlbums === false) { section.style.display = 'none'; return; }
+        const row = $('newAlbumRow');
+        if (!row) return;
+        const site = (window.DataStore && typeof DataStore.getSiteSettings === 'function') ? DataStore.getSiteSettings() : {};
+        if (site.newAlbumVisible === false) { section.style.display = 'none'; return; }
+        const albums = (window.DataStore && typeof DataStore.getNewAlbums === 'function') ? DataStore.getNewAlbums() : [];
+        const visibleAlbums = albums.filter(a => a && a.visible !== false && !a.deleted);
+        if (!visibleAlbums.length) { section.style.display = 'none'; return; }
+        section.style.display = '';
+        if (site.newAlbumTitle) {
+            const titleEl = $('newAlbumSectionTitle');
+            if (titleEl) titleEl.textContent = site.newAlbumTitle;
+        }
+        row.innerHTML = visibleAlbums.map((a, i) => newAlbumCardHTML(a, i)).join('');
+        row.querySelectorAll('.new-album-card').forEach(card => {
+            card.addEventListener('click', e => {
+                if (e.target.closest('.new-album-play-btn')) return;
+                const idx = parseInt(card.dataset.idx, 10);
+                const album = visibleAlbums[idx];
+                if (album && album.tracks && album.tracks.length) {
+                    window.playSong(album.tracks[0], album.tracks);
+                }
+            });
+        });
+        row.querySelectorAll('.new-album-play-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const idx = parseInt(btn.closest('.new-album-card').dataset.idx, 10);
+                const album = visibleAlbums[idx];
+                if (album && album.tracks && album.tracks.length) {
+                    window.playSong(album.tracks[0], album.tracks);
+                }
+            });
+        });
+        bindDragScroll(row);
+    }
+
+    function newAlbumCardHTML(album, idx) {
+        const art = album.thumbnail || album.artwork || '';
+        const trackCount = (album.tracks && album.tracks.length) || 0;
+        const duration = album.tracks && album.tracks.length
+            ? album.tracks.reduce((s, t) => s + (parseFloat(t.duration) || 0), 0)
+            : 0;
+        const mins = Math.floor(duration / 60);
+        const badges = [];
+        if (album.spatialAudio) badges.push('<span class="new-album-badge new-album-badge-spatial">Spatial Audio</span>');
+        if (album.dolbyAtmos) badges.push('<span class="new-album-badge new-album-badge-atmos">with Dolby Atmos</span>');
+        return `
+            <div class="new-album-card" data-idx="${idx}" data-id="${album.id || ''}">
+                <div class="new-album-art-wrap">
+                    <div class="new-album-art-bg" style="background-image:url('${art}')"></div>
+                    ${badges.length ? `<div class="new-album-badges">${badges.join('')}</div>` : ''}
+                    <div class="new-album-thumb">
+                        <img src="${art}" alt="${album.name || ''}" loading="lazy">
+                        <button class="new-album-play-btn" aria-label="Play album"><i class="fas fa-play"></i></button>
+                    </div>
+                </div>
+                <div class="new-album-info">
+                    <span class="new-album-label">New Album</span>
+                    <div class="new-album-name">${album.name || 'Untitled'}</div>
+                    <div class="new-album-artist">${album.artist || 'Unknown Artist'}</div>
+                    ${album.description ? `<div class="new-album-desc">${album.description}</div>` : ''}
+                    <div class="new-album-meta">
+                        ${trackCount ? `<span class="new-album-meta-item"><i class="fas fa-music"></i>${trackCount} track${trackCount !== 1 ? 's' : ''}</span>` : ''}
+                        ${mins ? `<span class="new-album-meta-item"><i class="fas fa-clock"></i>${mins} min</span>` : ''}
+                        ${album.movie ? `<span class="new-album-meta-item"><i class="fas fa-film"></i>${album.movie}</span>` : ''}
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    function bindDragScroll(el) {
+        if (el._dragBound) return;
+        el._dragBound = true;
+        let isDragging = false, startX, scrollLeft, hasMoved;
+        el.addEventListener('mousedown', e => {
+            if (e.target.closest('button')) return;
+            isDragging = true; hasMoved = false;
+            startX = e.pageX - el.offsetLeft;
+            scrollLeft = el.scrollLeft;
+            el.classList.add('dragging');
+        });
+        el.addEventListener('mouseleave', () => { isDragging = false; el.classList.remove('dragging'); });
+        el.addEventListener('mouseup', () => { isDragging = false; el.classList.remove('dragging'); });
+        el.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const x = e.pageX - el.offsetLeft;
+            const walk = (x - startX) * 1.5;
+            if (Math.abs(walk) > 3) hasMoved = true;
+            el.scrollLeft = scrollLeft - walk;
+        });
+        el.addEventListener('click', e => {
+            if (hasMoved) { e.preventDefault(); e.stopPropagation(); hasMoved = false; }
+        }, true);
+    }
+
     function renderOneTapRadio() {
         const section = document.querySelector('.one-tap-radio');
         if (section && playerSections().oneTapRadio === false) { section.style.display = 'none'; return; }
@@ -1697,6 +1798,7 @@ window.AIHome = (() => {
         // Greeting hero bar sits at the top of Home. Idempotent — builds once,
         // then only updates greeting/date/quote text in place.
         if (typeof renderGreetingSection === 'function') renderGreetingSection();
+        renderNewAlbums();
         renderOneTapRadio();
         renderRecentlyAdded();
         renderMusicHero();

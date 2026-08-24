@@ -245,6 +245,9 @@
                             <button class="builder-sidebar-item" data-page="musiccollections">
                                 <i class="fas fa-folder-tree"></i> Music Collections
                             </button>
+                            <button class="builder-sidebar-item" data-page="newalbums">
+                                <i class="fas fa-record-vinyl"></i> New Albums
+                            </button>
                         </div>
                     </div>
                     <div class="builder-sidebar-section">
@@ -784,6 +787,128 @@
                                         <i class="fas fa-save"></i> Create Collection
                                     </button>
                                     <button type="button" class="builder-btn" onclick="resetCollectionForm()">
+                                        <i class="fas fa-times"></i> Clear
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- New Albums Page -->
+                    <div class="builder-page" id="newAlbumsPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">New Albums</h1>
+                            <p class="builder-page-subtitle">Manage featured album releases for the home page showcase</p>
+                        </div>
+
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title">Album List</h2>
+                            </div>
+                            <div id="newAlbumsList">
+                                <div class="empty-state" style="padding: 40px; text-align: center; color: #888;">
+                                    <i class="fas fa-record-vinyl"></i>
+                                    <p>No albums yet. Create your first featured album.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="content-card">
+                            <div class="content-card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                                <h2 class="content-card-title">Create / Edit Album</h2>
+                            </div>
+                            <form id="newAlbumForm" onsubmit="return false;">
+                                <div class="form-grid">
+                                    <input type="hidden" id="albumEditId" value="">
+                                    <div class="form-group">
+                                        <label class="form-label">Album Name *</label>
+                                        <input type="text" class="form-input" id="albumName" required placeholder="e.g. Long Way Home">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Artist Name *</label>
+                                        <input type="text" class="form-input" id="albumArtist" required placeholder="e.g. STELLA LEFTY">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Movie / Album Info</label>
+                                        <input type="text" class="form-input" id="albumMovie" placeholder="e.g. Original Soundtrack">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Description</label>
+                                        <textarea class="form-input" id="albumDescription" rows="2" placeholder="A breakout star of 2026 delivers..."></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">HD Thumbnail Image URL</label>
+                                        <input type="url" class="form-input" id="albumThumbnail" placeholder="https://… or /path/to/image.jpg">
+                                        <div id="albumThumbPreview" style="margin-top:10px;display:none;">
+                                            <img src="" alt="Thumbnail Preview" id="albumThumbImg" style="max-width:140px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);">
+                                        </div>
+                                        <div style="margin-top:8px;">
+                                            <button type="button" class="builder-btn small-btn" onclick="openUploadImageModal()" style="font-size:11px;padding:4px 10px;">
+                                                <i class="fas fa-upload"></i> Upload Image
+                                            </button>
+                                            <button type="button" class="builder-btn small-btn" onclick="useGalleryImage('albumThumbnail','albumThumbPreview','albumThumbImg')" style="font-size:11px;padding:4px 10px;margin-left:6px;">
+                                                <i class="fas fa-images"></i> From Gallery
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Add Audio / Songs</label>
+                                        <select class="form-select" id="albumSongs" multiple style="height:180px;">
+                                        </select>
+                                        <div style="margin-top:6px;font-size:11px;color:#888;">Hold Ctrl/Cmd to select multiple songs</div>
+                                    </div>
+                                    <div class="form-group" id="albumAudioListContainer" style="display:none;">
+                                        <label class="form-label">Selected Audio Files</label>
+                                        <div id="albumAudioList" style="max-height:140px;overflow-y:auto;padding:8px;border:1px dashed rgba(255,255,255,0.15);border-radius:6px;">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Spatial Audio</label>
+                                        <select class="form-select" id="albumSpatialAudio">
+                                            <option value="true">Enabled</option>
+                                            <option value="false">Disabled</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Dolby Atmos</label>
+                                        <select class="form-select" id="albumDolbyAtmos">
+                                            <option value="true">Enabled</option>
+                                            <option value="false">Disabled</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Play Button Position</label>
+                                        <select class="form-select" id="albumPlayBtnPos">
+                                            <option value="center">Center</option>
+                                            <option value="top-left">Top Left</option>
+                                            <option value="bottom-right">Bottom Right</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" id="albumStatus">
+                                            <option value="active">Active</option>
+                                            <option value="draft">Draft</option>
+                                            <option value="inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Visible on PWS</label>
+                                        <select class="form-select" id="albumVisible">
+                                            <option value="true">Yes</option>
+                                            <option value="false">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Display Order</label>
+                                        <input type="number" class="form-input" id="albumOrder" value="0" min="0" max="999">
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="button" class="builder-btn primary" onclick="saveNewAlbum()">
+                                        <i class="fas fa-save"></i> Save Album
+                                    </button>
+                                    <button type="button" class="builder-btn" onclick="resetAlbumForm()">
                                         <i class="fas fa-times"></i> Clear
                                     </button>
                                 </div>
