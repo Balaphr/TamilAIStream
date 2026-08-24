@@ -519,63 +519,76 @@ window.AIHome = (() => {
 
 
     /* ---------------- Evergreen Classics ---------------- */
+    function evergreenCardHTML(song, i) {
+        const title = (song.title || song.name || 'Untitled').slice(0, 34);
+        const artist = (song.artist || song.singer || 'Unknown Artist').slice(0, 30);
+        const art = artOf(song);
+        const dur = durationText(song.duration);
+        const artHtml = art
+            ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=\\\'eg-card-art-placeholder\\\'><i class=\\\'fas fa-gem\\\'></i></div>\'">'
+            : '<div class="eg-card-art-placeholder"><i class="fas fa-gem"></i></div>';
+        return '<div class="eg-card" data-idx="' + i + '">' +
+            '<div class="eg-card-art">' + artHtml +
+            '<div class="eg-card-play-overlay">' +
+            '<button class="eg-card-play-btn" data-idx="' + i + '" title="Play ' + escapeHtml(title) + '"><i class="fas fa-play" style="margin-left:2px;"></i></button>' +
+            '</div></div>' +
+            '<div class="eg-card-info">' +
+            '<div class="eg-card-title" title="' + escapeHtml(title) + '">' + escapeHtml(title) + '</div>' +
+            '<div class="eg-card-artist" title="' + escapeHtml(artist) + '">' + escapeHtml(artist) + '</div>' +
+            '<div class="eg-card-meta">' +
+            '<span class="eg-card-badge"><i class="fas fa-gem"></i> Classic</span>' +
+            (dur ? '<span class="eg-card-dur"><i class="far fa-clock"></i> ' + dur + '</span>' : '') +
+            '</div></div></div>';
+    }
+
     function renderEvergreen() {
         const grid = $('aiEvergreenGrid');
         if (!grid) return;
         const songs = publishedSongs();
-        // Filter for evergreen songs (older songs, or songs tagged as evergreen/classic)
         const evergreen = songs
             .filter(s => s && (s.status === 'published' || s.status === 'active'))
             .filter(s => {
-                // Consider songs as evergreen if they have mood/genre like 'classic', 'old', 'evergreen', 'retro'
-                // or if they are from older movies (pre-2010) - we'll use a simple heuristic
                 const genre = (s.genre || s.mood || '').toLowerCase();
-                const isClassicTag = genre.includes('classic') || genre.includes('evergreen') || genre.includes('retro') || genre.includes('old');
-                // Also include songs from older eras (pre-2010) based on movie/year if available
-                return isClassicTag;
+                return genre.includes('classic') || genre.includes('evergreen') || genre.includes('retro') || genre.includes('old');
             })
-            .sort((a, b) => (b.plays || 0) - (a.plays || 0)) // Sort by popularity
+            .sort((a, b) => (b.plays || 0) - (a.plays || 0))
             .slice(0, 12);
 
+        let list = evergreen;
         if (!evergreen.length) {
-            // Fallback: show oldest published songs as evergreen classics
-            const fallback = songs
+            list = songs
                 .filter(s => s && (s.status === 'published' || s.status === 'active'))
                 .sort((a, b) => new Date(a.createdAt || a.uploadedAt || 0) - new Date(b.createdAt || b.uploadedAt || 0))
                 .slice(0, 12);
-            if (!fallback.length) {
+            if (!list.length) {
                 grid.innerHTML = emptyHTML('fa-solid fa-gem', 'No Evergreen Classics yet',
                     'Add classic Tamil songs from the Builder and they will appear here.');
                 return;
             }
-            grid.innerHTML = fallback.map((s, i) => songCardHTML(s, i)).join('');
-            grid.querySelectorAll('.ai-song-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const i = parseInt(card.dataset.idx, 10);
-                    const song = fallback[i];
-                    if (!song) return;
-                    if (song.streamUrl && !song.audioUrl && typeof window.playStation === 'function') {
-                        window.playStation(song.title || song.name || '');
-                    } else if (song.audioUrl && typeof window.playSong === 'function') {
-                        window.playSong(song, fallback);
-                    } else {
-                        showToastSafe('This track has no audio attached yet', 'info');
-                    }
-                });
-            });
-            return;
         }
 
-        grid.innerHTML = evergreen.map((s, i) => songCardHTML(s, i)).join('');
-        grid.querySelectorAll('.ai-song-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const i = parseInt(card.dataset.idx, 10);
-                const song = evergreen[i];
+        grid.innerHTML = list.map((s, i) => evergreenCardHTML(s, i)).join('');
+
+        grid.querySelectorAll('.eg-card-play-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const idx = parseInt(this.dataset.idx, 10);
+                const song = list[idx];
+                if (!song) return;
+                if (typeof window.playSong === 'function') window.playSong(song, list);
+            });
+        });
+
+        grid.querySelectorAll('.eg-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.closest('.eg-card-play-btn')) return;
+                const idx = parseInt(this.dataset.idx, 10);
+                const song = list[idx];
                 if (!song) return;
                 if (song.streamUrl && !song.audioUrl && typeof window.playStation === 'function') {
                     window.playStation(song.title || song.name || '');
                 } else if (song.audioUrl && typeof window.playSong === 'function') {
-                    window.playSong(song, evergreen);
+                    window.playSong(song, list);
                 } else {
                     showToastSafe('This track has no audio attached yet', 'info');
                 }
