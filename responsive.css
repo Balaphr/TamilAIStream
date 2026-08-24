@@ -171,25 +171,23 @@ body {
         padding-bottom: calc(60px + 52px + 8px + 16px);
     }
 
-    /* Mobile bottom nav with 8 items */
+    /* Mobile bottom nav — equal width items */
     .tamilai-bottom-nav {
-        justify-content: space-between;
-        padding-left: 4px;
-        padding-right: 4px;
+        justify-content: space-around;
+        padding: 4px 0;
     }
     .tamilai-nav-item {
-        min-width: 36px;
-        padding: 5px 2px;
+        padding: 6px 0;
         flex: 1;
-        max-width: 50px;
+        min-width: 0;
     }
     .tamilai-nav-icon {
         width: 24px;
         height: 24px;
-        font-size: 14px;
+        font-size: 15px;
     }
     .tamilai-nav-label {
-        font-size: 0.48rem;
+        font-size: 9px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

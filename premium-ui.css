@@ -3441,43 +3441,49 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     padding: 4px 0 calc(4px + env(safe-area-inset-bottom, 0));
     box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch;
 }
 
-/* --- Bottom Nav Items: 3D depth + zoom on click --- */
+/* --- Bottom Nav Items: equal width, perfect centering --- */
 .tamilai-nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
-    padding: 6px 4px;
+    justify-content: center;
+    gap: 2px;
+    padding: 6px 0;
     border: none;
     background: none;
     color: rgba(255, 255, 255, 0.4);
-    font-size: 0.58rem;
+    font-size: 10px;
     font-family: inherit;
     cursor: pointer;
     position: relative;
-    min-width: 40px;
+    flex: 1;
+    min-width: 0;
     min-height: 44px;
-    justify-content: center;
     transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     transform-style: preserve-3d;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .tamilai-nav-item:active {
-    transform: scale(0.88) translateZ(-4px);
+    transform: scale(0.92);
     transition-duration: 0.1s;
 }
 
 .tamilai-nav-icon {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 17px;
     transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    flex-shrink: 0;
 }
 
 .tamilai-nav-item.active {
@@ -3485,7 +3491,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
 }
 .tamilai-nav-item.active .tamilai-nav-icon {
     background: rgba(52, 211, 153, 0.15);
-    transform: scale(1.12) translateZ(6px);
+    transform: scale(1.1);
     box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2);
 }
 .tamilai-nav-item.active::before {
@@ -3494,7 +3500,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     top: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 20px;
+    width: 24px;
     height: 2px;
     border-radius: 0 0 2px 2px;
     background: linear-gradient(90deg, #34d399, #10b981);
@@ -3502,9 +3508,10 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
 }
 
 .tamilai-nav-label {
-    font-size: 0.58rem;
+    font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.01em;
+    white-space: nowrap;
 }
 
 /* Live indicator for radio */
@@ -3665,22 +3672,20 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     .tamilai-bottom-nav {
         display: flex;
         justify-content: space-around;
-        overflow-x: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+        align-items: stretch;
     }
-    .tamilai-bottom-nav::-webkit-scrollbar { display: none; }
     .tamilai-nav-item {
-        min-width: 36px;
-        padding: 5px 3px;
+        padding: 6px 0;
+        flex: 1;
+        min-width: 0;
     }
     .tamilai-nav-icon {
         width: 26px;
         height: 26px;
-        font-size: 15px;
+        font-size: 16px;
     }
     .tamilai-nav-label {
-        font-size: 0.52rem;
+        font-size: 10px;
     }
     .hide-mobile { display: none !important; }
 }
@@ -3688,16 +3693,15 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
 /* Very small mobile */
 @media (max-width: 360px) {
     .tamilai-nav-item {
-        min-width: 30px;
-        padding: 4px 2px;
+        padding: 5px 0;
     }
     .tamilai-nav-icon {
         width: 22px;
         height: 22px;
-        font-size: 13px;
+        font-size: 14px;
     }
     .tamilai-nav-label {
-        font-size: 0.48rem;
+        font-size: 9px;
     }
     .premium-topnav-title {
         font-size: 0.85rem;
