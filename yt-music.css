@@ -4835,6 +4835,89 @@ body.home-active .ytm-page-home {
     flex-shrink: 0;
 }
 
+/* Mobile menu brand logo */
+.premium-mobile-menu-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.premium-mobile-menu-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #22d3ee, #3b82f6, #a855f7);
+    box-shadow: 0 4px 12px rgba(34, 211, 238, 0.3);
+    flex-shrink: 0;
+}
+.premium-mobile-menu-logo svg { width: 18px; height: 18px; }
+.premium-mobile-menu-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: inherit; }
+.premium-mobile-menu-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+/* Mobile menu profile section */
+.premium-mobile-menu-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.premium-mobile-menu-profile:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+.premium-mobile-menu-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #22d3ee, #3b82f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+.premium-mobile-menu-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    object-fit: cover;
+}
+.premium-mobile-menu-userinfo {
+    flex: 1;
+    min-width: 0;
+}
+.premium-mobile-menu-username {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.premium-mobile-menu-userplan {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.premium-mobile-menu-userplan i {
+    font-size: 0.55rem;
+    color: #fbbf24;
+}
+
 /* ============================================
    PREMIUM GRAND SIDEBAR
    Full-height glassmorphism drawer

@@ -984,7 +984,7 @@
 }
 
 /* One Tap Radio */
-.one-tap-radio { padding-bottom: 4px; }
+.one-tap-radio { padding-bottom: 4px; margin-top: 0; }
 .otr-row {
     display: flex;
     gap: 10px;
@@ -1039,62 +1039,75 @@
 }
 .recently-added-track {
     display: flex;
-    gap: 10px;
-    padding: 6px 20px 14px;
+    gap: 14px;
+    padding: 8px 20px 16px;
     overflow-x: auto;
     overflow-y: hidden;
     scroll-behavior: auto;
     scrollbar-width: none;
+    scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
 }
 .recently-added-track::-webkit-scrollbar { display: none; }
 .ra-song-card {
     flex: 0 0 auto;
-    width: 140px;
-    background: var(--ai-card);
-    border: 1px solid var(--ai-border);
-    border-radius: 12px;
-    padding: 10px;
+    width: 180px;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    padding: 12px;
     cursor: pointer;
-    transition: transform 0.2s, border-color 0.2s;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s, box-shadow 0.25s;
     position: relative;
     overflow: hidden;
+    scroll-snap-align: start;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(168, 85, 247, 0) inset;
 }
-.ra-song-card:hover { transform: translateY(-2px); border-color: var(--ai-accent); }
+.ra-song-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4), 0 0 24px rgba(168, 85, 247, 0.08);
+}
 .ra-song-art {
     width: 100%;
     aspect-ratio: 1;
-    border-radius: 8px;
-    background: var(--ai-surface);
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1a0a2e, #0d1f2d);
     background-size: cover;
     background-position: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     position: relative;
+    overflow: hidden;
 }
+.ra-song-art img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+.ra-song-card:hover .ra-song-art img { transform: scale(1.08); }
 .ra-song-new {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    background: var(--ai-accent);
-    color: #000;
+    top: 6px;
+    right: 6px;
+    background: linear-gradient(135deg, #a855f7, #6366f1);
+    color: #fff;
     font-size: 9px;
     font-weight: 800;
-    padding: 2px 5px;
-    border-radius: 4px;
+    padding: 3px 7px;
+    border-radius: 6px;
     letter-spacing: 0.04em;
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
 }
 .ra-song-name {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--ai-text);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.3;
 }
 .ra-song-artist {
-    font-size: 10px;
-    color: var(--ai-muted);
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.5);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1353,37 +1366,37 @@
 .ai-card-row {
     display: flex;
     gap: 14px;
-    padding: 12px 20px 20px;
+    padding: 8px 20px 16px;
     overflow-x: auto;
-    scroll-snap-type: x proximity;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
-.ai-card-row::-webkit-scrollbar { height: 6px; }
-.ai-card-row::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.14); border-radius: 8px; }
-.ai-card-row::-webkit-scrollbar-track { background: transparent; }
+.ai-card-row::-webkit-scrollbar { display: none; }
 
 .ai-playlist-card {
     position: relative;
-    flex: 0 0 164px;
-    width: 164px;
+    flex: 0 0 180px;
+    width: 180px;
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 12px;
-    border-radius: 16px;
-    background: var(--ai-glass);
-    border: 1px solid var(--ai-border-soft);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     cursor: pointer;
     scroll-snap-align: start;
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s, box-shadow 0.25s;
     -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(168, 85, 247, 0) inset;
 }
 .ai-playlist-card:hover {
-    transform: translateY(-4px);
-    background: var(--ai-glass-hover);
-    border-color: var(--ai-border-strong);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 24px rgba(34, 211, 238, 0.08);
+    transform: translateY(-6px) scale(1.02);
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4), 0 0 24px rgba(168, 85, 247, 0.08);
 }
 .ai-playlist-art {
     position: relative;
@@ -1445,26 +1458,28 @@
 
 /* ---------- 8. Live FM Stations ---------- */
 .ai-live-fm, .ai-live-news, .ai-recently, .ai-ai-rec { min-width: 0; }
-.ai-fm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 12px 20px 20px; }
+.ai-fm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; padding: 8px 20px 16px; }
 .ai-fm-card {
     position: relative;
     display: flex;
     gap: 12px;
     align-items: center;
     padding: 12px;
-    border-radius: 16px;
-    background: var(--ai-glass);
-    border: 1px solid var(--ai-border-soft);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     cursor: pointer;
     overflow: hidden;
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s, box-shadow 0.25s;
     -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(168, 85, 247, 0) inset;
 }
 .ai-fm-card:hover {
-    transform: translateY(-3px);
-    background: var(--ai-glass-hover);
-    border-color: var(--ai-border-strong);
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4), 0 0 22px rgba(34, 211, 238, 0.08);
+    transform: translateY(-4px);
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(168, 85, 247, 0.06);
 }
 .ai-fm-card:active {
     transform: scale(0.96);
@@ -1853,35 +1868,37 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
 /* ---------- 10. Recently Played ---------- */
 .ai-recent-row {
     display: flex;
-    gap: 12px;
-    padding: 12px 20px 20px;
+    gap: 14px;
+    padding: 8px 20px 16px;
     overflow-x: auto;
-    scroll-snap-type: x proximity;
-    scrollbar-width: thin;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
-.ai-recent-row::-webkit-scrollbar { height: 6px; }
-.ai-recent-row::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.14); border-radius: 8px; }
+.ai-recent-row::-webkit-scrollbar { display: none; }
 .ai-song-card {
     position: relative;
-    flex: 0 0 116px;
-    width: 116px;
+    flex: 0 0 180px;
+    width: 180px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 10px;
+    gap: 10px;
+    padding: 12px;
     border-radius: 14px;
-    background: var(--ai-glass);
-    border: 1px solid var(--ai-border-soft);
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     cursor: pointer;
     scroll-snap-align: start;
-    transition: transform 0.25s, background 0.25s, border-color 0.25s, box-shadow 0.25s;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s, box-shadow 0.25s;
     -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(168, 85, 247, 0) inset;
 }
 .ai-song-card:hover {
-    transform: translateY(-4px);
-    background: var(--ai-glass-hover);
-    border-color: var(--ai-border-strong);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+    transform: translateY(-6px) scale(1.02);
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4), 0 0 24px rgba(168, 85, 247, 0.08);
 }
 .ai-song-card:active {
     transform: scale(0.93);
@@ -2033,16 +2050,23 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px;
+    padding: 10px;
     border-radius: 14px;
-    background: var(--ai-glass);
-    border: 1px solid var(--ai-border-soft);
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     cursor: pointer;
-    transition: transform 0.22s, background 0.22s, border-color 0.22s;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s, box-shadow 0.25s;
     -webkit-tap-highlight-color: transparent;
     min-width: 0;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
-.ai-rec-song:hover { transform: translateY(-2px); background: var(--ai-glass-hover); border-color: var(--ai-border-strong); }
+.ai-rec-song:hover {
+    transform: translateY(-3px);
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35), 0 0 20px rgba(168, 85, 247, 0.06);
+}
 .ai-rec-song:active { transform: scale(0.95); transition-duration: 0.08s; }
 .ai-rec-song.playing-song {
     border-color: rgba(34, 211, 238, 0.5);
@@ -2187,8 +2211,8 @@ body.gp-active .tamilai-bottom-nav { bottom: 88px; }
 .ai-decade-cards {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 12px 20px 20px;
+    gap: 14px;
+    padding: 8px 20px 16px;
 }
 .ai-decade-card {
     position: relative;
@@ -2196,16 +2220,19 @@ body.gp-active .tamilai-bottom-nav { bottom: 88px; }
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     padding: 24px 14px 20px;
-    border-radius: 18px;
-    background: var(--ai-glass);
-    border: 1px solid var(--ai-border-soft);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     cursor: pointer;
     overflow: hidden;
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s, box-shadow 0.25s;
     -webkit-tap-highlight-color: transparent;
     text-align: center;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(168, 85, 247, 0) inset;
 }
 .ai-decade-card::before {
     content: '';
@@ -2215,10 +2242,9 @@ body.gp-active .tamilai-bottom-nav { bottom: 88px; }
     transition: opacity 0.3s;
 }
 .ai-decade-card:hover {
-    transform: translateY(-4px);
-    background: var(--ai-glass-hover);
-    border-color: var(--ai-border-strong);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 20px var(--ai-decade-glow, rgba(34, 211, 238, 0.08));
+    transform: translateY(-6px) scale(1.02);
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4), 0 0 24px rgba(168, 85, 247, 0.08);
 }
 .ai-decade-card:hover::before { opacity: 0.18; }
 .ai-decade-card:active {

@@ -850,7 +850,7 @@ html.builder-preview #premiumKebabMenu {
    edges. Loads last (premium-ui.css) so it wins over ai-glass.css. */
 .ytm-page-home .greeting-section {
     padding-top: 6px;
-    margin-bottom: 22px;
+    margin-bottom: 0;
     perspective: 1200px;
 }
 
@@ -1041,7 +1041,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     .ytm-page-home .greeting-weather-icon { width: 36px; height: 36px; font-size: 1rem; }
 }
 @media (max-width: 480px) {
-    .ytm-page-home .greeting-section { margin-bottom: 16px; }
+    .ytm-page-home .greeting-section { margin-bottom: 0; }
     .ytm-page-home .greeting-hero {
         padding: 18px 16px;
         border-radius: 20px;

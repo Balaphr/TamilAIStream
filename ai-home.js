@@ -1051,6 +1051,20 @@ window.AIHome = (() => {
             const premium = !!(user && (user.premium || user.plan === 'premium'));
             sidebarPlan.innerHTML = (premium ? '<i class="fa-solid fa-crown"></i> Premium' : '<i class="fa-solid fa-crown" style="color:#fbbf24;"></i> Free');
         }
+        // Sync mobile menu profile section
+        const mobileName = $('mobileMenuUserName');
+        const mobileAvatar = $('mobileMenuAvatar');
+        const mobilePlan = document.querySelector('.premium-mobile-menu-userplan');
+        if (mobileName) mobileName.textContent = name.split(' ')[0];
+        if (mobileAvatar) {
+            const photo = (user && user.photoURL) || '';
+            if (photo) mobileAvatar.innerHTML = '<img src="' + escapeHtml(photo) + '" alt="' + escapeHtml(name) + '">';
+            else mobileAvatar.textContent = initials;
+        }
+        if (mobilePlan) {
+            const premium = !!(user && (user.premium || user.plan === 'premium'));
+            mobilePlan.innerHTML = (premium ? '<i class="fa-solid fa-crown"></i> Premium' : '<i class="fa-solid fa-crown" style="color:#fbbf24;"></i> Free');
+        }
     }
 
     /* ---------------- Notifications + Install ---------------- */

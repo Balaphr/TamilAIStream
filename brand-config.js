@@ -75,18 +75,6 @@
           img.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:50%;';
           img.loading = 'lazy';
           el.appendChild(img);
-          // Update PWA manifest icons to use the brand logo
-          try {
-            const manifestLink = document.querySelector('link[rel="manifest"]');
-            if (manifestLink) {
-              fetch(manifestLink.href).then(r => r.json()).then(manifest => {
-                if (manifest.icons) {
-                  manifest.icons.forEach(icon => { icon.src = logo; });
-                  // Note: manifest is only updatable via server-side for installed PWAs
-                }
-              }).catch(() => {});
-            }
-          } catch (e) {}
         }
       });
 
@@ -101,6 +89,58 @@
       if (appleTitle) appleTitle.setAttribute('content', BRAND.shortName);
       const themeMeta = document.querySelector('meta[name="theme-color"]');
       if (themeMeta) themeMeta.setAttribute('content', getThemeColor());
+
+      // Generate dynamic PWA icons from canvas if SVG logo is available
+      generateDynamicIcons(logo);
+    } catch (e) { /* ignore */ }
+  }
+
+  // Generate PWA icons dynamically from the brand SVG logo using Canvas API
+  function generateDynamicIcons(logoUrl) {
+    if (!logoUrl || !logoUrl.startsWith('data:image/svg')) return;
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() {
+        const sizes = [192, 512];
+        sizes.forEach(function(size) {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            // Draw rounded background
+            const radius = size * 0.195;
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(size - radius, 0);
+            ctx.quadraticCurveTo(size, 0, size, radius);
+            ctx.lineTo(size, size - radius);
+            ctx.quadraticCurveTo(size, size, size - radius, size);
+            ctx.lineTo(radius, size);
+            ctx.quadraticCurveTo(0, size, 0, size - radius);
+            ctx.lineTo(0, radius);
+            ctx.quadraticCurveTo(0, 0, radius, 0);
+            ctx.closePath();
+            ctx.fillStyle = '#060e1a';
+            ctx.fill();
+            // Draw logo centered
+            const padding = size * 0.15;
+            ctx.drawImage(img, padding, padding, size - padding * 2, size - padding * 2);
+            // Convert to blob and create object URL for dynamic icon
+            canvas.toBlob(function(blob) {
+              if (blob) {
+                const url = URL.createObjectURL(blob);
+                // Update any dynamic icon references
+                document.querySelectorAll('link[rel="icon"][data-dynamic]').forEach(function(link) {
+                  link.href = url;
+                });
+              }
+            }, 'image/png');
+          } catch (e) { /* ignore */ }
+        });
+      };
+      img.src = logoUrl;
     } catch (e) { /* ignore */ }
   }
 

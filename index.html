@@ -137,12 +137,12 @@
     <!-- Splash Screen Script (inline for instant execution) -->
     <script>
     (function() {
-        // First visit: show a brief 600ms splash. Returning visitors (this session): skip instantly.
+        // First visit: show ~10s premium 3D logo animation. Returning visitors (this session): skip instantly.
         var splashSeen = false;
         try { splashSeen = sessionStorage.getItem('tamilai_splash_seen') === '1'; } catch (e) {}
         /* PWA standalone: always skip splash for instant resume */
         var isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
-        const SPLASH_MIN_MS = (splashSeen || isStandalone) ? 0 : 600;
+        const SPLASH_MIN_MS = (splashSeen || isStandalone) ? 0 : 10000;
         const overlay = document.getElementById('splashOverlay');
         const skipBtn = document.getElementById('splashSkip');
         if (!overlay) return;
@@ -441,7 +441,22 @@
             <aside class="premium-mobile-menu" id="premiumMobileMenu" aria-label="Responsive navigation menu">
                 <div class="premium-mobile-menu-inner">
                     <div class="premium-mobile-menu-header">
-                        <span class="premium-mobile-menu-title"><i class="fas fa-bars-staggered"></i> Menu</span>
+                        <div class="premium-mobile-menu-brand">
+                            <div class="premium-mobile-menu-logo" data-brand-logo>
+                                <svg viewBox="0 0 40 40" fill="none">
+                                    <circle cx="20" cy="20" r="18" fill="url(#mobileMenuGrad)"/>
+                                    <path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/>
+                                    <defs>
+                                        <linearGradient id="mobileMenuGrad" x1="0" y1="0" x2="40" y2="40">
+                                            <stop stop-color="#22d3ee"/>
+                                            <stop offset="0.5" stop-color="#3b82f6"/>
+                                            <stop offset="1" stop-color="#a855f7"/>
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                            </div>
+                            <span class="premium-mobile-menu-title" data-brand-text>Tamil AI Stream</span>
+                        </div>
                         <button class="premium-mobile-menu-close" id="premiumMobileMenuClose" aria-label="Close menu">
                             <i class="fas fa-xmark"></i>
                         </button>
@@ -455,24 +470,28 @@
                     </div>
                     <div class="premium-mobile-menu-content">
                         <div class="premium-sidebar-section">
-                            <div class="premium-sidebar-section-title">Navigate</div>
+                            <div class="premium-sidebar-section-title">Menu</div>
                             <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item active" data-page="home">
-                                <div class="premium-sidebar-item-icon"><i class="fas fa-house"></i></div>
-                                <span>Home</span>
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-music"></i></div>
+                                <span>Music</span>
                                 <div class="premium-sidebar-item-indicator"></div>
                             </button>
                             <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="radio">
-                                <div class="premium-sidebar-item-icon premium-sidebar-item-icon-live"><i class="fas fa-radio"></i></div>
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-tower-broadcast"></i></div>
                                 <span>Radio</span>
-                                <span class="premium-sidebar-badge premium-sidebar-badge-live">LIVE</span>
                             </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="activity">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-chart-bar"></i></div>
+                                <span>Activity</span>
+                            </button>
+                        </div>
+
+                        <div class="premium-sidebar-divider"></div>
+
+                        <div class="premium-sidebar-section">
                             <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="explore">
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-compass"></i></div>
                                 <span>Explore</span>
-                            </button>
-                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="search">
-                                <div class="premium-sidebar-item-icon"><i class="fas fa-search"></i></div>
-                                <span>Search</span>
                             </button>
                             <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="library">
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-book-open"></i></div>
@@ -482,9 +501,26 @@
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-list"></i></div>
                                 <span>Playlists</span>
                             </button>
-                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="stations">
-                                <div class="premium-sidebar-item-icon"><i class="fas fa-tower-broadcast"></i></div>
-                                <span>Stations</span>
+                        </div>
+
+                        <div class="premium-sidebar-divider"></div>
+
+                        <div class="premium-sidebar-section">
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="presets">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-sliders"></i></div>
+                                <span>Presets</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="replays">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-rotate"></i></div>
+                                <span>Replays</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="community">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-users"></i></div>
+                                <span>Community</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="charts">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-chart-line"></i></div>
+                                <span>Charts</span>
                             </button>
                             <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="history">
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-clock-rotate-left"></i></div>
@@ -495,31 +531,20 @@
                         <div class="premium-sidebar-divider"></div>
 
                         <div class="premium-sidebar-section">
-                            <div class="premium-sidebar-section-title">Account</div>
-                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="dashboard">
-                                <div class="premium-sidebar-item-icon"><i class="fas fa-chart-line"></i></div>
-                                <span>Music Dashboard</span>
-                            </button>
                             <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="settings">
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-gear"></i></div>
                                 <span>Settings</span>
                             </button>
-                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="account">
-                                <div class="premium-sidebar-item-icon"><i class="fas fa-user"></i></div>
-                                <span>My Account</span>
-                            </button>
-                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="premium">
-                                <div class="premium-sidebar-item-icon"><i class="fas fa-crown"></i></div>
-                                <span>Premium</span>
-                            </button>
-                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item premium-sidebar-admin" id="premiumMobileNavBuilder" style="display:none;" data-action="builder">
-                                <div class="premium-sidebar-item-icon premium-sidebar-item-icon-admin"><i class="fas fa-tools"></i></div>
-                                <span>Builder</span>
-                                <span class="premium-sidebar-admin-badge">Admin</span>
-                            </button>
                         </div>
                     </div>
                     <div class="premium-mobile-menu-footer">
+                        <div class="premium-mobile-menu-profile" id="mobileMenuProfile">
+                            <div class="premium-mobile-menu-avatar" id="mobileMenuAvatar">G</div>
+                            <div class="premium-mobile-menu-userinfo">
+                                <div class="premium-mobile-menu-username" id="mobileMenuUserName">Guest</div>
+                                <div class="premium-mobile-menu-userplan"><i class="fa-solid fa-crown"></i> Free</div>
+                            </div>
+                        </div>
                         <button class="premium-sidebar-logout" id="premiumMobileMenuLogout">
                             <i class="fas fa-right-from-bracket"></i>
                             <span>Logout</span>
