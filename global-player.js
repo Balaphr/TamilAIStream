@@ -192,6 +192,7 @@ const GlobalPlayer = (() => {
         el.id = 'gp-mini';
         el.className = 'gp-mini';
         el.innerHTML = `
+            <div class="gp-mini-glow"></div>
             <div class="gp-mini-progress" id="gpMiniProgress">
                 <div class="gp-mini-progress-bar" id="gpMiniBar"></div>
                 <div class="gp-mini-progress-buffered" id="gpMiniBuffered"></div>
@@ -200,6 +201,7 @@ const GlobalPlayer = (() => {
             <div class="gp-mini-inner">
                 <div class="gp-mini-artwork" id="gpMiniArtwork">
                     <div class="gp-mini-art-img" id="gpMiniArtImg"></div>
+                    <div class="gp-mini-art-glow"></div>
                     <div class="gp-mini-eq" id="gpMiniEq">
                         <span></span><span></span><span></span><span></span>
                     </div>
@@ -210,10 +212,6 @@ const GlobalPlayer = (() => {
                     </div>
                     <div class="gp-mini-title" id="gpMiniTitle">Tamil AI Stream</div>
                     <div class="gp-mini-artist" id="gpMiniArtist">Select a song to play</div>
-                    <div class="gp-mini-time">
-                        <span id="gpMiniCur">0:00</span>
-                        <span id="gpMiniDur">0:00</span>
-                    </div>
                 </div>
                 <div class="gp-mini-wave" id="gpMiniWave">
                     <canvas id="gpMiniWaveCanvas"></canvas>
@@ -225,12 +223,13 @@ const GlobalPlayer = (() => {
                 </div>
                 <div class="gp-mini-right">
                     <button class="gp-btn gp-mini-fav" id="gpMiniFav" title="Favorite"><i class="far fa-heart"></i></button>
+                    <div class="gp-mini-time">
+                        <span id="gpMiniCur">0:00</span>
+                        <span class="gp-mini-time-sep">/</span>
+                        <span id="gpMiniDur">0:00</span>
+                    </div>
                     <button class="gp-btn gp-mini-expand" id="gpMiniExpand" title="Expand"><i class="fas fa-chevron-up"></i></button>
                 </div>
-            </div>
-            <div class="gp-mini-np" id="gpMiniNp">
-                <span class="gp-np-dot"></span>
-                <span id="gpNpText">Now Playing</span>
             </div>
         `;
         document.body.appendChild(el);
