@@ -619,6 +619,7 @@ const YTMusic = {
                     TamilAIPremium.syncRadioState();
                 }
                 break;
+            case 'music': this.renderLibraryContent(); break;
             case 'artists': this.renderArtistsContent(); break;
             case 'settings': this.renderSettingsPage(); break;
             case 'account': this.renderAccountPage(); break;
@@ -634,9 +635,6 @@ const YTMusic = {
                 } else if (desktopSI) {
                     desktopSI.focus();
                 }
-                break;
-            case 'menu':
-                this.toggleMobileMenu(true);
                 break;
         }
 
