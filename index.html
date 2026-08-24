@@ -541,76 +541,10 @@
                     <!-- Good Morning Section (top of Home) -->
                     <div class="greeting-section" data-section="greeting"></div>
 
-                    <!-- Premium Now Playing Player + Visualizer -->
-                    <div class="premium-now-playing-wrap" id="premiumNowPlayingWrap">
-                        <!-- Futuristic Audio Visualizer Background -->
-                        <div class="premium-np-visualizer-bg">
-                            <canvas id="premiumVizCanvas"></canvas>
-                        </div>
-                        <!-- Glassmorphism Player Card -->
-                        <div class="premium-np-card" id="premiumNpCard">
-                            <div class="premium-np-art">
-                                <img id="premiumNpArtImg" src="" alt="Now Playing" style="display:none;" loading="lazy">
-                                <div class="premium-np-art-placeholder" id="premiumNpArtPlaceholder">
-                                    <i class="fas fa-music"></i>
-                                </div>
-                                <span class="premium-np-art-live" id="premiumNpLiveBadge">
-                                    <span class="premium-np-live-dot"></span> LIVE
-                                </span>
-                            </div>
-                            <div class="premium-np-info">
-                                <div class="premium-np-station" id="premiumNpStation" style="display:none;"></div>
-                                <div class="premium-np-title" id="premiumNpTitle">No Track</div>
-                                <div class="premium-np-artist" id="premiumNpArtist">Select a station or song</div>
-                                <!-- Futuristic Waveform -->
-                                <div class="premium-np-waveform">
-                                    <canvas id="premiumNpWaveform"></canvas>
-                                </div>
-                                <!-- Progress Bar -->
-                                <div class="premium-np-progress-wrap">
-                                    <span class="premium-np-time" id="premiumNpCurrentTime">0:00</span>
-                                    <div class="premium-np-progress" id="premiumNpProgress">
-                                        <div class="premium-np-progress-bar" id="premiumNpProgressBar"></div>
-                                        <div class="premium-np-progress-thumb"></div>
-                                    </div>
-                                    <span class="premium-np-time" id="premiumNpDuration">0:00</span>
-                                </div>
-                                <!-- Controls Row -->
-                                <div class="premium-np-controls">
-                                    <button class="premium-np-btn" id="premiumNpShuffleBtn" title="Shuffle"><i class="fas fa-shuffle"></i></button>
-                                    <button class="premium-np-btn" id="premiumNpPrevBtn" title="Previous"><i class="fas fa-backward-step"></i></button>
-                                    <button class="premium-np-btn premium-np-btn-play" id="premiumNpPlayBtn" title="Play/Pause"><i class="fas fa-play"></i></button>
-                                    <button class="premium-np-btn" id="premiumNpNextBtn" title="Next"><i class="fas fa-forward-step"></i></button>
-                                    <button class="premium-np-btn" id="premiumNpRepeatBtn" title="Repeat"><i class="fas fa-repeat"></i></button>
-                                    <div class="premium-np-volume">
-                                        <button class="premium-np-volume-btn" id="premiumNpVolumeBtn" title="Volume"><i class="fas fa-volume-high"></i></button>
-                                        <input type="range" class="premium-np-volume-slider" id="premiumNpVolumeSlider" min="0" max="1" step="0.01" value="0.7">
-                                    </div>
-                                    <div class="premium-np-more">
-                                        <button class="premium-np-btn" id="premiumNpMoreBtn" title="More"><i class="fas fa-ellipsis-vertical"></i></button>
-                                        <div class="premium-np-more-menu" id="premiumNpMoreMenu">
-                                            <button class="premium-np-more-item"><i class="fas fa-heart"></i> Add to Favourites</button>
-                                            <button class="premium-np-more-item"><i class="fas fa-plus"></i> Add to Playlist</button>
-                                            <button class="premium-np-more-item"><i class="fas fa-share-nodes"></i> Share</button>
-                                            <button class="premium-np-more-item"><i class="fas fa-bars-staggered"></i> View Queue</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <!-- Futuristic Audio Visualizer (behind player area) -->
+                    <div class="premium-fm-visualizer-wrap" id="premiumFmVisualizerWrap">
+                        <canvas id="premiumVizCanvas"></canvas>
                     </div>
-
-                    <!-- Live FM Stations Carousel -->
-                    <section class="premium-fm-carousel-section">
-                        <div class="premium-fm-header">
-                            <h2 class="premium-fm-title"><span class="ai-live-dot"></span> Live FM Stations</h2>
-                            <button class="premium-fm-see-all" data-ai-seeall="live-fm">See All</button>
-                        </div>
-                        <div class="premium-fm-viewport">
-                            <div class="premium-fm-track" id="premiumFmTrack"></div>
-                        </div>
-                        <div class="premium-fm-dots" id="premiumFmDots"></div>
-                    </section>
 
                     <!-- One Tap Radio -->
                     <section class="ai-panel one-tap-radio" data-section="ai-one-tap-radio">
