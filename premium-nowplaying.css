@@ -1,0 +1,780 @@
+/* ============================================
+   Premium Now Playing Player + Visualizer + FM Carousel
+   Futuristic AI Glassmorphism Design
+   ============================================ */
+
+/* --- Color Variables for new sections --- */
+:root {
+    --np-cyan: #22d3ee;
+    --np-blue: #3b82f6;
+    --np-purple: #a855f7;
+    --np-glow-cyan: rgba(34,211,238,0.4);
+    --np-glow-blue: rgba(59,130,246,0.3);
+    --np-glow-purple: rgba(168,85,247,0.3);
+    --np-glass: rgba(255,255,255,0.04);
+    --np-glass-border: rgba(255,255,255,0.07);
+    --np-glass-hover: rgba(255,255,255,0.08);
+}
+
+/* ============================================
+   SECTION 1: Premium Now Playing Player
+   ============================================ */
+.premium-now-playing-wrap {
+    position: relative;
+    margin: 0 auto 32px;
+    max-width: 900px;
+    padding: 0 16px;
+}
+
+.premium-np-visualizer-bg {
+    position: absolute;
+    inset: -60px;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: 32px;
+}
+
+.premium-np-visualizer-bg canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.premium-np-card {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 28px;
+    padding: 28px;
+    background: rgba(10, 14, 30, 0.72);
+    backdrop-filter: blur(40px) saturate(1.6);
+    -webkit-backdrop-filter: blur(40px) saturate(1.6);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 24px;
+    box-shadow:
+        0 0 0 1px rgba(255,255,255,0.03),
+        0 8px 40px rgba(0,0,0,0.5),
+        0 0 80px -20px var(--np-glow-cyan),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    overflow: hidden;
+    transition: box-shadow 0.6s ease;
+}
+
+.premium-np-card.is-playing {
+    box-shadow:
+        0 0 0 1px rgba(255,255,255,0.05),
+        0 8px 40px rgba(0,0,0,0.5),
+        0 0 100px -15px var(--np-glow-cyan),
+        0 0 60px -20px var(--np-glow-purple),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.premium-np-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 20%, rgba(34,211,238,0.06), transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(168,85,247,0.04), transparent 60%);
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 0;
+}
+
+/* Artwork */
+.premium-np-art {
+    position: relative;
+    flex-shrink: 0;
+    width: 200px;
+    height: 200px;
+    border-radius: 18px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    z-index: 1;
+}
+
+.premium-np-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.premium-np-card.is-playing .premium-np-art img {
+    transform: scale(1.03);
+}
+
+.premium-np-art-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    color: rgba(255,255,255,0.15);
+    background: linear-gradient(135deg, rgba(34,211,238,0.08), rgba(168,85,247,0.08));
+}
+
+.premium-np-art-live {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: none;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: rgba(239,68,68,0.2);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(239,68,68,0.35);
+    border-radius: 20px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #f87171;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.premium-np-art-live.visible {
+    display: inline-flex;
+}
+
+.premium-np-live-dot {
+    width: 6px;
+    height: 6px;
+    background: #ef4444;
+    border-radius: 50%;
+    animation: npLivePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes npLivePulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+    50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(239,68,68,0); }
+}
+
+/* Info + Controls */
+.premium-np-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    z-index: 1;
+}
+
+.premium-np-station {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--np-cyan);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.premium-np-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+    line-height: 1.3;
+}
+
+.premium-np-artist {
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.55);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 14px;
+}
+
+/* Waveform */
+.premium-np-waveform {
+    width: 100%;
+    height: 36px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.premium-np-waveform canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Progress Bar */
+.premium-np-progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.premium-np-time {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.45);
+    min-width: 36px;
+    font-variant-numeric: tabular-nums;
+}
+
+.premium-np-progress {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+    position: relative;
+    cursor: pointer;
+    transition: height 0.2s ease;
+}
+
+.premium-np-progress:hover {
+    height: 6px;
+}
+
+.premium-np-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--np-cyan), var(--np-blue), var(--np-purple));
+    border-radius: 4px;
+    position: relative;
+    transition: width 0.1s linear;
+    width: 0%;
+}
+
+.premium-np-progress-thumb {
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%) scale(0);
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(34,211,238,0.5);
+    transition: transform 0.2s ease;
+}
+
+.premium-np-progress:hover .premium-np-progress-thumb {
+    transform: translateY(-50%) scale(1);
+}
+
+/* Controls Row */
+.premium-np-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.premium-np-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    color: rgba(255,255,255,0.6);
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.premium-np-btn:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.06);
+}
+
+.premium-np-btn.active {
+    color: var(--np-cyan);
+}
+
+.premium-np-btn-play {
+    width: 56px;
+    height: 56px;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--np-cyan), var(--np-blue), var(--np-purple));
+    background-size: 200% 200%;
+    color: #fff;
+    box-shadow:
+        0 4px 20px rgba(34,211,238,0.35),
+        0 0 40px rgba(34,211,238,0.15);
+    animation: npPlayBtnGlow 3s ease-in-out infinite;
+    position: relative;
+}
+
+.premium-np-btn-play::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--np-cyan), var(--np-blue), var(--np-purple));
+    background-size: 200% 200%;
+    z-index: -1;
+    filter: blur(12px);
+    opacity: 0.5;
+    animation: npPlayBtnGlow 3s ease-in-out infinite;
+}
+
+.premium-np-btn-play:hover {
+    transform: scale(1.08);
+    box-shadow:
+        0 6px 28px rgba(34,211,238,0.5),
+        0 0 60px rgba(34,211,238,0.2);
+}
+
+@keyframes npPlayBtnGlow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Volume Control */
+.premium-np-volume {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.premium-np-volume-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.premium-np-volume-btn:hover {
+    color: #fff;
+}
+
+.premium-np-volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+}
+
+.premium-np-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--np-cyan);
+    box-shadow: 0 0 6px rgba(34,211,238,0.5);
+    cursor: pointer;
+}
+
+.premium-np-volume-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--np-cyan);
+    border: none;
+    box-shadow: 0 0 6px rgba(34,211,238,0.5);
+    cursor: pointer;
+}
+
+/* More Options */
+.premium-np-more {
+    position: relative;
+}
+
+.premium-np-more-menu {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    min-width: 160px;
+    background: rgba(15,20,40,0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.premium-np-more-menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.premium-np-more-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background 0.15s;
+}
+
+.premium-np-more-item:hover {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+}
+
+/* ============================================
+   SECTION 2: Audio Visualizer Canvas (behind player)
+   ============================================ */
+.premium-visualizer-container {
+    position: relative;
+    width: 100%;
+    margin: -20px 0 16px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.premium-visualizer-container canvas {
+    width: 100%;
+    height: 120px;
+    display: block;
+}
+
+/* ============================================
+   SECTION 3: Live FM Stations Carousel
+   ============================================ */
+.premium-fm-carousel-section {
+    margin: 0 auto 36px;
+    max-width: 1200px;
+    padding: 0 16px;
+}
+
+.premium-fm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.premium-fm-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.premium-fm-title .ai-live-dot {
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    display: inline-block;
+    animation: npLivePulse 1.5s ease-in-out infinite;
+}
+
+.premium-fm-see-all {
+    font-size: 0.78rem;
+    color: var(--np-cyan);
+    background: rgba(34,211,238,0.08);
+    border: 1px solid rgba(34,211,238,0.2);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.premium-fm-see-all:hover {
+    background: rgba(34,211,238,0.15);
+    border-color: rgba(34,211,238,0.35);
+}
+
+.premium-fm-viewport {
+    position: relative;
+    overflow: hidden;
+}
+
+.premium-fm-track {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 2px 12px;
+    scroll-snap-type: x mandatory;
+}
+
+.premium-fm-track::-webkit-scrollbar {
+    display: none;
+}
+
+/* FM Station Card */
+.premium-fm-card {
+    flex: 0 0 200px;
+    scroll-snap-align: start;
+    background: rgba(10, 14, 30, 0.7);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 18px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    position: relative;
+}
+
+.premium-fm-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    border-color: rgba(34,211,238,0.25);
+    box-shadow:
+        0 16px 48px rgba(0,0,0,0.5),
+        0 0 40px -10px rgba(34,211,238,0.2);
+}
+
+.premium-fm-card.active {
+    border-color: var(--np-cyan);
+    box-shadow:
+        0 0 0 1px var(--np-cyan),
+        0 0 30px -5px var(--np-glow-cyan),
+        0 12px 40px rgba(0,0,0,0.4);
+}
+
+.premium-fm-card-art {
+    position: relative;
+    width: 100%;
+    height: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(34,211,238,0.05), rgba(168,85,247,0.05));
+}
+
+.premium-fm-card-art img {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    border-radius: 14px;
+    transition: transform 0.3s ease;
+}
+
+.premium-fm-card:hover .premium-fm-card-art img {
+    transform: scale(1.08);
+}
+
+.premium-fm-card-logo-placeholder {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    font-size: 24px;
+    color: rgba(255,255,255,0.15);
+}
+
+.premium-fm-card-live {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    background: rgba(239,68,68,0.2);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 12px;
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: #f87171;
+    letter-spacing: 0.5px;
+}
+
+.premium-fm-card-eq {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    display: none;
+    align-items: flex-end;
+    gap: 2px;
+    height: 18px;
+    padding: 3px 5px;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    border-radius: 6px;
+}
+
+.premium-fm-card.active .premium-fm-card-eq {
+    display: inline-flex;
+}
+
+.premium-fm-card-eq span {
+    width: 3px;
+    background: var(--np-cyan);
+    border-radius: 2px;
+    animation: fmEqBounce 0.6s ease-in-out infinite alternate;
+}
+
+.premium-fm-card-eq span:nth-child(1) { height: 6px; animation-delay: 0s; }
+.premium-fm-card-eq span:nth-child(2) { height: 12px; animation-delay: 0.1s; }
+.premium-fm-card-eq span:nth-child(3) { height: 8px; animation-delay: 0.2s; }
+.premium-fm-card-eq span:nth-child(4) { height: 14px; animation-delay: 0.05s; }
+
+@keyframes fmEqBounce {
+    0% { height: 4px; }
+    100% { height: 16px; }
+}
+
+.premium-fm-card-info {
+    padding: 12px 14px 14px;
+}
+
+.premium-fm-card-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.premium-fm-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.premium-fm-card-category {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.premium-fm-card-speaker {
+    color: rgba(255,255,255,0.2);
+    font-size: 11px;
+    flex-shrink: 0;
+    transition: color 0.2s;
+}
+
+.premium-fm-card:hover .premium-fm-card-speaker,
+.premium-fm-card.active .premium-fm-card-speaker {
+    color: var(--np-cyan);
+}
+
+/* Pagination Dots */
+.premium-fm-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 14px;
+}
+
+.premium-fm-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+.premium-fm-dot.active {
+    width: 20px;
+    border-radius: 4px;
+    background: var(--np-cyan);
+    box-shadow: 0 0 8px rgba(34,211,238,0.4);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+    .premium-np-card {
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+    }
+    .premium-np-art {
+        width: 100%;
+        height: 220px;
+        border-radius: 16px;
+    }
+    .premium-np-title {
+        font-size: 1.15rem;
+    }
+    .premium-np-controls {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .premium-np-volume {
+        margin-left: 0;
+        width: 100%;
+        justify-content: center;
+        margin-top: 4px;
+    }
+    .premium-fm-card {
+        flex: 0 0 170px;
+    }
+}
+
+@media (max-width: 480px) {
+    .premium-now-playing-wrap {
+        padding: 0 10px;
+        margin-bottom: 24px;
+    }
+    .premium-np-card {
+        padding: 16px;
+        border-radius: 18px;
+    }
+    .premium-np-art {
+        height: 180px;
+    }
+    .premium-np-btn-play {
+        width: 50px;
+        height: 50px;
+        font-size: 18px;
+    }
+    .premium-fm-carousel-section {
+        padding: 0 10px;
+        margin-bottom: 28px;
+    }
+    .premium-fm-card {
+        flex: 0 0 155px;
+    }
+    .premium-fm-card-art {
+        height: 110px;
+    }
+}
