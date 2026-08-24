@@ -406,6 +406,30 @@ const AICommandBot = (() => {
             return handleQualityCheck(songs);
         }
 
+        if (lower.includes('album') && (lower.includes('add') || lower.includes('new') || lower.includes('create'))) {
+            return handleAddAlbum(cmd);
+        }
+
+        if (lower.includes('album') && lower.includes('thumbnail')) {
+            return handleAlbumThumbnail(cmd);
+        }
+
+        if (lower.includes('album') && (lower.includes('layout') || lower.includes('horizontal') || lower.includes('grid'))) {
+            return handleAlbumLayout(cmd);
+        }
+
+        if (lower.includes('album') && (lower.includes('responsive') || lower.includes('mobile'))) {
+            return handleAlbumResponsive(cmd);
+        }
+
+        if (lower.includes('album') && lower.includes('delete')) {
+            return handleDeleteAlbum(cmd);
+        }
+
+        if (lower.includes('album') && lower.includes('show')) {
+            return handleShowAlbums();
+        }
+
         if (lower.includes('auto') && (lower.includes('fill') || lower.includes('metadata'))) {
             return `<p>Auto-fill is built into the song upload form. When you upload an audio file, the AI will:</p>
                 <ul>
@@ -730,6 +754,93 @@ const AICommandBot = (() => {
         if (issues.length > 15) html += `<li>... and ${issues.length - 15} more</li>`;
         html += '</ul><p>Use the AI Auto-fill feature when adding songs to fill in metadata automatically.</p>';
         return html;
+    }
+
+    /* ---- New Album Command Handlers ---- */
+    function handleAddAlbum(cmd) {
+        const name = cmd.replace(/add|new|album|create|the|a/gi, '').trim();
+        if (!name) return '<p>Example: <code>Add album "Long Way Home"</code></p>';
+        try {
+            const albums = DataStore.getNewAlbums ? DataStore.getNewAlbums() : [];
+            albums.push({ id: 'album_' + Date.now(), name: name, artist: 'Unknown Artist', tracks: [], visible: true, createdAt: new Date().toISOString() });
+            if (DataStore.setNewAlbums) DataStore.setNewAlbums(albums);
+            return `<p><strong>Album "${name}" created!</strong></p><p>Go to <strong>Builder → New Albums</strong> to add songs, thumbnail, and details.</p>`;
+        } catch (e) {
+            return '<p>Failed to create album. Make sure you are logged in as admin.</p>';
+        }
+    }
+
+    function handleAlbumThumbnail(cmd) {
+        const urlMatch = cmd.match(/https?:\/\/[^\s]+/);
+        if (!urlMatch) return '<p>Example: <code>Change album thumbnail to https://example.com/cover.jpg</code></p>';
+        try {
+            const albums = DataStore.getNewAlbums ? DataStore.getNewAlbums() : [];
+            if (!albums.length) return '<p>No albums found. Create one first with "Add album [name]".</p>';
+            const last = albums[albums.length - 1];
+            last.thumbnail = urlMatch[0];
+            if (DataStore.setNewAlbums) DataStore.setNewAlbums(albums);
+            return `<p><strong>Thumbnail updated</strong> for "${last.name}"!</p>`;
+        } catch (e) {
+            return '<p>Failed to update thumbnail.</p>';
+        }
+    }
+
+    function handleAlbumLayout(cmd) {
+        const lower = cmd.toLowerCase();
+        let layout = 'scroll';
+        if (lower.includes('grid')) layout = 'grid';
+        try {
+            const site = DataStore.getSiteSettings ? DataStore.getSiteSettings() : {};
+            site.newAlbumLayout = layout;
+            if (DataStore.setSiteSettings) DataStore.setSiteSettings(site);
+            return `<p><strong>Album layout changed to ${layout}!</strong></p>`;
+        } catch (e) {
+            return '<p>Failed to change layout.</p>';
+        }
+    }
+
+    function handleAlbumResponsive(cmd) {
+        try {
+            const site = DataStore.getSiteSettings ? DataStore.getSiteSettings() : {};
+            site.newAlbumMobileWidth = 280;
+            site.newAlbumTabletWidth = 300;
+            site.newAlbumMobileThumb = 68;
+            if (DataStore.setSiteSettings) DataStore.setSiteSettings(site);
+            return '<p><strong>Mobile responsive settings applied!</strong> Cards will adapt to screen size.</p>';
+        } catch (e) {
+            return '<p>Failed to apply responsive settings.</p>';
+        }
+    }
+
+    function handleDeleteAlbum(cmd) {
+        const name = cmd.replace(/delete|remove|album|the|a/gi, '').trim();
+        try {
+            let albums = DataStore.getNewAlbums ? DataStore.getNewAlbums() : [];
+            if (!name) return '<p>Example: <code>Delete album "Long Way Home"</code></p>';
+            const before = albums.length;
+            albums = albums.filter(a => !(a.name || '').toLowerCase().includes(name.toLowerCase()));
+            if (albums.length === before) return `<p>No album matching "${name}" found.</p>`;
+            if (DataStore.setNewAlbums) DataStore.setNewAlbums(albums);
+            return `<p><strong>Album "${name}" deleted!</strong></p>`;
+        } catch (e) {
+            return '<p>Failed to delete album.</p>';
+        }
+    }
+
+    function handleShowAlbums() {
+        try {
+            const albums = DataStore.getNewAlbums ? DataStore.getNewAlbums() : [];
+            if (!albums.length) return '<p>No albums found. Create one with "Add album [name]".</p>';
+            let html = `<p><strong>${albums.length} album(s):</strong></p><ul>`;
+            for (const a of albums) {
+                const tracks = (a.tracks || []).length;
+                html += `<li><strong>${a.name}</strong> — ${a.artist || 'Unknown'} (${tracks} tracks) ${a.visible !== false ? '✅' : '🚫'}</li>`;
+            }
+            html += '</ul>';
+            return html;
+        } catch (e) {
+            return '<p>Failed to load albums.</p>';
+        }
     }
 
     /* ---- Utilities ---- */

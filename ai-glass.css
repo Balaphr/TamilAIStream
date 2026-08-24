@@ -1334,7 +1334,15 @@
 .ra-song-card:hover .ra-song-play { opacity: 1; transform: translateY(0); }
 @media (max-width: 480px) {
     .recently-added-track { padding: 6px 14px 14px; gap: 8px; }
-    .ra-song-card { width: 120px; padding: 8px; }
+    .ra-song-card { width: 145px; padding: 8px; }
+}
+@media (max-width: 768px) {
+    .ai-playlist-card { flex: 0 0 160px; width: 160px; }
+    .ai-song-card { flex: 0 0 160px; width: 160px; }
+}
+@media (max-width: 480px) {
+    .ai-playlist-card { flex: 0 0 145px; width: 145px; }
+    .ai-song-card { flex: 0 0 145px; width: 145px; }
 }
 @keyframes aiLivePulse {
     0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.55); }
@@ -3328,3 +3336,157 @@ body.ai-playlist-detail-open { overflow: hidden; }
     color: #fff;
 }
 .premium-plan-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245,158,11,0.3); }
+
+/* ============================================================
+   THREE-DOT CONTEXT MENU (Music Cards)
+   ============================================================ */
+.card-menu-trigger {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 5;
+}
+.card-menu-trigger i { margin-top: -1px; }
+.eg-card:hover .card-menu-trigger,
+.ra-song-card:hover .card-menu-trigger,
+.ai-playlist-card:hover .card-menu-trigger,
+.ai-song-card:hover .card-menu-trigger,
+.new-album-card:hover .card-menu-trigger {
+    opacity: 1;
+    transform: scale(1);
+}
+.card-menu-trigger:active { transform: scale(0.9); }
+/* Always show on touch devices */
+@media (hover: none) {
+    .card-menu-trigger { opacity: 1; transform: scale(1); }
+}
+
+/* Context Menu Overlay */
+.card-context-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+.card-context-overlay.open { opacity: 1; visibility: visible; }
+
+/* Context Menu Panel */
+.card-context-menu {
+    position: fixed;
+    z-index: 9999;
+    width: 240px;
+    max-height: 420px;
+    overflow-y: auto;
+    background: rgba(13, 18, 30, 0.96);
+    backdrop-filter: blur(24px) saturate(1.8);
+    -webkit-backdrop-filter: blur(24px) saturate(1.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 6px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.92) translateY(-8px);
+    transform-origin: top right;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.card-context-menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1) translateY(0);
+}
+.card-context-menu::-webkit-scrollbar { width: 4px; }
+.card-context-menu::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+/* Context Menu Header */
+.cc-menu-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin-bottom: 4px;
+}
+.cc-menu-header-art {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.cc-menu-header-info { min-width: 0; flex: 1; }
+.cc-menu-header-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cc-menu-header-artist {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Context Menu Items */
+.cc-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.78rem;
+    font-family: inherit;
+}
+.cc-menu-item:hover { background: rgba(255, 255, 255, 0.06); }
+.cc-menu-item:active { background: rgba(255, 255, 255, 0.1); }
+.cc-menu-item-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+.cc-menu-item-icon.cyan { background: rgba(34, 211, 238, 0.12); color: #22d3ee; }
+.cc-menu-item-icon.purple { background: rgba(168, 85, 247, 0.12); color: #a855f7; }
+.cc-menu-item-icon.green { background: rgba(52, 211, 153, 0.12); color: #34d399; }
+.cc-menu-item-icon.blue { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
+.cc-menu-item-icon.amber { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+.cc-menu-item-icon.red { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+.cc-menu-item-icon.pink { background: rgba(236, 72, 153, 0.12); color: #ec4899; }
+.cc-menu-item-icon.slate { background: rgba(148, 163, 184, 0.12); color: #94a3b8; }
+.cc-menu-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 4px 12px;
+}

@@ -596,7 +596,9 @@
                         <div class="ai-sec-head">
                             <h2 class="ai-sec-title"><i class="fas fa-clock-rotate-left"></i> Recently Added</h2>
                         </div>
-                        <div class="recently-added-track" id="recentlyAddedTrack"></div>
+                        <div class="recently-added-viewport" id="recentlyAddedViewport">
+                            <div class="recently-added-track" id="recentlyAddedTrack"></div>
+                        </div>
                     </section>
 
                     <!-- Row 1: Music Hero + Trending Playlists -->
@@ -1098,27 +1100,19 @@
 
         </div><!-- /ytm-main-content -->
 
-<!-- Premium Bottom Navigation (Mobile/PWA) — Apple Music-style -->
+<!-- Premium Bottom Navigation (Mobile/PWA) — 3-tab layout -->
 <nav class="tamilai-bottom-nav" id="tamilaiBottomNav" role="navigation" aria-label="Main navigation">
     <button class="tamilai-nav-item active" data-page="home" aria-label="Home">
         <div class="tamilai-nav-icon"><i class="fas fa-house"></i></div>
         <span class="tamilai-nav-label">Home</span>
     </button>
-    <button class="tamilai-nav-item" data-page="explore" aria-label="Explore">
-        <div class="tamilai-nav-icon"><i class="fas fa-compass"></i></div>
-        <span class="tamilai-nav-label">Explore</span>
+    <button class="tamilai-nav-item" data-page="search" aria-label="Search">
+        <div class="tamilai-nav-icon"><i class="fas fa-magnifying-glass"></i></div>
+        <span class="tamilai-nav-label">Search</span>
     </button>
-    <button class="tamilai-nav-item" data-page="playlists" aria-label="Playlists">
-        <div class="tamilai-nav-icon"><i class="fas fa-list"></i></div>
-        <span class="tamilai-nav-label">Playlists</span>
-    </button>
-    <button class="tamilai-nav-item" data-page="stations" aria-label="Stations">
-        <div class="tamilai-nav-icon"><i class="fas fa-tower-broadcast"></i></div>
-        <span class="tamilai-nav-label">Stations</span>
-    </button>
-    <button class="tamilai-nav-item" data-page="history" aria-label="History">
-        <div class="tamilai-nav-icon"><i class="fas fa-clock-rotate-left"></i></div>
-        <span class="tamilai-nav-label">History</span>
+    <button class="tamilai-nav-item" data-page="account" aria-label="Account">
+        <div class="tamilai-nav-icon"><i class="fas fa-user"></i></div>
+        <span class="tamilai-nav-label">Account</span>
     </button>
 </nav>
 

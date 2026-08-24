@@ -527,8 +527,10 @@ window.AIHome = (() => {
         const artHtml = art
             ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=\\\'eg-card-art-placeholder\\\'><i class=\\\'fas fa-gem\\\'></i></div>\'">'
             : '<div class="eg-card-art-placeholder"><i class="fas fa-gem"></i></div>';
+        const songJson = escapeHtml(JSON.stringify({ id: song.id, title: song.title, artist: song.artist, thumbnail: art, genre: song.genre, mood: song.mood }));
         return '<div class="eg-card" data-idx="' + i + '">' +
             '<div class="eg-card-art">' + artHtml +
+            '<button class="card-menu-trigger" onclick="event.stopPropagation();AIHome.openCardContextMenu(event, JSON.parse(this.dataset.song))" data-song=\'' + songJson + '\' aria-label="More options"><i class="fas fa-ellipsis-vertical"></i></button>' +
             '<div class="eg-card-play-overlay">' +
             '<button class="eg-card-play-btn" data-idx="' + i + '" title="Play ' + escapeHtml(title) + '"><i class="fas fa-play" style="margin-left:2px;"></i></button>' +
             '</div></div>' +
@@ -772,11 +774,14 @@ window.AIHome = (() => {
         const badges = [];
         if (album.spatialAudio) badges.push('<span class="new-album-badge new-album-badge-spatial">Spatial Audio</span>');
         if (album.dolbyAtmos) badges.push('<span class="new-album-badge new-album-badge-atmos">with Dolby Atmos</span>');
+        const firstTrack = (album.tracks && album.tracks[0]) || {};
+        const songJson = JSON.stringify({ id: firstTrack.id || album.id, title: album.name, artist: album.artist, thumbnail: art, genre: '', mood: '' }).replace(/'/g, '&#39;');
         return `
             <div class="new-album-card" data-idx="${idx}" data-id="${album.id || ''}">
                 <div class="new-album-art-wrap">
                     <div class="new-album-art-bg" style="background-image:url('${art}')"></div>
                     ${badges.length ? `<div class="new-album-badges">${badges.join('')}</div>` : ''}
+                    <button class="card-menu-trigger" onclick="event.stopPropagation();AIHome.openCardContextMenu(event, JSON.parse(this.dataset.song))" data-song='${songJson}' aria-label="More options"><i class="fas fa-ellipsis-vertical"></i></button>
                     <div class="new-album-thumb">
                         <img src="${art}" alt="${album.name || ''}" loading="lazy">
                         <button class="new-album-play-btn" aria-label="Play album"><i class="fas fa-play"></i></button>
@@ -862,9 +867,12 @@ window.AIHome = (() => {
         const artist = (song.artist || song.singer || 'Unknown Artist').slice(0, 30);
         const art = artOf(song) || ART_PLACEHOLDER;
         const dur = durationText(song.duration);
+        const songJson = escapeHtml(JSON.stringify({ id: song.id, title: song.title, artist: song.artist, thumbnail: artOf(song), genre: song.genre, mood: song.mood }));
         return '<div class="ai-song-card" data-idx="' + i + '">' +
             '<div class="ai-song-art">' + (artOf(song) ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
-            '<i class="fa-solid fa-music"></i></div>' +
+            '<i class="fa-solid fa-music"></i>' +
+            '<button class="card-menu-trigger" onclick="event.stopPropagation();AIHome.openCardContextMenu(event, JSON.parse(this.dataset.song))" data-song=\'' + songJson + '\' aria-label="More options"><i class="fas fa-ellipsis-vertical"></i></button>' +
+            '</div>' +
             '<div class="ai-song-body"><div class="ai-song-title" title="' + escapeHtml(title) + '">' + escapeHtml(title) + '</div>' +
             '<div class="ai-song-artist">' + escapeHtml(artist) + '</div>' +
             (dur ? '<div class="ai-song-dur"><i class="fa-regular fa-clock"></i>' + dur + '</div>' : '') +
@@ -1734,8 +1742,10 @@ window.AIHome = (() => {
             const artist = (s.artist || s.movie || '').slice(0, 28);
             const artStyle = art ? `background-image:url('${art}')` : '';
             const isNew = i < recent.length;
+            const songJson = JSON.stringify({ id: s.id, title: s.title, artist: s.artist, thumbnail: art, genre: s.genre, mood: s.mood }).replace(/'/g, '&#39;');
             return `<div class="ra-song-card" data-song-id="${s.id}" onclick="if(typeof playSongById==='function')playSongById('${s.id}')">
                 <div class="ra-song-art" style="${artStyle}">${isNew ? '<span class="ra-song-new">NEW</span>' : ''}</div>
+                <button class="card-menu-trigger" onclick="event.stopPropagation();AIHome.openCardContextMenu(event, JSON.parse(this.dataset.song))" data-song='${songJson}' aria-label="More options"><i class="fas fa-ellipsis-vertical"></i></button>
                 <button class="ra-song-play" onclick="event.stopPropagation();if(typeof playSongById==='function')playSongById('${s.id}')"><i class="fas fa-play"></i></button>
                 <div class="ra-song-name">${name}</div>
                 <div class="ra-song-artist">${artist}</div>
@@ -1867,5 +1877,184 @@ window.AIHome = (() => {
         init();
     }
 
-    return { init, refreshHome, renderLiveFm, syncFmPlaying, renderDecadeCards, stopDecadeBot };
+    /* ============================================================
+       THREE-DOT CONTEXT MENU — Shared across all music cards
+       ============================================================ */
+    let _ccOverlay = null;
+    let _ccMenu = null;
+
+    function _ensureCCElements() {
+        if (!_ccOverlay) {
+            _ccOverlay = document.createElement('div');
+            _ccOverlay.className = 'card-context-overlay';
+            _ccOverlay.addEventListener('click', closeCardContextMenu);
+            document.body.appendChild(_ccOverlay);
+        }
+        if (!_ccMenu) {
+            _ccMenu = document.createElement('div');
+            _ccMenu.className = 'card-context-menu';
+            document.body.appendChild(_ccMenu);
+        }
+    }
+
+    function closeCardContextMenu() {
+        if (_ccOverlay) _ccOverlay.classList.remove('open');
+        if (_ccMenu) _ccMenu.classList.remove('open');
+        document.removeEventListener('keydown', _ccKeyHandler);
+    }
+
+    function _ccKeyHandler(e) {
+        if (e.key === 'Escape') closeCardContextMenu();
+    }
+
+    function openCardContextMenu(e, songData) {
+        e.stopPropagation();
+        e.preventDefault();
+        _ensureCCElements();
+        closeCardContextMenu();
+
+        const s = songData || {};
+        const art = s.thumbnail || s.albumCover || s.cover || '';
+        const title = (s.title || 'Unknown').slice(0, 40);
+        const artist = s.artist || s.singer || '';
+
+        _ccMenu.innerHTML = `
+            <div class="cc-menu-header">
+                ${art ? `<img class="cc-menu-header-art" src="${art}" alt="">` : ''}
+                <div class="cc-menu-header-info">
+                    <div class="cc-menu-header-title">${title}</div>
+                    <div class="cc-menu-header-artist">${artist}</div>
+                </div>
+            </div>
+            <button class="cc-menu-item" data-action="shuffle">
+                <span class="cc-menu-item-icon cyan"><i class="fas fa-shuffle"></i></span> Shuffle Play
+            </button>
+            <button class="cc-menu-item" data-action="mix">
+                <span class="cc-menu-item-icon purple"><i class="fas fa-wand-magic-sparkles"></i></span> Start Mix
+            </button>
+            <button class="cc-menu-item" data-action="playNext">
+                <span class="cc-menu-item-icon green"><i class="fas fa-forward-step"></i></span> Play Next
+            </button>
+            <button class="cc-menu-item" data-action="addToQueue">
+                <span class="cc-menu-item-icon blue"><i class="fas fa-plus"></i></span> Add to Queue
+            </button>
+            <div class="cc-menu-divider"></div>
+            <button class="cc-menu-item" data-action="saveLibrary">
+                <span class="cc-menu-item-icon amber"><i class="fas fa-bookmark"></i></span> Save Playlist to Library
+            </button>
+            <button class="cc-menu-item" data-action="savePlaylist">
+                <span class="cc-menu-item-icon pink"><i class="fas fa-folder-plus"></i></span> Save to Playlist
+            </button>
+            <button class="cc-menu-item" data-action="share">
+                <span class="cc-menu-item-icon slate"><i class="fas fa-share-nodes"></i></span> Share
+            </button>
+            <div class="cc-menu-divider"></div>
+            <button class="cc-menu-item" data-action="notInterested">
+                <span class="cc-menu-item-icon red"><i class="fas fa-ban"></i></span> Not Interested
+            </button>`;
+
+        // Position menu near the click
+        const rect = e.target.getBoundingClientRect();
+        let top = rect.bottom + 8;
+        let left = rect.right - 240;
+        if (top + 420 > window.innerHeight) top = rect.top - 420;
+        if (top < 8) top = 8;
+        if (left < 8) left = 8;
+        if (left + 240 > window.innerWidth) left = window.innerWidth - 248;
+        _ccMenu.style.top = top + 'px';
+        _ccMenu.style.left = left + 'px';
+
+        requestAnimationFrame(() => {
+            _ccOverlay.classList.add('open');
+            _ccMenu.classList.add('open');
+        });
+        document.addEventListener('keydown', _ccKeyHandler);
+
+        // Bind actions
+        _ccMenu.querySelectorAll('.cc-menu-item').forEach(btn => {
+            btn.addEventListener('click', ev => {
+                ev.stopPropagation();
+                _handleContextAction(btn.dataset.action, s);
+                closeCardContextMenu();
+            });
+        });
+    }
+
+    function _handleContextAction(action, song) {
+        const allSongs = publishedSongs();
+        switch (action) {
+            case 'shuffle': {
+                const shuffled = [...allSongs].sort(() => Math.random() - 0.5);
+                if (typeof window.playSong === 'function' && shuffled.length) window.playSong(shuffled[0], shuffled);
+                break;
+            }
+            case 'mix': {
+                const similar = allSongs.filter(s => (s.genre || s.mood || '') === (song.genre || song.mood || '')).slice(0, 20);
+                const mix = similar.length ? similar : allSongs.slice(0, 20);
+                if (typeof window.playSong === 'function' && mix.length) window.playSong(mix[0], mix);
+                break;
+            }
+            case 'playNext': {
+                if (typeof window.DataStore !== 'undefined') {
+                    try {
+                        const q = DataStore.get(DataStore.KEYS.QUEUE) || [];
+                        q.splice(0, 0, song);
+                        DataStore.set(DataStore.KEYS.QUEUE, q);
+                    } catch (e) {}
+                }
+                break;
+            }
+            case 'addToQueue': {
+                if (typeof window.DataStore !== 'undefined') {
+                    try {
+                        const q = DataStore.get(DataStore.KEYS.QUEUE) || [];
+                        q.push(song);
+                        DataStore.set(DataStore.KEYS.QUEUE, q);
+                    } catch (e) {}
+                }
+                break;
+            }
+            case 'saveLibrary': {
+                try {
+                    const playlists = DataStore.get(DataStore.KEYS.PLAYLISTS) || [];
+                    playlists.push({ id: 'pl_' + Date.now(), name: song.title || 'My Playlist', songs: [song], createdAt: new Date().toISOString() });
+                    DataStore.set(DataStore.KEYS.PLAYLISTS, playlists);
+                } catch (e) {}
+                break;
+            }
+            case 'savePlaylist': {
+                try {
+                    const playlists = DataStore.get(DataStore.KEYS.PLAYLISTS) || [];
+                    if (playlists.length) {
+                        playlists[0].songs = playlists[0].songs || [];
+                        playlists[0].songs.push(song);
+                        DataStore.set(DataStore.KEYS.PLAYLISTS, playlists);
+                    }
+                } catch (e) {}
+                break;
+            }
+            case 'share': {
+                if (navigator.share) {
+                    navigator.share({ title: song.title, text: `${song.title} — ${song.artist || ''}`, url: window.location.href }).catch(() => {});
+                }
+                break;
+            }
+            case 'notInterested': {
+                try {
+                    const hidden = DataStore.get('hiddenSongs') || [];
+                    hidden.push(song.id);
+                    DataStore.set('hiddenSongs', hidden);
+                } catch (e) {}
+                break;
+            }
+        }
+    }
+
+    function publishedSongs() {
+        try {
+            return (DataStore.getSongs() || []).filter(s => s && (s.status === 'published' || s.status === 'active'));
+        } catch (e) { return []; }
+    }
+
+    return { init, refreshHome, renderLiveFm, syncFmPlaying, renderDecadeCards, stopDecadeBot, openCardContextMenu, closeCardContextMenu };
 })();
