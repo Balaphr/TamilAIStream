@@ -1763,102 +1763,45 @@ function updateNowPlayingBar(title, station) {
     if (titleEl) titleEl.textContent = title;
     if (stationEl) stationEl.textContent = station;
 
-    // New Now Playing Top Bar
-    const bar = document.getElementById('nowPlayingBar');
-    const npbTitle = document.getElementById('npbTitle');
-    const npbArtist = document.getElementById('npbArtist');
-    const npbArt = document.getElementById('npbArt');
-    const npbNextWrap = document.getElementById('npbNextWrap');
-    const npbNextTitle = document.getElementById('npbNextTitle');
-    const npbPlayPause = document.getElementById('npbPlayPause');
+    // Slim Now Playing Bar
+    const slimBar = document.getElementById('slimNowPlaying');
+    const snpCurrent = document.getElementById('snpCurrent');
+    const snpNext = document.getElementById('snpNext');
 
-    if (bar && npbTitle) {
-        bar.style.display = '';
-        npbTitle.textContent = title || '—';
-        npbTitle.classList.remove('marquee-active');
-        const titleSpan = npbTitle.querySelector('span');
-        if (titleSpan) titleSpan.remove();
-
-        if ((title || '').length > 28) {
-            npbTitle.classList.add('marquee-active');
-            npbTitle.innerHTML = '<span>' + title + ' • ' + title + '</span>';
-        }
-
-        // Artist / subtitle line
-        if (npbArtist) {
-            npbArtist.textContent = station || '';
-        }
-
-        // Art
-        const track = window.currentPlaybackTrack || currentPlaybackTrack;
-        if (track && track.thumbnail) {
-            npbArt.innerHTML = '<img src="' + (track.thumbnail || '').replace(/"/g, '&quot;') + '" alt="" onerror="this.remove()">';
-        } else {
-            npbArt.innerHTML = '<i class="fas fa-music"></i>';
-        }
+    if (slimBar && snpCurrent) {
+        slimBar.style.display = '';
+        snpCurrent.textContent = 'Now Playing: ' + (title || '—');
 
         // Next song
         const q = window.currentPlaybackQueue || currentPlaybackQueue || [];
         const idx = typeof window.currentPlaybackQueueIndex === 'number' ? window.currentPlaybackQueueIndex :
                     typeof currentPlaybackQueueIndex === 'number' ? currentPlaybackQueueIndex : -1;
-        if (idx >= 0 && idx < q.length - 1) {
+        if (idx >= 0 && idx < q.length - 1 && snpNext) {
             const next = q[idx + 1];
-            if (next && npbNextWrap && npbNextTitle) {
-                npbNextWrap.style.display = '';
-                npbNextTitle.textContent = (next.title || '—') + (next.artist ? ' · ' + next.artist : '');
-            }
-        } else if (npbNextWrap) {
-            npbNextWrap.style.display = 'none';
-        }
-
-        // Play/Pause icon
-        if (npbPlayPause) {
-            const playing = audioPlayer && !audioPlayer.paused;
-            npbPlayPause.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play" style="margin-left:2px;"></i>';
+            snpNext.textContent = 'Next: ' + (next.title || '—');
+        } else if (snpNext) {
+            snpNext.textContent = 'Next: —';
         }
     }
 }
 
 function updateNowPlayingBarPause() {
-    const npbPlayPause = document.getElementById('npbPlayPause');
-    if (npbPlayPause) {
-        const playing = audioPlayer && !audioPlayer.paused;
-        npbPlayPause.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play" style="margin-left:2px;"></i>';
-    }
+    // Slim bar has no play/pause button — it's purely informational
 }
 
 function hideNowPlayingBar() {
-    const bar = document.getElementById('nowPlayingBar');
-    if (bar) bar.style.display = 'none';
+    const slimBar = document.getElementById('slimNowPlaying');
+    if (slimBar) slimBar.style.display = 'none';
 }
 
-// Wire up Now Playing bar controls
+// Wire up Slim Now Playing bar close button
 function initNowPlayingBar() {
-    const npbPlayPause = document.getElementById('npbPlayPause');
-    const npbPrev = document.getElementById('npbPrev');
-    const npbNext = document.getElementById('npbNext');
-    if (npbPlayPause) {
-        npbPlayPause.addEventListener('click', () => {
-            if (!audioPlayer || !audioPlayer.src) return;
-            if (audioPlayer.paused) { audioPlayer.play(); }
-            else { audioPlayer.pause(); }
+    const snpClose = document.getElementById('snpClose');
+    if (snpClose) {
+        snpClose.addEventListener('click', () => {
+            const slimBar = document.getElementById('slimNowPlaying');
+            if (slimBar) slimBar.style.display = 'none';
         });
-    }
-    if (npbPrev) {
-        npbPrev.addEventListener('click', () => {
-            if (typeof window.playPreviousTrack === 'function') window.playPreviousTrack();
-        });
-    }
-    if (npbNext) {
-        npbNext.addEventListener('click', () => {
-            if (typeof window.playNextTrack === 'function') window.playNextTrack();
-        });
-    }
-    // Sync pause/play icon on audio events
-    if (audioPlayer) {
-        audioPlayer.addEventListener('play', updateNowPlayingBarPause);
-        audioPlayer.addEventListener('pause', updateNowPlayingBarPause);
-        audioPlayer.addEventListener('ended', updateNowPlayingBarPause);
     }
 }
 

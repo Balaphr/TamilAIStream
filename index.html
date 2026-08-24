@@ -413,26 +413,16 @@
                 </div>
             </header>
 
-            <!-- Now Playing Top Bar (shows when song is playing) -->
-            <div class="now-playing-bar" id="nowPlayingBar" style="display:none;">
-                <div class="npb-inner">
-                    <div class="npb-art" id="npbArt"><i class="fas fa-music"></i></div>
-                    <div class="npb-info">
-                        <div class="npb-current">
-                            <span class="npb-label">NOW PLAYING</span>
-                            <span class="npb-title" id="npbTitle">—</span>
-                            <span class="npb-artist" id="npbArtist">—</span>
-                        </div>
-                        <div class="npb-next" id="npbNextWrap" style="display:none;">
-                            <span class="npb-label">NEXT</span>
-                            <span class="npb-next-title" id="npbNextTitle">—</span>
-                        </div>
-                    </div>
-                    <div class="npb-controls">
-                        <button class="npb-btn" id="npbPrev" aria-label="Previous"><i class="fas fa-backward-step"></i></button>
-                        <button class="npb-btn npb-play" id="npbPlayPause" aria-label="Play/Pause"><i class="fas fa-pause"></i></button>
-                        <button class="npb-btn" id="npbNext" aria-label="Next"><i class="fas fa-forward-step"></i></button>
-                    </div>
+            <!-- Slim Now Playing Bar (auto-updates) -->
+            <div class="slim-now-playing" id="slimNowPlaying" style="display:none;">
+                <div class="snp-inner">
+                    <span class="snp-icon">🎵</span>
+                    <span class="snp-text" id="snpText">
+                        <span class="snp-current" id="snpCurrent">Now Playing: —</span>
+                        <span class="snp-arrow">→</span>
+                        <span class="snp-next" id="snpNext">Next: —</span>
+                    </span>
+                    <button class="snp-close" id="snpClose" aria-label="Close"><i class="fas fa-times"></i></button>
                 </div>
             </div>
 
@@ -1100,17 +1090,17 @@
 
         </div><!-- /ytm-main-content -->
 
-<!-- Premium Bottom Navigation (Mobile/PWA) — 3-tab layout -->
+<!-- Premium Bottom Navigation (Mobile/PWA) — Menu/Search/Account -->
 <nav class="tamilai-bottom-nav" id="tamilaiBottomNav" role="navigation" aria-label="Main navigation">
-    <button class="tamilai-nav-item active" data-page="home" aria-label="Home">
-        <div class="tamilai-nav-icon"><i class="fas fa-house"></i></div>
-        <span class="tamilai-nav-label">Home</span>
+    <button class="tamilai-nav-item" data-page="menu" aria-label="Menu">
+        <div class="tamilai-nav-icon"><i class="fas fa-bars"></i></div>
+        <span class="tamilai-nav-label">Menu</span>
     </button>
     <button class="tamilai-nav-item" data-page="search" aria-label="Search">
         <div class="tamilai-nav-icon"><i class="fas fa-magnifying-glass"></i></div>
         <span class="tamilai-nav-label">Search</span>
     </button>
-    <button class="tamilai-nav-item" data-page="account" aria-label="Account">
+    <button class="tamilai-nav-item active" data-page="account" aria-label="Account & Settings">
         <div class="tamilai-nav-icon"><i class="fas fa-user"></i></div>
         <span class="tamilai-nav-label">Account</span>
     </button>

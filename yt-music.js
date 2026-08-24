@@ -635,6 +635,9 @@ const YTMusic = {
                     desktopSI.focus();
                 }
                 break;
+            case 'menu':
+                this.toggleMobileMenu(true);
+                break;
         }
 
         if (!opts._fromPop && history.pushState) history.replaceState(null, null, '#' + page);
