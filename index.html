@@ -56,6 +56,7 @@
     <link rel="stylesheet" href="splash.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="premium-ui.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="premium-nowplaying.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="ads.css" media="print" onload="this.media='all'">
     <!-- Performance: DNS prefetch for Firebase -->
     <link rel="dns-prefetch" href="https://firestore.googleapis.com">
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
@@ -79,6 +80,7 @@
         <link rel="stylesheet" href="splash.css">
         <link rel="stylesheet" href="premium-ui.css">
         <link rel="stylesheet" href="premium-nowplaying.css">
+        <link rel="stylesheet" href="ads.css">
     </noscript>
 </head>
 <body>
@@ -581,6 +583,9 @@
                         </div>
                     </section>
 
+                    <!-- Ad Slot: Home -->
+                    <div class="tas-ad-slot" id="tasAdHome" data-ad-location="home" style="display:none;"></div>
+
                     <!-- Recently Added Songs (auto-populated from builder) -->
                     <section class="ai-panel recently-added-section" data-section="ai-recently-added" id="recentlyAddedSection" style="display:none;">
                         <div class="ai-sec-head">
@@ -620,6 +625,9 @@
                             <div class="ai-card-row" id="aiTrendingPlaylists"></div>
                         </section>
                     </div>
+
+                    <!-- Ad Slot: Between Content -->
+                    <div class="tas-ad-slot" id="tasAdBetween" data-ad-location="between" style="display:none;"></div>
 
                     <!-- Row 2: Live FM + Evergreen Classics -->
                     <div class="ai-home-row">
@@ -1431,6 +1439,7 @@
     <script defer src="pwa.js"></script>
     <script defer src="brand-config.js"></script>
     <script defer src="premium-nowplaying.js"></script>
+    <script defer src="ads-display.js"></script>
 </body>
 </html>
 
