@@ -494,60 +494,27 @@ function restorePlaybackState() {
         if (audioPlayer) {
             audioPlayer.volume = playbackVolume;
         }
-        const wasPlaying = saved.isStreamPlaying === true;
         const progress = typeof saved.progress === 'number' ? saved.progress : 0;
-        if (wasPlaying && audioPlayer && currentPlaybackTrack) {
-            const src = currentPlaybackTrack.audioUrl || currentPlaybackTrack.streamUrl || '';
-            if (src && audioPlayer.src !== src) {
-                audioPlayer.src = src;
-                audioPlayer.load();
-            }
-            audioPlayer.currentTime = progress;
-            audioPlayer.volume = playbackVolume;
-            audioPlayer.play().then(() => {
-                isStreamPlaying = true;
-                userPaused = false;
-                updatePlayPauseButton(true);
-                showLiveStatus(true);
-                updateStationCardStates(true);
-                updateNowPlayingBar(currentPlaybackTrack.title || currentPlaybackTrack.name || '', currentStation || '');
-                if (typeof GlobalPlayer !== 'undefined') {
-                    GlobalPlayer.state.track = currentPlaybackTrack;
-                    GlobalPlayer.state.isLive = !!(currentPlaybackTrack.streamUrl && !currentPlaybackTrack.audioUrl);
-                    GlobalPlayer.state.currentTime = progress;
-                    GlobalPlayer.updateTrackUI();
-                    GlobalPlayer.updatePlayUI(true);
-                    GlobalPlayer.updateLiveUI();
-                }
-                if (typeof YTMusic !== 'undefined') {
-                    YTMusic.currentTrack = currentPlaybackTrack;
-                    YTMusic.isPlaying = true;
-                    YTMusic.progress = progress;
-                    YTMusic.updatePlayerUI();
-                    YTMusic.updateFullscreenPlayerUI();
-                    YTMusic.updateMiniPlayerUI();
-                }
-                if (typeof MiniAudioPlayer !== 'undefined') {
-                    MiniAudioPlayer.syncPlayingUI();
-                }
-            }).catch(() => {
-                isStreamPlaying = false;
-                updatePlayPauseButton(false);
-                if (typeof GlobalPlayer !== 'undefined') GlobalPlayer.updatePlayUI(false);
-            });
-        } else if (currentPlaybackTrack) {
-            isStreamPlaying = false;
-            updatePlayPauseButton(false);
+        // Never auto-play on page load. Restore track info and position,
+        // but require explicit user action (Play button) to start playback.
+        isStreamPlaying = false;
+        userPaused = true;
+        updatePlayPauseButton(false);
+        if (currentPlaybackTrack) {
             updateNowPlayingBar(currentPlaybackTrack.title || currentPlaybackTrack.name || '', currentStation || '');
-            if (typeof GlobalPlayer !== 'undefined') {
+        }
+        if (typeof GlobalPlayer !== 'undefined') {
+            if (currentPlaybackTrack) {
                 GlobalPlayer.state.track = currentPlaybackTrack;
                 GlobalPlayer.state.isLive = !!(currentPlaybackTrack.streamUrl && !currentPlaybackTrack.audioUrl);
                 GlobalPlayer.state.currentTime = progress;
                 GlobalPlayer.updateTrackUI();
-                GlobalPlayer.updatePlayUI(false);
                 GlobalPlayer.updateLiveUI();
             }
-            if (typeof YTMusic !== 'undefined') {
+            GlobalPlayer.updatePlayUI(false);
+        }
+        if (typeof YTMusic !== 'undefined') {
+            if (currentPlaybackTrack) {
                 YTMusic.currentTrack = currentPlaybackTrack;
                 YTMusic.isPlaying = false;
                 YTMusic.progress = progress;
@@ -5811,5 +5778,44 @@ function showWhyThisSong(track) {
         if (!document.hidden) {
             restoreFromBackground();
         }
+    });
+
+    // APP CLOSE: Stop playback completely when the app/tab is closed.
+    // This prevents background audio and ensures a clean state on next open.
+    window.addEventListener('pagehide', () => {
+        try {
+            if (typeof audioPlayer !== 'undefined' && audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.removeAttribute('src');
+                audioPlayer.load();
+            }
+            isStreamPlaying = false;
+            userPaused = true;
+            // Persist stopped state so next open does not auto-resume
+            try {
+                const state = JSON.parse(localStorage.getItem('tamilAIStream_player_state') || '{}');
+                state.isStreamPlaying = false;
+                localStorage.setItem('tamilAIStream_player_state', JSON.stringify(state));
+            } catch(e) {}
+            if (typeof GlobalPlayer !== 'undefined' && GlobalPlayer.updatePlayUI) {
+                GlobalPlayer.updatePlayUI(false);
+            }
+        } catch(e) {}
+    });
+
+    window.addEventListener('beforeunload', () => {
+        try {
+            if (typeof audioPlayer !== 'undefined' && audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.removeAttribute('src');
+                audioPlayer.load();
+            }
+            isStreamPlaying = false;
+            try {
+                const state = JSON.parse(localStorage.getItem('tamilAIStream_player_state') || '{}');
+                state.isStreamPlaying = false;
+                localStorage.setItem('tamilAIStream_player_state', JSON.stringify(state));
+            } catch(e) {}
+        } catch(e) {}
     });
 })();

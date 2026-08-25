@@ -102,15 +102,17 @@
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = function() {
-        const sizes = [192, 512];
+        var sizes = [192, 512];
+        var blobs = {};
+        var loaded = 0;
+
         sizes.forEach(function(size) {
           try {
-            const canvas = document.createElement('canvas');
+            var canvas = document.createElement('canvas');
             canvas.width = size;
             canvas.height = size;
-            const ctx = canvas.getContext('2d');
-            // Draw rounded background
-            const radius = size * 0.195;
+            var ctx = canvas.getContext('2d');
+            var radius = size * 0.195;
             ctx.beginPath();
             ctx.moveTo(radius, 0);
             ctx.lineTo(size - radius, 0);
@@ -124,21 +126,87 @@
             ctx.closePath();
             ctx.fillStyle = '#060e1a';
             ctx.fill();
-            // Draw logo centered
-            const padding = size * 0.15;
+            var padding = size * 0.15;
             ctx.drawImage(img, padding, padding, size - padding * 2, size - padding * 2);
-            // Convert to blob and create object URL for dynamic icon
             canvas.toBlob(function(blob) {
               if (blob) {
-                const url = URL.createObjectURL(blob);
-                // Update any dynamic icon references
-                document.querySelectorAll('link[rel="icon"][data-dynamic]').forEach(function(link) {
-                  link.href = url;
-                });
+                blobs[size] = URL.createObjectURL(blob);
+                loaded++;
+                if (loaded === sizes.length) applyIconURLs(blobs);
               }
             }, 'image/png');
-          } catch (e) { /* ignore */ }
+          } catch (e) { loaded++; }
         });
+
+        // Also generate a small favicon (48px) from the SVG
+        try {
+          var favCanvas = document.createElement('canvas');
+          favCanvas.width = 48;
+          favCanvas.height = 48;
+          var favCtx = favCanvas.getContext('2d');
+          var fr = 48 * 0.195;
+          favCtx.beginPath();
+          favCtx.moveTo(fr, 0);
+          favCtx.lineTo(48 - fr, 0);
+          favCtx.quadraticCurveTo(48, 0, 48, fr);
+          favCtx.lineTo(48, 48 - fr);
+          favCtx.quadraticCurveTo(48, 48, 48 - fr, 48);
+          favCtx.lineTo(fr, 48);
+          favCtx.quadraticCurveTo(0, 48, 0, 48 - fr);
+          favCtx.lineTo(0, fr);
+          favCtx.quadraticCurveTo(0, 0, fr, 0);
+          favCtx.closePath();
+          favCtx.fillStyle = '#060e1a';
+          favCtx.fill();
+          var fp = 48 * 0.15;
+          favCtx.drawImage(img, fp, fp, 48 - fp * 2, 48 - fp * 2);
+          favCanvas.toBlob(function(blob) {
+            if (blob) {
+              blobs['favicon'] = URL.createObjectURL(blob);
+              if (loaded === sizes.length) applyIconURLs(blobs);
+            }
+          }, 'image/png');
+        } catch (e) {}
+
+        function applyIconURLs(urls) {
+          // Update favicon
+          var favicon = document.querySelector('link[rel="icon"]');
+          if (favicon && urls.favicon) favicon.href = urls.favicon;
+          else if (favicon && urls[48]) favicon.href = urls[48];
+
+          // Update apple-touch-icon
+          var appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+          if (appleIcon && urls[192]) appleIcon.href = urls[192];
+
+          // Update any dynamic icon references
+          document.querySelectorAll('link[rel="icon"][data-dynamic]').forEach(function(link) {
+            if (urls[192]) link.href = urls[192];
+          });
+
+          // Generate a dynamic manifest with the blob URLs
+          try {
+            var brandName = (typeof BRAND !== 'undefined' && BRAND.name) ? BRAND.name : 'Tamil AI Stream';
+            var brandShort = (typeof BRAND !== 'undefined' && BRAND.shortName) ? BRAND.shortName : brandName;
+            var manifest = {
+              name: brandName,
+              short_name: brandShort,
+              description: 'AI-Powered Tamil Radio',
+              start_url: '/',
+              display: 'standalone',
+              background_color: '#060e1a',
+              theme_color: '#060e1a',
+              orientation: 'any',
+              icons: [
+                { src: urls[192] || '', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+                { src: urls[512] || '', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+              ]
+            };
+            var manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            var manifestURL = URL.createObjectURL(manifestBlob);
+            var manifestLink = document.querySelector('link[rel="manifest"]');
+            if (manifestLink) manifestLink.href = manifestURL;
+          } catch (e) { /* ignore */ }
+        }
       };
       img.src = logoUrl;
     } catch (e) { /* ignore */ }

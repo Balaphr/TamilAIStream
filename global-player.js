@@ -175,10 +175,10 @@ const GlobalPlayer = (() => {
                 updateShuffleUI();
                 updateRepeatUI();
                 updateProgressUI();
-                if (saved.isStreamPlaying) {
-                    state.isPlaying = true;
-                    updatePlayUI(true);
-                }
+                // Never auto-resume from storage. Restore track info only.
+                // User must press Play to start playback.
+                state.isPlaying = false;
+                updatePlayUI(false);
             }
             const gpState = JSON.parse(localStorage.getItem('global_player_state') || '{}');
             if (gpState.themeIdx !== undefined) { themeIdx = gpState.themeIdx; applyTheme(); }
