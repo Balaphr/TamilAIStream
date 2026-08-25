@@ -170,8 +170,15 @@ const GlobalPlayer = (() => {
                 if (saved.playbackRepeat !== undefined) state.repeat = saved.playbackRepeat;
                 else if (saved.repeat !== undefined) state.repeat = saved.repeat;
                 if (saved.playbackPosition !== undefined) state.currentTime = saved.playbackPosition;
+                if (saved.progress !== undefined && saved.progress > 0) state.currentTime = saved.progress;
+                if (saved.duration !== undefined) state.duration = saved.duration;
                 updateShuffleUI();
                 updateRepeatUI();
+                updateProgressUI();
+                if (saved.isStreamPlaying) {
+                    state.isPlaying = true;
+                    updatePlayUI(true);
+                }
             }
             const gpState = JSON.parse(localStorage.getItem('global_player_state') || '{}');
             if (gpState.themeIdx !== undefined) { themeIdx = gpState.themeIdx; applyTheme(); }

@@ -1301,6 +1301,10 @@
 @media (max-width: 480px) {
     .ai-playlist-card { flex: 0 0 145px; width: 145px; }
     .ai-song-card { flex: 0 0 145px; width: 145px; }
+    .ai-playlist-name { font-size: 0.78rem; }
+    .ai-playlist-count { font-size: 0.68rem; }
+    .ai-song-title { font-size: 0.78rem; }
+    .ai-song-artist { font-size: 0.68rem; }
 }
 @keyframes aiLivePulse {
     0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.55); }
@@ -1558,7 +1562,7 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(168, 85, 247, 0) inset;
 }
 .ai-playlist-card:hover {
-    transform: translateY(-6px) scale(1.02);
+    transform: translateY(-6px) scale(1.03);
     border-color: rgba(168, 85, 247, 0.3);
     box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4), 0 0 24px rgba(168, 85, 247, 0.08);
 }
@@ -1618,7 +1622,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.ai-playlist-count { font-size: 0.68rem; color: var(--ai-text-3); }
+.ai-playlist-count { font-size: 0.72rem; color: var(--ai-text-3); }
 
 /* ---------- 8. Live FM Stations ---------- */
 .ai-live-fm, .ai-live-news, .ai-recently, .ai-ai-rec { min-width: 0; }
@@ -2060,12 +2064,12 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(168, 85, 247, 0) inset;
 }
 .ai-song-card:hover {
-    transform: translateY(-6px) scale(1.02);
+    transform: translateY(-6px) scale(1.03);
     border-color: rgba(168, 85, 247, 0.3);
     box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4), 0 0 24px rgba(168, 85, 247, 0.08);
 }
 .ai-song-card:active {
-    transform: scale(0.93);
+    transform: scale(0.95);
     transition-duration: 0.08s;
     box-shadow: 0 4px 12px rgba(34, 211, 238, 0.25);
     border-color: rgba(34, 211, 238, 0.5);
@@ -2108,7 +2112,7 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
     position: relative;
     width: 100%;
     aspect-ratio: 1;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
     background-size: cover;
     background-position: center;
@@ -2127,15 +2131,15 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
 .ai-song-body { min-width: 0; }
 .ai-song-title {
     font-family: var(--ai-ff);
-    font-size: 0.74rem;
+    font-size: 0.82rem;
     font-weight: 700;
     color: var(--ai-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.ai-song-artist { font-size: 0.64rem; color: var(--ai-text-3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ai-song-dur { font-size: 0.6rem; color: var(--ai-text-3); margin-top: 3px; display: inline-flex; align-items: center; gap: 4px; }
+.ai-song-artist { font-size: 0.72rem; color: var(--ai-text-3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ai-song-dur { font-size: 0.65rem; color: var(--ai-text-3); margin-top: 3px; display: inline-flex; align-items: center; gap: 4px; }
 
 /* Empty state */
 .ai-empty {

@@ -13,10 +13,13 @@
 }
 
 .premium-fm-visualizer-wrap {
-    position: relative;
+    position: absolute;
     width: 100%;
     max-width: 900px;
-    margin: 0 auto 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+    margin: 0;
     padding: 0 16px;
     pointer-events: none;
     z-index: 0;
