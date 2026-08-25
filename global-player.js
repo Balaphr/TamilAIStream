@@ -733,6 +733,13 @@ const GlobalPlayer = (() => {
         if (typeof PlayerEngine !== 'undefined') PlayerEngine.seekTo(target);
     }
 
+    function updateGlassFrame(playing) {
+        if (miniEl) {
+            miniEl.classList.toggle('gp-glass-frame', playing);
+            miniEl.classList.toggle('gp-glass-active', playing);
+        }
+    }
+
     function updatePlayUI(playing) {
         state.isPlaying = playing;
         const miniIcon = document.querySelector('#gpMiniPlay i');
@@ -743,6 +750,7 @@ const GlobalPlayer = (() => {
         if (expPlay) expPlay.classList.toggle('playing', playing);
         updateEqBars(playing);
         if (typeof updatePlayPauseButton === 'function') updatePlayPauseButton(playing);
+        updateGlassFrame(playing);
         
         // Restart/stopped animation loops based on actual playback state
         if (playing) {
