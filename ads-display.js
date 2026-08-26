@@ -141,6 +141,7 @@ const AdsDisplay = (() => {
     }
 
     /* --- Sticky Bottom Ad --- */
+    let _stickyShowTimer = null;
     function renderStickyBottom() {
         if (_stickyDismissed) return;
         if (!shouldShowAds()) return;
@@ -161,9 +162,13 @@ const AdsDisplay = (() => {
         if (content) {
             content.innerHTML = renderAdCard(ad, { compact: true });
         }
-        setTimeout(() => {
-            container.classList.add('tas-ad-sticky-visible');
-        }, 2000);
+        // Only schedule the show animation once; skip if already visible
+        if (!container.classList.contains('tas-ad-sticky-visible')) {
+            if (_stickyShowTimer) clearTimeout(_stickyShowTimer);
+            _stickyShowTimer = setTimeout(() => {
+                container.classList.add('tas-ad-sticky-visible');
+            }, 1500);
+        }
         trackImpression(ad);
     }
 
@@ -194,10 +199,37 @@ const AdsDisplay = (() => {
     }
 
     /* --- Init / Refresh --- */
+    let _refreshTimer = null;
+    function debouncedRefresh() {
+        if (_refreshTimer) clearTimeout(_refreshTimer);
+        _refreshTimer = setTimeout(() => {
+            refreshAll();
+        }, 300);
+    }
+
     function init() {
         if (_initialized) return;
         _initialized = true;
         refreshAll();
+
+        // Re-render ads when R2 content sync completes (critical for mobile PWS
+        // where localStorage is empty on first visit — ads arrive asynchronously
+        // via the manifest pull). Also handles cross-tab Builder sync.
+        window.addEventListener('storage-sync', debouncedRefresh);
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'tamilAIStream_advertisements' || e.key === 'tamilAIStream_siteSettings') {
+                debouncedRefresh();
+            }
+        });
+
+        // Safety net: if initial render found no ads (R2 sync still in-flight on
+        // slow mobile connections), retry at 3s and 8s after page load.
+        setTimeout(() => {
+            if (_renderedSlots.size === 0) refreshAll();
+        }, 3000);
+        setTimeout(() => {
+            if (_renderedSlots.size === 0) refreshAll();
+        }, 8000);
     }
 
     function refreshAll() {
