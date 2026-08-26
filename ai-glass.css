@@ -1294,6 +1294,18 @@
     .recently-added-track { padding: 6px 14px 14px; gap: 8px; }
     .ra-song-card { width: 145px; padding: 8px; }
 }
+
+/* Recently Added: CSS marquee auto-scroll (mobile) */
+@keyframes ra-marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+.recently-added-track.ra-autoscroll {
+    animation: ra-marquee var(--ra-duration, 30s) linear infinite;
+}
+.recently-added-track.ra-autoscroll.ra-paused {
+    animation-play-state: paused;
+}
 @media (max-width: 768px) {
     .ai-playlist-card { flex: 0 0 160px; width: 160px; }
     .ai-song-card { flex: 0 0 160px; width: 160px; }

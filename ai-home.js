@@ -1711,11 +1711,9 @@ window.AIHome = (() => {
     }
 
     /* ---------------- Refresh + init ---------------- */
-    let _raScrollRaf = null;
     let _raPaused = false;
     let _raInView = true; // IntersectionObserver: only animate when visible
-    let _raIoBound = false;
-    let _raSpeed = 0.4; // pixels per frame (~24px/sec at 60fps)
+    let _raSpeed = 0.4; // kept for reference; CSS animation handles actual scroll
     let _raTrackBound = false; // prevent duplicate event listeners
 
     function renderRecentlyAdded() {
@@ -1723,9 +1721,6 @@ window.AIHome = (() => {
         const track = document.getElementById('recentlyAddedTrack');
         if (!section || !track) return;
         if (playerSections().recentlyAdded === false) { section.style.display = 'none'; return; }
-
-        // Stop any existing scroll animation
-        if (_raScrollRaf) { cancelAnimationFrame(_raScrollRaf); _raScrollRaf = null; }
 
         let songs = [];
         try { songs = DataStore.getSongs() || []; } catch (e) { return; }
@@ -1752,53 +1747,43 @@ window.AIHome = (() => {
             </div>`;
         }).join('');
 
-        // Reset scroll position
+        // Reset scroll and apply CSS marquee animation
         track.scrollLeft = 0;
+        track.classList.remove('ra-autoscroll', 'ra-paused');
+        // Force reflow so the animation restarts cleanly after content change
+        void track.offsetWidth;
+        // Calculate duration: scroll half the content (mirrored items) at a pleasant speed
+        const halfWidth = track.scrollWidth / 2;
+        const duration = Math.max(20, halfWidth / 24); // ~24px/sec
+        track.style.setProperty('--ra-duration', duration + 's');
+        track.classList.add('ra-autoscroll');
         _raPaused = false;
 
         // Bind pause/resume events only once
         if (!_raTrackBound) {
             _raTrackBound = true;
-            // Battery/CPU: only run the RAF loop while the section is on screen
+            // Battery/CPU: only run animation while the section is on screen
             if (typeof IntersectionObserver !== 'undefined') {
                 new IntersectionObserver((entries) => {
                     _raInView = entries[0] && entries[0].isIntersecting;
+                    track.classList.toggle('ra-paused', !_raInView || _raPaused);
                 }, { rootMargin: '80px' }).observe(section);
             }
             // Pause on touch
-            track.addEventListener('touchstart', () => { _raPaused = true; }, { passive: true });
-            track.addEventListener('touchend', () => { setTimeout(() => { _raPaused = false; }, 800); }, { passive: true });
-            track.addEventListener('touchcancel', () => { setTimeout(() => { _raPaused = false; }, 800); }, { passive: true });
+            track.addEventListener('touchstart', () => { _raPaused = true; track.classList.add('ra-paused'); }, { passive: true });
+            track.addEventListener('touchend', () => { setTimeout(() => { _raPaused = false; track.classList.toggle('ra-paused', !_raInView); }, 800); }, { passive: true });
+            track.addEventListener('touchcancel', () => { setTimeout(() => { _raPaused = false; track.classList.toggle('ra-paused', !_raInView); }, 800); }, { passive: true });
 
             // Pause on mouse hover
-            track.addEventListener('mouseenter', () => { _raPaused = true; });
-            track.addEventListener('mouseleave', () => { _raPaused = false; });
-
-            // Pause when user manually drags
-            let dragging = false;
-            track.addEventListener('mousedown', () => { dragging = true; _raPaused = true; });
-            track.addEventListener('mouseup', () => { dragging = false; setTimeout(() => { _raPaused = false; }, 1200); });
-            track.addEventListener('mousemove', (e) => { if (dragging) e.preventDefault(); });
+            track.addEventListener('mouseenter', () => { _raPaused = true; track.classList.add('ra-paused'); });
+            track.addEventListener('mouseleave', () => { _raPaused = false; track.classList.toggle('ra-paused', !_raInView); });
 
             // Pause when tab is hidden (save CPU/battery)
             document.addEventListener('visibilitychange', () => {
-                if (document.hidden) _raPaused = true;
-                else setTimeout(() => { _raPaused = false; }, 500);
+                if (document.hidden) { _raPaused = true; track.classList.add('ra-paused'); }
+                else { _raPaused = false; track.classList.toggle('ra-paused', !_raInView); }
             });
         }
-
-        // Auto-scroll loop
-        const tick = () => {
-            if (!track || !track.isConnected) { _raScrollRaf = null; return; }
-            if (!_raPaused && _raInView) {
-                track.scrollLeft += _raSpeed;
-                if (track.scrollLeft >= track.scrollWidth / 2) {
-                    track.scrollLeft = 0;
-                }
-            }
-            _raScrollRaf = requestAnimationFrame(tick);
-        };
-        _raScrollRaf = requestAnimationFrame(tick);
     }
 
     function refreshHome() {

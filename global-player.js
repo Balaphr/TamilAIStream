@@ -1360,11 +1360,16 @@ const GlobalPlayer = (() => {
 
     function closePlayer() {
         collapse();
-        if (typeof PlayerEngine !== 'undefined') PlayerEngine.pause();
-        const miniEl = document.getElementById('gp-mini');
-        if (miniEl) miniEl.classList.remove('visible');
-        document.body.classList.remove('gp-active');
-        document.body.classList.remove('gp-visible');
+        // Keep mini player visible if there's an active track — only hide
+        // when there is nothing loaded at all.
+        if (state.track || getCurrentTrackFromScript()) {
+            showMiniPlayer();
+        } else {
+            const mini = document.getElementById('gp-mini');
+            if (mini) mini.classList.remove('visible');
+            document.body.classList.remove('gp-active');
+            document.body.classList.remove('gp-visible');
+        }
     }
 
     function toggleAiBot() {
