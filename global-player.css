@@ -1163,7 +1163,7 @@ a:hover {
    ============================================ */
 @media (max-width: 640px) {
     .gp-mini {
-        bottom: calc(64px + env(safe-area-inset-bottom, 0));
+        bottom: calc(124px + env(safe-area-inset-bottom, 0));
         width: calc(100% - 16px);
         border-radius: 16px;
     }
@@ -1220,7 +1220,7 @@ body.gp-active {
 }
 @media (max-width: 640px) {
     body.gp-active {
-        padding-bottom: 140px;
+        padding-bottom: 200px;
     }
 }
 
@@ -1727,5 +1727,20 @@ body.gp-active {
         animation: none !important;
         transition: none !important;
         transform: none !important;
+    }
+}
+
+/* Disable hover transforms on touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .gp-mini:hover,
+    .gp-mini:hover .gp-mini-artwork,
+    .gp-mini:hover .gp-mini-art-img,
+    .gp-exp-artwork:hover,
+    .gp-exp-artwork:hover .gp-exp-art-img,
+    .gp-exp-play:hover,
+    .gp-exp-prev:hover,
+    .gp-exp-next:hover {
+        transform: none;
+        box-shadow: none;
     }
 }

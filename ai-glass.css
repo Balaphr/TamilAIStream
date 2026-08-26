@@ -2295,7 +2295,7 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
 .gp-mini.gp-hidden { transform: translateY(calc(100% + 30px)); }
 .gp-mini.visible { transform: translateY(0); }
 body.gp-active { padding-bottom: 88px; }
-body.gp-active .tamilai-bottom-nav { bottom: 88px; }
+body.gp-active .tamilai-bottom-nav { bottom: 72px; }
 .site-footer { display: none; }
 .gp-mini-inner { display: flex; align-items: center; gap: 12px; max-width: 1400px; margin: 0 auto; padding: 8px 0; }
 .gp-mini-artwork { width: 52px; height: 52px; border-radius: 12px; }
