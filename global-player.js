@@ -1083,6 +1083,7 @@ const GlobalPlayer = (() => {
         } catch (e) { /* default: show */ }
         miniEl?.classList.add('visible');
         document.body.classList.add('gp-visible');
+        document.body.classList.add('gp-active');
     }
 
     function loadLyrics() {

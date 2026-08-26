@@ -507,8 +507,8 @@ a:hover {
 /* Expanded Artwork - Premium Large Album Cover */
 .gp-exp-artwork-wrap {
     position: relative;
-    width: min(380px, 80vw);
-    height: min(380px, 80vw);
+    width: min(480px, 90vw);
+    height: min(480px, 90vw);
     margin: 8px 0 28px;
 }
 .gp-exp-artwork {
@@ -1196,7 +1196,7 @@ a:hover {
    RESPONSIVE - Tablet
    ============================================ */
 @media (min-width: 641px) and (max-width: 1024px) {
-    .gp-exp-artwork-wrap { width: min(360px, 60vw); height: min(360px, 60vw); }
+    .gp-exp-artwork-wrap { width: min(420px, 70vw); height: min(420px, 70vw); }
 }
 
 /* ============================================
@@ -1207,7 +1207,7 @@ a:hover {
     .gp-mini-artwork { width: 50px; height: 50px; }
     .gp-mini-wave { width: 100px; height: 36px; }
 
-    .gp-exp-artwork-wrap { width: min(380px, 40vw); height: min(380px, 40vw); }
+    .gp-exp-artwork-wrap { width: min(440px, 45vw); height: min(440px, 45vw); }
     .gp-exp-container { max-width: 560px; }
     .gp-exp-title { font-size: 1.5rem; }
 }
