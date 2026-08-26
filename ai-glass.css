@@ -3464,3 +3464,392 @@ body.ai-playlist-detail-open { overflow: hidden; }
     background: rgba(255, 255, 255, 0.06);
     margin: 4px 12px;
 }
+
+/* ============================================
+   HOME PAGE 3D ANIMATIONS - Premium Grand
+   ============================================ */
+
+/* 3D Perspective for Hero Section */
+.greeting-hero,
+.hero-section,
+.hero-carousel {
+    perspective: 1200px;
+    perspective-origin: center 30%;
+}
+
+/* Hero Title 3D */
+.greeting-title,
+.hero-title {
+    will-change: transform;
+    transform: translateZ(0);
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    transform-style: preserve-3d;
+}
+.greeting-hero:hover .greeting-title,
+.hero-section:hover .hero-title {
+    transform: translateZ(40px) rotateY(-2deg) rotateX(1deg);
+}
+
+/* Hero Subtitle 3D */
+.greeting-subtitle,
+.hero-subtitle {
+    will-change: transform;
+    transform: translateZ(20px);
+    transition: transform 0.5s ease;
+}
+.greeting-hero:hover .greeting-subtitle,
+.hero-section:hover .hero-subtitle {
+    transform: translateZ(30px);
+}
+
+/* Hero Buttons 3D */
+.hero-actions .builder-btn,
+.hero-cta .btn {
+    will-change: transform, box-shadow;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+}
+.hero-actions .builder-btn:hover,
+.hero-cta .btn:hover {
+    transform: translateZ(24px) scale(1.05);
+    box-shadow:
+        0 16px 48px rgba(34, 211, 238, 0.4),
+        0 4px 16px rgba(34, 211, 238, 0.2);
+}
+.hero-actions .builder-btn:active,
+.hero-cta .btn:active {
+    transform: translateZ(8px) scale(0.98);
+}
+
+/* Card 3D Effects */
+.glass-card,
+.recently-added-card,
+.station-card,
+.featured-card,
+.mood-card,
+.playlist-card,
+.album-card,
+.artist-card {
+    will-change: transform, box-shadow;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+}
+.glass-card:hover,
+.recently-added-card:hover,
+.station-card:hover,
+.featured-card:hover,
+.mood-card:hover,
+.playlist-card:hover,
+.album-card:hover,
+.artist-card:hover {
+    transform: translateY(-8px) translateZ(24px) rotateX(2deg) rotateY(-1deg);
+    box-shadow:
+        0 32px 80px rgba(0, 0, 0, 0.5),
+        0 8px 24px rgba(52, 211, 153, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+.glass-card:active,
+.recently-added-card:active,
+.station-card:active,
+.featured-card:active {
+    transform: translateY(-4px) translateZ(12px) scale(0.99);
+}
+
+/* Card Artwork 3D Pop */
+.glass-card .card-artwork,
+.recently-added-card .card-image,
+.station-card .station-image,
+.featured-card .featured-image,
+.mood-card .mood-image,
+.playlist-card .playlist-image,
+.album-card .album-image,
+.artist-card .artist-image {
+    will-change: transform;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.glass-card:hover .card-artwork,
+.recently-added-card:hover .card-image,
+.station-card:hover .station-image,
+.featured-card:hover .featured-image,
+.mood-card:hover .mood-image,
+.playlist-card:hover .playlist-image,
+.album-card:hover .album-image,
+.artist-card:hover .artist-image {
+    transform: translateZ(20px) scale(1.08) rotateY(-3deg);
+}
+
+/* Card Content 3D */
+.glass-card .card-content,
+.recently-added-card .card-info,
+.station-card .station-info,
+.featured-card .featured-info,
+.mood-card .mood-info,
+.playlist-card .playlist-info {
+    will-change: transform;
+    transform: translateZ(8px);
+    transition: transform 0.3s ease;
+}
+.glass-card:hover .card-content,
+.recently-added-card:hover .card-info,
+.station-card:hover .station-info,
+.featured-card:hover .featured-info,
+.mood-card:hover .mood-info,
+.playlist-card:hover .playlist-info {
+    transform: translateZ(16px);
+}
+
+/* Section Headers 3D */
+.section-title,
+.section-header h2,
+.section-header h3 {
+    will-change: transform;
+    transform: translateZ(16px);
+    transition: transform 0.4s ease;
+}
+
+/* Floating Animation for Hero Elements */
+@keyframes heroFloat3D {
+    0%, 100% { transform: translateY(0) rotateY(0deg) rotateX(0deg) translateZ(0); }
+    25% { transform: translateY(-4px) rotateY(-0.5deg) rotateX(0.3deg) translateZ(6px); }
+    50% { transform: translateY(-2px) rotateY(0.5deg) rotateX(-0.3deg) translateZ(10px); }
+    75% { transform: translateY(-4px) rotateY(-0.3deg) rotateX(0.2deg) translateZ(6px); }
+}
+.greeting-hero .greeting-title,
+.hero-section .hero-title {
+    animation: heroFloat3D 8s ease-in-out infinite;
+}
+
+/* Parallax Background Layers */
+.hero-bg-layer,
+.section-bg-layer {
+    position: absolute;
+    inset: -10%;
+    will-change: transform;
+    transform: translateZ(-50px) scale(1.2);
+    transition: transform 0.1s linear;
+}
+
+/* Recently Added 3D Carousel */
+.recently-added-viewport {
+    perspective: 1000px;
+}
+.recently-added-track {
+    will-change: transform;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.recently-added-track:hover {
+    transform: translateZ(32px) scale(1.05) rotateY(-2deg);
+}
+.recently-added-track .track-artwork {
+    will-change: transform;
+    transform-style: preserve-3d;
+}
+.recently-added-track:hover .track-artwork {
+    transform: translateZ(16px) scale(1.1);
+}
+
+/* Station Grid 3D */
+.station-grid {
+    perspective: 1000px;
+}
+.station-grid-card {
+    will-change: transform, box-shadow;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+}
+.station-grid-card:hover {
+    transform: translateY(-6px) translateZ(20px) rotateX(1.5deg) rotateY(-1deg);
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.5),
+        0 6px 20px rgba(59, 130, 246, 0.2);
+}
+
+/* Featured Section 3D */
+.featured-grid {
+    perspective: 1000px;
+}
+.featured-item {
+    will-change: transform;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.featured-item:hover {
+    transform: translateZ(28px) rotateY(-1.5deg) scale(1.03);
+}
+
+/* Mood Grid 3D */
+.mood-grid {
+    perspective: 1000px;
+}
+.mood-grid-card {
+    will-change: transform, box-shadow;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+}
+.mood-grid-card:hover {
+    transform: translateY(-6px) translateZ(20px) rotateX(2deg);
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.5),
+        0 6px 20px rgba(168, 85, 247, 0.2);
+}
+
+/* Decade Grid 3D */
+.decade-grid {
+    perspective: 1000px;
+}
+.decade-card {
+    will-change: transform;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.decade-card:hover {
+    transform: translateZ(24px) rotateX(2deg) scale(1.04);
+}
+
+/* AI Radio 3D */
+.ai-radio-card {
+    will-change: transform;
+    transform-style: preserve-3d;
+    transform: translateZ(0);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ai-radio-card:hover {
+    transform: translateZ(30px) rotateY(-2deg);
+}
+
+/* Navigation Items 3D */
+.nav-item,
+.bottom-nav-item {
+    will-change: transform;
+    transform: translateZ(0);
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.nav-item:hover,
+.bottom-nav-item:hover {
+    transform: translateZ(12px) scale(1.1);
+}
+.nav-item:active,
+.bottom-nav-item:active {
+    transform: translateZ(4px) scale(0.95);
+}
+
+/* Search Bar 3D */
+.search-input-wrapper {
+    will-change: transform, box-shadow;
+    transform-style: preserve-3d;
+}
+.search-input-wrapper:focus-within {
+    transform: translateZ(16px);
+    box-shadow:
+        0 16px 48px rgba(34, 211, 238, 0.2),
+        0 4px 16px rgba(34, 211, 238, 0.1);
+}
+
+/* Premium Feel: Subtle ambient rotation on scroll */
+@media (prefers-reduced-motion: no-preference) {
+    .glass-card,
+    .recently-added-card,
+    .station-card,
+    .featured-card,
+    .mood-card,
+    .playlist-card,
+    .album-card,
+    .artist-card {
+        transform: translateZ(0) rotateX(var(--card-rx, 0deg)) rotateY(var(--card-ry, 0deg));
+        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+    }
+}
+
+/* Staggered Entrance Animation */
+@keyframes cardStaggerIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) translateZ(-50px) rotateX(10deg);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) translateZ(0) rotateX(0deg);
+    }
+}
+.glass-card,
+.recently-added-card,
+.station-card,
+.featured-card,
+.mood-card,
+.playlist-card,
+.album-card,
+.artist-card {
+    animation: cardStaggerIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.glass-card:nth-child(1), .recently-added-card:nth-child(1) { animation-delay: 0.05s; }
+.glass-card:nth-child(2), .recently-added-card:nth-child(2) { animation-delay: 0.1s; }
+.glass-card:nth-child(3), .recently-added-card:nth-child(3) { animation-delay: 0.15s; }
+.glass-card:nth-child(4), .recently-added-card:nth-child(4) { animation-delay: 0.2s; }
+.glass-card:nth-child(5), .recently-added-card:nth-child(5) { animation-delay: 0.25s; }
+.glass-card:nth-child(6), .recently-added-card:nth-child(6) { animation-delay: 0.3s; }
+
+/* Performance: Force GPU layers */
+.greeting-hero,
+.greeting-title,
+.greeting-subtitle,
+.hero-title,
+.hero-subtitle,
+.hero-actions .builder-btn,
+.glass-card,
+.recently-added-card,
+.station-card,
+.featured-card,
+.mood-card,
+.playlist-card,
+.album-card,
+.artist-card,
+.recently-added-track,
+.station-grid-card,
+.featured-item,
+.mood-grid-card,
+.decade-card,
+.ai-radio-card,
+.nav-item,
+.bottom-nav-item,
+.search-input-wrapper {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .greeting-title,
+    .hero-title,
+    .hero-subtitle,
+    .greeting-subtitle,
+    .hero-actions .builder-btn,
+    .glass-card,
+    .recently-added-card,
+    .station-card,
+    .featured-card,
+    .mood-card,
+    .playlist-card,
+    .album-card,
+    .artist-card,
+    .recently-added-track,
+    .station-grid-card,
+    .featured-item,
+    .mood-grid-card,
+    .decade-card,
+    .ai-radio-card {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+    }
+}

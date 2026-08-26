@@ -1225,3 +1225,216 @@ img[src=""] {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+
+/* ============================================
+   PERFORMANCE OPTIMIZATIONS - No Battery Drain, No Heating, No Lag
+   ============================================ */
+
+/* CSS Containment - Isolate layout/paint for independent sections */
+.greeting-hero,
+.hero-section,
+.section-content,
+.station-grid,
+.featured-grid,
+.mood-grid,
+.decade-grid,
+.recently-added-viewport,
+.ai-radio-section,
+.bottom-nav,
+.global-player {
+    contain: layout style paint;
+    content-visibility: auto;
+    contain-intrinsic-size: 400px;
+}
+
+/* Offscreen elements don't paint */
+@media (prefers-reduced-motion: no-preference) {
+    .glass-card:not(:hover),
+    .recently-added-card:not(:hover),
+    .station-card:not(:hover),
+    .featured-card:not(:hover),
+    .mood-card:not(:hover),
+    .playlist-card:not(:hover),
+    .album-card:not(:hover),
+    .artist-card:not(:hover) {
+        will-change: auto;
+    }
+}
+
+/* Only animate on hover/focus - saves CPU/GPU */
+.glass-card,
+.recently-added-card,
+.station-card,
+.featured-card,
+.mood-card,
+.playlist-card,
+.album-card,
+.artist-card {
+    will-change: auto;
+}
+.glass-card:hover,
+.recently-added-card:hover,
+.station-card:hover,
+.featured-card:hover,
+.mood-card:hover,
+.playlist-card:hover,
+.album-card:hover,
+.artist-card:hover {
+    will-change: transform, box-shadow;
+}
+
+/* Force GPU acceleration only for actively animating elements */
+.gp-mini.playing .gp-mini-artwork,
+.gp-expanded.playing .gp-exp-artwork,
+.gp-expanded.playing .gp-exp-eq span {
+    will-change: transform;
+}
+
+/* Reduce paint area for large backgrounds */
+.hero-bg,
+.section-bg,
+.gp-parallax-bg {
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+/* Optimize scrolling - no layout thrashing */
+html {
+    scroll-behavior: auto; /* Let JS handle smooth scroll if needed */
+}
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Efficient image rendering */
+img,
+.card-image,
+.station-image,
+.featured-image,
+.album-image,
+.artist-image,
+.track-artwork {
+    content-visibility: auto;
+    contain-intrinsic-size: 200px 200px;
+}
+
+/* Audio element optimization */
+audio {
+    content-visibility: auto;
+}
+
+/* Reduce animation frequency on low-end devices */
+@media (max-width: 480px), (max-resolution: 150dpi) {
+    .gp-expanded.playing .gp-exp-artwork {
+        animation-duration: 8s; /* Slower float */
+    }
+    .greeting-title,
+    .hero-title {
+        animation-duration: 10s;
+    }
+}
+
+/* Battery saver mode - reduce animations */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Efficient text rendering */
+.glass-card,
+.recently-added-card,
+.station-card,
+.featured-card {
+    text-rendering: optimizeSpeed;
+}
+
+/* Contain paint for lists */
+.station-grid,
+.featured-grid,
+.mood-grid,
+.decade-grid,
+.recently-added-track-list {
+    contain: strict;
+}
+
+/* Optimize backdrop-filter - only on visible elements */
+.glass-card:not(:hover)::before,
+.gp-mini:not(:hover)::before,
+.gp-expanded:not(.playing)::before {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.glass-card:hover::before,
+.gp-mini:hover::before,
+.gp-expanded.playing::before {
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+}
+
+/* Efficient shadow - use drop-shadow filter for complex shapes */
+.glass-card:hover,
+.recently-added-card:hover {
+    filter: drop-shadow(0 16px 32px rgba(0,0,0,0.4));
+}
+
+/* Lazy load heavy effects */
+.gp-exp-particles {
+    content-visibility: auto;
+    contain-intrinsic-size: 100px 100px;
+}
+
+/* Reduce repaints on static content */
+.sidebar,
+.header,
+.bottom-nav,
+.section-header {
+    will-change: auto;
+    contain: layout style paint;
+}
+
+/* Intersection Observer helper - elements offscreen don't animate */
+.offscreen {
+    animation-play-state: paused !important;
+    transition: none !important;
+}
+
+/* Efficient transform origin */
+.gp-mini-artwork,
+.gp-exp-artwork,
+.glass-card .card-artwork,
+.recently-added-card .card-image {
+    transform-origin: center center;
+}
+
+/* Optimize keyframes - use transform only */
+@keyframes gpEfficientFloat {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -4px, 8px); }
+}
+
+/* Content visibility for below-fold sections */
+section:not(:first-of-type) {
+    content-visibility: auto;
+    contain-intrinsic-size: 500px;
+}
+
+/* Efficient font loading */
+@font-face {
+    font-display: swap;
+}
+
+/* Reduce main thread work - defer non-critical */
+.non-critical {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 200px;
+}
+

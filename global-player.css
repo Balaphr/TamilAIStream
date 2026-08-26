@@ -1501,3 +1501,229 @@ body.gp-active {
             radial-gradient(ellipse 120px 100px at 0% 100%, rgba(6, 182, 212, 0.32), transparent 70%);
     }
 }
+
+
+/* ============================================
+   3D ANIMATIONS - GPU Accelerated
+   ============================================ */
+
+/* 3D Perspective Container */
+.gp-3d-perspective {
+    perspective: 1000px;
+    perspective-origin: center center;
+}
+
+/* Mini Player 3D Tilt on Hover */
+.gp-mini {
+    will-change: transform, box-shadow;
+    transform-style: preserve-3d;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+}
+.gp-mini:hover {
+    transform: translateX(-50%) translateY(0) rotateX(2deg) rotateY(-1deg);
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.7),
+        0 4px 16px rgba(52, 211, 153, 0.2),
+        0 0 0 1px rgba(52, 211, 153, 0.15);
+}
+.gp-mini:active {
+    transform: translateX(-50%) translateY(0) rotateX(0deg) rotateY(0deg) scale(0.98);
+}
+
+/* Mini Artwork 3D Pop */
+.gp-mini-artwork {
+    will-change: transform;
+    transform-style: preserve-3d;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gp-mini:hover .gp-mini-artwork {
+    transform: translateZ(16px) scale(1.08) rotateY(-3deg);
+}
+.gp-mini-art-img {
+    will-change: transform;
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gp-mini:hover .gp-mini-art-img {
+    transform: scale(1.12) translateZ(8px);
+}
+
+/* Mini Progress Bar 3D */
+.gp-mini-progress {
+    will-change: height, transform;
+}
+.gp-mini-progress-bar {
+    will-change: width;
+    transform: translateZ(4px);
+}
+.gp-mini-progress-thumb {
+    will-change: transform;
+    transform: translate(-50%, -50%) translateZ(12px);
+}
+
+/* Expanded Player 3D */
+.gp-expanded {
+    will-change: transform, opacity;
+    transform-style: preserve-3d;
+    perspective: 1200px;
+}
+.gp-exp-artwork-wrap {
+    will-change: transform;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
+.gp-exp-artwork {
+    will-change: transform;
+    transform-style: preserve-3d;
+    transform: translateZ(0) rotateY(0deg) rotateX(0deg);
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gp-exp-artwork:hover {
+    transform: translateZ(24px) rotateY(-5deg) rotateX(3deg) scale(1.02);
+}
+.gp-exp-art-img {
+    will-change: transform;
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gp-exp-artwork:hover .gp-exp-art-img {
+    transform: scale(1.05) translateZ(16px);
+}
+
+/* Expanded Player Float Animation */
+@keyframes gpArtFloat3D {
+    0%, 100% { transform: translateY(0) rotateY(0deg) rotateX(0deg) translateZ(0); }
+    25% { transform: translateY(-6px) rotateY(-1deg) rotateX(0.5deg) translateZ(8px); }
+    50% { transform: translateY(-4px) rotateY(1deg) rotateX(-0.5deg) translateZ(12px); }
+    75% { transform: translateY(-6px) rotateY(-0.5deg) rotateX(0.3deg) translateZ(8px); }
+}
+.gp-expanded.playing .gp-exp-artwork {
+    animation: gpArtFloat3D 6s ease-in-out infinite;
+}
+
+/* Expanded Controls 3D */
+.gp-exp-controls {
+    will-change: transform;
+    transform: translateZ(12px);
+}
+.gp-exp-play {
+    will-change: transform;
+    transform-style: preserve-3d;
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gp-exp-play:hover {
+    transform: translateZ(20px) scale(1.12);
+}
+.gp-exp-play:active {
+    transform: translateZ(8px) scale(0.95);
+}
+.gp-exp-prev, .gp-exp-next {
+    will-change: transform;
+    transform: translateZ(8px);
+    transition: transform 0.2s ease;
+}
+.gp-exp-prev:hover, .gp-exp-next:hover {
+    transform: translateZ(16px) scale(1.1);
+}
+
+/* Progress Bar 3D */
+.gp-exp-progress {
+    will-change: transform;
+    transform: translateZ(4px);
+}
+.gp-exp-bar {
+    will-change: width;
+    transform: translateZ(2px);
+}
+.gp-exp-thumb {
+    will-change: transform;
+    transform: translate(-50%, -50%) translateZ(16px);
+}
+
+/* Waveform 3D */
+.gp-exp-eq {
+    will-change: transform;
+    transform: translateZ(4px);
+}
+.gp-exp-eq span {
+    will-change: height, transform;
+    transform-origin: center bottom;
+    transform-style: preserve-3d;
+}
+
+/* Lyrics 3D Scroll */
+.gp-lyrics-line {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.gp-lyrics-line.active {
+    transform: translateZ(16px) scale(1.08);
+}
+
+/* Particle Background for Expanded */
+.gp-exp-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+}
+.gp-exp-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--gp-accent, #34d399);
+    opacity: 0;
+    animation: gpParticleFloat 8s ease-in-out infinite;
+}
+@keyframes gpParticleFloat {
+    0% { transform: translateY(100vh) translateZ(0) scale(0); opacity: 0; }
+    10% { opacity: 0.6; }
+    50% { transform: translateY(50vh) translateZ(20px) scale(1); opacity: 0.3; }
+    90% { opacity: 0.1; }
+    100% { transform: translateY(-20vh) translateZ(40px) scale(0); opacity: 0; }
+}
+
+/* Parallax Background */
+.gp-parallax-bg {
+    position: absolute;
+    inset: -20%;
+    background: inherit;
+    background-size: cover;
+    background-position: center;
+    filter: blur(80px) brightness(0.3);
+    transform: translateZ(-100px) scale(1.4);
+    will-change: transform;
+    z-index: -1;
+}
+
+/* Performance: Force GPU layers for animated elements */
+.gp-mini,
+.gp-expanded,
+.gp-mini-artwork,
+.gp-exp-artwork,
+.gp-mini-progress-bar,
+.gp-exp-bar,
+.gp-mini-play,
+.gp-exp-play,
+.gp-lyrics-line {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .gp-mini,
+    .gp-mini-artwork,
+    .gp-exp-artwork,
+    .gp-exp-artwork:hover,
+    .gp-mini:hover .gp-mini-artwork,
+    .gp-expanded.playing .gp-exp-artwork,
+    .gp-exp-particle,
+    .gp-lyrics-line {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+    }
+}
