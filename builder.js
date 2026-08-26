@@ -8760,6 +8760,7 @@ const AppBuilder = (() => {
         _aiLogEl = document.getElementById('appAiBotLog');
         _bindFieldListeners();
         _updateBuildStatus();
+        _renderBuildHistory();
     }
 
     function _bindFieldListeners() {
@@ -8881,6 +8882,7 @@ const AppBuilder = (() => {
             }
         });
         _updateBuildStatus();
+        _renderBuildHistory();
         _changeCount = 0;
         document.getElementById('appChangesCount').textContent = '0';
     }
@@ -8939,334 +8941,746 @@ const AppBuilder = (() => {
     }
 
     function buildApp() {
-        _aiLog('Building Windows .exe application package...', 'info');
-        _aiLog('Generating Electron project files...', 'info');
+        _aiLog('Starting Android build pipeline...', 'info');
+        _showBuildStatus('preparing');
 
-        const manifest = _generateManifest();
-        const splash = _generateSplashConfig();
-        const sw = _generateSWConfig();
+        const buildId = 'build_' + Date.now();
+        const buildNumber = (DataStore.getApplication()._buildCount || 0) + 1;
+
+        setTimeout(() => {
+            _aiLog('Collecting application settings...', 'info');
+            _showBuildStatus('preparing', 'Collecting settings...');
+
+            const config = {
+                settings: { ..._settings },
+                buildId,
+                buildNumber,
+                buildTime: new Date().toISOString(),
+                version: _settings.version || '1.0.0',
+                packageName: _settings.packageName || 'com.tamilaistream.app',
+                appName: _settings.appName || 'Tamil AI Stream'
+            };
+
+            setTimeout(() => {
+                _aiLog('Generating Capacitor Android project...', 'info');
+                _showBuildStatus('building', 'Generating Android project files...');
+
+                const files = _generateCapacitorProject(config);
+
+                setTimeout(() => {
+                    _aiLog('Packaging Android project...', 'info');
+                    _showBuildStatus('packaging', 'Creating downloadable archive...');
+
+                    setTimeout(() => {
+                        const zipBlob = _createZip(files);
+                        const zipUrl = URL.createObjectURL(zipBlob);
+                        const a = document.createElement('a');
+                        a.href = zipUrl;
+                        a.download = (config.appName.replace(/[^a-zA-Z0-9]/g, '') || 'TamilAIStream') + '-android-' + config.version + '-b' + buildNumber + '.zip';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(zipUrl);
+
+                        const buildRecord = {
+                            id: buildId,
+                            number: buildNumber,
+                            appName: config.appName,
+                            version: config.version,
+                            buildNumber: buildNumber,
+                            date: config.buildTime,
+                            status: 'completed',
+                            packageName: config.packageName,
+                            settings: { ..._settings }
+                        };
+
+                        _saveBuildHistory(buildRecord);
+                        _settings._lastBuild = config.buildTime;
+                        _settings._buildCount = buildNumber;
+                        DataStore.setApplication(_settings);
+
+                        _aiLog('Android project built successfully!', 'success');
+                        _aiLog('Build #' + buildNumber + ' — ' + config.appName + ' v' + config.version, 'success');
+                        _aiLog('To generate APK: extract zip → install Android Studio → open project → Build → Build APK', 'info');
+                        _aiLog('Or use GitHub Actions: push to repo → workflow builds APK/AAB automatically', 'info');
+                        _showBuildStatus('completed', 'Build #' + buildNumber + ' ready!');
+                        showToast('Android build completed! Download started.', 'success');
+                        _updateBuildStatus();
+                    }, 600);
+                }, 800);
+            }, 700);
+        }, 400);
+    }
+
+    function _showBuildStatus(stage, detail) {
+        const el = document.getElementById('appBuildProgress');
+        if (!el) return;
+        const stages = ['preparing', 'building', 'packaging', 'completed'];
+        const labels = ['Preparing', 'Building', 'Packaging', 'Completed'];
+        const icons = ['fa-spinner fa-spin', 'fa-hammer', 'fa-box-archive', 'fa-check-circle'];
+        const currentIdx = stages.indexOf(stage);
+
+        let html = '<div class="build-progress-bar">';
+        stages.forEach((s, i) => {
+            const cls = i < currentIdx ? 'done' : i === currentIdx ? 'active' : '';
+            html += '<div class="build-stage ' + cls + '"><div class="build-stage-dot"><i class="fas ' + (i <= currentIdx ? icons[i] : 'fa-circle') + '"></i></div><span>' + labels[i] + '</span></div>';
+        });
+        html += '</div>';
+        if (detail) html += '<div class="build-detail">' + detail + '</div>';
+        el.innerHTML = html;
+    }
+
+    function _saveBuildHistory(build) {
+        let history = [];
+        try { history = JSON.parse(localStorage.getItem('tais_build_history') || '[]'); } catch(e) {}
+        history.unshift(build);
+        if (history.length > 20) history = history.slice(0, 20);
+        localStorage.setItem('tais_build_history', JSON.stringify(history));
+        _renderBuildHistory();
+    }
+
+    function _renderBuildHistory() {
+        const el = document.getElementById('appBuildHistory');
+        if (!el) return;
+        let history = [];
+        try { history = JSON.parse(localStorage.getItem('tais_build_history') || '[]'); } catch(e) {}
+
+        if (history.length === 0) {
+            el.innerHTML = '<div class="build-history-empty"><i class="fas fa-box-archive"></i><p>No builds yet. Click "Build Application" to create your first Android build.</p></div>';
+            return;
+        }
+
+        let html = '';
+        history.forEach(b => {
+            const d = new Date(b.date);
+            const dateStr = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            const statusCls = b.status === 'completed' ? 'success' : b.status === 'failed' ? 'failed' : 'pending';
+            html += '<div class="build-history-item">' +
+                '<div class="build-history-left">' +
+                    '<div class="build-history-num">#' + b.buildNumber + '</div>' +
+                    '<div class="build-history-info">' +
+                        '<strong>' + (b.appName || 'App') + '</strong> v' + (b.version || '1.0.0') +
+                        '<span class="build-history-date">' + dateStr + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="build-history-right">' +
+                    '<span class="build-status-badge ' + statusCls + '">' + (b.status || 'completed') + '</span>' +
+                '</div>' +
+            '</div>';
+        });
+        el.innerHTML = html;
+    }
+
+    function _generateCapacitorProject(config) {
+        const s = config.settings;
         const files = {};
 
         files['package.json'] = JSON.stringify({
-            name: (_settings.shortName || 'tamilaistream').toLowerCase().replace(/[^a-z0-9]/g, ''),
-            productName: _settings.appName || 'Tamil AI Stream',
-            version: _settings.version || '1.0.0',
-            description: _settings.description || 'Tamil AI Music Streaming Application',
-            main: 'main.js',
+            name: (s.shortName || 'tamilaistream').toLowerCase().replace(/[^a-z0-9]/g, ''),
+            version: config.version,
+            description: s.description || 'Tamil AI Music Streaming Application',
+            main: 'index.js',
             scripts: {
-                start: 'electron .',
-                build: 'electron-builder --win --publish never',
-                buildportable: 'electron-builder --win portable --publish never',
-                buildinstaller: 'electron-builder --win nsis --publish never'
+                start: 'cap run android',
+                build: 'cap sync && cap open android',
+                android: 'cap open android',
+                sync: 'cap sync'
             },
-            build: {
-                appId: _settings.packageName || 'com.tamilaistream.app',
-                productName: _settings.appName || 'Tamil AI Stream',
-                win: {
-                    target: [
-                        { target: 'nsis', arch: ['x64'] },
-                        { target: 'portable', arch: ['x64'] }
-                    ],
-                    icon: 'icon.png',
-                    artifactName: '${productName}-${version}-Setup.${ext}'
-                },
-                nsis: {
-                    oneClick: false,
-                    allowToChangeInstallationDirectory: true,
-                    createDesktopShortcut: true,
-                    createStartMenuShortcut: true,
-                    shortcutName: _settings.appName || 'Tamil AI Stream',
-                    installerIcon: 'icon.png',
-                    uninstallerIcon: 'icon.png',
-                    installerHeaderIcon: 'icon.png'
-                },
-                directories: { output: 'dist' },
-                files: ['**/*', '!node_modules', '!dist', '!build']
+            dependencies: {
+                '@capacitor/android': '^5.6.0',
+                '@capacitor/app': '^5.6.0',
+                '@capacitor/core': '^5.6.0',
+                '@capacitor/haptics': '^5.6.0',
+                '@capacitor/keyboard': '^5.6.0',
+                '@capacitor/status-bar': '^5.6.0',
+                '@capacitor/splash-screen': '^5.6.0',
+                '@capacitor/local-notifications': '^5.6.0',
+                '@capacitor/push-notifications': '^5.6.0',
+                '@capacitor/browser': '^5.6.0',
+                '@capacitor/share': '^5.6.0',
+                '@capacitor/screen-reader': '^5.6.0'
             },
             devDependencies: {
-                electron: '^28.0.0',
-                'electron-builder': '^24.9.1'
-            },
-            author: _settings.appName || 'Tamil AI Stream',
-            license: 'MIT'
+                '@capacitor/cli': '^5.6.0',
+                '@nicepkg/gpt-runner': '^2.0.0'
+            }
         }, null, 2);
 
-        files['main.js'] = `const { app, BrowserWindow, ipcMain, session, protocol } = require('electron');
-const path = require('path');
-const url = require('url');
+        files['capacitor.config.ts'] = `import type { CapacitorConfig } from '@capacitor/cli';
 
-let mainWindow;
-const WEBSITE_URL = '${_settings.websiteUrl || window.location.origin}';
-const APP_TITLE = ${JSON.stringify(_settings.appName || 'Tamil AI Stream')};
-const IS_DEV = process.argv.includes('--dev');
-
-function createWindow() {
-    mainWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        minWidth: 400,
-        minHeight: 300,
-        title: APP_TITLE,
-        icon: path.join(__dirname, 'icon.png'),
-        titleBarStyle: 'hiddenInset',
-        frame: process.platform === 'darwin' ? true : false,
-        backgroundColor: ${JSON.stringify(_settings.bgColor || '#080c1c')},
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            nodeIntegration: false,
-            contextIsolation: true,
-            sandbox: true,
-            webSecurity: true
-        },
-        show: false
-    });
-
-    mainWindow.loadURL(WEBSITE_URL);
-
-    mainWindow.once('ready-to-show', () => {
-        mainWindow.show();
-        ${_settings.splashEnabled === 'true' ? `
-        setTimeout(() => {
-            if (mainWindow) mainWindow.webContents.send('splash-done');
-        }, ${parseInt(_settings.splashDuration) || 2500});` : ''}
-    });
-
-    mainWindow.on('closed', () => { mainWindow = null; });
-
-    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        require('electron').shell.openExternal(url);
-        return { action: 'deny' };
-    });
-
-    if (IS_DEV) {
-        mainWindow.webContents.openDevTools();
+const config: CapacitorConfig = {
+  appId: '${config.packageName}',
+  appName: ${JSON.stringify(config.appName)},
+  webDir: 'www',
+  server: {
+    androidScheme: 'https',
+    url: ${JSON.stringify(s.websiteUrl || 'https://tamilaistream.com')},
+    cleartext: true
+  },
+  plugins: {
+    SplashScreen: {
+      launchAutoHide: ${s.splashEnabled === 'true'},
+      launchShowDuration: ${parseInt(s.splashDuration) || 2500},
+      backgroundColor: ${JSON.stringify(s.splashBgColor || '#080c1c')},
+      showSpinner: true,
+      spinnerColor: ${JSON.stringify(s.primaryColor || '#22d3ee')},
+      androidScaleType: 'CENTER_CROP',
+      splashFullScreen: true,
+      splashImmersive: true,
+      launchFadeOutDuration: 300
+    },
+    StatusBar: {
+      style: ${JSON.stringify(s.statusBarStyle === 'light' ? 'LIGHT' : 'DARK')},
+      backgroundColor: ${JSON.stringify(s.navBarColor || '#0a0e1a')},
+      overlaysWebView: ${s.statusBarOverlay === 'true'}
+    },
+    Keyboard: {
+      resize: 'body',
+      resizeOnFullScreen: true
+    },
+    LocalNotifications: {
+      smallIcon: 'ic_stat_icon_config_sample',
+      iconColor: ${JSON.stringify(s.primaryColor || '#22d3ee')}
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert']
     }
-}
-
-app.whenReady().then(() => {
-    createWindow();
-    app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
-});
-
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit();
-});
-
-ipcMain.handle('get-app-version', () => app.getVersion());
-ipcMain.handle('get-app-name', () => APP_TITLE);
-ipcMain.handle('minimize-window', () => { if (mainWindow) mainWindow.minimize(); });
-ipcMain.handle('maximize-window', () => {
-    if (mainWindow) {
-        mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
+  },
+  android: {
+    allowMixedContent: true,
+    backgroundColor: ${JSON.stringify(s.bgColor || '#080c1c')},
+    buildOptions: {
+      keystorePath: null,
+      keystoreAlias: null
     }
-});
-ipcMain.handle('close-window', () => { if (mainWindow) mainWindow.close(); });
+  }
+};
+
+export default config;
 `;
 
-        files['preload.js'] = `const { contextBridge, ipcRenderer } = require('electron');
+        files['package-lock.json'] = '{}';
 
-contextBridge.exposeInMainWorld('electronAPI', {
-    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
-    getAppName: () => ipcRenderer.invoke('get-app-name'),
-    minimize: () => ipcRenderer.invoke('minimize-window'),
-    maximize: () => ipcRenderer.invoke('maximize-window'),
-    close: () => ipcRenderer.invoke('close-window'),
-    isElectron: true,
-    platform: process.platform
-});
-`;
-
-        files['renderer.js'] = `// Electron titlebar controls
-document.addEventListener('DOMContentLoaded', () => {
-    if (window.electronAPI && window.electronAPI.isElectron) {
-        const style = document.createElement('style');
-        style.textContent = \`
-            .electron-titlebar {
-                position: fixed; top: 0; left: 0; right: 0; height: 32px;
-                -webkit-app-region: drag; z-index: 99999;
-                background: ${_settings.bgColor || '#080c1c'};
-                display: flex; align-items: center; justify-content: space-between;
-                padding: 0 8px; font-size: 12px; color: rgba(255,255,255,0.7);
-            }
-            .electron-titlebar .tb-title { margin-left: 80px; font-weight: 600; }
-            .electron-titlebar .tb-controls { -webkit-app-region: no-drag; display: flex; gap: 2px; }
-            .electron-titlebar .tb-btn {
-                width: 32px; height: 28px; display: flex; align-items: center; justify-content: center;
-                border: none; background: transparent; color: rgba(255,255,255,0.7); cursor: pointer;
-                border-radius: 4px; font-size: 14px;
-            }
-            .electron-titlebar .tb-btn:hover { background: rgba(255,255,255,0.1); }
-            .electron-titlebar .tb-btn.close:hover { background: #e81123; color: white; }
-            body { padding-top: 32px; }
-        \`;
-        document.head.appendChild(style);
-
-        const titlebar = document.createElement('div');
-        titlebar.className = 'electron-titlebar';
-        titlebar.innerHTML = \`
-            <span class="tb-title">\${window.electronAPI.getAppName ? '' : '${_settings.appName || 'Tamil AI Stream'}'}</span>
-            <div class="tb-controls">
-                <button class="tb-btn" onclick="window.electronAPI.minimize()">&#8211;</button>
-                <button class="tb-btn" onclick="window.electronAPI.maximize()">&#9633;</button>
-                <button class="tb-btn close" onclick="window.electronAPI.close()">&#10005;</button>
-            </div>
-        \`;
-        document.body.prepend(titlebar);
-    }
-});
-`;
-
-        files['index.html'] = `<!DOCTYPE html>
+        files['www/index.html'] = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' ${_settings.websiteUrl || window.location.origin}; connect-src 'self' ${_settings.websiteUrl || window.location.origin} https://*.firebaseio.com https://*.googleapis.com; img-src 'self' ${_settings.websiteUrl || window.location.origin} data: blob: https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';">
-    <title>${_settings.appName || 'Tamil AI Stream'}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="${s.primaryColor || '#22d3ee'}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>${config.appName}</title>
     <style>
-        body { margin: 0; padding: 0; background: ${_settings.bgColor || '#080c1c'}; overflow: hidden; }
-        #loading { display: flex; align-items: center; justify-content: center; height: 100vh;
-            flex-direction: column; gap: 16px; color: rgba(255,255,255,0.7); font-family: -apple-system, sans-serif; }
-        #loading .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: ${_settings.primaryColor || '#22d3ee'}; border-radius: 50%;
-            animation: spin 0.8s linear infinite; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: ${s.bgColor || '#080c1c'}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        #app { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;
+            flex-direction: column; gap: 16px; color: rgba(255,255,255,0.8); }
+        .logo { width: 80px; height: 80px; border-radius: 20px;
+            background: linear-gradient(135deg, ${s.primaryColor || '#22d3ee'}, ${s.accentColor || '#34d399'});
+            display: flex; align-items: center; justify-content: center; font-size: 36px; color: white;
+            box-shadow: 0 8px 32px rgba(34,211,238,0.3); }
+        .name { font-size: 18px; font-weight: 700; color: white; }
+        .sub { font-size: 13px; color: rgba(255,255,255,0.5); }
+        .spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: ${s.primaryColor || '#22d3ee'}; border-radius: 50%; animation: spin 0.8s linear infinite; margin-top: 8px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        ${_settings.splashEnabled === 'true' ? `
+        ${s.splashEnabled === 'true' ? `
         #splash { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center;
             justify-content: center; flex-direction: column; gap: 20px;
-            background: ${_settings.splashBgColor || '#080c1c'}; transition: opacity 0.5s ease; }
-        #splash.hide { opacity: 0; pointer-events: none; }
-        #splash .splash-logo { width: 80px; height: 80px; border-radius: 20px;
-            background: linear-gradient(135deg, ${_settings.primaryColor || '#22d3ee'}, ${_settings.accentColor || '#34d399'});
-            display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; }
-        #splash .splash-name { font-size: 20px; font-weight: 700; color: white; font-family: -apple-system, sans-serif; }
-        #splash .splash-bar { width: 120px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
-        #splash .splash-bar-fill { height: 100%; width: 0%; background: ${_settings.primaryColor || '#22d3ee'};
-            border-radius: 2px; animation: splash-load ${parseInt(_settings.splashDuration) || 2500}ms ease forwards; }
-        @keyframes splash-load { to { width: 100%; } }` : ''}
+            background: ${s.splashBgColor || '#080c1c'}; transition: opacity 0.4s ease; }
+        #splash.hide { opacity: 0; pointer-events: none; }` : ''}
     </style>
 </head>
 <body>
-    ${_settings.splashEnabled === 'true' ? `
-    <div id="splash">
-        <div class="splash-logo">&#9654;</div>
-        <div class="splash-name">${_settings.appName || 'Tamil AI Stream'}</div>
-        <div class="splash-bar"><div class="splash-bar-fill"></div></div>
-    </div>` : ''}
-    <div id="loading"><div class="spinner"></div><span>Loading ${_settings.appName || 'Tamil AI Stream'}...</span></div>
-    <script>
-        ${_settings.splashEnabled === 'true' ? `
-        setTimeout(() => {
-            const splash = document.getElementById('splash');
-            if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 600); }
-        }, ${parseInt(_settings.splashDuration) || 2500});` : ''}
-        window.location.href = '${_settings.websiteUrl || window.location.origin}';
-    </script>
-    <script src="renderer.js"></script>
+    ${s.splashEnabled === 'true' ? `<div id="splash"><div class="logo">&#9654;</div><div class="name">${config.appName}</div></div>` : ''}
+    <div id="app">
+        <div class="logo">&#9654;</div>
+        <div class="name">${config.appName}</div>
+        <div class="sub">Loading your music...</div>
+        <div class="spinner"></div>
+    </div>
+    <script type="module" src="main.js"></script>
 </body>
 </html>`;
 
-        files['build.bat'] = `@echo off
+        files['www/main.js'] = `import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
+import { SplashScreen } from '@capacitor/splash-screen';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+
+const WEBSITE_URL = ${JSON.stringify(s.websiteUrl || 'https://tamilaistream.com')};
+const APP_NAME = ${JSON.stringify(config.appName)};
+
+class TamilAIStreamApp {
+    constructor() {
+        this.iframe = null;
+        this.init();
+    }
+
+    async init() {
+        if (Capacitor.isNativePlatform()) {
+            await this.setupNative();
+        }
+        this.loadWebsite();
+        this.setupListeners();
+    }
+
+    async setupNative() {
+        try {
+            await StatusBar.setStyle({ style: Style.${s.statusBarStyle === 'light' ? 'Light' : 'Dark'} });
+            await StatusBar.setBackgroundColor({ color: ${JSON.stringify(s.navBarColor || '#0a0e1a')} });
+        } catch(e) {}
+
+        try {
+            if (${s.haptic === 'true'}) {
+                await Haptics.impact({ style: ImpactStyle.Light });
+            }
+        } catch(e) {}
+    }
+
+    loadWebsite() {
+        const container = document.getElementById('app');
+        container.innerHTML = '';
+
+        this.iframe = document.createElement('iframe');
+        this.iframe.src = WEBSITE_URL;
+        this.iframe.style.cssText = 'width:100%;height:100%;border:none;position:fixed;inset:0;';
+        this.iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture');
+        this.iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms allow-modals');
+        document.body.appendChild(this.iframe);
+
+        ${s.splashEnabled === 'true' ? `
+        setTimeout(() => {
+            SplashScreen.hide();
+            const splash = document.getElementById('splash');
+            if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 500); }
+        }, ${parseInt(s.splashDuration) || 2500});` : `SplashScreen.hide();`}
+    }
+
+    setupListeners() {
+        App.addListener('appStateChange', ({ isActive }) => {
+            if (this.iframe && this.iframe.contentWindow) {
+                this.iframe.contentWindow.postMessage({ type: 'appStateChange', isActive }, '*');
+            }
+        });
+
+        App.addListener('backButton', ({ canGoBack }) => {
+            if (this.iframe && this.iframe.contentWindow) {
+                this.iframe.contentWindow.postMessage({ type: 'backButton' }, '*');
+            }
+        });
+
+        App.addListener('appUrlOpen', (data) => {
+            console.log('App opened via URL:', data.url);
+        });
+
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'haptic') {
+                Haptics.impact({ style: ImpactStyle.Light }).catch(() => {});
+            }
+        });
+    }
+}
+
+new TamilAIStreamApp();
+`;
+
+        files['www/capacitor.plugins.json'] = JSON.stringify({
+            "plugins": {
+                "@capacitor/app": {},
+                "@capacitor/haptics": {},
+                "@capacitor/keyboard": {},
+                "@capacitor/status-bar": {},
+                "@capacitor/splash-screen": {},
+                "@capacitor/local-notifications": {},
+                "@capacitor/push-notifications": {},
+                "@capacitor/browser": {},
+                "@capacitor/share": {}
+            }
+        }, null, 2);
+
+        files['android/app/src/main/AndroidManifest.xml'] = `<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="${config.packageName}">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    ${s.allowDownloads === 'true' ? '<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />' : ''}
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="${config.appName}"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
+        android:theme="@style/AppTheme"
+        android:networkSecurityConfig="@xml/network_security_config">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/AppTheme.Splash">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${config.packageName}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>
+`;
+
+        files['android/app/src/main/res/values/styles.xml'] = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:editTextBackground">@drawable/ripple</item>
+        <item name="android:windowBackground">${s.bgColor || '#080c1c'}</item>
+        <item name="android:navigationBarColor">${s.navBarColor || '#0a0e1a'}</item>
+        <item name="android:statusBarColor">${s.navBarColor || '#0a0e1a'}</item>
+        <item name="android:windowLightStatusBar">${s.statusBarStyle === 'light' ? 'true' : 'false'}</item>
+    </style>
+    <style name="AppTheme.Splash" parent="AppTheme">
+        <item name="android:windowBackground">@drawable/splash</item>
+    </style>
+</resources>
+`;
+
+        files['android/app/src/main/res/drawable/splash.xml'] = `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="${s.splashBgColor || '#080c1c'}" />
+</layer-list>
+`;
+
+        files['android/app/src/main/res/drawable/ripple.xml'] = `<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#22d3ee">
+    <item android:id="@android:id/mask" android:drawable="@android:color/white" />
+</ripple>
+`;
+
+        files['android/app/src/main/res/xml/network_security_config.xml'] = `<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">${(s.websiteUrl || 'tamilaistream.com').replace('https://', '').replace('http://', '')}</domain>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
+`;
+
+        files['android/app/src/main/res/xml/file_paths'] = `<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <external-path name="external_files" path="." />
+    <cache-path name="cache" path="." />
+</paths>
+`;
+
+        files['android/app/src/main/java/com/tamilaistream/app/MainActivity.java'] = `package com.tamilaistream.app;
+
+import android.os.Bundle;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+}
+`;
+
+        files['android/build.gradle'] = `buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.1'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+`;
+
+        files['android/app/build.gradle'] = `apply plugin: 'com.android.application'
+
+android {
+    namespace "${config.packageName}"
+    compileSdkVersion 34
+    defaultConfig {
+        applicationId "${config.packageName}"
+        minSdkVersion 22
+        targetSdkVersion 34
+        versionCode ${config.buildNumber}
+        versionName "${config.version}"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.core:core:1.12.0'
+}
+`;
+
+        files['android/settings.gradle'] = `include ':app';
+rootProject.name = "${config.appName.replace(/[^a-zA-Z0-9]/g, '')}";
+`;
+
+        files['android/gradle.properties'] = `org.gradle.jvmargs=-Xmx2048m
+android.useAndroidX=true
+android.enableJetifier=true
+`;
+
+        files['android/gradle/wrapper/gradle-wrapper.properties'] = `distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\\://services.gradle.org/distributions/gradle-8.2-bin.zip
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+`;
+
+        files['.github/workflows/android-build.yml'] = `name: Android Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: false
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - debug
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Capacitor
+        run: npx cap sync android
+
+      - name: Make Gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build APK
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Build AAB
+        run: |
+          cd android
+          ./gradlew bundleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/bundle/release/app-release.aab
+          generate_release_notes: true
+`;
+
+        files['build-android.bat'] = `@echo off
 echo ========================================
-echo  ${_settings.appName || 'Tamil AI Stream'} - Windows Build
+echo  ${config.appName} - Android Build
 echo ========================================
 echo.
-echo [1/3] Installing dependencies...
+echo [1/5] Installing npm dependencies...
 call npm install
 if errorlevel 1 (echo ERROR: npm install failed & pause & exit /b 1)
 echo.
-echo [2/3] Building Windows .exe...
-call npx electron-builder --win --publish never
-if errorlevel 1 (echo ERROR: Build failed & pause & exit /b 1)
+echo [2/5] Installing Capacitor...
+call npx cap sync android
+if errorlevel 1 (echo ERROR: Capacitor sync failed & pause & exit /b 1)
 echo.
-echo [3/3] Build complete!
+echo [3/5] Opening Android Studio...
+echo Please open android/ folder in Android Studio
+echo Then: Build -> Build Bundle(s) / APK(s) -> Build APK(s)
 echo.
-echo Output files are in the "dist" folder:
-echo   - ${_settings.appName || 'Tamil AI Stream'} Setup.exe (Installer)
-echo   - ${_settings.appName || 'Tamil AI Stream'} Portable.exe (Portable)
+echo [4/5] Or build from command line:
+echo   cd android
+echo   gradlew.bat assembleRelease
 echo.
-echo You can also run: npm run buildportable (for portable .exe only)
-echo Or: npm run buildinstaller (for installer .exe only)
+echo [5/5] Build output will be in:
+echo   android\\app\\build\\outputs\\apk\\release\\
 echo.
 pause
 `;
 
-        files['build.sh'] = `#!/bin/bash
+        files['build-android.sh'] = `#!/bin/bash
 echo "========================================"
-echo " ${_settings.appName || 'Tamil AI Stream'} - Build"
+echo " ${config.appName} - Android Build"
 echo "========================================"
 echo ""
-echo "[1/3] Installing dependencies..."
+echo "[1/4] Installing dependencies..."
 npm install
 echo ""
-echo "[2/3] Building..."
-npx electron-builder --win --mac --linux --publish never
+echo "[2/4] Syncing Capacitor..."
+npx cap sync android
 echo ""
-echo "[3/3] Done! Check dist/ folder"
+echo "[3/4] Building APK..."
+cd android
+chmod +x gradlew
+./gradlew assembleRelease
+echo ""
+echo "[4/4] Build complete!"
+echo "APK: android/app/build/outputs/apk/release/"
+echo "AAB: android/app/build/outputs/bundle/release/"
 `;
 
-        files['icon.png'] = '';
-        files['README.md'] = `# ${_settings.appName || 'Tamil AI Stream'} - Desktop Application
+        files['README.md'] = `# ${config.appName} — Android App
 
-## Quick Start (Windows)
+## Build Requirements
 
-1. Make sure [Node.js](https://nodejs.org/) is installed (v16+)
-2. Double-click \`build.bat\`
-3. Wait for the build to complete
-4. Find the .exe in the \`dist\` folder
+- **Node.js** v16+
+- **Android Studio** (latest)
+- **JDK 17**
+
+## Quick Build (Windows)
+
+1. Double-click \`build-android.bat\`
+2. Open \`android/\` folder in Android Studio
+3. Build → Build Bundle(s) / APK(s) → Build APK(s)
+
+## Quick Build (Mac/Linux)
+
+\`\`\`bash
+chmod +x build-android.sh
+./build-android.sh
+\`\`\`
+
+## GitHub Actions (Automatic Build)
+
+1. Push this project to a GitHub repository
+2. Go to Actions tab → "Android Build" → Run workflow
+3. Download APK/AAB from Artifacts
 
 ## Manual Build
 
 \`\`\`bash
 npm install
-npm run build          # Both installer + portable
-npm run buildportable  # Portable .exe only
-npm run buildinstaller # NSIS installer only
-\`\`\`
-
-## Development Mode
-
-\`\`\`bash
-npm install
-npm start              # Opens app with DevTools
+npx cap sync android
+cd android
+./gradlew assembleRelease    # APK
+./gradlew bundleRelease      # AAB (for Play Store)
 \`\`\`
 
 ## Build Output
 
-- **Installer**: \`dist/${_settings.appName || 'Tamil AI Stream'} Setup.exe\`
-- **Portable**: \`dist/${_settings.appName || 'Tamil AI Stream'} Portable.exe\`
+- **APK**: \`android/app/build/outputs/apk/release/app-release.apk\`
+- **AAB**: \`android/app/build/outputs/bundle/release/app-release.aab\`
 
-## App Settings
+## Configuration
 
-- Version: ${_settings.version || '1.0.0'}
-- Package: ${_settings.packageName || 'com.tamilaistream.app'}
-- Website: ${_settings.websiteUrl || window.location.origin}
-- Theme: ${_settings.primaryColor || '#22d3ee'}
-- Offline Mode: ${_settings.offlineMode || 'true'}
-- Background Audio: ${_settings.bgAudio || 'true'}
+- **App Name**: ${config.appName}
+- **Package**: ${config.packageName}
+- **Version**: ${config.version}
+- **Build**: #${config.buildNumber}
+- **Website**: ${s.websiteUrl || 'https://tamilaistream.com'}
+
+## Play Store Submission
+
+1. Build AAB: \`./gradlew bundleRelease\`
+2. Sign with release keystore
+3. Upload to Google Play Console
 `;
 
-        files['.gitignore'] = 'node_modules/\ndist/\n*.log';
+        files['.gitignore'] = `node_modules/
+android/.gradle/
+android/app/build/
+android/build/
+android/capacitor-*
+*.log
+.DS_Store
+local.properties
+`;
 
-        _aiLog('Packaging as zip download...', 'info');
-
-        const zipBlob = _createZip(files);
-        const zipUrl = URL.createObjectURL(zipBlob);
-        const a = document.createElement('a');
-        a.href = zipUrl;
-        a.download = (_settings.shortName || 'TamilAIStream').toLowerCase() + '-electron-' + (_settings.version || '1.0.0') + '.zip';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(zipUrl);
-
-        _settings._lastBuild = new Date().toISOString();
-        DataStore.setApplication(_settings);
-
-        _aiLog('Windows .exe Electron project downloaded!', 'success');
-        _aiLog('To build: extract zip → run build.bat → find .exe in dist/', 'info');
-        showToast('Electron .exe project downloaded!', 'success');
-        _updateBuildStatus();
+        return files;
     }
 
     function _createZip(files) {
