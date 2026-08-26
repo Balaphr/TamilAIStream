@@ -3191,7 +3191,7 @@
 /* Song Card */
 .recently-added-card {
     flex: 0 0 auto;
-    width: 200px;
+    width: 180px;
     display: flex;
     flex-direction: column;
     border-radius: 14px;
@@ -3387,7 +3387,7 @@
 /* Responsive: Tablet */
 @media (max-width: 900px) {
     .recently-added-card {
-        width: 170px;
+        width: 160px;
     }
     .recently-added-card-play-btn {
         width: 42px;
@@ -3402,7 +3402,7 @@
         padding: 0 12px;
     }
     .recently-added-card {
-        width: 155px;
+        width: 145px;
     }
     .recently-added-card-info {
         padding: 10px 12px 12px;
@@ -3426,7 +3426,7 @@
 /* Responsive: Small Mobile */
 @media (max-width: 480px) {
     .recently-added-card {
-        width: 140px;
+        width: 145px;
     }
     .recently-added-card-art {
         aspect-ratio: 1;

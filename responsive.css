@@ -608,7 +608,7 @@ body {
 
     /* Recently added */
     .recently-added-section .section-header { padding: 0 10px; }
-    .recently-added-card { width: 140px; }
+    .recently-added-card { width: 160px; }
     .recently-added-card-play-btn { width: 44px; height: 44px; }
 
     /* Ticker */
@@ -784,7 +784,7 @@ body {
     .songs-empty-text { max-width: 240px; font-size: 0.85rem; }
 
     /* Recently added */
-    .recently-added-card { width: 130px; }
+    .recently-added-card { width: 145px; }
     .recently-added-card-play-btn { width: 40px; height: 40px; }
 
     /* Home main top spacing */

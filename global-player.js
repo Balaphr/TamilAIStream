@@ -312,6 +312,9 @@ const GlobalPlayer = (() => {
                     <button class="gp-btn gp-exp-share" id="gpExpShare" title="Share"><i class="fas fa-share-nodes"></i></button>
                     <button class="gp-btn gp-exp-volume" id="gpExpVolume" title="Volume"><i class="fas fa-volume-high"></i></button>
                 </div>
+                <div class="gp-exp-waveform" id="gpExpWaveform">
+                    <canvas id="gpExpWaveCanvas"></canvas>
+                </div>
                 <div class="gp-exp-volume-slider" id="gpExpVolSlider" style="display:none;">
                     <i class="fas fa-volume-low"></i>
                     <input type="range" min="0" max="100" value="80" id="gpExpVolRange">
@@ -502,9 +505,25 @@ const GlobalPlayer = (() => {
         document.addEventListener('touchend', () => { if (isDragging) { isDragging = false; wrap.classList.remove('dragging'); commitSeek(); } });
     }
 
+    // Periodic heartbeat: keeps button state perfectly aligned with real audio
+    let _syncInterval = null;
+    function startPlayStateSync() {
+        if (_syncInterval) return;
+        _syncInterval = setInterval(() => {
+            const ap = window.audioPlayer;
+            if (!ap) return;
+            const realPlaying = !ap.paused;
+            if (state.isPlaying !== realPlaying) {
+                state.isPlaying = realPlaying;
+                updatePlayUI(realPlaying);
+            }
+        }, 1000);
+    }
+
     function hookAudioSources() {
         hookAudioPlayer();
         hookPlayerEngine();
+        startPlayStateSync();
     }
 
     function hookAudioPlayer() {
@@ -621,14 +640,24 @@ const GlobalPlayer = (() => {
     }
 
     function togglePlay() {
-        if (window.audioPlayer && window.audioPlayer.src) {
-            if (window.audioPlayer.paused) {
+        const ap = window.audioPlayer;
+        if (ap && ap.src) {
+            const shouldPlay = ap.paused;
+            if (shouldPlay) {
                 if (typeof window.resumePlayback === 'function') window.resumePlayback();
-                else window.audioPlayer.play().catch(() => {});
+                else ap.play().catch(() => {});
             } else {
                 if (typeof window.pausePlayback === 'function') window.pausePlayback();
-                else window.audioPlayer.pause();
+                else ap.pause();
             }
+            // Force immediate UI update from actual audio state (bypass event delay)
+            setTimeout(() => {
+                const realState = !ap.paused;
+                if (state.isPlaying !== realState) {
+                    state.isPlaying = realState;
+                    updatePlayUI(realState);
+                }
+            }, 50);
         } else if (typeof PlayerEngine !== 'undefined') {
             PlayerEngine.togglePlay();
         }
@@ -1131,11 +1160,21 @@ const GlobalPlayer = (() => {
 
     function startVisualizer() {
         const canvas = document.getElementById('gpExpVisualizer');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-        canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        const waveCanvas = document.getElementById('gpExpWaveCanvas');
+        if (!canvas && !waveCanvas) return;
+
+        function setupCanvas(c) {
+            if (!c) return null;
+            c.width = c.offsetWidth * window.devicePixelRatio;
+            c.height = c.offsetHeight * window.devicePixelRatio;
+            const ctx = c.getContext('2d');
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            return ctx;
+        }
+
+        const mainCtx = setupCanvas(canvas);
+        const waveCtx = setupCanvas(waveCanvas);
+
         function draw() {
             const actuallyPlaying = state.isPlaying && window.audioPlayer && !window.audioPlayer.paused;
             if (document.hidden || !isExpanded || !actuallyPlaying) {
@@ -1143,23 +1182,47 @@ const GlobalPlayer = (() => {
                 return;
             }
             const freqData = (typeof window.analyserNode !== 'undefined' && window.analyserNode) ? (() => { try { const d = new Uint8Array(window.analyserNode.frequencyBinCount); window.analyserNode.getByteFrequencyData(d); return d; } catch(e) { return null; } })() : null;
-            const w = canvas.offsetWidth;
-            const h = canvas.offsetHeight;
-            ctx.clearRect(0, 0, w, h);
-            const bars = 64;
-            const barW = w / bars;
-            const step = freqData ? Math.floor(freqData.length / bars) : 0;
-            // Single cached gradient per frame; pseudo-bars when no analyser
-            const grad = ctx.createLinearGradient(0, h, 0, 0);
-            grad.addColorStop(0, 'rgba(52,211,153,0.8)');
-            grad.addColorStop(0.5, 'rgba(59,130,246,0.6)');
-            grad.addColorStop(1, 'rgba(168,85,247,0.4)');
-            ctx.fillStyle = grad;
-            for (let i = 0; i < bars; i++) {
-                const val = freqData ? freqData[i * step] / 255 : (0.2 + Math.random() * 0.5);
-                const barH = val * h * 0.8;
-                ctx.fillRect(i * barW + 1, h - barH, barW - 2, barH);
+
+            if (canvas && mainCtx) {
+                const w = canvas.offsetWidth;
+                const h = canvas.offsetHeight;
+                mainCtx.clearRect(0, 0, w, h);
+                const bars = 64;
+                const barW = w / bars;
+                const step = freqData ? Math.floor(freqData.length / bars) : 0;
+                const grad = mainCtx.createLinearGradient(0, h, 0, 0);
+                grad.addColorStop(0, 'rgba(52,211,153,0.8)');
+                grad.addColorStop(0.5, 'rgba(59,130,246,0.6)');
+                grad.addColorStop(1, 'rgba(168,85,247,0.4)');
+                mainCtx.fillStyle = grad;
+                for (let i = 0; i < bars; i++) {
+                    const val = freqData ? freqData[i * step] / 255 : (0.2 + Math.random() * 0.5);
+                    const barH = val * h * 0.8;
+                    mainCtx.fillRect(i * barW + 1, h - barH, barW - 2, barH);
+                }
             }
+
+            if (waveCanvas && waveCtx) {
+                const ww = waveCanvas.offsetWidth;
+                const wh = waveCanvas.offsetHeight;
+                waveCtx.clearRect(0, 0, ww, wh);
+                const waveBars = 80;
+                const waveBarW = ww / waveBars;
+                const waveStep = freqData ? Math.floor(freqData.length / waveBars) : 0;
+                const waveGrad = waveCtx.createLinearGradient(0, wh, 0, 0);
+                waveGrad.addColorStop(0, 'rgba(255,255,255,0.15)');
+                waveGrad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+                waveGrad.addColorStop(1, 'rgba(255,255,255,0.5)');
+                waveCtx.fillStyle = waveGrad;
+                for (let i = 0; i < waveBars; i++) {
+                    const val = freqData ? freqData[i * waveStep] / 255 : (0.15 + Math.random() * 0.4);
+                    const barH = val * wh * 0.85;
+                    waveCtx.beginPath();
+                    waveCtx.roundRect(i * waveBarW + 1, (wh - barH) / 2, waveBarW - 2, barH, 2);
+                    waveCtx.fill();
+                }
+            }
+
             waveformRAF = requestAnimationFrame(draw);
         }
         draw();

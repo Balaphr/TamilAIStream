@@ -501,7 +501,7 @@ function restorePlaybackState() {
         userPaused = true;
         updatePlayPauseButton(false);
         if (currentPlaybackTrack) {
-            updateNowPlayingBar(currentPlaybackTrack.title || currentPlaybackTrack.name || '', currentStation || '');
+            updateNowPlayingBar(currentPlaybackTrack.title || currentPlaybackTrack.name || '', currentStation || '', false);
         }
         if (typeof GlobalPlayer !== 'undefined') {
             if (currentPlaybackTrack) {
@@ -688,7 +688,10 @@ function initAudioPlayer() {
                     GlobalPlayer.updateProgressUI();
                 }
             }
-            updateNowPlayingBarPause();
+            if (currentPlaybackTrack) {
+                const artistMovie = [currentPlaybackTrack.artist, currentPlaybackTrack.movie].filter(Boolean).join(' • ');
+                updateNowPlayingBar(currentPlaybackTrack.title || currentPlaybackTrack.name || '', artistMovie || currentStation || '');
+            }
             if (typeof GlobalPlayer !== 'undefined') {
                 // Immediate full sync: push the CURRENT track into GlobalPlayer
                 // and refresh thumbnail/title/movie in mini + full-screen player
@@ -751,7 +754,6 @@ function initAudioPlayer() {
             if (typeof MiniAudioPlayer !== 'undefined' && typeof MiniAudioPlayer.updateProgressUI === 'function') {
                 MiniAudioPlayer.updateProgressUI();
             }
-            updateNowPlayingBarPause();
         });
         audioPlayer.addEventListener('durationchange', () => {
             if (typeof YTMusic !== 'undefined') {
@@ -1765,7 +1767,7 @@ function updatePlayPauseButton(playing) {
     });
 }
 
-function updateNowPlayingBar(title, station) {
+function updateNowPlayingBar(title, station, showBar) {
     // Legacy bar
     const titleEl = document.querySelector('.now-playing-title');
     const stationEl = document.querySelector('.now-playing-station');
@@ -1778,6 +1780,10 @@ function updateNowPlayingBar(title, station) {
     const snpNext = document.getElementById('snpNext');
 
     if (slimBar && snpCurrent) {
+        if (showBar === false) {
+            slimBar.style.display = 'none';
+            return;
+        }
         slimBar.style.display = '';
         snpCurrent.textContent = 'Now Playing: ' + (title || '—');
 
@@ -1795,7 +1801,8 @@ function updateNowPlayingBar(title, station) {
 }
 
 function updateNowPlayingBarPause() {
-    // Slim bar has no play/pause button — it's purely informational
+    const slimBar = document.getElementById('slimNowPlaying');
+    if (slimBar) slimBar.style.display = 'none';
 }
 
 function hideNowPlayingBar() {
