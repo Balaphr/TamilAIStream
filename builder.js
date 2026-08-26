@@ -8939,31 +8939,473 @@ const AppBuilder = (() => {
     }
 
     function buildApp() {
-        _aiLog('Building application package...', 'info');
+        _aiLog('Building Windows .exe application package...', 'info');
+        _aiLog('Generating Electron project files...', 'info');
 
-        const buildData = {
-            settings: _settings,
-            manifest: _generateManifest(),
-            splashConfig: _generateSplashConfig(),
-            swConfig: _generateSWConfig(),
-            buildTime: new Date().toISOString(),
-            buildVersion: _settings.version
-        };
+        const manifest = _generateManifest();
+        const splash = _generateSplashConfig();
+        const sw = _generateSWConfig();
+        const files = {};
 
-        const blob = new Blob([JSON.stringify(buildData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
+        files['package.json'] = JSON.stringify({
+            name: (_settings.shortName || 'tamilaistream').toLowerCase().replace(/[^a-z0-9]/g, ''),
+            productName: _settings.appName || 'Tamil AI Stream',
+            version: _settings.version || '1.0.0',
+            description: _settings.description || 'Tamil AI Music Streaming Application',
+            main: 'main.js',
+            scripts: {
+                start: 'electron .',
+                build: 'electron-builder --win --publish never',
+                buildportable: 'electron-builder --win portable --publish never',
+                buildinstaller: 'electron-builder --win nsis --publish never'
+            },
+            build: {
+                appId: _settings.packageName || 'com.tamilaistream.app',
+                productName: _settings.appName || 'Tamil AI Stream',
+                win: {
+                    target: [
+                        { target: 'nsis', arch: ['x64'] },
+                        { target: 'portable', arch: ['x64'] }
+                    ],
+                    icon: 'icon.png',
+                    artifactName: '${productName}-${version}-Setup.${ext}'
+                },
+                nsis: {
+                    oneClick: false,
+                    allowToChangeInstallationDirectory: true,
+                    createDesktopShortcut: true,
+                    createStartMenuShortcut: true,
+                    shortcutName: _settings.appName || 'Tamil AI Stream',
+                    installerIcon: 'icon.png',
+                    uninstallerIcon: 'icon.png',
+                    installerHeaderIcon: 'icon.png'
+                },
+                directories: { output: 'dist' },
+                files: ['**/*', '!node_modules', '!dist', '!build']
+            },
+            devDependencies: {
+                electron: '^28.0.0',
+                'electron-builder': '^24.9.1'
+            },
+            author: _settings.appName || 'Tamil AI Stream',
+            license: 'MIT'
+        }, null, 2);
+
+        files['main.js'] = `const { app, BrowserWindow, ipcMain, session, protocol } = require('electron');
+const path = require('path');
+const url = require('url');
+
+let mainWindow;
+const WEBSITE_URL = '${_settings.websiteUrl || window.location.origin}';
+const APP_TITLE = ${JSON.stringify(_settings.appName || 'Tamil AI Stream')};
+const IS_DEV = process.argv.includes('--dev');
+
+function createWindow() {
+    mainWindow = new BrowserWindow({
+        width: 1200,
+        height: 800,
+        minWidth: 400,
+        minHeight: 300,
+        title: APP_TITLE,
+        icon: path.join(__dirname, 'icon.png'),
+        titleBarStyle: 'hiddenInset',
+        frame: process.platform === 'darwin' ? true : false,
+        backgroundColor: ${JSON.stringify(_settings.bgColor || '#080c1c')},
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true,
+            sandbox: true,
+            webSecurity: true
+        },
+        show: false
+    });
+
+    mainWindow.loadURL(WEBSITE_URL);
+
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.show();
+        ${_settings.splashEnabled === 'true' ? `
+        setTimeout(() => {
+            if (mainWindow) mainWindow.webContents.send('splash-done');
+        }, ${parseInt(_settings.splashDuration) || 2500});` : ''}
+    });
+
+    mainWindow.on('closed', () => { mainWindow = null; });
+
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        require('electron').shell.openExternal(url);
+        return { action: 'deny' };
+    });
+
+    if (IS_DEV) {
+        mainWindow.webContents.openDevTools();
+    }
+}
+
+app.whenReady().then(() => {
+    createWindow();
+    app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+});
+
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+});
+
+ipcMain.handle('get-app-version', () => app.getVersion());
+ipcMain.handle('get-app-name', () => APP_TITLE);
+ipcMain.handle('minimize-window', () => { if (mainWindow) mainWindow.minimize(); });
+ipcMain.handle('maximize-window', () => {
+    if (mainWindow) {
+        mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
+    }
+});
+ipcMain.handle('close-window', () => { if (mainWindow) mainWindow.close(); });
+`;
+
+        files['preload.js'] = `const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('electronAPI', {
+    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+    getAppName: () => ipcRenderer.invoke('get-app-name'),
+    minimize: () => ipcRenderer.invoke('minimize-window'),
+    maximize: () => ipcRenderer.invoke('maximize-window'),
+    close: () => ipcRenderer.invoke('close-window'),
+    isElectron: true,
+    platform: process.platform
+});
+`;
+
+        files['renderer.js'] = `// Electron titlebar controls
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.electronAPI && window.electronAPI.isElectron) {
+        const style = document.createElement('style');
+        style.textContent = \`
+            .electron-titlebar {
+                position: fixed; top: 0; left: 0; right: 0; height: 32px;
+                -webkit-app-region: drag; z-index: 99999;
+                background: ${_settings.bgColor || '#080c1c'};
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 0 8px; font-size: 12px; color: rgba(255,255,255,0.7);
+            }
+            .electron-titlebar .tb-title { margin-left: 80px; font-weight: 600; }
+            .electron-titlebar .tb-controls { -webkit-app-region: no-drag; display: flex; gap: 2px; }
+            .electron-titlebar .tb-btn {
+                width: 32px; height: 28px; display: flex; align-items: center; justify-content: center;
+                border: none; background: transparent; color: rgba(255,255,255,0.7); cursor: pointer;
+                border-radius: 4px; font-size: 14px;
+            }
+            .electron-titlebar .tb-btn:hover { background: rgba(255,255,255,0.1); }
+            .electron-titlebar .tb-btn.close:hover { background: #e81123; color: white; }
+            body { padding-top: 32px; }
+        \`;
+        document.head.appendChild(style);
+
+        const titlebar = document.createElement('div');
+        titlebar.className = 'electron-titlebar';
+        titlebar.innerHTML = \`
+            <span class="tb-title">\${window.electronAPI.getAppName ? '' : '${_settings.appName || 'Tamil AI Stream'}'}</span>
+            <div class="tb-controls">
+                <button class="tb-btn" onclick="window.electronAPI.minimize()">&#8211;</button>
+                <button class="tb-btn" onclick="window.electronAPI.maximize()">&#9633;</button>
+                <button class="tb-btn close" onclick="window.electronAPI.close()">&#10005;</button>
+            </div>
+        \`;
+        document.body.prepend(titlebar);
+    }
+});
+`;
+
+        files['index.html'] = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' ${_settings.websiteUrl || window.location.origin}; connect-src 'self' ${_settings.websiteUrl || window.location.origin} https://*.firebaseio.com https://*.googleapis.com; img-src 'self' ${_settings.websiteUrl || window.location.origin} data: blob: https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';">
+    <title>${_settings.appName || 'Tamil AI Stream'}</title>
+    <style>
+        body { margin: 0; padding: 0; background: ${_settings.bgColor || '#080c1c'}; overflow: hidden; }
+        #loading { display: flex; align-items: center; justify-content: center; height: 100vh;
+            flex-direction: column; gap: 16px; color: rgba(255,255,255,0.7); font-family: -apple-system, sans-serif; }
+        #loading .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: ${_settings.primaryColor || '#22d3ee'}; border-radius: 50%;
+            animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        ${_settings.splashEnabled === 'true' ? `
+        #splash { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center;
+            justify-content: center; flex-direction: column; gap: 20px;
+            background: ${_settings.splashBgColor || '#080c1c'}; transition: opacity 0.5s ease; }
+        #splash.hide { opacity: 0; pointer-events: none; }
+        #splash .splash-logo { width: 80px; height: 80px; border-radius: 20px;
+            background: linear-gradient(135deg, ${_settings.primaryColor || '#22d3ee'}, ${_settings.accentColor || '#34d399'});
+            display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; }
+        #splash .splash-name { font-size: 20px; font-weight: 700; color: white; font-family: -apple-system, sans-serif; }
+        #splash .splash-bar { width: 120px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+        #splash .splash-bar-fill { height: 100%; width: 0%; background: ${_settings.primaryColor || '#22d3ee'};
+            border-radius: 2px; animation: splash-load ${parseInt(_settings.splashDuration) || 2500}ms ease forwards; }
+        @keyframes splash-load { to { width: 100%; } }` : ''}
+    </style>
+</head>
+<body>
+    ${_settings.splashEnabled === 'true' ? `
+    <div id="splash">
+        <div class="splash-logo">&#9654;</div>
+        <div class="splash-name">${_settings.appName || 'Tamil AI Stream'}</div>
+        <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+    </div>` : ''}
+    <div id="loading"><div class="spinner"></div><span>Loading ${_settings.appName || 'Tamil AI Stream'}...</span></div>
+    <script>
+        ${_settings.splashEnabled === 'true' ? `
+        setTimeout(() => {
+            const splash = document.getElementById('splash');
+            if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 600); }
+        }, ${parseInt(_settings.splashDuration) || 2500});` : ''}
+        window.location.href = '${_settings.websiteUrl || window.location.origin}';
+    </script>
+    <script src="renderer.js"></script>
+</body>
+</html>`;
+
+        files['build.bat'] = `@echo off
+echo ========================================
+echo  ${_settings.appName || 'Tamil AI Stream'} - Windows Build
+echo ========================================
+echo.
+echo [1/3] Installing dependencies...
+call npm install
+if errorlevel 1 (echo ERROR: npm install failed & pause & exit /b 1)
+echo.
+echo [2/3] Building Windows .exe...
+call npx electron-builder --win --publish never
+if errorlevel 1 (echo ERROR: Build failed & pause & exit /b 1)
+echo.
+echo [3/3] Build complete!
+echo.
+echo Output files are in the "dist" folder:
+echo   - ${_settings.appName || 'Tamil AI Stream'} Setup.exe (Installer)
+echo   - ${_settings.appName || 'Tamil AI Stream'} Portable.exe (Portable)
+echo.
+echo You can also run: npm run buildportable (for portable .exe only)
+echo Or: npm run buildinstaller (for installer .exe only)
+echo.
+pause
+`;
+
+        files['build.sh'] = `#!/bin/bash
+echo "========================================"
+echo " ${_settings.appName || 'Tamil AI Stream'} - Build"
+echo "========================================"
+echo ""
+echo "[1/3] Installing dependencies..."
+npm install
+echo ""
+echo "[2/3] Building..."
+npx electron-builder --win --mac --linux --publish never
+echo ""
+echo "[3/3] Done! Check dist/ folder"
+`;
+
+        files['icon.png'] = '';
+        files['README.md'] = `# ${_settings.appName || 'Tamil AI Stream'} - Desktop Application
+
+## Quick Start (Windows)
+
+1. Make sure [Node.js](https://nodejs.org/) is installed (v16+)
+2. Double-click \`build.bat\`
+3. Wait for the build to complete
+4. Find the .exe in the \`dist\` folder
+
+## Manual Build
+
+\`\`\`bash
+npm install
+npm run build          # Both installer + portable
+npm run buildportable  # Portable .exe only
+npm run buildinstaller # NSIS installer only
+\`\`\`
+
+## Development Mode
+
+\`\`\`bash
+npm install
+npm start              # Opens app with DevTools
+\`\`\`
+
+## Build Output
+
+- **Installer**: \`dist/${_settings.appName || 'Tamil AI Stream'} Setup.exe\`
+- **Portable**: \`dist/${_settings.appName || 'Tamil AI Stream'} Portable.exe\`
+
+## App Settings
+
+- Version: ${_settings.version || '1.0.0'}
+- Package: ${_settings.packageName || 'com.tamilaistream.app'}
+- Website: ${_settings.websiteUrl || window.location.origin}
+- Theme: ${_settings.primaryColor || '#22d3ee'}
+- Offline Mode: ${_settings.offlineMode || 'true'}
+- Background Audio: ${_settings.bgAudio || 'true'}
+`;
+
+        files['.gitignore'] = 'node_modules/\ndist/\n*.log';
+
+        _aiLog('Packaging as zip download...', 'info');
+
+        const zipBlob = _createZip(files);
+        const zipUrl = URL.createObjectURL(zipBlob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = 'tamilaistream-build-' + _settings.version + '.json';
+        a.href = zipUrl;
+        a.download = (_settings.shortName || 'TamilAIStream').toLowerCase() + '-electron-' + (_settings.version || '1.0.0') + '.zip';
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        URL.revokeObjectURL(zipUrl);
 
         _settings._lastBuild = new Date().toISOString();
         DataStore.setApplication(_settings);
 
-        _aiLog('Build complete — downloaded as JSON', 'success');
-        showToast('Build downloaded!', 'success');
+        _aiLog('Windows .exe Electron project downloaded!', 'success');
+        _aiLog('To build: extract zip → run build.bat → find .exe in dist/', 'info');
+        showToast('Electron .exe project downloaded!', 'success');
         _updateBuildStatus();
+    }
+
+    function _createZip(files) {
+        const entries = [];
+        let offset = 0;
+
+        for (const [name, content] of Object.entries(files)) {
+            const nameBytes = new TextEncoder().encode(name);
+            const contentBytes = content ? new TextEncoder().encode(content) : new Uint8Array(0);
+            const compressed = _deflateRaw(contentBytes);
+
+            const crc = _crc32(contentBytes);
+            entries.push({ nameBytes, compressed, crc, uncompressedSize: contentBytes.length, compressedSize: compressed.length });
+        }
+
+        let centralSize = 0;
+        const centralHeaders = [];
+        let tempOffset = 0;
+
+        for (let i = 0; i < entries.length; i++) {
+            const e = entries[i];
+            const header = new Uint8Array(46 + e.nameBytes.length);
+            const view = new DataView(header.buffer);
+
+            view.setUint32(0, 0x02014b50, true);
+            view.setUint16(4, 20, true);
+            view.setUint16(6, 20, true);
+            view.setUint16(8, 0, true);
+            view.setUint16(10, 0, true);
+            view.setUint16(12, 0, true);
+            view.setUint32(16, e.crc, true);
+            view.setUint32(20, e.compressedSize, true);
+            view.setUint32(24, e.uncompressedSize, true);
+            view.setUint16(28, e.nameBytes.length, true);
+            view.setUint16(30, 0, true);
+            view.setUint16(32, 0, true);
+            view.setUint16(34, 0, true);
+            view.setUint16(36, 0, true);
+            view.setUint32(38, 0x20, true);
+            view.setUint32(42, tempOffset, true);
+            header.set(e.nameBytes, 46);
+
+            centralHeaders.push(header);
+            centralSize += header.length;
+            tempOffset += 30 + e.nameBytes.length + e.compressedSize;
+        }
+
+        const totalSize = tempOffset + centralSize + 22;
+        const zip = new Uint8Array(totalSize);
+        const zipView = new DataView(zip.buffer);
+        let pos = 0;
+
+        for (let i = 0; i < entries.length; i++) {
+            const e = entries[i];
+            const localHeader = new Uint8Array(30 + e.nameBytes.length);
+            const lv = new DataView(localHeader.buffer);
+
+            lv.setUint32(0, 0x04034b50, true);
+            lv.setUint16(4, 20, true);
+            lv.setUint16(6, 0, true);
+            lv.setUint16(8, 0, true);
+            lv.setUint16(10, 0, true);
+            lv.setUint32(14, e.crc, true);
+            lv.setUint32(18, e.compressedSize, true);
+            lv.setUint32(22, e.uncompressedSize, true);
+            lv.setUint16(26, e.nameBytes.length, true);
+            lv.setUint16(28, 0, true);
+            localHeader.set(e.nameBytes, 30);
+
+            zip.set(localHeader, pos);
+            pos += localHeader.length;
+            zip.set(e.compressed, pos);
+            pos += e.compressedSize;
+        }
+
+        for (const ch of centralHeaders) {
+            zip.set(ch, pos);
+            pos += ch.length;
+        }
+
+        zipView.setUint32(pos, 0x06054b50, true);
+        zipView.setUint16(pos + 4, 0, true);
+        zipView.setUint16(pos + 6, 0, true);
+        zipView.setUint16(pos + 8, entries.length, true);
+        zipView.setUint16(pos + 10, entries.length, true);
+        zipView.setUint32(pos + 12, centralSize, true);
+        zipView.setUint32(pos + 16, tempOffset, true);
+        zipView.setUint16(pos + 20, 0, true);
+
+        return new Blob([zip], { type: 'application/zip' });
+    }
+
+    function _crc32(bytes) {
+        let crc = 0xFFFFFFFF;
+        const table = _crc32._table || (_crc32._table = (() => {
+            const t = new Uint32Array(256);
+            for (let i = 0; i < 256; i++) {
+                let c = i;
+                for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+                t[i] = c;
+            }
+            return t;
+        })());
+        for (let i = 0; i < bytes.length; i++) {
+            crc = table[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+        }
+        return (crc ^ 0xFFFFFFFF) >>> 0;
+    }
+
+    function _deflateRaw(data) {
+        if (data.length === 0) return new Uint8Array(0);
+        const out = [];
+        let i = 0;
+        out.push(0x78, 0x01);
+        let pos = 0;
+        while (pos < data.length) {
+            const remaining = data.length - pos;
+            const blockLen = Math.min(32768, remaining);
+            const isLast = (pos + blockLen >= data.length);
+            out.push(isLast ? 0x01 : 0x00);
+            out.push(blockLen & 0xFF, (blockLen >> 8) & 0xFF);
+            out.push((~blockLen) & 0xFF, ((~blockLen) >> 8) & 0xFF);
+            for (let j = 0; j < blockLen; j++) {
+                out.push(data[pos + j]);
+            }
+            pos += blockLen;
+        }
+        const adler = _adler32(data);
+        out.push((adler >> 24) & 0xFF, (adler >> 16) & 0xFF, (adler >> 8) & 0xFF, adler & 0xFF);
+        return new Uint8Array(out);
+    }
+
+    function _adler32(data) {
+        let a = 1, b = 0;
+        for (let i = 0; i < data.length; i++) {
+            a = (a + data[i]) % 65521;
+            b = (b + a) % 65521;
+        }
+        return (b << 16) | a;
     }
 
     function _generateManifest() {
