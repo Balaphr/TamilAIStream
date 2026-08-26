@@ -506,15 +506,6 @@ function navigateTo(page) {
         return;
     }
 
-    // Application opens center overview + right panel settings
-    if (page === 'application') {
-        document.querySelectorAll(`[data-page="application"]`).forEach(el => el.classList.add('active'));
-        document.getElementById('applicationPage').style.display = 'block';
-        if (!_pageLoaded[page]) { _pageLoaded[page] = true; _loadPageData(page); }
-        _openApplicationInRightPanel();
-        return;
-    }
-
     // Close right panel when navigating to a center page
     closeRightPanel();
 
