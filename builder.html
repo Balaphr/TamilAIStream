@@ -274,6 +274,9 @@
                             <button class="builder-sidebar-item" data-page="miniplayersettings">
                                 <i class="fas fa-play-circle"></i> Mini Player
                             </button>
+                            <button class="builder-sidebar-item" data-page="application">
+                                <i class="fas fa-mobile-screen-button"></i> Application
+                            </button>
                         </div>
                     </div>
                     <div class="builder-sidebar-section">
@@ -3096,7 +3099,549 @@
     </div>
 
     <!-- Song Preview Player -->
-    <!-- ========== TRASH PAGE ========== -->
+                    <!-- ========== APPLICATION PAGE ========== -->
+                    <div class="builder-page" id="applicationPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title"><i class="fas fa-mobile-screen-button"></i> Application</h1>
+                            <p class="builder-page-subtitle">Configure and build your mobile application from the existing PWS website</p>
+                        </div>
+
+                        <!-- Application AI Bot -->
+                        <div class="app-ai-bot-card">
+                            <div class="app-ai-bot-header">
+                                <div class="app-ai-bot-avatar"><i class="fas fa-robot"></i></div>
+                                <div class="app-ai-bot-info">
+                                    <strong>Application AI Bot</strong>
+                                    <span>Automatically applies changes when you modify settings</span>
+                                </div>
+                                <div class="app-ai-bot-status" id="appAiBotStatus">
+                                    <span class="app-status-dot"></span> Ready
+                                </div>
+                            </div>
+                            <div class="app-ai-bot-log" id="appAiBotLog">
+                                <div class="app-bot-msg">AI Bot initialized. Make changes and I will auto-apply them.</div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="app-action-bar">
+                            <button class="builder-btn app-action-btn preview" onclick="AppBuilder.preview()">
+                                <i class="fas fa-eye"></i> Preview
+                            </button>
+                            <button class="builder-btn app-action-btn draft" onclick="AppBuilder.saveDraft()">
+                                <i class="fas fa-save"></i> Save Draft
+                            </button>
+                            <button class="builder-btn app-action-btn publish" onclick="AppBuilder.publish()">
+                                <i class="fas fa-cloud-arrow-up"></i> Publish
+                            </button>
+                            <button class="builder-btn app-action-btn build" onclick="AppBuilder.buildApp()">
+                                <i class="fas fa-box-archive"></i> Build App
+                            </button>
+                        </div>
+
+                        <!-- App Identity -->
+                        <div class="builder-content-card" data-app-section="identity">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-tag"></i> App Identity</h3>
+                                <span class="app-section-badge">Core</span>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">App Name</label>
+                                        <input type="text" class="form-input" id="appAppName" placeholder="Tamil AI Stream" data-app-field="appName">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">App Short Name</label>
+                                        <input type="text" class="form-input" id="appShortName" placeholder="TAIS" maxlength="12" data-app-field="shortName">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">App Description</label>
+                                        <input type="text" class="form-input" id="appDescription" placeholder="Tamil music streaming app" data-app-field="description">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">App Version</label>
+                                        <input type="text" class="form-input" id="appVersion" placeholder="1.0.0" data-app-field="version">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Package Name (Android)</label>
+                                        <input type="text" class="form-input" id="appPackageName" placeholder="com.tamilaistream.app" data-app-field="packageName">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Website URL</label>
+                                        <input type="url" class="form-input" id="appWebsiteUrl" placeholder="https://tamilaistream.com" data-app-field="websiteUrl">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- App Icon & Logo -->
+                        <div class="builder-content-card" data-app-section="branding">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-image"></i> App Icon & Logo</h3>
+                                <span class="app-section-badge">Branding</span>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">App Icon (512x512 PNG)</label>
+                                        <div class="app-icon-upload" id="appIconUpload">
+                                            <div class="app-icon-preview" id="appIconPreview">
+                                                <i class="fas fa-mobile-screen-button"></i>
+                                            </div>
+                                            <input type="file" id="appIconFile" accept="image/png,image/jpeg" class="app-file-input" data-app-field="icon">
+                                            <button type="button" class="builder-btn small" onclick="document.getElementById('appIconFile').click()">Choose Icon</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Splash Screen Logo</label>
+                                        <div class="app-icon-upload" id="appSplashLogoUpload">
+                                            <div class="app-icon-preview" id="appSplashLogoPreview">
+                                                <i class="fas fa-play-circle"></i>
+                                            </div>
+                                            <input type="file" id="appSplashLogoFile" accept="image/png,image/jpeg" class="app-file-input" data-app-field="splashLogo">
+                                            <button type="button" class="builder-btn small" onclick="document.getElementById('appSplashLogoFile').click()">Choose Logo</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Favicon</label>
+                                        <div class="app-icon-upload" id="appFaviconUpload">
+                                            <div class="app-icon-preview small" id="appFaviconPreview">
+                                                <i class="fas fa-star"></i>
+                                            </div>
+                                            <input type="file" id="appFaviconFile" accept="image/png,image/jpeg,image/svg+xml" class="app-file-input" data-app-field="favicon">
+                                            <button type="button" class="builder-btn small" onclick="document.getElementById('appFaviconFile').click()">Choose Favicon</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Maskable Icon</label>
+                                        <div class="app-icon-upload" id="appMaskableUpload">
+                                            <div class="app-icon-preview" id="appMaskablePreview">
+                                                <i class="fas fa-expand"></i>
+                                            </div>
+                                            <input type="file" id="appMaskableFile" accept="image/png" class="app-file-input" data-app-field="maskableIcon">
+                                            <button type="button" class="builder-btn small" onclick="document.getElementById('appMaskableFile').click()">Choose Icon</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Splash Screen -->
+                        <div class="builder-content-card" data-app-section="splash">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-rocket"></i> Splash Screen</h3>
+                                <span class="app-section-badge">Startup</span>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Enable Splash Screen</label>
+                                        <select class="form-input" id="appSplashEnabled" data-app-field="splashEnabled"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Splash Duration (ms)</label>
+                                        <input type="number" class="form-input" id="appSplashDuration" min="1000" max="5000" step="100" data-app-field="splashDuration">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Background Color</label>
+                                        <input type="color" class="form-input app-color-input" id="appSplashBgColor" value="#080c1c" data-app-field="splashBgColor">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Animation Style</label>
+                                        <select class="form-input" id="appSplashAnimation" data-app-field="splashAnimation">
+                                            <option value="fade">Fade In</option>
+                                            <option value="scale">Scale Up</option>
+                                            <option value="slide">Slide Up</option>
+                                            <option value="pulse">Pulse</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Show Loading Bar</label>
+                                        <select class="form-input" id="appSplashLoadingBar" data-app-field="splashLoadingBar"><option value="true">Yes</option><option value="false">No</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Show App Name</label>
+                                        <select class="form-input" id="appSplashShowName" data-app-field="splashShowName"><option value="true">Yes</option><option value="false">No</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Theme -->
+                        <div class="builder-content-card" data-app-section="theme">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-palette"></i> App Theme</h3>
+                                <span class="app-section-badge">Appearance</span>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Theme Mode</label>
+                                        <select class="form-input" id="appThemeMode" data-app-field="themeMode">
+                                            <option value="dark">Dark</option>
+                                            <option value="light">Light</option>
+                                            <option value="system">Follow System</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Primary Color</label>
+                                        <input type="color" class="form-input app-color-input" id="appPrimaryColor" value="#22d3ee" data-app-field="primaryColor">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Accent Color</label>
+                                        <input type="color" class="form-input app-color-input" id="appAccentColor" value="#34d399" data-app-field="accentColor">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Background Color</label>
+                                        <input type="color" class="form-input app-color-input" id="appBgColor" value="#080c1c" data-app-field="bgColor">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Status Bar Style</label>
+                                        <select class="form-input" id="appStatusBar" data-app-field="statusBarStyle">
+                                            <option value="dark">Dark</option>
+                                            <option value="light">Light</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Navigation Bar Color</label>
+                                        <input type="color" class="form-input app-color-input" id="appNavBarColor" value="#0a0e1a" data-app-field="navBarColor">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Home Layout -->
+                        <div class="builder-content-card" data-app-section="homelayout">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-house"></i> Home Layout</h3>
+                                <span class="app-section-badge">Layout</span>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Home Style</label>
+                                        <select class="form-input" id="appHomeStyle" data-app-field="homeStyle">
+                                            <option value="standard">Standard (AI Home)</option>
+                                            <option value="minimal">Minimal</option>
+                                            <option value="grid">Grid Focus</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Show Hero Carousel</label>
+                                        <select class="form-input" id="appShowHero" data-app-field="showHero"><option value="true">Yes</option><option value="false">No</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Show FM Section</label>
+                                        <select class="form-input" id="appShowFm" data-app-field="showFm"><option value="true">Yes</option><option value="false">No</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Show Recently Added</label>
+                                        <select class="form-input" id="appShowRecent" data-app-field="showRecent"><option value="true">Yes</option><option value="false">No</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Show AI Recommendations</label>
+                                        <select class="form-input" id="appShowAiRec" data-app-field="showAiRec"><option value="true">Yes</option><option value="false">No</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Show Playlists</label>
+                                        <select class="form-input" id="appShowPlaylists" data-app-field="showPlaylists"><option value="true">Yes</option><option value="false">No</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Navigation -->
+                        <div class="builder-content-card" data-app-section="navigation">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-bars"></i> Bottom Navigation</h3>
+                                <span class="app-section-badge">Navigation</span>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Home</label>
+                                        <select class="form-input" id="appNavHome" data-app-field="navHome"><option value="true">Visible</option><option value="false">Hidden</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">FM / Radio</label>
+                                        <select class="form-input" id="appNavFm" data-app-field="navFm"><option value="true">Visible</option><option value="false">Hidden</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Music / Songs</label>
+                                        <select class="form-input" id="appNavMusic" data-app-field="navMusic"><option value="true">Visible</option><option value="false">Hidden</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Search</label>
+                                        <select class="form-input" id="appNavSearch" data-app-field="navSearch"><option value="true">Visible</option><option value="false">Hidden</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Account / Profile</label>
+                                        <select class="form-input" id="appNavAccount" data-app-field="navAccount"><option value="true">Visible</option><option value="false">Hidden</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Navigation Style</label>
+                                        <select class="form-input" id="appNavStyle" data-app-field="navStyle">
+                                            <option value="icons">Icons + Labels</option>
+                                            <option value="icons-only">Icons Only</option>
+                                            <option value="labels">Labels Only</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Player Settings -->
+                        <div class="builder-content-card" data-app-section="player">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-headphones"></i> Player Settings</h3>
+                                <span class="app-section-badge">Playback</span>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Full Screen Player</label>
+                                        <select class="form-input" id="appFullScreenPlayer" data-app-field="fullScreenPlayer"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Background Audio</label>
+                                        <select class="form-input" id="appBgAudio" data-app-field="bgAudio"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Lock Screen Controls</label>
+                                        <select class="form-input" id="appLockScreen" data-app-field="lockScreenControls"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Mini Player</label>
+                                        <select class="form-input" id="appMiniPlayer" data-app-field="miniPlayer"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Sleep Timer</label>
+                                        <select class="form-input" id="appSleepTimer" data-app-field="sleepTimer"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Audio Quality</label>
+                                        <select class="form-input" id="appAudioQuality" data-app-field="audioQuality">
+                                            <option value="auto">Auto</option>
+                                            <option value="high">High (320kbps)</option>
+                                            <option value="medium">Medium (192kbps)</option>
+                                            <option value="low">Low (128kbps)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notifications -->
+                        <div class="builder-content-card" data-app-section="notifications">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-bell"></i> Notifications</h3>
+                                <span class="app-section-badge">Engagement</span>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Enable Notifications</label>
+                                        <select class="form-input" id="appNotifications" data-app-field="notifications"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">New Release Alerts</label>
+                                        <select class="form-input" id="appNewReleaseAlert" data-app-field="newReleaseAlert"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Recommendation Push</label>
+                                        <select class="form-input" id="appRecPush" data-app-field="recPush"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">FM Live Alerts</label>
+                                        <select class="form-input" id="appFmAlert" data-app-field="fmAlert"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Authentication -->
+                        <div class="builder-content-card" data-app-section="auth">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-lock"></i> Login / Authentication</h3>
+                                <span class="app-section-badge">Security</span>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Enable Login</label>
+                                        <select class="form-input" id="appLoginEnabled" data-app-field="loginEnabled"><option value="true">Enabled</option><option value="false">Disabled (Guest Mode)</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Google Sign-In</label>
+                                        <select class="form-input" id="appGoogleLogin" data-app-field="googleLogin"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Email/Password</label>
+                                        <select class="form-input" id="appEmailLogin" data-app-field="emailLogin"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Guest Mode</label>
+                                        <select class="form-input" id="appGuestMode" data-app-field="guestMode"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- App Settings -->
+                        <div class="builder-content-card" data-app-section="appsettings">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-gear"></i> App Settings</h3>
+                                <span class="app-section-badge">General</span>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Allow Downloads</label>
+                                        <select class="form-input" id="appAllowDownloads" data-app-field="allowDownloads"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Offline Mode</label>
+                                        <select class="form-input" id="appOfflineMode" data-app-field="offlineMode"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Share Button</label>
+                                        <select class="form-input" id="appShareButton" data-app-field="shareButton"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Analytics Tracking</label>
+                                        <select class="form-input" id="appAnalytics" data-app-field="analytics"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Cache Strategy</label>
+                                        <select class="form-input" id="appCacheStrategy" data-app-field="cacheStrategy">
+                                            <option value="aggressive">Aggressive (Fast)</option>
+                                            <option value="balanced">Balanced</option>
+                                            <option value="minimal">Minimal (Fresh)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Auto-Update Check</label>
+                                        <select class="form-input" id="appAutoUpdate" data-app-field="autoUpdate"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mobile Responsive -->
+                        <div class="builder-content-card" data-app-section="responsive">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-mobile-alt"></i> Mobile Responsive Settings</h3>
+                                <span class="app-section-badge">Display</span>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Safe Area Padding</label>
+                                        <select class="form-input" id="appSafeArea" data-app-field="safeArea"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">StatusBar Overlay</label>
+                                        <select class="form-input" id="appStatusBarOverlay" data-app-field="statusBarOverlay"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Landscape Support</label>
+                                        <select class="form-input" id="appLandscape" data-app-field="landscape"><option value="portrait">Portrait Only</option><option value="both">Both Orientations</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Tablet Layout</label>
+                                        <select class="form-input" id="appTabletLayout" data-app-field="tabletLayout">
+                                            <option value="responsive">Responsive</option>
+                                            <option value="compact">Compact</option>
+                                            <option value="expanded">Expanded</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Haptic Feedback</label>
+                                        <select class="form-input" id="appHaptic" data-app-field="haptic"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Gestures (Swipe Nav)</label>
+                                        <select class="form-input" id="appGestures" data-app-field="gestures"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Auto Update -->
+                        <div class="builder-content-card" data-app-section="aiupdate">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-wand-magic-sparkles"></i> AI Auto Update</h3>
+                                <span class="app-section-badge">AI</span>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Auto-Optimize Images</label>
+                                        <select class="form-input" id="appAiOptimizeImages" data-app-field="aiOptimizeImages"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Smart Caching</label>
+                                        <select class="form-input" id="appAiSmartCache" data-app-field="aiSmartCache"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Auto-Apply Builder Changes</label>
+                                        <select class="form-input" id="appAiAutoApply" data-app-field="aiAutoApply"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Performance Monitoring</label>
+                                        <select class="form-input" id="appAiPerfMonitor" data-app-field="aiPerfMonitor"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Content Sync</label>
+                                        <select class="form-input" id="appAiContentSync" data-app-field="aiContentSync"><option value="true">Enabled</option><option value="false">Disabled</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Update Frequency</label>
+                                        <select class="form-input" id="appAiUpdateFreq" data-app-field="aiUpdateFreq">
+                                            <option value="realtime">Real-time</option>
+                                            <option value="5">Every 5 minutes</option>
+                                            <option value="15">Every 15 minutes</option>
+                                            <option value="60">Every hour</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Build Status -->
+                        <div class="builder-content-card" data-app-section="buildstatus">
+                            <div class="builder-card-header">
+                                <h3><i class="fas fa-chart-line"></i> Build Status</h3>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="app-build-info">
+                                    <div class="app-build-row">
+                                        <span class="app-build-label">Last Saved:</span>
+                                        <span class="app-build-value" id="appLastSaved">Never</span>
+                                    </div>
+                                    <div class="app-build-row">
+                                        <span class="app-build-label">Last Published:</span>
+                                        <span class="app-build-value" id="appLastPublished">Never</span>
+                                    </div>
+                                    <div class="app-build-row">
+                                        <span class="app-build-label">Last Build:</span>
+                                        <span class="app-build-value" id="appLastBuild">Never</span>
+                                    </div>
+                                    <div class="app-build-row">
+                                        <span class="app-build-label">Draft Status:</span>
+                                        <span class="app-build-value" id="appDraftStatus">No draft</span>
+                                    </div>
+                                    <div class="app-build-row">
+                                        <span class="app-build-label">Changes Applied:</span>
+                                        <span class="app-build-value" id="appChangesCount">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== TRASH PAGE ========== -->
     <div class="builder-page" id="trashPage" style="display:none;">
         <div class="builder-page-header">
             <h1 class="builder-page-title"><i class="fas fa-trash-can-arrow-up"></i> Trash</h1>

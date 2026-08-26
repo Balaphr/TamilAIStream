@@ -41,7 +41,8 @@ const DataStore = {
         NEW_ALBUMS: 'tamilAIStream_newAlbums',
         FAVORITES: 'tamilAIStream_favorites',
         TRASH: 'tamilAIStream_trash',
-        DELETED_IDS: 'tamilAIStream_deletedIds'
+        DELETED_IDS: 'tamilAIStream_deletedIds',
+        APPLICATION: 'tamilAIStream_application'
     },
 
     get(key) {
@@ -210,6 +211,9 @@ const DataStore = {
 
     getDeletedIds() { return this.get(this.KEYS.DELETED_IDS) || {}; },
     setDeletedIds(data) { this.set(this.KEYS.DELETED_IDS, data); },
+
+    getApplication() { return this.get(this.KEYS.APPLICATION) || {}; },
+    setApplication(data) { this.set(this.KEYS.APPLICATION, data); },
 
     // Move an item to Trash instead of permanently deleting it
     moveToTrash(item, type) {

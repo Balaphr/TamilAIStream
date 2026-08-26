@@ -532,7 +532,8 @@ function navigateTo(page) {
         'analytics': 'analyticsPage',
         'musiccollections': 'musicCollectionsPage',
         'site360': 'site360Page',
-        'aiwebflow': 'aiwebflowPage'
+        'aiwebflow': 'aiwebflowPage',
+        'application': 'applicationPage'
     };
 
     const pageId = pageMap[page];
@@ -576,6 +577,7 @@ function _loadPageData(page) {
     if (page === 'analytics') { loadAnalyticsData(); initAnalyticsTabs(); }
     if (page === 'site360' && typeof Site360 !== 'undefined') Site360.init();
     if (page === 'aiwebflow' && typeof AIWebflow !== 'undefined') AIWebflow.activate();
+    if (page === 'application') AppBuilder.loadApplicationSettings();
     if (page === 'trash') loadTrashPage();
 }
 
@@ -2647,6 +2649,9 @@ function initBuilder() {
     // Initialize publish state
     getPublishState();
     updatePublishUI();
+
+    // Initialize Application Builder
+    if (typeof AppBuilder !== 'undefined') AppBuilder.init();
 
     // Load dashboard by default
     navigateTo('dashboard');
@@ -8668,3 +8673,352 @@ const AIDuplicateScan = {
     }
 };
 if (typeof window !== 'undefined') window.AIDuplicateScan = AIDuplicateScan;
+
+// ============================================
+// Application Builder — Mobile App Configuration
+// ============================================
+const AppBuilder = (() => {
+    let _settings = {};
+    let _changeCount = 0;
+    let _aiLogEl = null;
+    let _debounceTimers = {};
+
+    const DEFAULTS = {
+        appName: 'Tamil AI Stream',
+        shortName: 'TAIS',
+        description: 'Tamil music streaming app with AI-powered recommendations',
+        version: '1.0.0',
+        packageName: 'com.tamilaistream.app',
+        websiteUrl: window.location.origin,
+        icon: '',
+        splashLogo: '',
+        favicon: '',
+        maskableIcon: '',
+        splashEnabled: 'true',
+        splashDuration: 2500,
+        splashBgColor: '#080c1c',
+        splashAnimation: 'fade',
+        splashLoadingBar: 'true',
+        splashShowName: 'true',
+        themeMode: 'dark',
+        primaryColor: '#22d3ee',
+        accentColor: '#34d399',
+        bgColor: '#080c1c',
+        statusBarStyle: 'dark',
+        navBarColor: '#0a0e1a',
+        homeStyle: 'standard',
+        showHero: 'true',
+        showFm: 'true',
+        showRecent: 'true',
+        showAiRec: 'true',
+        showPlaylists: 'true',
+        navHome: 'true',
+        navFm: 'true',
+        navMusic: 'true',
+        navSearch: 'true',
+        navAccount: 'true',
+        navStyle: 'icons',
+        fullScreenPlayer: 'true',
+        bgAudio: 'true',
+        lockScreenControls: 'true',
+        miniPlayer: 'true',
+        sleepTimer: 'true',
+        audioQuality: 'auto',
+        notifications: 'true',
+        newReleaseAlert: 'true',
+        recPush: 'true',
+        fmAlert: 'true',
+        loginEnabled: 'true',
+        googleLogin: 'true',
+        emailLogin: 'true',
+        guestMode: 'true',
+        allowDownloads: 'false',
+        offlineMode: 'true',
+        shareButton: 'true',
+        analytics: 'true',
+        cacheStrategy: 'aggressive',
+        autoUpdate: 'true',
+        safeArea: 'true',
+        statusBarOverlay: 'true',
+        landscape: 'portrait',
+        tabletLayout: 'responsive',
+        haptic: 'true',
+        gestures: 'true',
+        aiOptimizeImages: 'true',
+        aiSmartCache: 'true',
+        aiAutoApply: 'true',
+        aiPerfMonitor: 'true',
+        aiContentSync: 'true',
+        aiUpdateFreq: 'realtime'
+    };
+
+    function init() {
+        _settings = { ...DEFAULTS, ...DataStore.getApplication() };
+        _aiLogEl = document.getElementById('appAiBotLog');
+        _bindFieldListeners();
+        _updateBuildStatus();
+    }
+
+    function _bindFieldListeners() {
+        document.querySelectorAll('[data-app-field]').forEach(el => {
+            const handler = (e) => {
+                const field = e.target.dataset.appField;
+                let value = e.target.type === 'file' ? '' : e.target.value;
+                if (e.target.type === 'file' && e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        value = ev.target.result;
+                        _settings[field] = value;
+                        _onFieldChanged(field, value);
+                        _updateIconPreview(field, value);
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                    return;
+                }
+                _settings[field] = value;
+                _onFieldChanged(field, value);
+            };
+            el.addEventListener('change', handler);
+            if (el.type !== 'file') {
+                el.addEventListener('input', debounce(handler, 500));
+            }
+        });
+    }
+
+    function debounce(fn, delay) {
+        return function(...args) {
+            clearTimeout(this._debounceTimer);
+            this._debounceTimer = setTimeout(() => fn.apply(this, args), delay);
+        };
+    }
+
+    function _onFieldChanged(field, value) {
+        _changeCount++;
+        document.getElementById('appChangesCount').textContent = _changeCount;
+        _aiLog(`Setting "${field}" updated → ${typeof value === 'string' && value.length > 50 ? value.slice(0, 50) + '...' : value}`, 'info');
+        _applyToManifest();
+    }
+
+    function _updateIconPreview(field, value) {
+        const map = {
+            icon: 'appIconPreview',
+            splashLogo: 'appSplashLogoPreview',
+            favicon: 'appFaviconPreview',
+            maskableIcon: 'appMaskablePreview'
+        };
+        const previewId = map[field];
+        if (!previewId || !value) return;
+        const el = document.getElementById(previewId);
+        if (el) el.innerHTML = '<img src="' + value + '" alt="Preview">';
+    }
+
+    function _aiLog(msg, type) {
+        if (!_aiLogEl) return;
+        const cls = type || '';
+        _aiLogEl.innerHTML += '<div class="app-bot-msg ' + cls + '">' + msg + '</div>';
+        _aiLogEl.scrollTop = _aiLogEl.scrollHeight;
+    }
+
+    function _applyToManifest() {
+        try {
+            const manifest = {
+                name: _settings.appName,
+                short_name: _settings.shortName,
+                description: _settings.description,
+                start_url: _settings.websiteUrl || window.location.origin,
+                display: 'standalone',
+                orientation: _settings.landscape === 'both' ? 'any' : 'portrait',
+                background_color: _settings.bgColor,
+                theme_color: _settings.primaryColor,
+                icons: [],
+                categories: ['music', 'entertainment']
+            };
+            if (_settings.icon) manifest.icons.push({ src: _settings.icon, sizes: '512x512', type: 'image/png', purpose: 'any' });
+            if (_settings.maskableIcon) manifest.icons.push({ src: _settings.maskableIcon, sizes: '512x512', type: 'image/png', purpose: 'maskable' });
+            if (_settings.favicon) manifest.icons.push({ src: _settings.favicon, sizes: '192x192', type: 'image/png' });
+
+            const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            let link = document.querySelector('link[rel="manifest"]');
+            if (link) {
+                URL.revokeObjectURL(link.href);
+                link.href = url;
+            } else {
+                link = document.createElement('link');
+                link.rel = 'manifest';
+                link.href = url;
+                document.head.appendChild(link);
+            }
+            _aiLog('Manifest applied dynamically', 'success');
+        } catch (e) {
+            _aiLog('Manifest apply error: ' + e.message, 'warning');
+        }
+    }
+
+    function _updateBuildStatus() {
+        const saved = DataStore.getApplication();
+        document.getElementById('appLastSaved').textContent = saved._lastSaved ? new Date(saved._lastSaved).toLocaleString() : 'Never';
+        document.getElementById('appLastPublished').textContent = saved._lastPublished ? new Date(saved._lastPublished).toLocaleString() : 'Never';
+        document.getElementById('appLastBuild').textContent = saved._lastBuild ? new Date(saved._lastBuild).toLocaleString() : 'Never';
+        document.getElementById('appDraftStatus').textContent = saved._hasDraft ? 'Draft exists' : 'No draft';
+    }
+
+    function loadApplicationSettings() {
+        _settings = { ...DEFAULTS, ...DataStore.getApplication() };
+        document.querySelectorAll('[data-app-field]').forEach(el => {
+            const field = el.dataset.appField;
+            if (_settings[field] !== undefined && el.type !== 'file') {
+                el.value = _settings[field];
+            }
+        });
+        document.querySelectorAll('[data-app-field][type="file"]').forEach(el => {
+            const field = el.dataset.appField;
+            if (_settings[field]) {
+                _updateIconPreview(field, _settings[field]);
+            }
+        });
+        _updateBuildStatus();
+        _changeCount = 0;
+        document.getElementById('appChangesCount').textContent = '0';
+    }
+
+    function saveApplicationSettings() {
+        _settings._lastSaved = new Date().toISOString();
+        _settings._hasDraft = false;
+        DataStore.setApplication(_settings);
+        _aiLog('Settings saved to storage', 'success');
+        showToast('Application settings saved', 'success');
+        _updateBuildStatus();
+        syncToLiveWebsite();
+    }
+
+    function preview() {
+        _aiLog('Generating preview...', 'info');
+        const params = new URLSearchParams();
+        Object.entries(_settings).forEach(([k, v]) => {
+            if (k.startsWith('_') || !v) return;
+            params.set(k, v);
+        });
+        const previewUrl = (_settings.websiteUrl || window.location.origin) + '?appPreview=1&' + params.toString();
+        window.open(previewUrl, '_blank', 'width=400,height=800');
+        _aiLog('Preview opened in new window', 'success');
+        showToast('Preview opened', 'info');
+    }
+
+    function saveDraft() {
+        _settings._hasDraft = true;
+        _settings._lastSaved = new Date().toISOString();
+        DataStore.setApplication(_settings);
+        _aiLog('Draft saved', 'success');
+        showToast('Draft saved', 'success');
+        _updateBuildStatus();
+    }
+
+    function publish() {
+        _aiLog('Publishing application...', 'info');
+        _settings._lastPublished = new Date().toISOString();
+        _settings._hasDraft = false;
+        DataStore.setApplication(_settings);
+
+        // Generate and inject manifest
+        _applyToManifest();
+
+        // Generate splash screen config
+        _generateSplashConfig();
+
+        // Generate service worker config
+        _generateSWConfig();
+
+        _aiLog('Application published successfully', 'success');
+        showToast('Application published!', 'success');
+        _updateBuildStatus();
+        syncToLiveWebsite();
+    }
+
+    function buildApp() {
+        _aiLog('Building application package...', 'info');
+
+        const buildData = {
+            settings: _settings,
+            manifest: _generateManifest(),
+            splashConfig: _generateSplashConfig(),
+            swConfig: _generateSWConfig(),
+            buildTime: new Date().toISOString(),
+            buildVersion: _settings.version
+        };
+
+        const blob = new Blob([JSON.stringify(buildData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'tamilaistream-build-' + _settings.version + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+
+        _settings._lastBuild = new Date().toISOString();
+        DataStore.setApplication(_settings);
+
+        _aiLog('Build complete — downloaded as JSON', 'success');
+        showToast('Build downloaded!', 'success');
+        _updateBuildStatus();
+    }
+
+    function _generateManifest() {
+        return {
+            name: _settings.appName,
+            short_name: _settings.shortName,
+            description: _settings.description,
+            start_url: _settings.websiteUrl || window.location.origin,
+            display: 'standalone',
+            orientation: _settings.landscape === 'both' ? 'any' : 'portrait',
+            background_color: _settings.bgColor,
+            theme_color: _settings.primaryColor,
+            scope: '/',
+            lang: 'en',
+            dir: 'ltr',
+            categories: ['music', 'entertainment'],
+            prefer_related_applications: false,
+            icons: [
+                { src: _settings.icon || '/icon-192.png', sizes: '192x192', type: 'image/png' },
+                { src: _settings.icon || '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+                { src: _settings.maskableIcon || _settings.icon || '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+            ],
+            shortcuts: [
+                { name: 'FM Radio', url: '/?tab=fm', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+                { name: 'Search', url: '/?tab=search', icons: [{ src: '/icon-192.png', sizes: '192x192' }] }
+            ]
+        };
+    }
+
+    function _generateSplashConfig() {
+        return {
+            enabled: _settings.splashEnabled === 'true',
+            duration: parseInt(_settings.splashDuration) || 2500,
+            backgroundColor: _settings.splashBgColor,
+            animation: _settings.splashAnimation,
+            showLoadingBar: _settings.splashLoadingBar === 'true',
+            showAppName: _settings.splashShowName === 'true',
+            logo: _settings.splashLogo,
+            appName: _settings.appName,
+            accentColor: _settings.primaryColor
+        };
+    }
+
+    function _generateSWConfig() {
+        return {
+            cacheStrategy: _settings.cacheStrategy,
+            offlineMode: _settings.offlineMode === 'true',
+            autoUpdate: _settings.autoUpdate === 'true',
+            aiOptimize: _settings.aiOptimizeImages === 'true',
+            aiSmartCache: _settings.aiSmartCache === 'true',
+            version: _settings.version
+        };
+    }
+
+    return {
+        init, loadApplicationSettings, saveApplicationSettings,
+        preview, saveDraft, publish, buildApp
+    };
+})();
+
+if (typeof window !== 'undefined') window.AppBuilder = AppBuilder;
