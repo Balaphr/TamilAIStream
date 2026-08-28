@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexvora AI</title>
+    <meta name="description" content="Nexvora AI — Intelligent Assistant Platform">
+    <meta name="theme-color" content="#0a0e1a">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="nexvora.css">
+</head>
+<body>
+    <!-- Auth Gate -->
+    <div class="nexvora-auth-gate" id="authGate">
+        <div class="nexvora-auth-bg">
+            <canvas id="nexvora-particles"></canvas>
+            <div class="nexvora-auth-glow g1"></div>
+            <div class="nexvora-auth-glow g2"></div>
+            <div class="nexvora-auth-glow g3"></div>
+        </div>
+        <div class="nexvora-auth-card">
+            <div class="nexvora-auth-logo">
+                <div class="nexvora-logo-mark"><i class="fa-solid fa-bolt"></i></div>
+                <h1>Nexvora <span>AI</span></h1>
+                <p>Intelligent Assistant Platform</p>
+            </div>
+            <div class="nexvora-auth-body" id="authLoginForm">
+                <div class="nexvora-auth-welcome">
+                    <h2>Welcome Back</h2>
+                    <p>Sign in to access your AI workspace</p>
+                </div>
+                <div class="nexvora-auth-methods">
+                    <button class="nexvora-auth-google" id="nexvoraGoogleLogin" type="button">
+                        <svg viewBox="0 0 48 48" width="20" height="20"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+                        <span>Continue with Google</span>
+                    </button>
+                    <button class="nexvora-auth-guest" id="nexvoraGuestLogin" type="button">
+                        <i class="fa-solid fa-user-astronaut"></i>
+                        <span>Continue as Guest</span>
+                    </button>
+                </div>
+                <div class="nexvora-auth-divider"><span>or sign in with email</span></div>
+                <form id="nexvoraLoginForm" novalidate>
+                    <div class="nexvora-input-group">
+                        <label for="nexvoraEmail"><i class="fa-solid fa-envelope"></i> Email</label>
+                        <input type="email" id="nexvoraEmail" placeholder="you@example.com" autocomplete="email" required>
+                        <div class="nexvora-input-error" id="nexvoraEmailErr"></div>
+                    </div>
+                    <div class="nexvora-input-group">
+                        <label for="nexvoraPass"><i class="fa-solid fa-lock"></i> Password</label>
+                        <div class="nexvora-pass-wrap">
+                            <input type="password" id="nexvoraPass" placeholder="Enter password" autocomplete="current-password" required>
+                            <button type="button" class="nexvora-pass-toggle" id="nexvoraPassToggle"><i class="fa-solid fa-eye"></i></button>
+                        </div>
+                        <div class="nexvora-input-error" id="nexvoraPassErr"></div>
+                    </div>
+                    <div class="nexvora-auth-error" id="nexvoraAuthError"></div>
+                    <div class="nexvora-form-opts">
+                        <label class="nexvora-remember"><input type="checkbox" id="nexvoraRemember"> <span>Remember me</span></label>
+                        <a href="javascript:void(0)" id="nexvoraForgot">Forgot Password?</a>
+                    </div>
+                    <button type="submit" class="nexvora-submit-btn" id="nexvoraSubmitBtn">
+                        <span class="nexvora-btn-text"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</span>
+                        <span class="nexvora-btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Signing In...</span>
+                    </button>
+                </form>
+                <div class="nexvora-auth-footer">New to Nexvora AI? <a href="javascript:void(0)" id="nexvoraShowRegister">Create Account</a></div>
+            </div>
+            <div class="nexvora-auth-body nexvora-hidden" id="authRegisterForm">
+                <div class="nexvora-auth-welcome">
+                    <h2>Create Account</h2>
+                    <p>Join Nexvora AI for a powerful assistant experience</p>
+                </div>
+                <form id="nexvoraRegisterForm" novalidate>
+                    <div class="nexvora-input-group">
+                        <label for="nexvoraRegName"><i class="fa-solid fa-user"></i> Full Name</label>
+                        <input type="text" id="nexvoraRegName" placeholder="Your name" autocomplete="name" required>
+                    </div>
+                    <div class="nexvora-input-group">
+                        <label for="nexvoraRegEmail"><i class="fa-solid fa-envelope"></i> Email</label>
+                        <input type="email" id="nexvoraRegEmail" placeholder="you@example.com" autocomplete="email" required>
+                    </div>
+                    <div class="nexvora-input-group">
+                        <label for="nexvoraRegPass"><i class="fa-solid fa-lock"></i> Password</label>
+                        <div class="nexvora-pass-wrap">
+                            <input type="password" id="nexvoraRegPass" placeholder="Min 8 characters" autocomplete="new-password" required>
+                            <button type="button" class="nexvora-pass-toggle" id="nexvoraRegPassToggle"><i class="fa-solid fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="nexvora-input-group">
+                        <label for="nexvoraRegConfirm"><i class="fa-solid fa-lock"></i> Confirm Password</label>
+                        <input type="password" id="nexvoraRegConfirm" placeholder="Confirm password" autocomplete="new-password" required>
+                    </div>
+                    <div class="nexvora-auth-error" id="nexvoraRegError"></div>
+                    <button type="submit" class="nexvora-submit-btn" id="nexvoraRegBtn">
+                        <span class="nexvora-btn-text"><i class="fa-solid fa-user-plus"></i> Create Account</span>
+                        <span class="nexvora-btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Creating...</span>
+                    </button>
+                </form>
+                <div class="nexvora-auth-footer">Already have an account? <a href="javascript:void(0)" id="nexvoraShowLogin">Sign In</a></div>
+            </div>
+        </div>
+        <div class="nexvora-auth-bottom"><a href="index.html"><i class="fa-solid fa-arrow-left"></i> Back to Tamil AI Stream</a></div>
+    </div>
+
+    <!-- Main App -->
+    <div class="nexvora-app nexvora-hidden" id="nexvoraApp">
+        <!-- Mobile Header -->
+        <div class="nexvora-mobile-header" id="mobileHeader">
+            <button class="nexvora-hamburger" id="nexvoraHamburger" type="button"><i class="fa-solid fa-bars"></i></button>
+            <div class="nexvora-mobile-title"><i class="fa-solid fa-bolt"></i><span>Nexvora AI</span></div>
+            <div class="nexvora-mobile-actions">
+                <button class="nexvora-icon-btn" id="mobileNewChat" title="New Chat"><i class="fa-solid fa-plus"></i></button>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="nexvora-sidebar" id="nexvoraSidebar" data-collapsed="false">
+            <div class="nexvora-sidebar-header">
+                <div class="nexvora-brand">
+                    <div class="nexvora-brand-icon"><i class="fa-solid fa-bolt"></i></div>
+                    <span class="nexvora-brand-text">Nexvora AI</span>
+                </div>
+                <div class="nexvora-header-actions">
+                    <button class="nexvora-sidebar-collapse-btn" id="nexvoraCollapseBtn" type="button" title="Collapse sidebar"><i class="fa-solid fa-angles-left"></i></button>
+                    <button class="nexvora-sidebar-close" id="nexvoraSidebarClose" type="button"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <!-- New Chat -->
+            <div class="nexvora-sidebar-action-row">
+                <button class="nexvora-new-chat-btn" id="nexvoraNewChat" type="button">
+                    <i class="fa-solid fa-plus"></i>
+                    <span class="nexvora-sidebar-label">New Chat</span>
+                </button>
+            </div>
+
+            <!-- Search -->
+            <div class="nexvora-search-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="nexvoraSearch" placeholder="Search...">
+                <kbd class="nexvora-search-kbd nexvora-sidebar-label">Ctrl+K</kbd>
+            </div>
+
+            <!-- Primary Navigation -->
+            <nav class="nexvora-sidebar-nav" role="navigation">
+                <button class="nexvora-nav-item active" data-nav="dashboard" type="button">
+                    <i class="fa-solid fa-grid-2"></i>
+                    <span class="nexvora-sidebar-label">Dashboard</span>
+                </button>
+                <button class="nexvora-nav-item" data-nav="chat" type="button">
+                    <i class="fa-solid fa-message"></i>
+                    <span class="nexvora-sidebar-label">AI Chat</span>
+                </button>
+                <button class="nexvora-nav-item" data-nav="tools" type="button">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span class="nexvora-sidebar-label">Tools</span>
+                    <i class="fa-solid fa-chevron-right nexvora-nav-arrow nexvora-sidebar-label"></i>
+                </button>
+                <button class="nexvora-nav-item" data-nav="prompts" type="button">
+                    <i class="fa-solid fa-wand-sparkles"></i>
+                    <span class="nexvora-sidebar-label">Prompts</span>
+                </button>
+                <button class="nexvora-nav-item" data-nav="favorites" type="button">
+                    <i class="fa-solid fa-star"></i>
+                    <span class="nexvora-sidebar-label">Favorites</span>
+                </button>
+                <button class="nexvora-nav-item" data-nav="library" type="button">
+                    <i class="fa-solid fa-bookmark"></i>
+                    <span class="nexvora-sidebar-label">Library</span>
+                </button>
+            </nav>
+
+            <!-- Tools Submenu -->
+            <div class="nexvora-tools-submenu nexvora-sidebar-label" id="nexvoraToolsSubmenu">
+                <button class="nexvora-tool-item" data-tool="translate" type="button"><i class="fa-solid fa-language"></i><span>Translate</span></button>
+                <button class="nexvora-tool-item" data-tool="writer" type="button"><i class="fa-solid fa-pen-fancy"></i><span>AI Writer</span></button>
+                <button class="nexvora-tool-item" data-tool="summarizer" type="button"><i class="fa-solid fa-compress"></i><span>Summarizer</span></button>
+                <button class="nexvora-tool-item" data-tool="document" type="button"><i class="fa-solid fa-file-lines"></i><span>Document AI</span></button>
+                <button class="nexvora-tool-item" data-tool="code" type="button"><i class="fa-solid fa-code"></i><span>Code Assistant</span></button>
+                <button class="nexvora-tool-item" data-tool="text" type="button"><i class="fa-solid fa-font"></i><span>Text Tools</span></button>
+                <button class="nexvora-tool-item" data-tool="more" type="button"><i class="fa-solid fa-ellipsis"></i><span>More Tools</span></button>
+            </div>
+
+            <!-- Projects Section -->
+            <div class="nexvora-sidebar-section" id="nexvoraProjectsSection">
+                <div class="nexvora-section-header">
+                    <div class="nexvora-section-label"><i class="fa-solid fa-folder"></i><span class="nexvora-sidebar-label">Projects</span></div>
+                    <button class="nexvora-section-action" id="nexvoraAddProject" title="New project"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <div class="nexvora-projects-list" id="nexvoraProjectsList"></div>
+            </div>
+
+            <!-- Recent Chats Section -->
+            <div class="nexvora-sidebar-section nexvora-chats-section">
+                <div class="nexvora-section-header">
+                    <div class="nexvora-section-label"><i class="fa-solid fa-clock-rotate-left"></i><span class="nexvora-sidebar-label">Recent</span></div>
+                </div>
+                <div class="nexvora-chat-list" id="nexvoraChatList"></div>
+            </div>
+
+            <!-- Bottom: Account Area -->
+            <div class="nexvora-sidebar-bottom">
+                <div class="nexvora-account-area" id="nexvoraAccountArea">
+                    <div class="nexvora-account-trigger" id="nexvoraAccountTrigger" tabindex="0" role="button" aria-label="Account menu">
+                        <div class="nexvora-user-avatar" id="nexvoraUserAvatar"><i class="fa-solid fa-user"></i></div>
+                        <div class="nexvora-user-info nexvora-sidebar-label">
+                            <span class="nexvora-user-name" id="nexvoraUserName">User</span>
+                            <span class="nexvora-user-email" id="nexvoraUserEmail"></span>
+                        </div>
+                        <i class="fa-solid fa-ellipsis-vertical nexvora-account-more nexvora-sidebar-label"></i>
+                    </div>
+                    <div class="nexvora-account-dropdown" id="nexvoraAccountDropdown">
+                        <div class="nexvora-dropdown-header nexvora-sidebar-label">
+                            <span class="nexvora-dropdown-name" id="nexvoraDropdownName">User</span>
+                            <span class="nexvora-dropdown-email" id="nexvoraDropdownEmail"></span>
+                        </div>
+                        <div class="nexvora-dropdown-divider"></div>
+                        <button class="nexvora-dropdown-item" data-action="account" type="button"><i class="fa-solid fa-circle-user"></i><span class="nexvora-sidebar-label">Account</span></button>
+                        <button class="nexvora-dropdown-item" data-action="settings" type="button"><i class="fa-solid fa-gear"></i><span class="nexvora-sidebar-label">Settings</span></button>
+                        <button class="nexvora-dropdown-item nexvora-dropdown-admin-only" data-action="models" type="button"><i class="fa-solid fa-microchip"></i><span class="nexvora-sidebar-label">Model Manager</span></button>
+                        <button class="nexvora-dropdown-item" data-action="shortcuts" type="button"><i class="fa-solid fa-keyboard"></i><span class="nexvora-sidebar-label">Shortcuts</span></button>
+                        <div class="nexvora-dropdown-divider"></div>
+                        <button class="nexvora-dropdown-item" data-action="help" type="button"><i class="fa-solid fa-circle-question"></i><span class="nexvora-sidebar-label">Help & Feedback</span></button>
+                        <button class="nexvora-dropdown-item nexvora-dropdown-admin-only" data-action="admin" type="button"><i class="fa-solid fa-shield-halved"></i><span class="nexvora-sidebar-label">Admin</span></button>
+                        <div class="nexvora-dropdown-divider"></div>
+                        <button class="nexvora-dropdown-item nexvora-dropdown-danger" data-action="signout" type="button"><i class="fa-solid fa-right-from-bracket"></i><span class="nexvora-sidebar-label">Sign Out</span></button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <div class="nexvora-sidebar-overlay" id="nexvoraSidebarOverlay"></div>
+
+        <!-- Main Content -->
+        <main class="nexvora-main" id="nexvoraMain">
+
+            <!-- ===== DASHBOARD VIEW ===== -->
+            <div class="nexvora-view nexvora-active" id="nexvoraDashboardView">
+                <div class="nexvora-dashboard">
+                    <div class="nexvora-dash-header">
+                        <div>
+                            <h1 id="nexvoraDashGreeting">Good morning</h1>
+                            <p>Here's what you can do today</p>
+                        </div>
+                        <div class="nexvora-dash-date" id="nexvoraDashDate"></div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="nexvora-dash-section">
+                        <h3><i class="fa-solid fa-bolt"></i> Quick Actions</h3>
+                        <div class="nexvora-quick-actions">
+                            <button class="nexvora-quick-action" data-action="new-chat">
+                                <div class="nexvora-qa-icon"><i class="fa-solid fa-message"></i></div>
+                                <span>New Chat</span>
+                            </button>
+                            <button class="nexvora-quick-action" data-action="translate">
+                                <div class="nexvora-qa-icon"><i class="fa-solid fa-language"></i></div>
+                                <span>Translate</span>
+                            </button>
+                            <button class="nexvora-quick-action" data-action="writer">
+                                <div class="nexvora-qa-icon"><i class="fa-solid fa-pen-fancy"></i></div>
+                                <span>Write</span>
+                            </button>
+                            <button class="nexvora-quick-action" data-action="summarizer">
+                                <div class="nexvora-qa-icon"><i class="fa-solid fa-compress"></i></div>
+                                <span>Summarize</span>
+                            </button>
+                            <button class="nexvora-quick-action" data-action="document">
+                                <div class="nexvora-qa-icon"><i class="fa-solid fa-file-lines"></i></div>
+                                <span>Documents</span>
+                            </button>
+                            <button class="nexvora-quick-action" data-action="code">
+                                <div class="nexvora-qa-icon"><i class="fa-solid fa-code"></i></div>
+                                <span>Coding</span>
+                            </button>
+                            <button class="nexvora-quick-action" data-action="projects">
+                                <div class="nexvora-qa-icon"><i class="fa-solid fa-folder"></i></div>
+                                <span>Projects</span>
+                            </button>
+                            <button class="nexvora-quick-action" data-action="prompts">
+                                <div class="nexvora-qa-icon"><i class="fa-solid fa-wand-sparkles"></i></div>
+                                <span>Prompts</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Row -->
+                    <div class="nexvora-dash-section">
+                        <h3><i class="fa-solid fa-chart-line"></i> Your Activity</h3>
+                        <div class="nexvora-stats-row">
+                            <div class="nexvora-stat-card">
+                                <div class="nexvora-stat-value" id="nexvoraStatChats">0</div>
+                                <div class="nexvora-stat-label">Chats</div>
+                            </div>
+                            <div class="nexvora-stat-card">
+                                <div class="nexvora-stat-value" id="nexvoraStatMessages">0</div>
+                                <div class="nexvora-stat-label">Messages</div>
+                            </div>
+                            <div class="nexvora-stat-card">
+                                <div class="nexvora-stat-value" id="nexvoraStatProjects">0</div>
+                                <div class="nexvora-stat-label">Projects</div>
+                            </div>
+                            <div class="nexvora-stat-card">
+                                <div class="nexvora-stat-value" id="nexvoraStatFiles">0</div>
+                                <div class="nexvora-stat-label">Files</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity & Model Status -->
+                    <div class="nexvora-dash-grid">
+                        <div class="nexvora-dash-section">
+                            <h3><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</h3>
+                            <div class="nexvora-activity-list" id="nexvoraActivityList">
+                                <div class="nexvora-empty-state-sm"><i class="fa-solid fa-inbox"></i><p>No recent activity</p></div>
+                            </div>
+                        </div>
+                        <div class="nexvora-dash-section">
+                            <h3><i class="fa-solid fa-microchip"></i> Model Status</h3>
+                            <div class="nexvora-model-status" id="nexvoraModelStatus">
+                                <div class="nexvora-empty-state-sm"><i class="fa-solid fa-microchip"></i><p>No models configured</p></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Getting Started Tips -->
+                    <div class="nexvora-dash-section">
+                        <h3><i class="fa-solid fa-lightbulb"></i> Getting Started</h3>
+                        <div class="nexvora-tips-grid">
+                            <div class="nexvora-tip-card" data-tip="chat">
+                                <i class="fa-solid fa-message"></i>
+                                <h4>Start a Conversation</h4>
+                                <p>Ask questions, brainstorm ideas, or get help with any task.</p>
+                            </div>
+                            <div class="nexvora-tip-card" data-tip="models">
+                                <i class="fa-solid fa-microchip"></i>
+                                <h4>Configure Models</h4>
+                                <p>Add your own AI models in the Model Manager to get started.</p>
+                            </div>
+                            <div class="nexvora-tip-card" data-tip="projects">
+                                <i class="fa-solid fa-folder"></i>
+                                <h4>Create a Project</h4>
+                                <p>Organize related chats and files into projects.</p>
+                            </div>
+                            <div class="nexvora-tip-card" data-tip="prompts">
+                                <i class="fa-solid fa-wand-sparkles"></i>
+                                <h4>Explore Prompts</h4>
+                                <p>Browse our prompt library or create your own custom prompts.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== CHAT VIEW ===== -->
+            <div class="nexvora-view" id="nexvoraChatView">
+                <div class="nexvora-model-bar">
+                    <div class="nexvora-model-selector" id="nexvoraModelSelector">
+                        <i class="fa-solid fa-microchip"></i>
+                        <span id="nexvoraCurrentModel">Select Model</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="nexvora-model-dropdown" id="nexvoraModelDropdown"></div>
+                    <div class="nexvora-model-bar-right">
+                        <div class="nexvora-connection-status" id="nexvoraConnectionStatus">
+                            <i class="fa-solid fa-circle"></i><span>Not connected</span>
+                        </div>
+                        <button class="nexvora-icon-btn" id="nexvoraTestConnection" title="Test connection"><i class="fa-solid fa-plug"></i></button>
+                        <button class="nexvora-icon-btn" id="nexvoraExportChat" title="Export chat"><i class="fa-solid fa-share-from-square"></i></button>
+                        <button class="nexvora-icon-btn" id="nexvoraModelBarNewChat" title="New Chat"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+                <div class="nexvora-chat-area" id="nexvoraChatArea">
+                    <div class="nexvora-welcome" id="nexvoraWelcome">
+                        <div class="nexvora-welcome-icon"><i class="fa-solid fa-bolt"></i></div>
+                        <h2>How can I help you today?</h2>
+                        <p>Choose a model and start a conversation. I can help with writing, analysis, coding, math, and much more.</p>
+                        <div class="nexvora-welcome-chips">
+                            <button class="nexvora-chip" data-prompt="Explain quantum computing in simple terms"><i class="fa-solid fa-atom"></i><span>Explain quantum computing</span></button>
+                            <button class="nexvora-chip" data-prompt="Write a Python function to sort a list"><i class="fa-solid fa-code"></i><span>Write a Python function</span></button>
+                            <button class="nexvora-chip" data-prompt="Help me write a professional email"><i class="fa-solid fa-envelope"></i><span>Write a professional email</span></button>
+                            <button class="nexvora-chip" data-prompt="What are the key differences between React and Vue?"><i class="fa-solid fa-scale-balanced"></i><span>Compare frameworks</span></button>
+                        </div>
+                    </div>
+                    <div class="nexvora-messages" id="nexvoraMessages"></div>
+                    <div class="nexvora-loading nexvora-hidden" id="nexvoraLoading">
+                        <div class="nexvora-loading-dots"><span></span><span></span><span></span></div>
+                        <span>Thinking...</span>
+                        <button class="nexvora-stop-btn" id="nexvoraStopBtn" type="button"><i class="fa-solid fa-stop"></i> Stop</button>
+                    </div>
+                </div>
+                <div class="nexvora-input-area">
+                    <div class="nexvora-input-container">
+                        <div class="nexvora-attachment-bar nexvora-hidden" id="nexvoraAttachmentBar"></div>
+                        <div class="nexvora-input-row">
+                            <button class="nexvora-icon-btn nexvora-attach-btn" id="nexvoraAttachBtn" title="Attach file"><i class="fa-solid fa-paperclip"></i></button>
+                            <input type="file" id="nexvoraFileInput" multiple class="nexvora-hidden">
+                            <textarea id="nexvoraInput" placeholder="Message Nexvora AI..." rows="1" maxlength="100000"></textarea>
+                            <button class="nexvora-icon-btn nexvora-voice-btn" id="nexvoraVoiceBtn" title="Voice input"><i class="fa-solid fa-microphone"></i></button>
+                            <button class="nexvora-send-btn" id="nexvoraSendBtn" title="Send" disabled><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== TOOLS HUB VIEW ===== -->
+            <div class="nexvora-view" id="nexvoraToolsView">
+                <div class="nexvora-view-header">
+                    <h2><i class="fa-solid fa-wand-magic-sparkles"></i> Tools Hub</h2>
+                </div>
+                <div class="nexvora-tools-grid" id="nexvoraToolsGrid">
+                    <div class="nexvora-tool-card" data-tool="chat">
+                        <div class="nexvora-tc-icon"><i class="fa-solid fa-message"></i></div>
+                        <h4>AI Chat</h4>
+                        <p>General-purpose AI conversation</p>
+                        <span class="nexvora-tc-badge active">Active</span>
+                    </div>
+                    <div class="nexvora-tool-card" data-tool="translate">
+                        <div class="nexvora-tc-icon"><i class="fa-solid fa-language"></i></div>
+                        <h4>Translation</h4>
+                        <p>Translate between languages</p>
+                        <span class="nexvora-tc-badge soon">Coming Soon</span>
+                    </div>
+                    <div class="nexvora-tool-card" data-tool="writer">
+                        <div class="nexvora-tc-icon"><i class="fa-solid fa-pen-fancy"></i></div>
+                        <h4>AI Writer</h4>
+                        <p>Draft articles, emails, and more</p>
+                        <span class="nexvora-tc-badge soon">Coming Soon</span>
+                    </div>
+                    <div class="nexvora-tool-card" data-tool="summarizer">
+                        <div class="nexvora-tc-icon"><i class="fa-solid fa-compress"></i></div>
+                        <h4>Summarizer</h4>
+                        <p>Condense long text into key points</p>
+                        <span class="nexvora-tc-badge soon">Coming Soon</span>
+                    </div>
+                    <div class="nexvora-tool-card" data-tool="document">
+                        <div class="nexvora-tc-icon"><i class="fa-solid fa-file-lines"></i></div>
+                        <h4>Document AI</h4>
+                        <p>Analyze and extract from documents</p>
+                        <span class="nexvora-tc-badge soon">Coming Soon</span>
+                    </div>
+                    <div class="nexvora-tool-card" data-tool="code">
+                        <div class="nexvora-tc-icon"><i class="fa-solid fa-code"></i></div>
+                        <h4>Code Assistant</h4>
+                        <p>Write, debug, and explain code</p>
+                        <span class="nexvora-tc-badge soon">Coming Soon</span>
+                    </div>
+                    <div class="nexvora-tool-card" data-tool="text">
+                        <div class="nexvora-tc-icon"><i class="fa-solid fa-font"></i></div>
+                        <h4>Text Tools</h4>
+                        <p>Case conversion, formatting, cleanup</p>
+                        <span class="nexvora-tc-badge soon">Coming Soon</span>
+                    </div>
+                    <div class="nexvora-tool-card nexvora-tool-card-more">
+                        <div class="nexvora-tc-icon"><i class="fa-solid fa-ellipsis"></i></div>
+                        <h4>More Tools</h4>
+                        <p>Additional tools coming soon</p>
+                        <span class="nexvora-tc-badge soon">Coming Soon</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== PROMPT LIBRARY VIEW ===== -->
+            <div class="nexvora-view" id="nexvoraPromptsView">
+                <div class="nexvora-view-header">
+                    <h2><i class="fa-solid fa-wand-sparkles"></i> Prompt Library</h2>
+                    <button class="nexvora-btn-primary" id="nexvoraNewPrompt"><i class="fa-solid fa-plus"></i> New Prompt</button>
+                </div>
+                <div class="nexvora-prompts-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="nexvoraPromptSearch" placeholder="Search prompts...">
+                </div>
+                <div class="nexvora-prompt-categories" id="nexvoraPromptCategories">
+                    <button class="nexvora-cat-btn active" data-cat="all">All</button>
+                    <button class="nexvora-cat-btn" data-cat="writing">Writing</button>
+                    <button class="nexvora-cat-btn" data-cat="business">Business</button>
+                    <button class="nexvora-cat-btn" data-cat="coding">Coding</button>
+                    <button class="nexvora-cat-btn" data-cat="education">Education</button>
+                    <button class="nexvora-cat-btn" data-cat="translation">Translation</button>
+                    <button class="nexvora-cat-btn" data-cat="marketing">Marketing</button>
+                    <button class="nexvora-cat-btn" data-cat="productivity">Productivity</button>
+                    <button class="nexvora-cat-btn" data-cat="custom">Custom</button>
+                </div>
+                <div class="nexvora-prompts-grid" id="nexvoraPromptsGrid"></div>
+            </div>
+
+            <!-- ===== FAVORITES VIEW ===== -->
+            <div class="nexvora-view" id="nexvoraFavoritesView">
+                <div class="nexvora-view-header">
+                    <h2><i class="fa-solid fa-star"></i> Favorites</h2>
+                </div>
+                <div class="nexvora-files-grid" id="nexvoraFavoritesGrid">
+                    <div class="nexvora-empty-state">
+                        <i class="fa-solid fa-star"></i>
+                        <p>No favorite items yet. Star messages to save them here.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== LIBRARY VIEW ===== -->
+            <div class="nexvora-view" id="nexvoraLibraryView">
+                <div class="nexvora-view-header">
+                    <h2><i class="fa-solid fa-bookmark"></i> Library</h2>
+                    <div class="nexvora-view-header-actions">
+                        <button class="nexvora-icon-btn" id="nexvoraAddToLibrary" title="Add to library"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+                <div class="nexvora-files-grid" id="nexvoraLibraryGrid">
+                    <div class="nexvora-empty-state">
+                        <i class="fa-solid fa-bookmark"></i>
+                        <p>No saved items yet. Bookmark useful AI outputs to find them later.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FILES VIEW ===== -->
+            <div class="nexvora-view" id="nexvoraFilesView">
+                <div class="nexvora-view-header">
+                    <h2><i class="fa-solid fa-file-lines"></i> Files</h2>
+                    <button class="nexvora-icon-btn" id="nexvoraUploadFile" title="Upload file"><i class="fa-solid fa-upload"></i></button>
+                </div>
+                <div class="nexvora-files-grid" id="nexvoraFilesGrid">
+                    <div class="nexvora-empty-state">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <p>No files yet. Upload files to attach them to conversations.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== SETTINGS VIEW ===== -->
+            <div class="nexvora-view" id="nexvoraSettingsView">
+                <div class="nexvora-view-header">
+                    <h2><i class="fa-solid fa-gear"></i> Settings</h2>
+                </div>
+                <div class="nexvora-settings-content">
+                    <!-- Appearance -->
+                    <div class="nexvora-setting-group">
+                        <h3><i class="fa-solid fa-palette"></i> Appearance</h3>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Theme</span>
+                                <span class="nexvora-setting-desc">Choose your preferred theme</span>
+                            </div>
+                            <select id="nexvoraThemeSelect" class="nexvora-select">
+                                <option value="system">System</option>
+                                <option value="dark">Dark</option>
+                                <option value="midnight">Midnight</option>
+                                <option value="light">Light</option>
+                            </select>
+                        </div>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Accent Color</span>
+                                <span class="nexvora-setting-desc">Choose your accent color</span>
+                            </div>
+                            <div class="nexvora-color-options" id="nexvoraAccentColor">
+                                <button class="nexvora-color-swatch active" data-color="#6c5ce7" style="background:#6c5ce7"></button>
+                                <button class="nexvora-color-swatch" data-color="#00b894" style="background:#00b894"></button>
+                                <button class="nexvora-color-swatch" data-color="#0984e3" style="background:#0984e3"></button>
+                                <button class="nexvora-color-swatch" data-color="#e17055" style="background:#e17055"></button>
+                                <button class="nexvora-color-swatch" data-color="#fd79a8" style="background:#fd79a8"></button>
+                                <button class="nexvora-color-swatch" data-color="#fdcb6e" style="background:#fdcb6e"></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Language -->
+                    <div class="nexvora-setting-group">
+                        <h3><i class="fa-solid fa-globe"></i> Language</h3>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Interface Language</span>
+                                <span class="nexvora-setting-desc">Interface language</span>
+                            </div>
+                            <select id="nexvoraLangSelect" class="nexvora-select">
+                                <option value="en">English</option>
+                                <option value="ta">Tamil</option>
+                                <option value="hi">Hindi</option>
+                                <option value="es">Spanish</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                                <option value="ja">Japanese</option>
+                                <option value="ko">Korean</option>
+                                <option value="zh">Chinese</option>
+                                <option value="ar">Arabic</option>
+                                <option value="pt">Portuguese</option>
+                                <option value="ru">Russian</option>
+                                <option value="it">Italian</option>
+                                <option value="th">Thai</option>
+                                <option value="vi">Vietnamese</option>
+                                <option value="id">Indonesian</option>
+                                <option value="tr">Turkish</option>
+                                <option value="pl">Polish</option>
+                                <option value="nl">Dutch</option>
+                                <option value="sv">Swedish</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Chat Preferences -->
+                    <div class="nexvora-setting-group">
+                        <h3><i class="fa-solid fa-message"></i> Chat</h3>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Send with Enter</span>
+                                <span class="nexvora-setting-desc">Press Enter to send, Shift+Enter for new line</span>
+                            </div>
+                            <label class="nexvora-toggle"><input type="checkbox" id="nexvoraEnterSend" checked><span class="nexvora-toggle-slider"></span></label>
+                        </div>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Auto-scroll</span>
+                                <span class="nexvora-setting-desc">Automatically scroll to latest message</span>
+                            </div>
+                            <label class="nexvora-toggle"><input type="checkbox" id="nexvoraAutoScroll" checked><span class="nexvora-toggle-slider"></span></label>
+                        </div>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Markdown Rendering</span>
+                                <span class="nexvora-setting-desc">Render markdown in AI responses</span>
+                            </div>
+                            <label class="nexvora-toggle"><input type="checkbox" id="nexvoraMarkdown" checked><span class="nexvora-toggle-slider"></span></label>
+                        </div>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Compact Mode</span>
+                                <span class="nexvora-setting-desc">Reduce spacing in chat messages</span>
+                            </div>
+                            <label class="nexvora-toggle"><input type="checkbox" id="nexvoraCompactMode"><span class="nexvora-toggle-slider"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- API Configuration -->
+                    <div class="nexvora-setting-group">
+                        <h3><i class="fa-solid fa-plug"></i> API Configuration</h3>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">API Base URL</span>
+                                <span class="nexvora-setting-desc">Base URL for your AI backend (e.g. http://127.0.0.1:8000)</span>
+                            </div>
+                            <input type="url" id="nexvoraApiUrl" class="nexvora-input-inline" placeholder="http://127.0.0.1:8000">
+                        </div>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">API Key</span>
+                                <span class="nexvora-setting-desc">Global API key (model-specific keys override this)</span>
+                            </div>
+                            <input type="password" id="nexvoraApiKey" class="nexvora-input-inline" placeholder="sk-...">
+                        </div>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Request Timeout (ms)</span>
+                                <span class="nexvora-setting-desc">Maximum wait time for API responses</span>
+                            </div>
+                            <input type="number" id="nexvoraApiTimeout" class="nexvora-input-inline" placeholder="30000" value="30000">
+                        </div>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Connection Status</span>
+                                <span class="nexvora-setting-desc" id="nexvoraApiConnectionDesc">Not configured</span>
+                            </div>
+                            <div id="nexvoraApiConnectionStatus" class="nexvora-api-status nexvora-api-status-disconnected">
+                                <i class="fa-solid fa-circle-xmark"></i> Not Connected
+                            </div>
+                        </div>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Test Connection</span>
+                                <span class="nexvora-setting-desc">Verify your API is reachable</span>
+                            </div>
+                            <button class="nexvora-btn-secondary" id="nexvoraTestApiConnection"><i class="fa-solid fa-plug"></i> Test</button>
+                        </div>
+                    </div>
+
+                    <!-- Notifications -->
+                    <div class="nexvora-setting-group">
+                        <h3><i class="fa-solid fa-bell"></i> Notifications</h3>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Chat Notifications</span>
+                                <span class="nexvora-setting-desc">Show notifications for new messages</span>
+                            </div>
+                            <label class="nexvora-toggle"><input type="checkbox" id="nexvoraChatNotif" checked><span class="nexvora-toggle-slider"></span></label>
+                        </div>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Sound Effects</span>
+                                <span class="nexvora-setting-desc">Play sounds for actions</span>
+                            </div>
+                            <label class="nexvora-toggle"><input type="checkbox" id="nexvoraSounds"><span class="nexvora-toggle-slider"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- Data -->
+                    <div class="nexvora-setting-group">
+                        <h3><i class="fa-solid fa-database"></i> Data</h3>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Export Chat History</span>
+                                <span class="nexvora-setting-desc">Download all conversations as JSON</span>
+                            </div>
+                            <button class="nexvora-btn-secondary" id="nexvoraExportChats"><i class="fa-solid fa-download"></i> Export</button>
+                        </div>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Clear All Data</span>
+                                <span class="nexvora-setting-desc">Remove all chats, projects, and files</span>
+                            </div>
+                            <button class="nexvora-btn-danger" id="nexvoraClearData"><i class="fa-solid fa-trash"></i> Clear</button>
+                        </div>
+                        <div class="nexvora-setting-row">
+                            <div class="nexvora-setting-info">
+                                <span class="nexvora-setting-label">Sign Out</span>
+                                <span class="nexvora-setting-desc">Sign out from Nexvora AI</span>
+                            </div>
+                            <button class="nexvora-btn-secondary" id="nexvoraSignOut"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== MODEL MANAGER VIEW ===== -->
+            <div class="nexvora-view" id="nexvoraModelsView">
+                <div class="nexvora-view-header">
+                    <h2><i class="fa-solid fa-microchip"></i> Model Manager</h2>
+                    <button class="nexvora-btn-primary" id="nexvoraAddModel"><i class="fa-solid fa-plus"></i> Add Model</button>
+                </div>
+                <div class="nexvora-models-content" id="nexvoraModelsContent"></div>
+            </div>
+
+            <!-- ===== HELP VIEW ===== -->
+            <div class="nexvora-view" id="nexvoraHelpView">
+                <div class="nexvora-view-header">
+                    <h2><i class="fa-solid fa-circle-question"></i> Help & Feedback</h2>
+                </div>
+                <div class="nexvora-help-content">
+                    <div class="nexvora-help-section">
+                        <h3>Frequently Asked Questions</h3>
+                        <div class="nexvora-faq-list">
+                            <div class="nexvora-faq-item">
+                                <button class="nexvora-faq-q" type="button"><span>How do I add an AI model?</span><i class="fa-solid fa-chevron-down"></i></button>
+                                <div class="nexvora-faq-a"><p>Go to <strong>Settings > Model Manager</strong> and click "Add Model". Enter your API endpoint, key, and model details. The model will appear in the model selector dropdown.</p></div>
+                            </div>
+                            <div class="nexvora-faq-item">
+                                <button class="nexvora-faq-q" type="button"><span>Is my data private?</span><i class="fa-solid fa-chevron-down"></i></button>
+                                <div class="nexvora-faq-a"><p>Yes. All data is stored locally in your browser's localStorage. Nothing is sent to any server unless you configure your own API endpoint. We never see your conversations or files.</p></div>
+                            </div>
+                            <div class="nexvora-faq-item">
+                                <button class="nexvora-faq-q" type="button"><span>Can I use multiple AI models?</span><i class="fa-solid fa-chevron-down"></i></button>
+                                <div class="nexvora-faq-a"><p>Yes! Nexvora supports multiple AI models. Add as many as you want in the Model Manager and switch between them using the model selector in chat.</p></div>
+                            </div>
+                            <div class="nexvora-faq-item">
+                                <button class="nexvora-faq-q" type="button"><span>How do keyboard shortcuts work?</span><i class="fa-solid fa-chevron-down"></i></button>
+                                <div class="nexvora-faq-a"><p>Press <kbd>Ctrl+K</kbd> to search, <kbd>Ctrl+N</kbd> for new chat, <kbd>Ctrl+/</kbd> to view all shortcuts. Check the full list in Settings > Shortcuts.</p></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nexvora-help-section">
+                        <h3>Send Feedback</h3>
+                        <div class="nexvora-feedback-form">
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraFeedbackType">Category</label>
+                                <select id="nexvoraFeedbackType" class="nexvora-select">
+                                    <option value="bug">Bug Report</option>
+                                    <option value="feature">Feature Request</option>
+                                    <option value="improvement">Improvement</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraFeedbackMsg">Message</label>
+                                <textarea id="nexvoraFeedbackMsg" class="nexvora-textarea" rows="4" placeholder="Describe your feedback..."></textarea>
+                            </div>
+                            <button class="nexvora-btn-primary" id="nexvoraSubmitFeedback"><i class="fa-solid fa-paper-plane"></i> Send Feedback</button>
+                            <p class="nexvora-feedback-note">Feedback is stored locally for now. A backend integration is planned for the future.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== ADMIN VIEW ===== -->
+            <div class="nexvora-view" id="nexvoraAdminView">
+                <div class="nexvora-view-header">
+                    <h2><i class="fa-solid fa-shield-halved"></i> Admin Panel</h2>
+                    <span class="nexvora-admin-badge">Developer</span>
+                </div>
+                <div class="nexvora-admin-content">
+                    <div class="nexvora-admin-notice">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <p>This area is for system administration. API keys and secrets are never exposed in frontend code.</p>
+                    </div>
+                    <div class="nexvora-admin-grid">
+                        <div class="nexvora-admin-card">
+                            <i class="fa-solid fa-microchip"></i>
+                            <h4>Model Management</h4>
+                            <p>Manage all AI model configurations</p>
+                            <button class="nexvora-btn-secondary" data-admin="models">Open</button>
+                        </div>
+                        <div class="nexvora-admin-card">
+                            <i class="fa-solid fa-plug"></i>
+                            <h4>API Endpoints</h4>
+                            <p>Configure backend API connections</p>
+                            <span class="nexvora-admin-soon">Coming Soon</span>
+                        </div>
+                        <div class="nexvora-admin-card">
+                            <i class="fa-solid fa-flag"></i>
+                            <h4>Feature Flags</h4>
+                            <p>Toggle features on/off</p>
+                            <span class="nexvora-admin-soon">Coming Soon</span>
+                        </div>
+                        <div class="nexvora-admin-card">
+                            <i class="fa-solid fa-chart-bar"></i>
+                            <h4>System Monitor</h4>
+                            <p>Usage stats and performance</p>
+                            <span class="nexvora-admin-soon">Coming Soon</span>
+                        </div>
+                        <div class="nexvora-admin-card">
+                            <i class="fa-solid fa-users"></i>
+                            <h4>User Management</h4>
+                            <p>Manage user accounts and roles</p>
+                            <span class="nexvora-admin-soon">Coming Soon</span>
+                        </div>
+                        <div class="nexvora-admin-card">
+                            <i class="fa-solid fa-database"></i>
+                            <h4>Data & Storage</h4>
+                            <p>Manage storage and backups</p>
+                            <span class="nexvora-admin-soon">Coming Soon</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ===== MODALS ===== -->
+
+        <!-- Model Manager Modal -->
+        <div class="nexvora-modal nexvora-hidden" id="nexvoraModelModal">
+            <div class="nexvora-modal-backdrop" id="nexvoraModelModalBackdrop"></div>
+            <div class="nexvora-modal-content">
+                <div class="nexvora-modal-header">
+                    <h3 id="nexvoraModelModalTitle">Add Model</h3>
+                    <button class="nexvora-icon-btn" id="nexvoraModelModalClose"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <form id="nexvoraModelForm" novalidate>
+                    <div class="nexvora-modal-body">
+                        <div class="nexvora-form-row">
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraMdlName">Model Name <span class="nexvora-required">*</span></label>
+                                <input type="text" id="nexvoraMdlName" placeholder="e.g. GPT-4 Turbo" required>
+                                <span class="nexvora-form-hint">Display name for this model</span>
+                            </div>
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraMdlId">Model ID <span class="nexvora-required">*</span></label>
+                                <input type="text" id="nexvoraMdlId" placeholder="e.g. gpt-4-turbo" required>
+                                <span class="nexvora-form-hint">Unique identifier used in API calls</span>
+                            </div>
+                        </div>
+                        <div class="nexvora-form-row">
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraMdlProvider">Provider <span class="nexvora-required">*</span></label>
+                                <select id="nexvoraMdlProvider" required>
+                                    <option value="">Select provider...</option>
+                                    <option value="openai">OpenAI</option>
+                                    <option value="anthropic">Anthropic</option>
+                                    <option value="google">Google</option>
+                                    <option value="ollama">Ollama (Local)</option>
+                                    <option value="custom">Custom / Other</option>
+                                </select>
+                                <span class="nexvora-form-hint">AI provider or self-hosted backend</span>
+                            </div>
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraMdlMaxTokens">Max Tokens</label>
+                                <input type="number" id="nexvoraMdlMaxTokens" placeholder="4096" value="4096" min="1" max="1000000">
+                                <span class="nexvora-form-hint">Maximum response length</span>
+                            </div>
+                        </div>
+                        <div class="nexvora-input-group">
+                            <label for="nexvoraMdlEndpoint">API Endpoint <span class="nexvora-required">*</span></label>
+                            <input type="url" id="nexvoraMdlEndpoint" placeholder="http://127.0.0.1:8000/v1/chat/completions" required>
+                            <span class="nexvora-form-hint">Full URL to the chat completions endpoint</span>
+                            <span class="nexvora-form-error nexvora-hidden" id="nexvoraMdlEndpointError"></span>
+                        </div>
+                        <div class="nexvora-form-note">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span>Examples: <code>http://127.0.0.1:8000/v1/chat/completions</code> (local) or <code>https://api.tamilai.stream/v1/chat/completions</code> (production)</span>
+                        </div>
+                        <div class="nexvora-input-group">
+                            <label for="nexvoraMdlApiKey">API Key</label>
+                            <div class="nexvora-pass-wrap">
+                                <input type="password" id="nexvoraMdlApiKey" placeholder="sk-...">
+                                <button type="button" class="nexvora-pass-toggle" id="nexvoraMdlKeyToggle"><i class="fa-solid fa-eye"></i></button>
+                            </div>
+                            <span class="nexvora-form-hint">Stored locally only. Never sent to third parties.</span>
+                        </div>
+                        <div class="nexvora-form-row">
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraMdlLangs">Supported Languages</label>
+                                <input type="text" id="nexvoraMdlLangs" placeholder="en, ta, hi">
+                                <span class="nexvora-form-hint">Comma-separated language codes</span>
+                            </div>
+                            <div class="nexvora-input-group">
+                                <label>Capabilities</label>
+                                <div class="nexvora-checkbox-group">
+                                    <label class="nexvora-checkbox"><input type="checkbox" id="nexvoraCapChat" value="chat" checked> Chat</label>
+                                    <label class="nexvora-checkbox"><input type="checkbox" id="nexvoraCapTranslation" value="translation"> Translation</label>
+                                    <label class="nexvora-checkbox"><input type="checkbox" id="nexvoraCapWriting" value="writing"> Writing</label>
+                                    <label class="nexvora-checkbox"><input type="checkbox" id="nexvoraCapSummarization" value="summarization"> Summarization</label>
+                                    <label class="nexvora-checkbox"><input type="checkbox" id="nexvoraCapDocuments" value="documents"> Documents</label>
+                                    <label class="nexvora-checkbox"><input type="checkbox" id="nexvoraCapCoding" value="coding"> Coding</label>
+                                </div>
+                                <span class="nexvora-form-hint">What this model can do</span>
+                            </div>
+                        </div>
+                        <div class="nexvora-form-row">
+                            <div class="nexvora-input-group">
+                                <label>Status</label>
+                                <label class="nexvora-toggle"><input type="checkbox" id="nexvoraMdlEnabled" checked><span class="nexvora-toggle-slider"></span><span>Enabled</span></label>
+                            </div>
+                            <div class="nexvora-input-group">
+                                <label>Default Model</label>
+                                <label class="nexvora-toggle"><input type="checkbox" id="nexvoraMdlDefault"><span class="nexvora-toggle-slider"></span><span>Set as default</span></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nexvora-modal-footer">
+                        <button type="button" class="nexvora-btn-secondary" id="nexvoraModelFormCancel">Cancel</button>
+                        <button type="submit" class="nexvora-btn-primary" id="nexvoraModelFormSave"><i class="fa-solid fa-check"></i> Save Model</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Project Modal -->
+        <div class="nexvora-modal nexvora-hidden" id="nexvoraProjectModal">
+            <div class="nexvora-modal-backdrop" id="nexvoraProjectModalBackdrop"></div>
+            <div class="nexvora-modal-content nexvora-modal-sm">
+                <div class="nexvora-modal-header">
+                    <h3>New Project</h3>
+                    <button class="nexvora-icon-btn" id="nexvoraProjectModalClose"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <form id="nexvoraProjectForm" novalidate>
+                    <div class="nexvora-modal-body">
+                        <div class="nexvora-input-group">
+                            <label for="nexvoraProjectName">Project Name</label>
+                            <input type="text" id="nexvoraProjectName" placeholder="e.g. Research, Coding" required>
+                        </div>
+                        <div class="nexvora-input-group">
+                            <label for="nexvoraProjectDesc">Description (optional)</label>
+                            <input type="text" id="nexvoraProjectDesc" placeholder="Brief description">
+                        </div>
+                    </div>
+                    <div class="nexvora-modal-footer">
+                        <button type="button" class="nexvora-btn-secondary" id="nexvoraProjectFormCancel">Cancel</button>
+                        <button type="submit" class="nexvora-btn-primary"><i class="fa-solid fa-folder-plus"></i> Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Prompt Modal -->
+        <div class="nexvora-modal nexvora-hidden" id="nexvoraPromptModal">
+            <div class="nexvora-modal-backdrop" id="nexvoraPromptModalBackdrop"></div>
+            <div class="nexvora-modal-content">
+                <div class="nexvora-modal-header">
+                    <h3 id="nexvoraPromptModalTitle">New Prompt</h3>
+                    <button class="nexvora-icon-btn" id="nexvoraPromptModalClose"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <form id="nexvoraPromptForm" novalidate>
+                    <div class="nexvora-modal-body">
+                        <div class="nexvora-input-group">
+                            <label for="nexvoraPromptTitle">Title <span class="nexvora-required">*</span></label>
+                            <input type="text" id="nexvoraPromptTitle" placeholder="e.g. Professional Email Writer" required>
+                        </div>
+                        <div class="nexvora-input-group">
+                            <label for="nexvoraPromptCategory">Category</label>
+                            <select id="nexvoraPromptCategory" class="nexvora-select">
+                                <option value="writing">Writing</option>
+                                <option value="business">Business</option>
+                                <option value="coding">Coding</option>
+                                <option value="education">Education</option>
+                                <option value="translation">Translation</option>
+                                <option value="marketing">Marketing</option>
+                                <option value="productivity">Productivity</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+                        <div class="nexvora-input-group">
+                            <label for="nexvoraPromptContent">Prompt Template <span class="nexvora-required">*</span></label>
+                            <textarea id="nexvoraPromptContent" class="nexvora-textarea" rows="6" placeholder="Write your prompt template here. Use {input} as a placeholder for user input." required></textarea>
+                        </div>
+                        <div class="nexvora-input-group">
+                            <label for="nexvoraPromptDesc">Description (optional)</label>
+                            <input type="text" id="nexvoraPromptDesc" placeholder="Brief description of what this prompt does">
+                        </div>
+                    </div>
+                    <div class="nexvora-modal-footer">
+                        <button type="button" class="nexvora-btn-secondary" id="nexvoraPromptFormCancel">Cancel</button>
+                        <button type="submit" class="nexvora-btn-primary"><i class="fa-solid fa-check"></i> Save Prompt</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Global Search Modal -->
+        <div class="nexvora-modal nexvora-hidden" id="nexvoraSearchModal">
+            <div class="nexvora-modal-backdrop" id="nexvoraSearchModalBackdrop"></div>
+            <div class="nexvora-modal-content nexvora-search-modal-content">
+                <div class="nexvora-search-modal-input">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="nexvoraGlobalSearch" placeholder="Search chats, projects, files, prompts..." autofocus>
+                    <kbd>ESC</kbd>
+                </div>
+                <div class="nexvora-search-results" id="nexvoraSearchResults">
+                    <div class="nexvora-search-empty">Type to search across all your content</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Keyboard Shortcuts Modal -->
+        <div class="nexvora-modal nexvora-hidden" id="nexvoraShortcutsModal">
+            <div class="nexvora-modal-backdrop" id="nexvoraShortcutsModalBackdrop"></div>
+            <div class="nexvora-modal-content nexvora-modal-md">
+                <div class="nexvora-modal-header">
+                    <h3><i class="fa-solid fa-keyboard"></i> Keyboard Shortcuts</h3>
+                    <button class="nexvora-icon-btn" id="nexvoraShortcutsModalClose"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="nexvora-modal-body">
+                    <div class="nexvora-shortcuts-grid">
+                        <div class="nexvora-shortcut-group">
+                            <h4>General</h4>
+                            <div class="nexvora-shortcut-row"><span>Search</span><kbd>Ctrl + K</kbd></div>
+                            <div class="nexvora-shortcut-row"><span>New Chat</span><kbd>Ctrl + N</kbd></div>
+                            <div class="nexvora-shortcut-row"><span>Shortcuts</span><kbd>Ctrl + /</kbd></div>
+                            <div class="nexvora-shortcut-row"><span>Toggle Sidebar</span><kbd>Ctrl + B</kbd></div>
+                        </div>
+                        <div class="nexvora-shortcut-group">
+                            <h4>Chat</h4>
+                            <div class="nexvora-shortcut-row"><span>Send Message</span><kbd>Enter</kbd></div>
+                            <div class="nexvora-shortcut-row"><span>New Line</span><kbd>Shift + Enter</kbd></div>
+                            <div class="nexvora-shortcut-row"><span>Focus Input</span><kbd>/</kbd></div>
+                            <div class="nexvora-shortcut-row"><span>Stop Generation</span><kbd>Esc</kbd></div>
+                        </div>
+                        <div class="nexvora-shortcut-group">
+                            <h4>Navigation</h4>
+                            <div class="nexvora-shortcut-row"><span>Dashboard</span><kbd>Ctrl + 1</kbd></div>
+                            <div class="nexvora-shortcut-row"><span>AI Chat</span><kbd>Ctrl + 2</kbd></div>
+                            <div class="nexvora-shortcut-row"><span>Tools</span><kbd>Ctrl + 3</kbd></div>
+                            <div class="nexvora-shortcut-row"><span>Prompts</span><kbd>Ctrl + 4</kbd></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Context Menu -->
+        <div class="nexvora-context-menu nexvora-hidden" id="nexvoraContextMenu">
+            <button class="nexvora-ctx-item" data-action="rename"><i class="fa-solid fa-pen"></i> Rename</button>
+            <button class="nexvora-ctx-item" data-action="pin"><i class="fa-solid fa-thumbtack"></i> Pin</button>
+            <button class="nexvora-ctx-item" data-action="favorite"><i class="fa-solid fa-star"></i> Favorite</button>
+            <button class="nexvora-ctx-item" data-action="archive"><i class="fa-solid fa-box-archive"></i> Archive</button>
+            <button class="nexvora-ctx-item" data-action="project"><i class="fa-solid fa-folder"></i> Move to Project</button>
+            <div class="nexvora-ctx-divider"></div>
+            <button class="nexvora-ctx-item" data-action="clear"><i class="fa-solid fa-eraser"></i> Clear Messages</button>
+            <button class="nexvora-ctx-item" data-action="export"><i class="fa-solid fa-share-from-square"></i> Export</button>
+            <div class="nexvora-ctx-divider"></div>
+            <button class="nexvora-ctx-item nexvora-ctx-danger" data-action="delete"><i class="fa-solid fa-trash"></i> Delete</button>
+        </div>
+
+        <!-- Toast Container -->
+        <div class="nexvora-toast-container" id="nexvoraToasts"></div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="nexvora-api-config.js"></script>
+    <script src="nexvora-ai-service.js"></script>
+    <script src="nexvora-model-manager.js"></script>
+    <script src="nexvora.js"></script>
+</body>
+</html>

@@ -14,6 +14,7 @@ const REDIRECTS = {
   '/admin-upload': '/admin-upload.html',
   '/dashboard': '/dashboard.html',
   '/particles': '/particles.html',
+  '/Nexvora': '/nexvora.html',
 };
 
 let DEPLOY_TIME;

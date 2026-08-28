@@ -1,0 +1,2329 @@
+/* ============================================================================
+   Nexvora AI — Premium AI Assistant Platform Styles
+   ============================================================================
+   Completely isolated from Tamil AI Stream styles. No class name collisions.
+   All classes prefixed with `nexvora-` for namespacing.
+   ============================================================================ */
+
+/* --- CSS Variables --- */
+:root {
+    --nv-bg: #0a0e1a;
+    --nv-bg-secondary: #111827;
+    --nv-bg-tertiary: #1a2236;
+    --nv-bg-elevated: #1e2a42;
+    --nv-surface: rgba(255,255,255,0.04);
+    --nv-surface-hover: rgba(255,255,255,0.08);
+    --nv-border: rgba(255,255,255,0.08);
+    --nv-border-strong: rgba(255,255,255,0.14);
+    --nv-text: #e8ecf4;
+    --nv-text-secondary: #8896b3;
+    --nv-text-muted: #5a6a8a;
+    --nv-accent: #6c5ce7;
+    --nv-accent-light: #a29bfe;
+    --nv-accent-glow: rgba(108,92,231,0.3);
+    --nv-accent-gradient: linear-gradient(135deg, #6c5ce7 0%, #00cec9 100%);
+    --nv-success: #00b894;
+    --nv-warning: #fdcb6e;
+    --nv-danger: #e17055;
+    --nv-danger-light: #ff7675;
+    --nv-radius-sm: 8px;
+    --nv-radius: 12px;
+    --nv-radius-lg: 16px;
+    --nv-radius-xl: 24px;
+    --nv-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    --nv-shadow-lg: 0 8px 40px rgba(0,0,0,0.4);
+    --nv-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --nv-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --nv-sidebar-w: 280px;
+    --nv-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Reset & Base --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.nexvora-hidden { display: none !important; }
+
+html, body {
+    width: 100%; height: 100%;
+    font-family: var(--nv-font);
+    background: var(--nv-bg);
+    color: var(--nv-text);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--nv-accent-light); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--nv-border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--nv-text-muted); }
+
+/* ============================================================================
+   AUTH GATE
+   ============================================================================ */
+.nexvora-auth-gate {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+    background: var(--nv-bg);
+}
+
+.nexvora-auth-bg {
+    position: absolute; inset: 0; overflow: hidden;
+}
+.nexvora-auth-bg canvas { width: 100%; height: 100%; }
+.nexvora-auth-glow {
+    position: absolute; border-radius: 50%;
+    filter: blur(120px); opacity: 0.15; pointer-events: none;
+}
+.nexvora-auth-glow.g1 { width: 500px; height: 500px; top: -150px; left: -100px; background: #6c5ce7; }
+.nexvora-auth-glow.g2 { width: 400px; height: 400px; bottom: -100px; right: -50px; background: #00cec9; }
+.nexvora-auth-glow.g3 { width: 300px; height: 300px; top: 50%; left: 50%; transform: translate(-50%,-50%); background: #a29bfe; }
+
+.nexvora-auth-card {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 420px;
+    background: rgba(17,24,39,0.85);
+    backdrop-filter: blur(40px);
+    border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius-xl);
+    padding: 40px 36px;
+    box-shadow: var(--nv-shadow-lg);
+}
+
+.nexvora-auth-logo {
+    text-align: center; margin-bottom: 32px;
+}
+.nexvora-logo-mark {
+    width: 56px; height: 56px; margin: 0 auto 16px;
+    background: var(--nv-accent-gradient);
+    border-radius: var(--nv-radius);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; color: #fff;
+    box-shadow: 0 4px 20px var(--nv-accent-glow);
+}
+.nexvora-auth-logo h1 {
+    font-size: 26px; font-weight: 800; letter-spacing: -0.5px;
+}
+.nexvora-auth-logo h1 span { color: var(--nv-accent-light); }
+.nexvora-auth-logo p {
+    color: var(--nv-text-secondary); font-size: 14px; margin-top: 4px;
+}
+
+.nexvora-auth-welcome { margin-bottom: 24px; }
+.nexvora-auth-welcome h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.nexvora-auth-welcome p { color: var(--nv-text-secondary); font-size: 14px; }
+
+.nexvora-auth-methods {
+    display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;
+}
+.nexvora-auth-google, .nexvora-auth-guest {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 12px; border-radius: var(--nv-radius);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: all var(--nv-transition);
+}
+.nexvora-auth-google {
+    background: #fff; color: #333; border: 1px solid #e0e0e0;
+}
+.nexvora-auth-google:hover { background: #f5f5f5; }
+.nexvora-auth-guest {
+    background: var(--nv-surface); color: var(--nv-text);
+    border: 1px solid var(--nv-border);
+}
+.nexvora-auth-guest:hover { background: var(--nv-surface-hover); }
+
+.nexvora-auth-divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 20px 0; color: var(--nv-text-muted); font-size: 12px;
+}
+.nexvora-auth-divider::before, .nexvora-auth-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--nv-border);
+}
+
+/* Form Elements */
+.nexvora-input-group { margin-bottom: 16px; }
+.nexvora-input-group label {
+    display: block; font-size: 13px; font-weight: 500;
+    color: var(--nv-text-secondary); margin-bottom: 6px;
+}
+.nexvora-input-group label i { margin-right: 6px; width: 14px; text-align: center; }
+.nexvora-input-group input[type="text"],
+.nexvora-input-group input[type="email"],
+.nexvora-input-group input[type="password"],
+.nexvora-input-group input[type="url"],
+.nexvora-input-group input[type="number"],
+.nexvora-input-group select,
+.nexvora-select {
+    width: 100%; padding: 11px 14px;
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius-sm); color: var(--nv-text);
+    font-size: 14px; font-family: var(--nv-font);
+    outline: none; transition: all var(--nv-transition);
+}
+.nexvora-input-group input:focus,
+.nexvora-select:focus {
+    border-color: var(--nv-accent);
+    box-shadow: 0 0 0 3px var(--nv-accent-glow);
+}
+.nexvora-input-group input::placeholder { color: var(--nv-text-muted); }
+.nexvora-input-error {
+    font-size: 12px; color: var(--nv-danger); margin-top: 4px;
+    min-height: 16px;
+}
+
+.nexvora-pass-wrap { position: relative; }
+.nexvora-pass-wrap input { padding-right: 42px; }
+.nexvora-pass-toggle {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--nv-text-muted);
+    cursor: pointer; padding: 4px; font-size: 14px;
+}
+.nexvora-pass-toggle:hover { color: var(--nv-text); }
+
+.nexvora-auth-error {
+    color: var(--nv-danger); font-size: 13px; text-align: center;
+    min-height: 20px; margin-bottom: 8px;
+}
+
+.nexvora-form-opts {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px; font-size: 13px;
+}
+.nexvora-remember {
+    display: flex; align-items: center; gap: 6px; cursor: pointer;
+    color: var(--nv-text-secondary);
+}
+.nexvora-remember input { accent-color: var(--nv-accent); }
+.nexvora-form-opts a { color: var(--nv-accent-light); font-size: 13px; }
+
+.nexvora-submit-btn {
+    width: 100%; padding: 12px; border: none; border-radius: var(--nv-radius);
+    background: var(--nv-accent-gradient); color: #fff;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    transition: all var(--nv-transition); position: relative; overflow: hidden;
+}
+.nexvora-submit-btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 16px var(--nv-accent-glow); }
+.nexvora-submit-btn:active { transform: translateY(0); }
+.nexvora-submit-btn .nexvora-btn-loader { display: none; }
+.nexvora-submit-btn.loading .nexvora-btn-text { display: none; }
+.nexvora-submit-btn.loading .nexvora-btn-loader { display: inline-flex; align-items: center; gap: 8px; }
+
+.nexvora-auth-footer {
+    text-align: center; margin-top: 20px; font-size: 13px; color: var(--nv-text-secondary);
+}
+.nexvora-auth-footer a { font-weight: 600; }
+
+.nexvora-auth-bottom {
+    position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+    z-index: 1;
+}
+.nexvora-auth-bottom a {
+    font-size: 13px; color: var(--nv-text-muted);
+    display: flex; align-items: center; gap: 6px;
+}
+.nexvora-auth-bottom a:hover { color: var(--nv-text-secondary); text-decoration: none; }
+
+/* ============================================================================
+   MAIN APP LAYOUT
+   ============================================================================ */
+.nexvora-app {
+    display: flex; width: 100vw; height: 100vh; overflow: hidden;
+    background: var(--nv-bg);
+}
+
+/* Mobile Header */
+.nexvora-mobile-header {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 52px; z-index: 100;
+    background: rgba(10,14,26,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--nv-border);
+    align-items: center; justify-content: space-between;
+    padding: 0 12px;
+}
+.nexvora-hamburger {
+    background: none; border: none; color: var(--nv-text);
+    font-size: 20px; cursor: pointer; padding: 8px;
+}
+.nexvora-mobile-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 16px; font-weight: 700;
+}
+.nexvora-mobile-title i { color: var(--nv-accent-light); }
+.nexvora-mobile-actions { display: flex; gap: 4px; }
+
+/* ============================================================================
+   SIDEBAR
+   ============================================================================ */
+.nexvora-sidebar {
+    width: var(--nv-sidebar-w); height: 100vh;
+    background: var(--nv-bg-secondary);
+    border-right: 1px solid var(--nv-border);
+    display: flex; flex-direction: column;
+    flex-shrink: 0; z-index: 200;
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease;
+    overflow: hidden;
+}
+
+/* --- Sidebar Header --- */
+.nexvora-sidebar-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 14px 10px; min-height: 52px;
+}
+.nexvora-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.nexvora-brand-icon {
+    width: 30px; height: 30px; flex-shrink: 0;
+    background: var(--nv-accent-gradient);
+    border-radius: var(--nv-radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: #fff;
+}
+.nexvora-brand-text {
+    font-size: 16px; font-weight: 800; letter-spacing: -0.3px;
+    white-space: nowrap; overflow: hidden;
+    transition: opacity 0.2s, width 0.25s;
+}
+.nexvora-header-actions {
+    display: flex; align-items: center; gap: 2px;
+}
+.nexvora-sidebar-collapse-btn {
+    background: none; border: none; color: var(--nv-text-muted);
+    width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all var(--nv-transition); font-size: 12px;
+}
+.nexvora-sidebar-collapse-btn:hover { background: var(--nv-surface-hover); color: var(--nv-text); }
+.nexvora-sidebar-close {
+    display: none; background: none; border: none;
+    color: var(--nv-text-muted); font-size: 20px; cursor: pointer;
+    padding: 4px; width: 28px; height: 28px;
+    border-radius: 6px; align-items: center; justify-content: center;
+}
+.nexvora-sidebar-close:hover { background: var(--nv-surface-hover); color: var(--nv-text); }
+
+/* --- New Chat Button --- */
+.nexvora-sidebar-action-row {
+    padding: 0 10px 8px;
+}
+.nexvora-new-chat-btn {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 9px 12px; border-radius: var(--nv-radius-sm);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    color: var(--nv-text); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all var(--nv-transition);
+    white-space: nowrap;
+}
+.nexvora-new-chat-btn:hover {
+    background: var(--nv-surface-hover); border-color: var(--nv-accent);
+}
+.nexvora-new-chat-btn i { flex-shrink: 0; width: 16px; text-align: center; font-size: 13px; }
+
+/* --- Search --- */
+.nexvora-search-wrap {
+    position: relative; margin: 0 10px 8px;
+}
+.nexvora-search-wrap > i {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--nv-text-muted); font-size: 12px; pointer-events: none;
+}
+.nexvora-search-wrap input {
+    width: 100%; padding: 8px 10px 8px 32px;
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius-sm); color: var(--nv-text);
+    font-size: 12px; font-family: var(--nv-font);
+    outline: none; transition: all var(--nv-transition);
+}
+.nexvora-search-wrap input:focus { border-color: var(--nv-accent); box-shadow: 0 0 0 2px var(--nv-accent-glow); }
+.nexvora-search-wrap input::placeholder { color: var(--nv-text-muted); }
+.nexvora-search-kbd {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-size: 10px; color: var(--nv-text-muted); background: var(--nv-bg-tertiary);
+    padding: 1px 5px; border-radius: 4px; border: 1px solid var(--nv-border);
+    font-family: var(--nv-font); pointer-events: none; line-height: 1.4;
+}
+
+/* --- Primary Navigation --- */
+.nexvora-sidebar-nav {
+    display: flex; flex-direction: column; gap: 1px;
+    padding: 0 10px 6px;
+}
+.nexvora-nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--nv-radius-sm);
+    background: none; border: none; color: var(--nv-text-secondary);
+    font-size: 13px; cursor: pointer; transition: all var(--nv-transition);
+    width: 100%; white-space: nowrap; position: relative;
+    font-family: var(--nv-font);
+}
+.nexvora-nav-item:hover { background: var(--nv-surface-hover); color: var(--nv-text); }
+.nexvora-nav-item.active {
+    background: var(--nv-accent-glow); color: var(--nv-text);
+}
+.nexvora-nav-item.active::before {
+    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 16px; border-radius: 0 2px 2px 0;
+    background: var(--nv-accent-gradient);
+}
+.nexvora-nav-item i { width: 16px; text-align: center; font-size: 13px; flex-shrink: 0; }
+.nexvora-nav-arrow { margin-left: auto; font-size: 10px !important; width: auto !important; transition: transform 0.2s; }
+.nexvora-nav-item.open .nexvora-nav-arrow { transform: rotate(90deg); }
+
+/* --- Tools Submenu --- */
+.nexvora-tools-submenu {
+    display: none; flex-direction: column; gap: 1px;
+    padding: 2px 10px 6px 26px;
+}
+.nexvora-tools-submenu.open { display: flex; }
+.nexvora-tool-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 6px 10px; border-radius: var(--nv-radius-sm);
+    background: none; border: none; color: var(--nv-text-secondary);
+    font-size: 12px; cursor: pointer; transition: all var(--nv-transition);
+    width: 100%; white-space: nowrap;
+    font-family: var(--nv-font);
+}
+.nexvora-tool-item:hover { background: var(--nv-surface-hover); color: var(--nv-text); }
+.nexvora-tool-item i { width: 14px; text-align: center; font-size: 12px; flex-shrink: 0; }
+
+/* --- Sidebar Sections --- */
+.nexvora-sidebar-section {
+    padding: 0 10px; overflow: hidden;
+}
+.nexvora-chats-section {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    min-height: 0;
+}
+.nexvora-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 2px;
+}
+.nexvora-section-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--nv-text-muted);
+    padding: 4px 0; user-select: none;
+}
+.nexvora-section-label i { font-size: 10px; width: 14px; text-align: center; }
+.nexvora-section-action {
+    background: none; border: none; color: var(--nv-text-muted);
+    width: 22px; height: 22px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all var(--nv-transition); font-size: 11px;
+}
+.nexvora-section-action:hover { background: var(--nv-surface-hover); color: var(--nv-text); }
+
+/* --- Date Group Labels --- */
+.nexvora-date-group {
+    font-size: 10px; font-weight: 600; color: var(--nv-text-muted);
+    padding: 10px 8px 4px; text-transform: uppercase; letter-spacing: 0.4px;
+    user-select: none;
+}
+
+/* --- Empty State --- */
+.nexvora-empty-chats {
+    padding: 20px 8px; color: var(--nv-text-muted); font-size: 12px;
+    text-align: center;
+}
+
+/* --- Chat List Items --- */
+.nexvora-chat-list { display: flex; flex-direction: column; gap: 1px; }
+
+.nexvora-chat-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 8px; border-radius: var(--nv-radius-sm);
+    cursor: pointer; transition: all var(--nv-transition);
+    font-size: 13px; color: var(--nv-text-secondary);
+    position: relative; overflow: hidden;
+}
+.nexvora-chat-item:hover { background: var(--nv-surface-hover); color: var(--nv-text); }
+.nexvora-chat-item.active { background: var(--nv-accent-glow); color: var(--nv-text); }
+.nexvora-chat-item.active::before {
+    content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 14px; border-radius: 0 2px 2px 0;
+    background: var(--nv-accent-gradient);
+}
+.nexvora-chat-item i { font-size: 12px; opacity: 0.5; flex-shrink: 0; width: 14px; text-align: center; }
+.nexvora-chat-item span {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+    line-height: 1.3;
+}
+
+/* Chat item three-dot menu */
+.nexvora-chat-item-menu {
+    position: relative; flex-shrink: 0;
+}
+.nexvora-chat-item-dots {
+    background: none; border: none; color: var(--nv-text-muted);
+    width: 24px; height: 24px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all var(--nv-transition);
+    font-size: 11px; opacity: 0;
+}
+.nexvora-chat-item:hover .nexvora-chat-item-dots { opacity: 1; }
+.nexvora-chat-item-dots:hover { background: var(--nv-surface-hover); color: var(--nv-text); }
+
+/* --- Projects --- */
+.nexvora-projects-list { display: flex; flex-direction: column; gap: 1px; }
+
+/* --- Account Area --- */
+.nexvora-sidebar-bottom {
+    padding: 8px 10px 10px; border-top: 1px solid var(--nv-border);
+}
+.nexvora-account-area { position: relative; }
+.nexvora-account-trigger {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 8px; border-radius: var(--nv-radius-sm);
+    cursor: pointer; transition: all var(--nv-transition);
+    outline: none;
+}
+.nexvora-account-trigger:hover { background: var(--nv-surface-hover); }
+.nexvora-account-trigger:focus-visible { box-shadow: 0 0 0 2px var(--nv-accent-glow); }
+.nexvora-user-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--nv-accent-gradient);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: #fff; flex-shrink: 0;
+}
+.nexvora-user-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.nexvora-user-name {
+    font-size: 13px; font-weight: 500; line-height: 1.2;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nexvora-user-email {
+    font-size: 11px; color: var(--nv-text-muted); line-height: 1.2;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nexvora-account-more {
+    font-size: 12px; color: var(--nv-text-muted); flex-shrink: 0;
+    transition: color var(--nv-transition);
+}
+
+/* --- Account Dropdown --- */
+.nexvora-account-dropdown {
+    display: none; position: absolute; bottom: 100%; left: 0; right: 0;
+    margin-bottom: 6px; background: var(--nv-bg-elevated);
+    border: 1px solid var(--nv-border-strong);
+    border-radius: var(--nv-radius); box-shadow: var(--nv-shadow-lg);
+    overflow: hidden; z-index: 300;
+    max-height: 400px; overflow-y: auto;
+}
+.nexvora-account-dropdown.open { display: block; }
+.nexvora-dropdown-header {
+    padding: 12px 14px;
+}
+.nexvora-dropdown-name {
+    display: block; font-size: 13px; font-weight: 600; color: var(--nv-text);
+}
+.nexvora-dropdown-email {
+    display: block; font-size: 11px; color: var(--nv-text-muted); margin-top: 2px;
+}
+.nexvora-dropdown-divider {
+    height: 1px; background: var(--nv-border); margin: 2px 0;
+}
+.nexvora-dropdown-item {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 8px 14px; border: none;
+    background: none; color: var(--nv-text-secondary);
+    font-size: 13px; cursor: pointer; transition: all var(--nv-transition);
+    font-family: var(--nv-font); text-align: left;
+}
+.nexvora-dropdown-item:hover { background: var(--nv-surface-hover); color: var(--nv-text); }
+.nexvora-dropdown-item i { width: 16px; text-align: center; font-size: 13px; flex-shrink: 0; }
+.nexvora-dropdown-danger { color: var(--nv-danger-light); }
+.nexvora-dropdown-danger:hover { background: rgba(225,112,85,0.1); color: var(--nv-danger-light); }
+
+/* --- Collapsed Sidebar State --- */
+.nexvora-sidebar[data-collapsed="true"] {
+    width: 56px;
+}
+.nexvora-sidebar[data-collapsed="true"] .nexvora-brand-text,
+.nexvora-sidebar[data-collapsed="true"] .nexvora-sidebar-label,
+.nexvora-sidebar[data-collapsed="true"] .nexvora-search-kbd,
+.nexvora-sidebar[data-collapsed="true"] .nexvora-user-info,
+.nexvora-sidebar[data-collapsed="true"] .nexvora-account-more,
+.nexvora-sidebar[data-collapsed="true"] .nexvora-nav-arrow {
+    opacity: 0; width: 0; overflow: hidden; padding: 0; margin: 0;
+    pointer-events: none;
+}
+.nexvora-sidebar[data-collapsed="true"] .nexvora-new-chat-btn {
+    justify-content: center; padding: 9px;
+}
+.nexvora-sidebar[data-collapsed="true"] .nexvora-new-chat-btn i {
+    margin: 0;
+}
+.nexvora-sidebar[data-collapsed="true"] .nexvora-search-wrap input {
+    padding-left: 10px; text-align: center;
+}
+.nexvora-sidebar[data-collapsed="true"] .nexvora-sidebar-nav {
+    align-items: center;
+}
+.nexvora-sidebar[data-collapsed="true"] .nexvora-nav-item {
+    justify-content: center; padding: 8px;
+}
+.nexvora-sidebar[data-collapsed="true"] .nexvora-nav-item.active::before { display: none; }
+.nexvora-sidebar[data-collapsed="true"] .nexvora-section-header { justify-content: center; }
+.nexvora-sidebar[data-collapsed="true"] .nexvora-section-action { display: none; }
+.nexvora-sidebar[data-collapsed="true"] .nexvora-chat-item {
+    justify-content: center; padding: 7px;
+}
+.nexvora-sidebar[data-collapsed="true"] .nexvora-chat-item.active::before { display: none; }
+.nexvora-sidebar[data-collapsed="true"] .nexvora-chat-item-dots { display: none; }
+.nexvora-sidebar[data-collapsed="true"] .nexvora-account-trigger {
+    justify-content: center; padding: 7px;
+}
+.nexvora-sidebar[data-collapsed="true"] .nexvora-tools-submenu { display: none !important; }
+.nexvora-sidebar[data-collapsed="true"] .nexvora-sidebar-section { padding: 0 6px; }
+.nexvora-sidebar[data-collapsed="true"] .nexvora-sidebar-action-row { padding: 0 6px 8px; }
+.nexvora-sidebar[data-collapsed="true"] .nexvora-sidebar-nav { padding: 0 6px 6px; }
+.nexvora-sidebar[data-collapsed="true"] .nexvora-search-wrap { margin: 0 6px 8px; }
+.nexvora-sidebar[data-collapsed="true"] .nexvora-sidebar-bottom { padding: 8px 6px 10px; }
+.nexvora-sidebar[data-collapsed="true"] .nexvora-sidebar-collapse-btn i {
+    transform: rotate(180deg);
+}
+.nexvora-sidebar[data-collapsed="true"] .nexvora-date-group { display: none; }
+
+/* Collapsed sidebar tooltip */
+.nexvora-sidebar[data-collapsed="true"] .nexvora-nav-item:hover,
+.nexvora-sidebar[data-collapsed="true"] .nexvora-chat-item:hover,
+.nexvora-sidebar[data-collapsed="true"] .nexvora-account-trigger:hover {
+    position: relative;
+}
+.nexvora-sidebar[data-collapsed="true"] .nexvora-nav-item:hover::after,
+.nexvora-sidebar[data-collapsed="true"] .nexvora-chat-item:hover::after,
+.nexvora-sidebar[data-collapsed="true"] .nexvora-account-trigger:hover::after {
+    content: attr(data-tooltip);
+    position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%);
+    background: var(--nv-bg-elevated); color: var(--nv-text);
+    padding: 5px 10px; border-radius: 6px; font-size: 12px;
+    white-space: nowrap; box-shadow: var(--nv-shadow);
+    border: 1px solid var(--nv-border-strong); z-index: 500;
+    pointer-events: none;
+}
+
+/* Sidebar Overlay */
+.nexvora-sidebar-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 199;
+}
+
+/* ============================================================================
+   MAIN CONTENT AREA
+   ============================================================================ */
+.nexvora-main {
+    flex: 1; display: flex; flex-direction: column;
+    overflow: hidden; position: relative;
+    min-width: 0;
+}
+
+.nexvora-view {
+    display: none; flex-direction: column;
+    width: 100%; height: 100%; overflow: hidden;
+}
+.nexvora-view.nexvora-active { display: flex; }
+
+.nexvora-view-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 28px; border-bottom: 1px solid var(--nv-border);
+}
+.nexvora-view-header h2 {
+    font-size: 20px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+}
+.nexvora-view-header h2 i { color: var(--nv-accent-light); }
+
+/* ============================================================================
+   CHAT VIEW
+   ============================================================================ */
+
+/* Model Selector Bar */
+.nexvora-model-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-bottom: 1px solid var(--nv-border);
+    background: rgba(10,14,26,0.6);
+    backdrop-filter: blur(10px);
+    position: relative; z-index: 50;
+}
+.nexvora-model-selector {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: var(--nv-radius-sm);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    cursor: pointer; font-size: 13px; font-weight: 500;
+    transition: all var(--nv-transition);
+}
+.nexvora-model-selector:hover { border-color: var(--nv-accent); }
+.nexvora-model-selector i:first-child { color: var(--nv-accent-light); font-size: 12px; }
+.nexvora-model-selector i:last-child { font-size: 10px; color: var(--nv-text-muted); }
+
+.nexvora-model-dropdown {
+    display: none; position: absolute; top: 100%; left: 20px;
+    margin-top: 4px; min-width: 260px;
+    background: var(--nv-bg-elevated);
+    border: 1px solid var(--nv-border-strong);
+    border-radius: var(--nv-radius); box-shadow: var(--nv-shadow-lg);
+    z-index: 100; overflow: hidden;
+}
+.nexvora-model-dropdown.open { display: block; }
+
+.nexvora-model-option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; cursor: pointer;
+    transition: all var(--nv-transition);
+    font-size: 13px;
+}
+.nexvora-model-option:hover { background: var(--nv-surface-hover); }
+.nexvora-model-option.active { background: var(--nv-accent-glow); }
+.nexvora-model-option.disabled { opacity: 0.4; cursor: not-allowed; }
+.nexvora-model-option i { color: var(--nv-accent-light); font-size: 12px; width: 16px; text-align: center; }
+.nexvora-model-option-info { flex: 1; }
+.nexvora-model-option-name { font-weight: 500; }
+.nexvora-model-option-provider { font-size: 11px; color: var(--nv-text-muted); }
+.nexvora-model-option .nexvora-model-check { color: var(--nv-success); font-size: 12px; display: none; }
+.nexvora-model-option.active .nexvora-model-check { display: inline; }
+
+.nexvora-model-bar-right { margin-left: auto; }
+
+/* Chat Area */
+.nexvora-chat-area {
+    flex: 1; overflow-y: auto; padding: 0;
+    display: flex; flex-direction: column;
+    scroll-behavior: smooth;
+}
+
+/* Welcome Screen */
+.nexvora-welcome {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 20px; text-align: center;
+}
+.nexvora-welcome-icon {
+    width: 72px; height: 72px; margin-bottom: 24px;
+    background: var(--nv-accent-gradient);
+    border-radius: var(--nv-radius-lg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; color: #fff;
+    box-shadow: 0 8px 32px var(--nv-accent-glow);
+}
+.nexvora-welcome h2 {
+    font-size: 28px; font-weight: 800; margin-bottom: 8px;
+    background: var(--nv-accent-gradient);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.nexvora-welcome p {
+    color: var(--nv-text-secondary); font-size: 15px;
+    max-width: 480px; line-height: 1.6;
+}
+
+.nexvora-welcome-chips {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 8px; margin-top: 28px; max-width: 600px;
+}
+.nexvora-chip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; border-radius: var(--nv-radius-xl);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    color: var(--nv-text-secondary); font-size: 13px;
+    cursor: pointer; transition: all var(--nv-transition);
+    font-family: var(--nv-font);
+}
+.nexvora-chip:hover {
+    background: var(--nv-surface-hover);
+    border-color: var(--nv-accent); color: var(--nv-text);
+    transform: translateY(-1px);
+}
+.nexvora-chip i { color: var(--nv-accent-light); font-size: 12px; }
+
+/* Messages */
+.nexvora-messages {
+    display: flex; flex-direction: column;
+    padding: 20px 0; flex: 1;
+}
+
+.nexvora-message {
+    display: flex; gap: 16px; padding: 20px 28px;
+    animation: nvFadeIn 0.3s ease;
+}
+@keyframes nvFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.nexvora-message-avatar {
+    width: 32px; height: 32px; border-radius: var(--nv-radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 14px;
+}
+.nexvora-message.user .nexvora-message-avatar {
+    background: var(--nv-accent-gradient); color: #fff;
+}
+.nexvora-message.assistant .nexvora-message-avatar {
+    background: var(--nv-bg-elevated); border: 1px solid var(--nv-border);
+    color: var(--nv-accent-light);
+}
+
+.nexvora-message-body { flex: 1; min-width: 0; }
+.nexvora-message-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 6px;
+}
+.nexvora-message-sender {
+    font-size: 13px; font-weight: 600;
+}
+.nexvora-message-time {
+    font-size: 11px; color: var(--nv-text-muted);
+}
+.nexvora-message-model {
+    font-size: 10px; color: var(--nv-accent-light);
+    background: var(--nv-accent-glow);
+    padding: 2px 8px; border-radius: 10px;
+}
+
+.nexvora-message-content {
+    font-size: 14px; line-height: 1.7;
+    color: var(--nv-text);
+    overflow-wrap: break-word;
+}
+
+/* Markdown in messages */
+.nexvora-message-content p { margin-bottom: 10px; }
+.nexvora-message-content p:last-child { margin-bottom: 0; }
+.nexvora-message-content strong { font-weight: 600; }
+.nexvora-message-content em { font-style: italic; color: var(--nv-text-secondary); }
+.nexvora-message-content ul, .nexvora-message-content ol {
+    margin: 8px 0; padding-left: 24px;
+}
+.nexvora-message-content li { margin-bottom: 4px; }
+.nexvora-message-content code {
+    font-family: var(--nv-mono); font-size: 13px;
+    background: rgba(108,92,231,0.15); color: var(--nv-accent-light);
+    padding: 2px 6px; border-radius: 4px;
+}
+.nexvora-message-content pre {
+    background: var(--nv-bg); border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius-sm); margin: 12px 0;
+    overflow: hidden; position: relative;
+}
+.nexvora-message-content pre code {
+    display: block; padding: 16px; overflow-x: auto;
+    background: none; color: var(--nv-text); border-radius: 0;
+}
+.nexvora-message-content pre .nexvora-code-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; background: var(--nv-bg-secondary);
+    border-bottom: 1px solid var(--nv-border);
+    font-size: 12px; color: var(--nv-text-muted);
+}
+.nexvora-message-content pre .nexvora-code-header .nexvora-copy-code {
+    background: none; border: none; color: var(--nv-text-muted);
+    cursor: pointer; font-size: 12px; font-family: var(--nv-font);
+    padding: 2px 8px; border-radius: 4px;
+}
+.nexvora-message-content pre .nexvora-code-header .nexvora-copy-code:hover {
+    color: var(--nv-text); background: var(--nv-surface-hover);
+}
+.nexvora-message-content blockquote {
+    border-left: 3px solid var(--nv-accent);
+    padding: 8px 16px; margin: 10px 0;
+    background: var(--nv-surface); border-radius: 0 var(--nv-radius-sm) var(--nv-radius-sm) 0;
+    color: var(--nv-text-secondary);
+}
+.nexvora-message-content h1, .nexvora-message-content h2,
+.nexvora-message-content h3, .nexvora-message-content h4 {
+    margin: 16px 0 8px; font-weight: 700;
+}
+.nexvora-message-content h1 { font-size: 20px; }
+.nexvora-message-content h2 { font-size: 17px; }
+.nexvora-message-content h3 { font-size: 15px; }
+.nexvora-message-content a {
+    color: var(--nv-accent-light); text-decoration: underline;
+}
+.nexvora-message-content hr {
+    border: none; border-top: 1px solid var(--nv-border); margin: 16px 0;
+}
+.nexvora-message-content table {
+    width: 100%; border-collapse: collapse; margin: 12px 0;
+    font-size: 13px;
+}
+.nexvora-message-content th, .nexvora-message-content td {
+    padding: 8px 12px; border: 1px solid var(--nv-border);
+    text-align: left;
+}
+.nexvora-message-content th {
+    background: var(--nv-bg-secondary); font-weight: 600;
+}
+
+/* Message Actions */
+.nexvora-message-actions {
+    display: flex; gap: 4px; margin-top: 8px;
+    opacity: 0; transition: opacity var(--nv-transition);
+}
+.nexvora-message:hover .nexvora-message-actions { opacity: 1; }
+.nexvora-msg-action {
+    background: none; border: 1px solid transparent;
+    color: var(--nv-text-muted); font-size: 12px;
+    padding: 4px 10px; border-radius: var(--nv-radius-sm);
+    cursor: pointer; transition: all var(--nv-transition);
+    font-family: var(--nv-font); display: flex; align-items: center; gap: 4px;
+}
+.nexvora-msg-action:hover {
+    background: var(--nv-surface-hover); border-color: var(--nv-border);
+    color: var(--nv-text);
+}
+.nexvora-msg-action.copied { color: var(--nv-success); }
+
+/* Loading */
+.nexvora-loading {
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; padding: 16px 28px; color: var(--nv-text-muted);
+    font-size: 13px;
+}
+.nexvora-loading-dots {
+    display: flex; gap: 4px;
+}
+.nexvora-loading-dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--nv-accent-light);
+    animation: nvDotPulse 1.4s infinite ease-in-out;
+}
+.nexvora-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.nexvora-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes nvDotPulse {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+}
+.nexvora-stop-btn {
+    background: var(--nv-danger); color: #fff; border: none;
+    padding: 4px 12px; border-radius: var(--nv-radius-sm);
+    font-size: 12px; cursor: pointer; font-family: var(--nv-font);
+}
+
+/* ============================================================================
+   INPUT AREA
+   ============================================================================ */
+.nexvora-input-area {
+    padding: 12px 20px 20px;
+    background: linear-gradient(to top, var(--nv-bg) 60%, transparent);
+}
+.nexvora-input-container {
+    max-width: 800px; margin: 0 auto;
+    background: var(--nv-bg-secondary);
+    border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius-lg);
+    overflow: hidden;
+    transition: border-color var(--nv-transition), box-shadow var(--nv-transition);
+}
+.nexvora-input-container:focus-within {
+    border-color: var(--nv-accent);
+    box-shadow: 0 0 0 3px var(--nv-accent-glow);
+}
+
+.nexvora-attachment-bar {
+    display: flex; gap: 8px; padding: 10px 14px;
+    border-bottom: 1px solid var(--nv-border);
+    overflow-x: auto;
+}
+.nexvora-attachment-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 10px; background: var(--nv-surface);
+    border-radius: var(--nv-radius-sm);
+    font-size: 12px; color: var(--nv-text-secondary);
+    white-space: nowrap;
+}
+.nexvora-attachment-item i { color: var(--nv-accent-light); }
+.nexvora-attachment-remove {
+    background: none; border: none; color: var(--nv-text-muted);
+    cursor: pointer; font-size: 10px; padding: 2px;
+}
+.nexvora-attachment-remove:hover { color: var(--nv-danger); }
+
+.nexvora-input-row {
+    display: flex; align-items: flex-end; gap: 4px;
+    padding: 8px 10px;
+}
+
+.nexvora-icon-btn {
+    background: none; border: none; color: var(--nv-text-muted);
+    width: 36px; height: 36px; border-radius: var(--nv-radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all var(--nv-transition);
+    font-size: 15px; flex-shrink: 0;
+}
+.nexvora-icon-btn:hover { background: var(--nv-surface-hover); color: var(--nv-text); }
+
+.nexvora-input-row textarea {
+    flex: 1; border: none; background: none; color: var(--nv-text);
+    font-size: 14px; font-family: var(--nv-font);
+    resize: none; outline: none; max-height: 200px;
+    padding: 8px 4px; line-height: 1.5;
+}
+.nexvora-input-row textarea::placeholder { color: var(--nv-text-muted); }
+
+.nexvora-send-btn {
+    width: 36px; height: 36px; border-radius: var(--nv-radius-sm);
+    background: var(--nv-accent-gradient); border: none;
+    color: #fff; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+    transition: all var(--nv-transition);
+    opacity: 0.4;
+}
+.nexvora-send-btn:not(:disabled) { opacity: 1; }
+.nexvora-send-btn:not(:disabled):hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 12px var(--nv-accent-glow);
+}
+
+.nexvora-voice-btn.recording {
+    color: var(--nv-danger);
+    animation: nvVoicePulse 1s infinite;
+}
+@keyframes nvVoicePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ============================================================================
+   FILES VIEW
+   ============================================================================ */
+.nexvora-files-grid {
+    flex: 1; overflow-y: auto; padding: 20px 28px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px; align-content: start;
+}
+.nexvora-file-card {
+    display: flex; flex-direction: column;
+    padding: 16px; border-radius: var(--nv-radius);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    cursor: pointer; transition: all var(--nv-transition);
+}
+.nexvora-file-card:hover { border-color: var(--nv-accent); transform: translateY(-2px); }
+.nexvora-file-icon {
+    font-size: 28px; color: var(--nv-accent-light); margin-bottom: 10px;
+}
+.nexvora-file-name {
+    font-size: 13px; font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nexvora-file-meta {
+    font-size: 11px; color: var(--nv-text-muted); margin-top: 4px;
+}
+.nexvora-empty-state {
+    grid-column: 1 / -1;
+    text-align: center; padding: 60px 20px;
+    color: var(--nv-text-muted);
+}
+.nexvora-empty-state i { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+.nexvora-empty-state p { font-size: 14px; }
+
+/* ============================================================================
+   SETTINGS VIEW
+   ============================================================================ */
+.nexvora-settings-content {
+    flex: 1; overflow-y: auto; padding: 20px 28px;
+    max-width: 700px;
+}
+.nexvora-setting-group {
+    margin-bottom: 32px;
+}
+.nexvora-setting-group h3 {
+    font-size: 15px; font-weight: 700; margin-bottom: 12px;
+    color: var(--nv-text-secondary); text-transform: uppercase;
+    letter-spacing: 0.5px; font-size: 12px;
+}
+.nexvora-setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; border-bottom: 1px solid var(--nv-border);
+}
+.nexvora-setting-info { flex: 1; }
+.nexvora-setting-label { display: block; font-size: 14px; font-weight: 500; }
+.nexvora-setting-desc { display: block; font-size: 12px; color: var(--nv-text-muted); margin-top: 2px; }
+
+.nexvora-select {
+    padding: 8px 12px; min-width: 140px;
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius-sm); color: var(--nv-text);
+    font-size: 13px; font-family: var(--nv-font);
+}
+
+.nexvora-toggle {
+    position: relative; display: inline-flex; align-items: center; gap: 8px;
+    cursor: pointer; font-size: 13px; color: var(--nv-text-secondary);
+}
+.nexvora-toggle input { display: none; }
+.nexvora-toggle-slider {
+    width: 40px; height: 22px; border-radius: 11px;
+    background: var(--nv-border-strong);
+    position: relative; transition: background var(--nv-transition);
+}
+.nexvora-toggle-slider::after {
+    content: ''; position: absolute;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; top: 3px; left: 3px;
+    transition: transform var(--nv-transition);
+}
+.nexvora-toggle input:checked + .nexvora-toggle-slider { background: var(--nv-accent); }
+.nexvora-toggle input:checked + .nexvora-toggle-slider::after { transform: translateX(18px); }
+
+/* Buttons */
+.nexvora-btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: var(--nv-radius-sm);
+    background: var(--nv-accent-gradient); color: #fff;
+    border: none; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all var(--nv-transition);
+    font-family: var(--nv-font);
+}
+.nexvora-btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.nexvora-btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: var(--nv-radius-sm);
+    background: var(--nv-surface); color: var(--nv-text);
+    border: 1px solid var(--nv-border); font-size: 13px;
+    cursor: pointer; transition: all var(--nv-transition);
+    font-family: var(--nv-font);
+}
+.nexvora-btn-secondary:hover { background: var(--nv-surface-hover); border-color: var(--nv-accent); }
+
+.nexvora-btn-danger {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: var(--nv-radius-sm);
+    background: rgba(225,112,85,0.1); color: var(--nv-danger-light);
+    border: 1px solid rgba(225,112,85,0.2); font-size: 13px;
+    cursor: pointer; transition: all var(--nv-transition);
+    font-family: var(--nv-font);
+}
+.nexvora-btn-danger:hover { background: rgba(225,112,85,0.2); }
+
+/* ============================================================================
+   MODEL MANAGER VIEW
+   ============================================================================ */
+.nexvora-models-content {
+    flex: 1; overflow-y: auto; padding: 20px 28px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px; align-content: start;
+}
+.nexvora-model-card {
+    padding: 20px; border-radius: var(--nv-radius);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    transition: all var(--nv-transition);
+}
+.nexvora-model-card:hover { border-color: var(--nv-accent); }
+.nexvora-model-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+}
+.nexvora-model-card-title {
+    font-size: 16px; font-weight: 600;
+}
+.nexvora-model-card-badge {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 10px;
+}
+.nexvora-model-card-badge.enabled {
+    background: rgba(0,184,148,0.15); color: var(--nv-success);
+}
+.nexvora-model-card-badge.disabled {
+    background: rgba(225,112,85,0.15); color: var(--nv-danger-light);
+}
+.nexvora-model-card-meta {
+    display: flex; flex-direction: column; gap: 6px;
+    margin-bottom: 14px;
+}
+.nexvora-model-card-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--nv-text-secondary);
+}
+.nexvora-model-card-row i { width: 14px; text-align: center; font-size: 11px; }
+.nexvora-model-card-row span {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nexvora-model-card-actions {
+    display: flex; gap: 8px;
+}
+.nexvora-model-card-actions button {
+    flex: 1; padding: 7px; border-radius: var(--nv-radius-sm);
+    font-size: 12px; cursor: pointer; font-family: var(--nv-font);
+    transition: all var(--nv-transition);
+}
+.nexvora-model-card-edit {
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    color: var(--nv-text-secondary);
+}
+.nexvora-model-card-edit:hover { border-color: var(--nv-accent); color: var(--nv-text); }
+.nexvora-model-card-delete {
+    background: rgba(225,112,85,0.1); border: 1px solid rgba(225,112,85,0.2);
+    color: var(--nv-danger-light);
+}
+.nexvora-model-card-delete:hover { background: rgba(225,112,85,0.2); }
+.nexvora-model-card-empty {
+    grid-column: 1 / -1;
+    text-align: center; padding: 60px 20px;
+    color: var(--nv-text-muted);
+}
+.nexvora-model-card-empty i { font-size: 48px; margin-bottom: 16px; opacity: 0.3; display: block; }
+
+/* ============================================================================
+   MODALS
+   ============================================================================ */
+.nexvora-modal {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+}
+.nexvora-modal-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+}
+.nexvora-modal-content {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 520px;
+    background: var(--nv-bg-secondary);
+    border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius-lg);
+    box-shadow: var(--nv-shadow-lg);
+    max-height: 90vh; overflow-y: auto;
+}
+.nexvora-modal-sm { max-width: 400px; }
+.nexvora-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px 0;
+}
+.nexvora-modal-header h3 { font-size: 18px; font-weight: 700; }
+.nexvora-modal-body { padding: 20px 24px; }
+.nexvora-modal-footer {
+    display: flex; justify-content: flex-end; gap: 10px;
+    padding: 16px 24px; border-top: 1px solid var(--nv-border);
+}
+
+/* ============================================================================
+   CONTEXT MENU
+   ============================================================================ */
+.nexvora-context-menu {
+    position: fixed; z-index: 500;
+    background: var(--nv-bg-elevated);
+    border: 1px solid var(--nv-border-strong);
+    border-radius: var(--nv-radius); box-shadow: var(--nv-shadow-lg);
+    min-width: 180px; padding: 6px; overflow: hidden;
+}
+.nexvora-ctx-item {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 8px 12px; border: none;
+    background: none; color: var(--nv-text-secondary);
+    font-size: 13px; cursor: pointer; border-radius: var(--nv-radius-sm);
+    transition: all var(--nv-transition); font-family: var(--nv-font);
+    text-align: left;
+}
+.nexvora-ctx-item:hover { background: var(--nv-surface-hover); color: var(--nv-text); }
+.nexvora-ctx-danger:hover { background: rgba(225,112,85,0.1); color: var(--nv-danger-light); }
+.nexvora-ctx-divider { height: 1px; background: var(--nv-border); margin: 2px 0; }
+
+/* ============================================================================
+   TOAST NOTIFICATIONS
+   ============================================================================ */
+.nexvora-toast-container {
+    position: fixed; bottom: 24px; right: 24px;
+    z-index: 9000; display: flex; flex-direction: column-reverse;
+    gap: 8px;
+}
+.nexvora-toast {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 18px; border-radius: var(--nv-radius);
+    background: var(--nv-bg-elevated);
+    border: 1px solid var(--nv-border);
+    box-shadow: var(--nv-shadow);
+    font-size: 13px; color: var(--nv-text);
+    animation: nvToastIn 0.3s ease;
+    max-width: 360px;
+}
+.nexvora-toast.removing { animation: nvToastOut 0.3s ease forwards; }
+@keyframes nvToastIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes nvToastOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(-8px) scale(0.95); }
+}
+.nexvora-toast i { font-size: 16px; flex-shrink: 0; }
+.nexvora-toast.success i { color: var(--nv-success); }
+.nexvora-toast.error i { color: var(--nv-danger); }
+.nexvora-toast.info i { color: var(--nv-accent-light); }
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+@media (max-width: 768px) {
+    .nexvora-mobile-header { display: flex; }
+
+    .nexvora-sidebar {
+        position: fixed; top: 0; left: 0; bottom: 0;
+        transform: translateX(-100%);
+        z-index: 300; width: var(--nv-sidebar-w) !important;
+    }
+    .nexvora-sidebar.open { transform: translateX(0); }
+    .nexvora-sidebar-close { display: flex; }
+    .nexvora-sidebar-collapse-btn { display: none; }
+    .nexvora-sidebar-overlay.open { display: block; }
+
+    /* Reset collapsed state labels on mobile */
+    .nexvora-sidebar .nexvora-sidebar-label,
+    .nexvora-sidebar .nexvora-search-kbd,
+    .nexvora-sidebar .nexvora-user-info,
+    .nexvora-sidebar .nexvora-account-more,
+    .nexvora-sidebar .nexvora-nav-arrow {
+        opacity: 1; width: auto; overflow: visible;
+        pointer-events: auto;
+    }
+
+    .nexvora-main { padding-top: 52px; }
+
+    .nexvora-message { padding: 16px; }
+    .nexvora-input-area { padding: 8px 12px 16px; }
+
+    .nexvora-welcome h2 { font-size: 22px; }
+    .nexvora-welcome-chips { flex-direction: column; }
+
+    .nexvora-models-content { grid-template-columns: 1fr; }
+    .nexvora-files-grid { grid-template-columns: 1fr 1fr; }
+
+    .nexvora-toast-container { left: 12px; right: 12px; bottom: 12px; }
+    .nexvora-toast { max-width: 100%; }
+
+    .nexvora-account-dropdown { bottom: auto; top: 100%; margin-top: 6px; margin-bottom: 0; }
+}
+
+@media (max-width: 480px) {
+    .nexvora-auth-card { margin: 12px; padding: 28px 24px; }
+    .nexvora-files-grid { grid-template-columns: 1fr; }
+    .nexvora-view-header { padding: 16px; }
+    .nexvora-settings-content { padding: 16px; }
+}
+
+/* ============================================================================
+   DASHBOARD VIEW
+   ============================================================================ */
+.nexvora-dashboard {
+    flex: 1; overflow-y: auto; padding: 28px;
+    max-width: 1100px;
+}
+.nexvora-dash-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 28px;
+}
+.nexvora-dash-header h1 {
+    font-size: 28px; font-weight: 800;
+    background: var(--nv-accent-gradient);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.nexvora-dash-header p { color: var(--nv-text-secondary); font-size: 14px; margin-top: 4px; }
+.nexvora-dash-date {
+    font-size: 13px; color: var(--nv-text-muted);
+    background: var(--nv-surface); padding: 6px 14px;
+    border-radius: var(--nv-radius-sm); border: 1px solid var(--nv-border);
+}
+
+.nexvora-dash-section { margin-bottom: 28px; }
+.nexvora-dash-section h3 {
+    font-size: 14px; font-weight: 600; color: var(--nv-text-secondary);
+    margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.nexvora-dash-section h3 i { color: var(--nv-accent-light); font-size: 13px; }
+
+/* Quick Actions */
+.nexvora-quick-actions {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+}
+.nexvora-quick-action {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 10px; padding: 20px 12px; border-radius: var(--nv-radius);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    cursor: pointer; transition: all var(--nv-transition);
+    font-family: var(--nv-font); color: var(--nv-text);
+}
+.nexvora-quick-action:hover {
+    background: var(--nv-surface-hover); border-color: var(--nv-accent);
+    transform: translateY(-2px); box-shadow: 0 4px 16px var(--nv-accent-glow);
+}
+.nexvora-qa-icon {
+    width: 44px; height: 44px; border-radius: var(--nv-radius);
+    background: var(--nv-accent-gradient);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: #fff;
+}
+.nexvora-quick-action span { font-size: 12px; font-weight: 500; }
+
+/* Stats Row */
+.nexvora-stats-row {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+.nexvora-stat-card {
+    padding: 20px; border-radius: var(--nv-radius);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    text-align: center;
+}
+.nexvora-stat-value {
+    font-size: 28px; font-weight: 800;
+    background: var(--nv-accent-gradient);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.nexvora-stat-label {
+    font-size: 12px; color: var(--nv-text-muted); margin-top: 4px;
+}
+
+/* Dashboard Grid */
+.nexvora-dash-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+}
+
+/* Activity List */
+.nexvora-activity-list { display: flex; flex-direction: column; gap: 2px; }
+.nexvora-activity-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--nv-radius-sm);
+    transition: background var(--nv-transition); cursor: pointer;
+}
+.nexvora-activity-item:hover { background: var(--nv-surface-hover); }
+.nexvora-activity-item i { color: var(--nv-accent-light); font-size: 12px; width: 16px; text-align: center; }
+.nexvora-activity-item span { font-size: 13px; flex: 1; }
+.nexvora-activity-item small { font-size: 11px; color: var(--nv-text-muted); }
+
+.nexvora-empty-state-sm {
+    text-align: center; padding: 30px 16px; color: var(--nv-text-muted);
+}
+.nexvora-empty-state-sm i { font-size: 28px; margin-bottom: 10px; opacity: 0.3; display: block; }
+.nexvora-empty-state-sm p { font-size: 13px; }
+
+/* Model Status */
+.nexvora-model-status { display: flex; flex-direction: column; gap: 2px; }
+.nexvora-model-status-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--nv-radius-sm);
+    transition: background var(--nv-transition);
+}
+.nexvora-model-status-item:hover { background: var(--nv-surface-hover); }
+.nexvora-model-status-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.nexvora-model-status-dot.online { background: var(--nv-success); }
+.nexvora-model-status-dot.offline { background: var(--nv-text-muted); }
+.nexvora-model-status-item span { font-size: 13px; flex: 1; }
+.nexvora-model-status-item small { font-size: 11px; color: var(--nv-text-muted); }
+
+/* Tips Grid */
+.nexvora-tips-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+.nexvora-tip-card {
+    padding: 20px; border-radius: var(--nv-radius);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    cursor: pointer; transition: all var(--nv-transition);
+}
+.nexvora-tip-card:hover { border-color: var(--nv-accent); transform: translateY(-2px); }
+.nexvora-tip-card i { font-size: 24px; color: var(--nv-accent-light); margin-bottom: 12px; }
+.nexvora-tip-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.nexvora-tip-card p { font-size: 12px; color: var(--nv-text-muted); line-height: 1.5; }
+
+/* ============================================================================
+   TOOLS HUB VIEW
+   ============================================================================ */
+.nexvora-tools-grid {
+    flex: 1; overflow-y: auto; padding: 20px 28px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px; align-content: start;
+}
+.nexvora-tool-card {
+    padding: 24px; border-radius: var(--nv-radius);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    cursor: pointer; transition: all var(--nv-transition);
+    position: relative;
+}
+.nexvora-tool-card:hover { border-color: var(--nv-accent); transform: translateY(-2px); box-shadow: 0 4px 16px var(--nv-accent-glow); }
+.nexvora-tc-icon {
+    width: 48px; height: 48px; border-radius: var(--nv-radius);
+    background: var(--nv-accent-gradient);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: #fff; margin-bottom: 14px;
+}
+.nexvora-tool-card h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.nexvora-tool-card p { font-size: 12px; color: var(--nv-text-muted); line-height: 1.5; margin-bottom: 12px; }
+.nexvora-tc-badge {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 10px;
+}
+.nexvora-tc-badge.active { background: rgba(0,184,148,0.15); color: var(--nv-success); }
+.nexvora-tc-badge.soon { background: rgba(253,203,110,0.15); color: var(--nv-warning); }
+
+/* ============================================================================
+   PROMPT LIBRARY VIEW
+   ============================================================================ */
+.nexvora-prompts-search {
+    position: relative; margin: 0 28px 14px;
+}
+.nexvora-prompts-search > i {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--nv-text-muted); font-size: 13px; pointer-events: none;
+}
+.nexvora-prompts-search input {
+    width: 100%; padding: 10px 14px 10px 36px;
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius-sm); color: var(--nv-text);
+    font-size: 13px; font-family: var(--nv-font); outline: none;
+    transition: all var(--nv-transition);
+}
+.nexvora-prompts-search input:focus { border-color: var(--nv-accent); box-shadow: 0 0 0 2px var(--nv-accent-glow); }
+
+.nexvora-prompt-categories {
+    display: flex; gap: 6px; padding: 0 28px 14px;
+    overflow-x: auto; flex-wrap: nowrap;
+}
+.nexvora-cat-btn {
+    padding: 6px 14px; border-radius: var(--nv-radius-xl);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    color: var(--nv-text-secondary); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: all var(--nv-transition);
+    white-space: nowrap; font-family: var(--nv-font);
+}
+.nexvora-cat-btn:hover { border-color: var(--nv-accent); color: var(--nv-text); }
+.nexvora-cat-btn.active {
+    background: var(--nv-accent-gradient); color: #fff; border-color: transparent;
+}
+
+.nexvora-prompts-grid {
+    flex: 1; overflow-y: auto; padding: 0 28px 28px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px; align-content: start;
+}
+.nexvora-prompt-card {
+    padding: 18px; border-radius: var(--nv-radius);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    cursor: pointer; transition: all var(--nv-transition);
+}
+.nexvora-prompt-card:hover { border-color: var(--nv-accent); }
+.nexvora-prompt-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+}
+.nexvora-prompt-card-title { font-size: 14px; font-weight: 600; }
+.nexvora-prompt-card-cat {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 10px;
+    background: var(--nv-accent-glow); color: var(--nv-accent-light);
+}
+.nexvora-prompt-card-desc { font-size: 12px; color: var(--nv-text-muted); margin-bottom: 10px; line-height: 1.4; }
+.nexvora-prompt-card-preview {
+    font-size: 12px; color: var(--nv-text-secondary);
+    font-family: var(--nv-mono); background: var(--nv-bg);
+    padding: 8px 10px; border-radius: var(--nv-radius-sm);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nexvora-prompt-card-actions {
+    display: flex; gap: 6px; margin-top: 10px;
+}
+.nexvora-prompt-card-actions button {
+    padding: 4px 10px; border-radius: var(--nv-radius-sm);
+    font-size: 11px; cursor: pointer; font-family: var(--nv-font);
+    transition: all var(--nv-transition);
+}
+.nexvora-prompt-use {
+    background: var(--nv-accent-gradient); color: #fff; border: none;
+}
+.nexvora-prompt-use:hover { opacity: 0.9; }
+.nexvora-prompt-delete {
+    background: none; border: 1px solid var(--nv-border); color: var(--nv-text-muted);
+}
+.nexvora-prompt-delete:hover { border-color: var(--nv-danger); color: var(--nv-danger-light); }
+
+/* ============================================================================
+   HELP & FEEDBACK VIEW
+   ============================================================================ */
+.nexvora-help-content {
+    flex: 1; overflow-y: auto; padding: 20px 28px;
+    max-width: 800px;
+}
+.nexvora-help-section { margin-bottom: 32px; }
+.nexvora-help-section h3 {
+    font-size: 16px; font-weight: 700; margin-bottom: 14px;
+}
+
+.nexvora-faq-list { display: flex; flex-direction: column; gap: 6px; }
+.nexvora-faq-item {
+    border: 1px solid var(--nv-border); border-radius: var(--nv-radius);
+    overflow: hidden;
+}
+.nexvora-faq-q {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; padding: 14px 16px; border: none;
+    background: var(--nv-surface); color: var(--nv-text);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    font-family: var(--nv-font); text-align: left;
+    transition: background var(--nv-transition);
+}
+.nexvora-faq-q:hover { background: var(--nv-surface-hover); }
+.nexvora-faq-q i { font-size: 12px; color: var(--nv-text-muted); transition: transform 0.2s; }
+.nexvora-faq-item.open .nexvora-faq-q i { transform: rotate(180deg); }
+.nexvora-faq-a {
+    display: none; padding: 14px 16px;
+    background: var(--nv-bg-secondary);
+    border-top: 1px solid var(--nv-border);
+    font-size: 13px; color: var(--nv-text-secondary); line-height: 1.6;
+}
+.nexvora-faq-item.open .nexvora-faq-a { display: block; }
+.nexvora-faq-a kbd {
+    background: var(--nv-bg); padding: 2px 6px; border-radius: 4px;
+    border: 1px solid var(--nv-border); font-family: var(--nv-mono); font-size: 12px;
+}
+
+.nexvora-feedback-form { max-width: 500px; }
+.nexvora-textarea {
+    width: 100%; padding: 11px 14px;
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius-sm); color: var(--nv-text);
+    font-size: 14px; font-family: var(--nv-font);
+    outline: none; resize: vertical; min-height: 80px;
+    transition: all var(--nv-transition);
+}
+.nexvora-textarea:focus { border-color: var(--nv-accent); box-shadow: 0 0 0 3px var(--nv-accent-glow); }
+.nexvora-feedback-note {
+    font-size: 12px; color: var(--nv-text-muted); margin-top: 10px;
+}
+
+/* ============================================================================
+   ADMIN VIEW
+   ============================================================================ */
+.nexvora-admin-badge {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 10px;
+    background: rgba(225,112,85,0.15); color: var(--nv-danger-light);
+}
+.nexvora-admin-content { flex: 1; overflow-y: auto; padding: 20px 28px; }
+.nexvora-admin-notice {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px; border-radius: var(--nv-radius);
+    background: rgba(253,203,110,0.08); border: 1px solid rgba(253,203,110,0.2);
+    margin-bottom: 24px; font-size: 13px; color: var(--nv-warning);
+}
+.nexvora-admin-notice i { flex-shrink: 0; }
+.nexvora-admin-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+}
+.nexvora-admin-card {
+    padding: 24px; border-radius: var(--nv-radius);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    transition: all var(--nv-transition);
+}
+.nexvora-admin-card:hover { border-color: var(--nv-accent); }
+.nexvora-admin-card i { font-size: 28px; color: var(--nv-accent-light); margin-bottom: 14px; display: block; }
+.nexvora-admin-card h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.nexvora-admin-card p { font-size: 12px; color: var(--nv-text-muted); margin-bottom: 14px; }
+.nexvora-admin-soon {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 10px;
+    background: rgba(253,203,110,0.15); color: var(--nv-warning);
+}
+
+/* ============================================================================
+   GLOBAL SEARCH MODAL
+   ============================================================================ */
+.nexvora-search-modal-content {
+    max-width: 600px; padding: 0; overflow: hidden;
+}
+.nexvora-search-modal-input {
+    display: flex; align-items: center; gap: 10px;
+    padding: 16px 20px; border-bottom: 1px solid var(--nv-border);
+}
+.nexvora-search-modal-input i { color: var(--nv-text-muted); font-size: 16px; }
+.nexvora-search-modal-input input {
+    flex: 1; border: none; background: none; color: var(--nv-text);
+    font-size: 15px; font-family: var(--nv-font); outline: none;
+}
+.nexvora-search-modal-input input::placeholder { color: var(--nv-text-muted); }
+.nexvora-search-modal-input kbd {
+    font-size: 11px; color: var(--nv-text-muted); background: var(--nv-bg-tertiary);
+    padding: 2px 8px; border-radius: 4px; border: 1px solid var(--nv-border);
+    font-family: var(--nv-font);
+}
+.nexvora-search-results {
+    max-height: 400px; overflow-y: auto; padding: 8px;
+}
+.nexvora-search-empty {
+    text-align: center; padding: 40px 20px;
+    color: var(--nv-text-muted); font-size: 13px;
+}
+.nexvora-search-group-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--nv-text-muted);
+    padding: 8px 12px 4px;
+}
+.nexvora-search-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--nv-radius-sm);
+    cursor: pointer; transition: background var(--nv-transition);
+}
+.nexvora-search-item:hover { background: var(--nv-surface-hover); }
+.nexvora-search-item i { color: var(--nv-accent-light); font-size: 12px; width: 16px; text-align: center; }
+.nexvora-search-item span { font-size: 13px; flex: 1; }
+.nexvora-search-item small { font-size: 11px; color: var(--nv-text-muted); }
+
+/* ============================================================================
+   SHORTCUTS MODAL
+   ============================================================================ */
+.nexvora-modal-md { max-width: 600px; }
+.nexvora-shortcuts-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+}
+.nexvora-shortcut-group h4 {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--nv-text-muted);
+    margin-bottom: 10px;
+}
+.nexvora-shortcut-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 0; font-size: 13px;
+}
+.nexvora-shortcut-row kbd {
+    background: var(--nv-bg); padding: 3px 8px; border-radius: 4px;
+    border: 1px solid var(--nv-border); font-family: var(--nv-mono);
+    font-size: 11px; color: var(--nv-text-secondary);
+}
+
+/* ============================================================================
+   ENHANCED FORM ELEMENTS
+   ============================================================================ */
+.nexvora-form-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+.nexvora-required { color: var(--nv-danger-light); }
+.nexvora-view-header-actions { display: flex; gap: 8px; }
+
+/* Accent Color Swatches */
+.nexvora-color-options { display: flex; gap: 8px; }
+.nexvora-color-swatch {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid transparent; cursor: pointer;
+    transition: all var(--nv-transition);
+}
+.nexvora-color-swatch:hover { transform: scale(1.15); }
+.nexvora-color-swatch.active { border-color: #fff; box-shadow: 0 0 0 2px var(--nv-accent); }
+
+/* Admin dropdown item */
+.nexvora-dropdown-admin { color: var(--nv-warning); }
+.nexvora-dropdown-admin:hover { background: rgba(253,203,110,0.1); color: var(--nv-warning); }
+
+/* ============================================================================
+   PINNED / FAVORITED CHAT INDICATORS
+   ============================================================================ */
+.nexvora-chat-item .nexvora-chat-pin { color: var(--nv-accent-light); font-size: 10px; }
+.nexvora-chat-item .nexvora-chat-star { color: var(--nv-warning); font-size: 10px; }
+
+/* ============================================================================
+   LIGHT THEME
+   ============================================================================ */
+.nexvora-theme-light {
+    --nv-bg: #f5f6fa;
+    --nv-bg-secondary: #ffffff;
+    --nv-bg-tertiary: #eef0f5;
+    --nv-bg-elevated: #ffffff;
+    --nv-surface: rgba(0,0,0,0.03);
+    --nv-surface-hover: rgba(0,0,0,0.06);
+    --nv-border: rgba(0,0,0,0.08);
+    --nv-border-strong: rgba(0,0,0,0.14);
+    --nv-text: #1a1d29;
+    --nv-text-secondary: #5a6078;
+    --nv-text-muted: #8a90a8;
+}
+
+/* ============================================================================
+   MIDNIGHT THEME
+   ============================================================================ */
+.nexvora-theme-midnight {
+    --nv-bg: #050810;
+    --nv-bg-secondary: #0a0f1c;
+    --nv-bg-tertiary: #0f1628;
+    --nv-bg-elevated: #141c30;
+    --nv-surface: rgba(255,255,255,0.03);
+    --nv-surface-hover: rgba(255,255,255,0.06);
+    --nv-border: rgba(255,255,255,0.06);
+    --nv-border-strong: rgba(255,255,255,0.1);
+}
+
+/* ============================================================================
+   COMPACT MODE
+   ============================================================================ */
+.nexvora-compact .nexvora-message { padding: 12px 20px; }
+.nexvora-compact .nexvora-message-avatar { width: 26px; height: 26px; font-size: 12px; }
+.nexvora-compact .nexvora-message-content { font-size: 13px; line-height: 1.5; }
+.nexvora-compact .nexvora-message-header { margin-bottom: 4px; }
+
+/* ============================================================================
+   RESPONSIVE ADDITIONS
+   ============================================================================ */
+@media (max-width: 768px) {
+    .nexvora-dashboard { padding: 16px; }
+    .nexvora-dash-grid { grid-template-columns: 1fr; }
+    .nexvora-quick-actions { grid-template-columns: repeat(4, 1fr); }
+    .nexvora-stats-row { grid-template-columns: repeat(2, 1fr); }
+    .nexvora-tools-grid { grid-template-columns: 1fr 1fr; padding: 16px; }
+    .nexvora-prompts-grid { grid-template-columns: 1fr; padding: 0 16px 16px; }
+    .nexvora-prompt-categories { padding: 0 16px 14px; }
+    .nexvora-prompts-search { margin: 0 16px 14px; }
+    .nexvora-shortcuts-grid { grid-template-columns: 1fr; }
+    .nexvora-admin-grid { grid-template-columns: 1fr; }
+    .nexvora-form-row { grid-template-columns: 1fr; }
+    .nexvora-dash-header { flex-direction: column; gap: 10px; }
+    .nexvora-tip-card { padding: 16px; }
+}
+@media (max-width: 480px) {
+    .nexvora-quick-actions { grid-template-columns: repeat(2, 1fr); }
+    .nexvora-tools-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================================
+   CONNECTION STATUS
+   ============================================================================ */
+.nexvora-connection-status {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: var(--nv-radius-sm);
+    font-size: 11px; font-weight: 500; white-space: nowrap;
+    transition: all var(--nv-transition);
+}
+.nexvora-connection-status i { font-size: 8px; }
+.nexvora-connection-status.connected {
+    color: var(--nv-success); background: rgba(0,184,148,0.1);
+}
+.nexvora-connection-status.connected i { color: var(--nv-success); }
+.nexvora-connection-status.disconnected,
+.nexvora-connection-status.no-model,
+.nexvora-connection-status.not-configured {
+    color: var(--nv-text-muted); background: var(--nv-surface);
+}
+.nexvora-connection-status.disconnected i,
+.nexvora-connection-status.no-model i,
+.nexvora-connection-status.not-configured i { color: var(--nv-text-muted); }
+.nexvora-connection-status.error,
+.nexvora-connection-status.disabled {
+    color: var(--nv-danger-light); background: rgba(225,112,85,0.1);
+}
+.nexvora-connection-status.error i,
+.nexvora-connection-status.disabled i { color: var(--nv-danger-light); }
+.nexvora-connection-status.connecting {
+    color: var(--nv-warning); background: rgba(253,203,110,0.1);
+}
+.nexvora-connection-status.connecting i { animation: nvSpin 1s linear infinite; }
+@keyframes nvSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.nexvora-connection-status.ready {
+    color: var(--nv-text-secondary); background: var(--nv-surface);
+}
+.nexvora-connection-status.ready i { color: var(--nv-accent-light); }
+
+/* Model status active item */
+.nexvora-model-status-active {
+    padding: 10px 12px; margin-bottom: 8px;
+    background: var(--nv-surface); border-radius: var(--nv-radius-sm);
+    border: 1px solid var(--nv-border);
+}
+.nexvora-model-status-dot.error {
+    background: var(--nv-danger-light);
+}
+
+/* ============================================================================
+   API SETTINGS INPUT
+   ============================================================================ */
+.nexvora-input-inline {
+    width: 220px; padding: 8px 12px;
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius-sm); color: var(--nv-text);
+    font-size: 13px; font-family: var(--nv-font);
+    outline: none; transition: all var(--nv-transition);
+}
+.nexvora-input-inline:focus {
+    border-color: var(--nv-accent); box-shadow: 0 0 0 2px var(--nv-accent-glow);
+}
+.nexvora-input-inline::placeholder { color: var(--nv-text-muted); }
+
+@media (max-width: 768px) {
+    .nexvora-connection-status { display: none; }
+    .nexvora-input-inline { width: 160px; }
+}
+
+/* ============================================================================
+   ADMIN-ONLY SECTIONS
+   ============================================================================ */
+.nexvora-admin-required {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--nv-text-muted);
+}
+.nexvora-admin-required i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: var(--nv-text-muted);
+    opacity: 0.5;
+}
+.nexvora-admin-required h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: var(--nv-text);
+}
+.nexvora-admin-required p {
+    font-size: 14px;
+    max-width: 400px;
+    margin: 0;
+}
+
+/* Hide admin-only menu items by default */
+.nexvora-dropdown-admin-only {
+    display: none;
+}
+
+/* ============================================================================
+   MODEL MANAGER EMPTY STATE
+   ============================================================================ */
+.nexvora-model-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 20px;
+    text-align: center;
+}
+.nexvora-model-empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--nv-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+.nexvora-model-empty-icon i {
+    font-size: 32px;
+    color: var(--nv-accent);
+}
+.nexvora-model-empty-state h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: var(--nv-text);
+}
+.nexvora-model-empty-state > p {
+    font-size: 14px;
+    color: var(--nv-text-muted);
+    max-width: 400px;
+    margin: 0 0 32px;
+    line-height: 1.6;
+}
+.nexvora-model-empty-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 400px;
+    width: 100%;
+}
+.nexvora-model-empty-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--nv-surface);
+    border-radius: var(--nv-radius);
+    border: 1px solid var(--nv-border);
+    text-align: left;
+}
+.nexvora-model-empty-step-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--nv-accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.nexvora-model-empty-step strong {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--nv-text);
+}
+.nexvora-model-empty-step div {
+    font-size: 13px;
+    color: var(--nv-text-muted);
+    line-height: 1.5;
+}
+
+/* ============================================================================
+   ENHANCED MODEL CARDS
+   ============================================================================ */
+.nexvora-model-card {
+    background: var(--nv-bg);
+    border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius);
+    padding: 16px;
+    transition: all var(--nv-transition);
+}
+.nexvora-model-card:hover {
+    border-color: var(--nv-accent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.nexvora-model-card-default {
+    border-left: 3px solid var(--nv-accent);
+}
+.nexvora-model-card-disabled {
+    opacity: 0.7;
+}
+.nexvora-model-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+.nexvora-model-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--nv-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.nexvora-model-card-default-badge {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--nv-accent);
+    color: white;
+}
+.nexvora-model-card-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+.nexvora-model-card-badge.enabled {
+    background: rgba(0,184,148,0.1);
+    color: var(--nv-success);
+}
+.nexvora-model-card-badge.disabled {
+    background: rgba(99,110,114,0.1);
+    color: var(--nv-text-muted);
+}
+.nexvora-model-card-body {
+    margin-bottom: 12px;
+}
+.nexvora-model-card-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.nexvora-model-card-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--nv-text-muted);
+}
+.nexvora-model-card-row i {
+    width: 14px;
+    text-align: center;
+    color: var(--nv-text-muted);
+    font-size: 11px;
+}
+.nexvora-model-card-label {
+    font-weight: 500;
+    color: var(--nv-text-muted);
+}
+.nexvora-model-card-url {
+    color: var(--nv-accent);
+    word-break: break-all;
+}
+.nexvora-model-card-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--nv-border);
+}
+.nexvora-model-card-section .nexvora-model-card-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    display: block;
+}
+.nexvora-model-card-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.nexvora-chip-cap {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--nv-surface);
+    color: var(--nv-text-muted);
+    border: 1px solid var(--nv-border);
+}
+.nexvora-chip-chat { border-color: rgba(108,92,231,0.3); color: var(--nv-accent); background: rgba(108,92,231,0.1); }
+.nexvora-chip-translation { border-color: rgba(0,184,148,0.3); color: var(--nv-success); background: rgba(0,184,148,0.1); }
+.nexvora-chip-writing { border-color: rgba(253,203,110,0.3); color: var(--nv-warning); background: rgba(253,203,110,0.1); }
+.nexvora-chip-summarization { border-color: rgba(116,185,255,0.3); color: var(--nv-info); background: rgba(116,185,255,0.1); }
+.nexvora-chip-documents { border-color: rgba(162,155,254,0.3); color: #a29bfe; background: rgba(162,155,254,0.1); }
+.nexvora-chip-coding { border-color: rgba(0,206,209,0.3); color: #00ced1; background: rgba(0,206,209,0.1); }
+.nexvora-chip-lang {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--nv-surface);
+    color: var(--nv-text-secondary);
+    border: 1px solid var(--nv-border);
+    text-transform: uppercase;
+}
+.nexvora-model-card-none {
+    font-size: 11px;
+    color: var(--nv-text-muted);
+    font-style: italic;
+}
+
+/* --- Model Card Footer --- */
+.nexvora-model-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--nv-border);
+}
+.nexvora-model-card-connection {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+.nexvora-model-status-unknown {
+    color: var(--nv-text-muted);
+    background: var(--nv-surface);
+}
+.nexvora-model-status-connected {
+    color: var(--nv-success);
+    background: rgba(0,184,148,0.1);
+}
+.nexvora-model-status-connected i { color: var(--nv-success); }
+.nexvora-model-status-error {
+    color: var(--nv-danger-light);
+    background: rgba(225,112,85,0.1);
+}
+.nexvora-model-status-error i { color: var(--nv-danger-light); }
+.nexvora-model-status-testing {
+    color: var(--nv-warning);
+    background: rgba(253,203,110,0.1);
+}
+.nexvora-model-status-testing i { animation: nvSpin 1s linear infinite; }
+.nexvora-model-status-noendpoint {
+    color: var(--nv-text-muted);
+    background: var(--nv-surface);
+}
+.nexvora-model-card-actions {
+    display: flex;
+    gap: 4px;
+}
+.nexvora-model-card-test,
+.nexvora-model-card-toggle,
+.nexvora-model-card-edit,
+.nexvora-model-card-delete {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border: none;
+    border-radius: var(--nv-radius-sm);
+    background: var(--nv-surface);
+    color: var(--nv-text-secondary);
+    font-size: 12px;
+    font-family: var(--nv-font);
+    cursor: pointer;
+    transition: all var(--nv-transition);
+}
+.nexvora-model-card-test:hover {
+    background: rgba(108,92,231,0.1);
+    color: var(--nv-accent);
+}
+.nexvora-model-card-toggle:hover {
+    background: rgba(0,184,148,0.1);
+    color: var(--nv-success);
+}
+.nexvora-model-card-edit:hover {
+    background: rgba(116,185,255,0.1);
+    color: var(--nv-info);
+}
+.nexvora-model-card-delete:hover {
+    background: rgba(225,112,85,0.1);
+    color: var(--nv-danger-light);
+}
+.nexvora-model-card-test:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .nexvora-model-card-meta { grid-template-columns: 1fr; }
+    .nexvora-model-card-footer { flex-direction: column; gap: 8px; align-items: flex-start; }
+    .nexvora-model-card-actions { width: 100%; justify-content: flex-end; }
+}
+
+/* ============================================================================
+   FORM VALIDATION & HINTS
+   ============================================================================ */
+.nexvora-form-hint {
+    display: block;
+    font-size: 11px;
+    color: var(--nv-text-muted);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+.nexvora-form-error {
+    display: block;
+    font-size: 11px;
+    color: var(--nv-danger-light);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+.nexvora-form-error.nexvora-hidden { display: none; }
+.nexvora-input-error {
+    border-color: var(--nv-danger-light) !important;
+    box-shadow: 0 0 0 2px rgba(225,112,85,0.2) !important;
+}
+.nexvora-form-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(108,92,231,0.05);
+    border: 1px solid rgba(108,92,231,0.15);
+    border-radius: var(--nv-radius-sm);
+    font-size: 12px;
+    color: var(--nv-text-secondary);
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+.nexvora-form-note i {
+    color: var(--nv-accent);
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+.nexvora-form-note code {
+    font-size: 11px;
+    background: var(--nv-surface);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: monospace;
+    color: var(--nv-accent);
+}
+.nexvora-checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 8px 0;
+}
+.nexvora-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--nv-text-secondary);
+    cursor: pointer;
+}
+.nexvora-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--nv-accent);
+    cursor: pointer;
+}
+.nexvora-input-group select {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--nv-surface);
+    border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius-sm);
+    color: var(--nv-text);
+    font-size: 14px;
+    font-family: var(--nv-font);
+    outline: none;
+    transition: all var(--nv-transition);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23636e72' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+.nexvora-input-group select:focus {
+    border-color: var(--nv-accent);
+    box-shadow: 0 0 0 2px var(--nv-accent-glow);
+}
+.nexvora-input-group select option {
+    background: var(--nv-bg);
+    color: var(--nv-text);
+}
+
+/* ============================================================================
+   API STATUS INDICATOR (Settings)
+   ============================================================================ */
+.nexvora-api-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--nv-radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+}
+.nexvora-api-status i { font-size: 10px; }
+.nexvora-api-status-connected {
+    background: rgba(0,184,148,0.1);
+    color: var(--nv-success);
+}
+.nexvora-api-status-connected i { color: var(--nv-success); }
+.nexvora-api-status-disconnected {
+    background: var(--nv-surface);
+    color: var(--nv-text-muted);
+}
+.nexvora-api-status-disconnected i { color: var(--nv-text-muted); }
+.nexvora-api-status-error {
+    background: rgba(225,112,85,0.1);
+    color: var(--nv-danger-light);
+}
+.nexvora-api-status-error i { color: var(--nv-danger-light); }
+.nexvora-api-status-testing {
+    background: rgba(253,203,110,0.1);
+    color: var(--nv-warning);
+}
+.nexvora-api-status-testing i { animation: nvSpin 1s linear infinite; }
+

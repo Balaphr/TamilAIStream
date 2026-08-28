@@ -17,7 +17,8 @@ const vanillaFiles = [
   'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
   'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
   'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js',
-  'brand-config.js'
+  'brand-config.js',
+  'nexvora-model-manager.js', 'nexvora-api-config.js', 'nexvora-ai-service.js', 'nexvora.js'
 ]
 
 function skipVanillaTransform() {
@@ -53,7 +54,8 @@ function copyVanillaScripts() {
         'builder.js', 'builder-360.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
         'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js',
-        'brand-config.js', 've-edit-mode.js'
+        'brand-config.js', 've-edit-mode.js',
+        'nexvora-model-manager.js', 'nexvora-api-config.js', 'nexvora-ai-service.js', 'nexvora.js'
       ]
 
       const vanillaCSS = [
@@ -63,7 +65,8 @@ function copyVanillaScripts() {
         'responsive.css', 'ai-glass.css', 'splash.css',
         'premium-ui.css', 'ultra-perf.css',
         'builder.css', 'builder-360.css', 'admin.css', 'admin-login.css', 'analytics.css',
-        'profile.css', 'playlist.css', 'dashboard.css'
+        'profile.css', 'playlist.css', 'dashboard.css',
+        'nexvora.css'
       ]
 
       const outDir = resolve('dist')
@@ -119,7 +122,8 @@ export default defineConfig({
         'admin-login': 'admin-login.html',
         'admin-upload': 'admin-upload.html',
         dashboard: 'dashboard.html',
-        particles: 'particles.html'
+        particles: 'particles.html',
+        nexvora: 'nexvora.html'
       }
     }
   },
@@ -139,7 +143,8 @@ export default defineConfig({
       'premium-landing.js', 'script.js', 'yt-music.js', 'global-player.js',
       'premium-effects.js', 'player-engine.js', 'r2-content-sync.js',
       'pwa.js', 'ai-music-assistant.js', 'listening-history.js', 'ai-home.js',
-      'builder.js', 'admin.js', 'login.js', 'profile.js', 'dashboard.js'
+      'builder.js', 'admin.js', 'login.js', 'profile.js', 'dashboard.js',
+      'nexvora-model-manager.js', 'nexvora-api-config.js', 'nexvora-ai-service.js', 'nexvora.js'
     ]
   }
 })
