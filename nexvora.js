@@ -474,17 +474,19 @@ window.NexvoraAI = (function () {
             });
         }
         restoreSidebarState();
-        renderModelSelector();
-        renderModelManagerCards();
-        renderChatList();
-        renderProjects();
-        renderFiles();
-        renderLibrary();
-        renderPrompts();
-        renderFavorites();
-        renderDashboard();
-        applySettings();
-        updateConnectionStatus();
+        initEventListeners();
+
+        try { renderModelSelector(); } catch (e) { console.error('[Nexvora] renderModelSelector error:', e); }
+        try { renderModelManagerCards(); } catch (e) { console.error('[Nexvora] renderModelManagerCards error:', e); }
+        try { renderChatList(); } catch (e) { console.error('[Nexvora] renderChatList error:', e); }
+        try { renderProjects(); } catch (e) { console.error('[Nexvora] renderProjects error:', e); }
+        try { renderFiles(); } catch (e) { console.error('[Nexvora] renderFiles error:', e); }
+        try { renderLibrary(); } catch (e) { console.error('[Nexvora] renderLibrary error:', e); }
+        try { renderPrompts(); } catch (e) { console.error('[Nexvora] renderPrompts error:', e); }
+        try { renderFavorites(); } catch (e) { console.error('[Nexvora] renderFavorites error:', e); }
+        try { renderDashboard(); } catch (e) { console.error('[Nexvora] renderDashboard error:', e); }
+        try { applySettings(); } catch (e) { console.error('[Nexvora] applySettings error:', e); }
+        try { updateConnectionStatus(); } catch (e) { console.error('[Nexvora] updateConnectionStatus error:', e); }
 
         // Check API connection on startup (non-blocking)
         if (typeof NexvoraAIService !== 'undefined') {
@@ -502,7 +504,6 @@ window.NexvoraAI = (function () {
             showView('dashboard');
             showWelcome();
         }
-        initEventListeners();
     }
 
     // --- Event Listeners ---
