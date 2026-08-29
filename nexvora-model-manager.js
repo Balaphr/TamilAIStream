@@ -247,16 +247,6 @@ window.NexvoraModelManager = (function () {
             } catch (e) {
                 body = { tamil: inputText };
             }
-            } catch (e) {
-                // Fallback to standard format
-                body = {
-                    model: model.modelId || model.id,
-                    messages: messages,
-                    max_tokens: options.maxTokens || model.maxTokens || 4096,
-                    temperature: options.temperature || 0.7,
-                    stream: !!options.stream
-                };
-            }
         } else if (model.provider === 'custom' || model.provider === 'TamilAI') {
             body = {
                 model: model.modelId || model.id,
