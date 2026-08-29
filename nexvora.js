@@ -2693,7 +2693,7 @@ window.NexvoraAI = (function () {
                     // URL validation
                     if (url && !/^https?:\/\/.+/i.test(url)) {
                         showToast('Invalid URL. Must start with http:// or https://', 'error');
-                        this.value = apiConfig.baseUrl || '';
+                        this.value = NexvoraAPIConfig.load().baseUrl || '';
                         return;
                     }
                     NexvoraAPIConfig.update({ baseUrl: url });
@@ -2718,30 +2718,103 @@ window.NexvoraAI = (function () {
             var testApiBtn = $('#nexvoraTestApiConnection');
             if (testApiBtn) {
                 testApiBtn.addEventListener('click', function () {
-                    if (!apiConfig.baseUrl && !apiUrlInput.value.trim()) {
+                    // Always read fresh config from localStorage + current input values
+                    var freshConfig = NexvoraAPIConfig.load();
+                    var baseUrl = (apiUrlInput && apiUrlInput.value.trim()) || freshConfig.baseUrl || '';
+                    var apiKey = (apiKeyInput && apiKeyInput.value.trim()) || freshConfig.apiKey || '';
+
+                    if (!baseUrl) {
                         showToast('No API URL configured. Enter your backend URL first.', 'error');
                         return;
                     }
+
+                    // Save any unsaved input values before testing
+                    if (apiUrlInput && apiUrlInput.value.trim()) {
+                        NexvoraAPIConfig.update({ baseUrl: apiUrlInput.value.trim() });
+                    }
+                    if (apiKeyInput && apiKeyInput.value.trim()) {
+                        NexvoraAPIConfig.update({ apiKey: apiKeyInput.value.trim() });
+                    }
+
                     testApiBtn.disabled = true;
                     testApiBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
                     apiStatusEl.className = 'nexvora-api-status nexvora-api-status-testing';
                     apiStatusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
 
-                    NexvoraAPIConfig.checkHealth().then(function (status) {
-                        testApiBtn.disabled = false;
-                        testApiBtn.innerHTML = '<i class="fa-solid fa-plug"></i> Test';
-                        updateApiStatusDisplay();
-                        renderDashboard();
-                        if (status.status === 'connected') {
-                            showToast('API connected! Latency: ' + (status.latency || '?') + 'ms', 'success');
-                        } else {
-                            showToast('API not reachable: ' + (status.lastError || 'Check your backend URL'), 'error');
+                    // Build URL: append /v1/chat/completions to base URL
+                    var cleanBase = baseUrl.replace(/\/+$/, '');
+                    if (cleanBase.indexOf('/v1/chat/completions') === -1) {
+                        cleanBase = cleanBase + '/v1/chat/completions';
+                    }
+
+                    var headers = { 'Content-Type': 'application/json' };
+                    if (apiKey) {
+                        headers['Authorization'] = 'Bearer ' + apiKey;
+                    }
+
+                    var body = {
+                        model: 'tamilai',
+                        messages: [{ role: 'user', content: 'test' }],
+                        max_tokens: 5,
+                        stream: false
+                    };
+
+                    var timeout = parseInt(apiTimeoutInput && apiTimeoutInput.value, 10) || freshConfig.timeout || 30000;
+                    var controller = null;
+                    var timeoutId = null;
+
+                    if (typeof AbortController !== 'undefined') {
+                        controller = new AbortController();
+                        timeoutId = setTimeout(function () { controller.abort(); }, timeout);
+                    }
+
+                    var start = Date.now();
+
+                    fetch(cleanBase, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify(body),
+                        signal: controller ? controller.signal : undefined
+                    })
+                    .then(function (res) {
+                        if (timeoutId) clearTimeout(timeoutId);
+                        var latency = Date.now() - start;
+
+                        if (!res.ok) {
+                            return res.text().then(function (text) {
+                                var errMsg = 'HTTP ' + res.status;
+                                if (text) errMsg += ': ' + text.slice(0, 200);
+                                NexvoraAPIConfig.setStatus(NexvoraAPIConfig.STATUS.ERROR, errMsg);
+                                testApiBtn.disabled = false;
+                                testApiBtn.innerHTML = '<i class="fa-solid fa-plug"></i> Test';
+                                updateApiStatusDisplay();
+                                showToast('Connection failed — ' + errMsg, 'error');
+                            });
                         }
-                    }).catch(function () {
+
+                        return res.json().then(function () {
+                            NexvoraAPIConfig.setStatus(NexvoraAPIConfig.STATUS.CONNECTED, null, latency);
+                            testApiBtn.disabled = false;
+                            testApiBtn.innerHTML = '<i class="fa-solid fa-plug"></i> Test';
+                            updateApiStatusDisplay();
+                            renderDashboard();
+                            showToast('API connected! Latency: ' + latency + 'ms', 'success');
+                        });
+                    })
+                    .catch(function (err) {
+                        if (timeoutId) clearTimeout(timeoutId);
+                        var errMsg = err.name === 'AbortError'
+                            ? 'Request timed out after ' + timeout + 'ms'
+                            : (err.message || 'Connection failed');
+                        // CORS errors show as TypeError with generic message
+                        if (err instanceof TypeError && !err.name.includes('Abort')) {
+                            errMsg = 'Network/CORS error — ensure your backend allows cross-origin requests';
+                        }
+                        NexvoraAPIConfig.setStatus(NexvoraAPIConfig.STATUS.ERROR, errMsg);
                         testApiBtn.disabled = false;
                         testApiBtn.innerHTML = '<i class="fa-solid fa-plug"></i> Test';
                         updateApiStatusDisplay();
-                        showToast('Connection test failed', 'error');
+                        showToast('Connection failed — ' + errMsg, 'error');
                     });
                 });
             }
