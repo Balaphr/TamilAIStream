@@ -1792,13 +1792,16 @@ window.NexvoraAI = (function () {
             updateConnectionStatus();
 
         } catch (err) {
+            console.error('[Nexvora] generateResponse error:', err.code, err.message, err.detail);
             var errorContent = getNotConnectedMessage(err);
             var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
             chat.messages.push(errorMsg);
             updateChat(chat.id, { messages: chat.messages });
             appendMessageToDOM(errorMsg);
             scrollToBottom();
-            showToast(err.message || 'Connection error', 'error');
+            var toastMsg = err.message || 'Connection error';
+            if (err.detail && err.detail.status) toastMsg += ' (HTTP ' + err.detail.status + ')';
+            showToast(toastMsg, 'error');
             updateConnectionStatus();
 
         } finally {

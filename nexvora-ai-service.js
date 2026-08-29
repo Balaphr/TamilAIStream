@@ -269,6 +269,7 @@ window.NexvoraAIService = (function () {
         }
 
         var model = validation.model;
+        console.log('[NexvoraAIService] Active model:', JSON.stringify({ id: model.id, name: model.name, endpoint: model.endpoint, modelId: model.modelId, apiKey: model.apiKey ? '(set)' : '(empty)', capabilities: model.capabilities }));
         var headers = getConfig().buildHeaders(model);
         var url;
         var body;
@@ -308,6 +309,12 @@ window.NexvoraAIService = (function () {
             body.messages = [{ role: 'system', content: options.systemPrompt }].concat(body.messages);
         }
 
+        // Diagnostic logging
+        console.log('[NexvoraAIService] sendChatMessage → URL:', url);
+        console.log('[NexvoraAIService] sendChatMessage → Method: POST');
+        console.log('[NexvoraAIService] sendChatMessage → Headers:', JSON.stringify(headers));
+        console.log('[NexvoraAIService] sendChatMessage → Body:', JSON.stringify(body));
+
         getConfig().setStatus(getConfig().STATUS.CONNECTING);
 
         try {
@@ -321,6 +328,7 @@ window.NexvoraAIService = (function () {
             });
             return parsed;
         } catch (err) {
+            console.error('[NexvoraAIService] sendChatMessage error:', err.code, err.message, err.detail);
             getConfig().setStatus(getConfig().STATUS.ERROR, err.message);
             throw err;
         }
