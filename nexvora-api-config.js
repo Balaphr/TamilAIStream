@@ -94,8 +94,13 @@ window.NexvoraAPIConfig = (function () {
 
     function loadConfig() {
         var saved = lsGetJSON(STORAGE_KEY) || {};
+        var baseUrl = saved.baseUrl || env.AI_API_URL || DEFAULT_BASE_URL;
+        // Validate baseUrl is a proper absolute URL
+        if (!baseUrl || !/^https?:\/\/.+/i.test(baseUrl)) {
+            baseUrl = DEFAULT_BASE_URL;
+        }
         return {
-            baseUrl:    saved.baseUrl    || env.AI_API_URL    || DEFAULT_BASE_URL,
+            baseUrl:    baseUrl,
             apiKey:     saved.apiKey     || env.AI_API_KEY    || '',
             timeout:    saved.timeout    || DEFAULTS.timeout,
             stream:     saved.stream     || env.AI_STREAM === 'true',
@@ -195,9 +200,8 @@ window.NexvoraAPIConfig = (function () {
 
     // ---------------------------------------------------------------------------
     // Health check (non-destructive, no model logic)
-    // For custom providers with requestBodyTemplate: sends POST with test data.
-    // For custom providers without template: tries GET reachability check.
-    // For standard providers: uses the global /health endpoint.
+    // Always sends POST with chat body to the model endpoint.
+    // Falls back to config baseUrl + /v1/chat/completions if no model endpoint.
     // ---------------------------------------------------------------------------
     function checkHealth(model) {
         var config = loadConfig();
@@ -270,11 +274,25 @@ window.NexvoraAPIConfig = (function () {
             });
         }
 
-        // Custom providers with endpoint but no template: simple GET reachability check
+        // Custom providers: always POST with chat body to test endpoint
         if (model && model.endpoint) {
             var modelUrl = model.endpoint.replace(/\/+$/, '');
+            // If endpoint doesn't contain /v1/chat/completions, build from baseUrl
+            if (modelUrl.indexOf('/v1/chat/completions') === -1) {
+                var base = config.baseUrl ? config.baseUrl.replace(/\/+$/, '') : '';
+                if (base) {
+                    modelUrl = base + '/v1/chat/completions';
+                }
+            }
             setStatus(STATUS.CONNECTING);
             var headers = buildHeaders(model);
+
+            var testBody = {
+                model: model.modelId || model.id,
+                messages: [{ role: 'user', content: 'test' }],
+                max_tokens: 5,
+                stream: false
+            };
 
             return new Promise(function (resolve) {
                 var controller = null;
@@ -286,8 +304,9 @@ window.NexvoraAPIConfig = (function () {
                 }
 
                 var fetchOptions = {
-                    method: 'GET',
-                    headers: headers
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(testBody)
                 };
                 if (controller) fetchOptions.signal = controller.signal;
 
@@ -317,8 +336,8 @@ window.NexvoraAPIConfig = (function () {
             });
         }
 
-        // Standard providers: use global /health endpoint
-        var url = buildUrl(ENDPOINTS.health, model);
+        // Standard providers: POST to /v1/chat/completions
+        var url = buildUrl(ENDPOINTS.chat, model);
         if (!url) {
             setStatus(STATUS.DISCONNECTED, 'No API URL configured');
             return Promise.resolve(getStatus());
@@ -326,6 +345,13 @@ window.NexvoraAPIConfig = (function () {
 
         setStatus(STATUS.CONNECTING);
         var headers = buildHeaders(model);
+
+        var standardBody = {
+            model: model.modelId || model.id || 'test',
+            messages: [{ role: 'user', content: 'test' }],
+            max_tokens: 5,
+            stream: false
+        };
 
         return new Promise(function (resolve) {
             var controller = null;
@@ -337,8 +363,9 @@ window.NexvoraAPIConfig = (function () {
             }
 
             var fetchOptions = {
-                method: 'GET',
-                headers: headers
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(standardBody)
             };
             if (controller) fetchOptions.signal = controller.signal;
 

@@ -22,17 +22,16 @@ window.NexvoraModelManager = (function () {
     var DEFAULT_MODELS = [
         {
             id: 'tamil-translation',
-            name: 'Tamil Translation',
-            modelId: 'tamil-translation',
-            endpoint: 'https://api.tamilai.stream/translate',
+            name: 'TamilAI Chat',
+            modelId: 'tamilai',
+            endpoint: 'https://api.tamilai.stream/v1/chat/completions',
             provider: 'custom',
             apiKey: '',
             languages: ['ta', 'en'],
-            capabilities: ['translation'],
+            capabilities: ['chat', 'translation'],
             maxTokens: 4096,
             enabled: true,
-            isDefault: true,
-            requestBodyTemplate: '{"tamil": "{{input}}"}'
+            isDefault: true
         }
     ];
 
@@ -75,6 +74,23 @@ window.NexvoraModelManager = (function () {
                         changed = true;
                     }
                 });
+                // Force-update stale endpoints to the correct chat completions URL
+                if (m.endpoint && def.endpoint && m.endpoint !== def.endpoint &&
+                    def.endpoint.indexOf('/v1/chat/completions') !== -1) {
+                    m.endpoint = def.endpoint;
+                    changed = true;
+                }
+                // Force-remove stale requestBodyTemplate from chat-capable models
+                if (m.requestBodyTemplate && def.capabilities && def.capabilities.indexOf('chat') !== -1 && !def.requestBodyTemplate) {
+                    delete m.requestBodyTemplate;
+                    changed = true;
+                }
+            }
+            // Force-add chat capability if model is the default and missing it
+            if (def && def.capabilities && def.capabilities.indexOf('chat') !== -1 &&
+                m.capabilities && m.capabilities.indexOf('chat') === -1) {
+                m.capabilities = def.capabilities.slice();
+                changed = true;
             }
         });
         if (changed) lsSet(STORAGE_KEY, models);
@@ -273,11 +289,33 @@ window.NexvoraModelManager = (function () {
         }
 
         var headers = { 'Content-Type': 'application/json' };
-        if (model.apiKey) {
-            headers['Authorization'] = 'Bearer ' + model.apiKey;
+        var apiKey = model.apiKey || '';
+        if (!apiKey) {
+            try {
+                var cfg = JSON.parse(localStorage.getItem('nexvora_api_config') || '{}');
+                apiKey = cfg.apiKey || '';
+            } catch (e) {}
+        }
+        if (apiKey) {
+            headers['Authorization'] = 'Bearer ' + apiKey;
         }
 
-        return fetch(model.endpoint, {
+        // Build correct URL for chat-capable models
+        var fetchUrl = model.endpoint || '';
+        var caps2 = model.capabilities || [];
+        var isChat2 = caps2.some(function (c) { return c === 'chat'; });
+        if (isChat2 && fetchUrl.indexOf('/v1/chat/completions') === -1) {
+            var configBase = '';
+            try {
+                var cfg2 = JSON.parse(localStorage.getItem('nexvora_api_config') || '{}');
+                configBase = (cfg2.baseUrl || 'https://api.tamilai.stream').replace(/\/+$/, '');
+            } catch (e) {
+                configBase = 'https://api.tamilai.stream';
+            }
+            fetchUrl = configBase + '/v1/chat/completions';
+        }
+
+        return fetch(fetchUrl, {
             method: 'POST',
             headers: headers,
             body: JSON.stringify(body)
@@ -397,28 +435,45 @@ window.NexvoraModelManager = (function () {
             }
 
             var headers = { 'Content-Type': 'application/json' };
-            if (m.apiKey) {
-                headers['Authorization'] = 'Bearer ' + m.apiKey;
+            // Use model apiKey first, fall back to config apiKey from Settings
+            var apiKey = m.apiKey || '';
+            if (!apiKey) {
+                try {
+                    var cfg = JSON.parse(localStorage.getItem('nexvora_api_config') || '{}');
+                    apiKey = cfg.apiKey || '';
+                } catch (e) {}
+            }
+            if (apiKey) {
+                headers['Authorization'] = 'Bearer ' + apiKey;
             }
 
-            // Custom providers with requestBodyTemplate: send POST with test data
-            var fetchOptions;
-            if (m.requestBodyTemplate) {
-                var testBody;
+            // Build correct URL: always POST to /v1/chat/completions
+            var testUrl = m.endpoint ? m.endpoint.replace(/\/+$/, '') : '';
+            if (testUrl.indexOf('/v1/chat/completions') === -1) {
+                // Endpoint doesn't point to chat completions — build from config
+                var configBaseUrl = '';
                 try {
-                    testBody = JSON.parse(m.requestBodyTemplate.replace(/\{\{input\}\}/g, '\u0B85\u0BA9\u0BCD'));
+                    var cfg2 = JSON.parse(localStorage.getItem('nexvora_api_config') || '{}');
+                    configBaseUrl = (cfg2.baseUrl || 'https://api.tamilai.stream').replace(/\/+$/, '');
                 } catch (e) {
-                    testBody = { tamil: '\u0B85\u0BA9\u0BCD' };
+                    configBaseUrl = 'https://api.tamilai.stream';
                 }
-                fetchOptions = { method: 'POST', headers: headers, body: JSON.stringify(testBody) };
-            } else {
-                fetchOptions = { method: 'GET', headers: headers };
+                testUrl = configBaseUrl + '/v1/chat/completions';
             }
+
+            var testBody = {
+                model: m.modelId || m.id,
+                messages: [{ role: 'user', content: 'test' }],
+                max_tokens: 5,
+                stream: false
+            };
+
+            var fetchOptions = { method: 'POST', headers: headers, body: JSON.stringify(testBody) };
             if (controller) fetchOptions.signal = controller.signal;
 
             var start = Date.now();
 
-            fetch(m.endpoint, fetchOptions)
+            fetch(testUrl, fetchOptions)
                 .then(function (res) {
                     if (timeoutId) clearTimeout(timeoutId);
                     var latency = Date.now() - start;
@@ -430,20 +485,11 @@ window.NexvoraModelManager = (function () {
                         });
                     }
 
-                    if (m.requestBodyTemplate) {
-                        return res.json().then(function (data) {
-                            if (data && data.english !== undefined) {
-                                setConnectionStatus(m.id, 'connected', latency);
-                                resolve({ connected: true, latency: latency, message: 'Connected' });
-                            } else {
-                                setConnectionStatus(m.id, 'error', null);
-                                resolve({ connected: false, message: 'API returned unexpected response \u2014 expected "english" field' });
-                            }
-                        });
-                    }
-
-                    setConnectionStatus(m.id, 'connected', latency);
-                    resolve({ connected: true, latency: latency, message: 'Connected' });
+                    // Verify response is valid chat completions format
+                    return res.json().then(function (data) {
+                        setConnectionStatus(m.id, 'connected', latency);
+                        resolve({ connected: true, latency: latency, message: 'Connected' });
+                    });
                 })
                 .catch(function (err) {
                     if (timeoutId) clearTimeout(timeoutId);

@@ -266,10 +266,16 @@ window.NexvoraAIService = (function () {
         var hasChatCap = caps.some(function (c) { return c === 'chat'; });
 
         if (model.provider === 'custom' || model.provider === 'TamilAI') {
-            // Custom/TamilAI providers: use model endpoint directly
-            url = model.endpoint ? model.endpoint.replace(/\/+$/, '') : null;
+            // Custom/TamilAI providers: always build URL from config.baseUrl for chat
             if (hasChatCap) {
-                // Chat capability: send standard OpenAI-compatible chat body
+                // Chat capability: always use config.baseUrl + /v1/chat/completions
+                var base = model.endpoint ? model.endpoint.replace(/\/+$/, '') : '';
+                if (base.indexOf('/v1/chat/completions') === -1) {
+                    base = Config.load().baseUrl ? Config.load().baseUrl.replace(/\/+$/, '') : '';
+                    url = base ? base + '/v1/chat/completions' : null;
+                } else {
+                    url = base;
+                }
                 body = {
                     model: model.modelId || model.id,
                     messages: messages,
