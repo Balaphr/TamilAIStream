@@ -1740,76 +1740,72 @@ window.NexvoraAI = (function () {
         generateResponse(chat, text);
     }
 
-    function generateResponse(chat, userText) {
+    async function generateResponse(chat, userText) {
         isGenerating = true; showLoading(true);
-        var thinkingEl = null;
+        showThinkingMessage();
 
-        function finishSuccess(assistantMsg) {
-            try {
-                isGenerating = false; showLoading(false); removeThinkingMessage();
+        try {
+            // Translation mode: use the translation service directly
+            if (translationMode && typeof NexvoraAIService !== 'undefined') {
+                var result = await NexvoraAIService.translateText(userText, 'en', 'ta');
+                var assistantMsg = {
+                    id: 'msg-' + Date.now(),
+                    role: 'assistant',
+                    content: '**Translation:**\n\n' + result.content +
+                        (result.source ? '\n\n**Original:** ' + result.source : ''),
+                    model: result.model || 'TamilAI Translator',
+                    timestamp: Date.now()
+                };
                 chat.messages.push(assistantMsg);
                 updateChat(chat.id, { messages: chat.messages });
                 appendMessageToDOM(assistantMsg);
                 scrollToBottom();
                 renderDashboard();
                 updateConnectionStatus();
-            } catch (e) {
-                isGenerating = false; showLoading(false); removeThinkingMessage();
-            }
-        }
-
-        function finishError(err, prefix) {
-            try {
-                isGenerating = false; showLoading(false); removeThinkingMessage();
-                var errorContent = getNotConnectedMessage(err);
-                var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
-                chat.messages.push(errorMsg);
-                updateChat(chat.id, { messages: chat.messages });
-                appendMessageToDOM(errorMsg);
-                scrollToBottom();
-                showToast(err.message || (prefix || 'Error'), 'error');
-                updateConnectionStatus();
-            } catch (e) {
-                isGenerating = false; showLoading(false); removeThinkingMessage();
-            }
-        }
-
-        // Translation mode: use the translation service directly
-        if (translationMode && typeof NexvoraAIService !== 'undefined') {
-            thinkingEl = showThinkingMessage();
-            NexvoraAIService.translateText(userText, 'en', 'ta')
-                .then(function (result) {
-                    finishSuccess({
-                        id: 'msg-' + Date.now(),
-                        role: 'assistant',
-                        content: '**Translation:**\n\n' + result.content +
-                            (result.source ? '\n\n**Original:** ' + result.source : ''),
-                        model: result.model || 'TamilAI Translator',
-                        timestamp: Date.now()
-                    });
-                })
-                .catch(function (err) { finishError(err, 'Translation error'); });
-            return;
-        }
-
-        // Standard chat mode
-        // Validate via service layer before attempting
-        if (typeof NexvoraAIService !== 'undefined') {
-            var validation = NexvoraAIService.validateModel('chat');
-            if (!validation.valid) {
-                finishError(validation.error);
                 return;
             }
+
+            // Standard chat mode
+            // Validate via service layer before attempting
+            if (typeof NexvoraAIService !== 'undefined') {
+                var validation = NexvoraAIService.validateModel('chat');
+                if (!validation.valid) {
+                    var errContent = getNotConnectedMessage(validation.error);
+                    var errMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errContent, model: '', timestamp: Date.now() };
+                    chat.messages.push(errMsg);
+                    updateChat(chat.id, { messages: chat.messages });
+                    appendMessageToDOM(errMsg);
+                    scrollToBottom();
+                    return;
+                }
+            }
+
+            var messages = chat.messages.map(function (m) { return { role: m.role, content: m.content }; });
+
+            var response = await NexvoraModelManager.sendRequest(messages, { temperature: 0.7 });
+            var assistantMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: response.content, model: response.model, timestamp: Date.now() };
+            chat.messages.push(assistantMsg);
+            updateChat(chat.id, { messages: chat.messages });
+            appendMessageToDOM(assistantMsg);
+            scrollToBottom();
+            renderDashboard();
+            updateConnectionStatus();
+
+        } catch (err) {
+            var errorContent = getNotConnectedMessage(err);
+            var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
+            chat.messages.push(errorMsg);
+            updateChat(chat.id, { messages: chat.messages });
+            appendMessageToDOM(errorMsg);
+            scrollToBottom();
+            showToast(err.message || 'Connection error', 'error');
+            updateConnectionStatus();
+
+        } finally {
+            isGenerating = false;
+            showLoading(false);
+            removeThinkingMessage();
         }
-
-        var messages = chat.messages.map(function (m) { return { role: m.role, content: m.content }; });
-
-        thinkingEl = showThinkingMessage();
-        NexvoraModelManager.sendRequest(messages, { temperature: 0.7 })
-            .then(function (response) {
-                finishSuccess({ id: 'msg-' + Date.now(), role: 'assistant', content: response.content, model: response.model, timestamp: Date.now() });
-            })
-            .catch(function (err) { finishError(err, 'Connection error'); });
     }
 
     // Build user-friendly "not connected" messages

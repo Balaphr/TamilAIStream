@@ -109,18 +109,24 @@ window.NexvoraAIService = (function () {
     // ---------------------------------------------------------------------------
     // HTTP request with timeout and retries
     // ---------------------------------------------------------------------------
-    function makeRequest(url, headers, body, options) {
+    async function makeRequest(url, headers, body, options) {
         options = options || {};
         var config = Config.load();
         var timeout = options.timeout || config.timeout || Config.DEFAULTS.timeout;
         var retries = options.retries !== undefined ? options.retries : Config.DEFAULTS.retries;
         var retryDelay = options.retryDelay || Config.DEFAULTS.retryDelay;
 
-        function attempt(retriesLeft) {
-            return new Promise(function (resolve, reject) {
-                var controller = null;
-                var timeoutId = null;
+        var lastError = null;
 
+        for (var attempt = 0; attempt <= retries; attempt++) {
+            if (attempt > 0) {
+                await new Promise(function (r) { setTimeout(r, retryDelay); });
+            }
+
+            var controller = null;
+            var timeoutId = null;
+
+            try {
                 if (typeof AbortController !== 'undefined') {
                     controller = new AbortController();
                     timeoutId = setTimeout(function () { controller.abort(); }, timeout);
@@ -134,62 +140,52 @@ window.NexvoraAIService = (function () {
                 if (controller) fetchOptions.signal = controller.signal;
 
                 var start = Date.now();
+                var res = await fetch(url, fetchOptions);
+                if (timeoutId) clearTimeout(timeoutId);
+                var latency = Date.now() - start;
 
-                fetch(url, fetchOptions)
-                    .then(function (res) {
-                        if (timeoutId) clearTimeout(timeoutId);
-                        var latency = Date.now() - start;
+                if (!res.ok) {
+                    var errorText = '';
+                    try { errorText = await res.text(); } catch (e) { /* ignore */ }
+                    var errDetail = { status: res.status, body: errorText, latency: latency };
 
-                        if (!res.ok) {
-                            return res.text().then(function (text) {
-                                var errDetail = { status: res.status, body: text, latency: latency };
+                    // Retry on 5xx errors
+                    if (res.status >= 500 && attempt < retries) {
+                        lastError = createError(ServiceError.API_ERROR, errDetail);
+                        continue;
+                    }
 
-                                // Retry on 5xx errors
-                                if (res.status >= 500 && retriesLeft > 0) {
-                                    return new Promise(function (resolveRetry) {
-                                        setTimeout(function () {
-                                            attempt(retriesLeft - 1).then(resolveRetry).catch(resolveRetry);
-                                        }, retryDelay);
-                                    });
-                                }
+                    throw createError(ServiceError.API_ERROR, errDetail);
+                }
 
-                                reject(createError(ServiceError.API_ERROR, errDetail));
-                            });
-                        }
+                var data = await res.json();
+                return { data: data, latency: latency };
 
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        resolve({ data: data, latency: Date.now() - start });
-                    })
-                    .catch(function (err) {
-                        if (timeoutId) clearTimeout(timeoutId);
+            } catch (err) {
+                if (timeoutId) clearTimeout(timeoutId);
 
-                        if (err.code) {
-                            // Already a ServiceError
-                            reject(err);
-                            return;
-                        }
+                // Already a ServiceError from above — throw immediately (unless retrying 5xx)
+                if (err.code && err.code !== 'TIMEOUT' && err.code !== 'NETWORK_ERROR') {
+                    throw err;
+                }
 
-                        if (err.name === 'AbortError') {
-                            reject(createError(ServiceError.TIMEOUT, { timeout: timeout }));
-                            return;
-                        }
+                if (err.name === 'AbortError') {
+                    throw createError(ServiceError.TIMEOUT, { timeout: timeout });
+                }
 
-                        // Network error — retry
-                        if (retriesLeft > 0) {
-                            setTimeout(function () {
-                                attempt(retriesLeft - 1).then(resolve).catch(reject);
-                            }, retryDelay);
-                            return;
-                        }
+                lastError = err;
 
-                        reject(createError(ServiceError.NETWORK_ERROR, { original: err.message }));
-                    });
-            });
+                // Network/fetch error — retry if attempts remain
+                if (attempt < retries) {
+                    continue;
+                }
+
+                throw createError(ServiceError.NETWORK_ERROR, { original: err.message });
+            }
         }
 
-        return attempt(retries);
+        // Should not reach here, but just in case
+        throw lastError || createError(ServiceError.NETWORK_ERROR, { original: 'Request failed' });
     }
 
     // ---------------------------------------------------------------------------
@@ -241,13 +237,13 @@ window.NexvoraAIService = (function () {
     // ---------------------------------------------------------------------------
     // SERVICE: sendChatMessage
     // ---------------------------------------------------------------------------
-    function sendChatMessage(messages, options) {
+    async function sendChatMessage(messages, options) {
         options = options || {};
 
         // Always use standard chat format — never use requestBodyTemplate for chat
         var validation = validateModel('chat');
         if (!validation.valid) {
-            return Promise.reject(validation.error);
+            throw validation.error;
         }
 
         var model = validation.model;
@@ -259,8 +255,8 @@ window.NexvoraAIService = (function () {
         if (model.endpoint) {
             url = model.endpoint.replace(/\/+$/, '');
         } else {
-            var config = Config.load();
-            if (config.baseUrl) {
+            var cfg = Config.load();
+            if (cfg.baseUrl) {
                 url = Config.buildUrl(Config.ENDPOINTS.chat, model);
             }
         }
@@ -283,7 +279,7 @@ window.NexvoraAIService = (function () {
         }
 
         if (!url) {
-            return Promise.reject(createError(ServiceError.NO_API_CONFIG));
+            throw createError(ServiceError.NO_API_CONFIG);
         }
 
         if (options.systemPrompt && body.messages) {
@@ -292,21 +288,20 @@ window.NexvoraAIService = (function () {
 
         Config.setStatus(Config.STATUS.CONNECTING);
 
-        return makeRequest(url, headers, body, options)
-            .then(function (result) {
-                var parsed = parseResponse(result.data, model.name);
-                Config.setStatus(Config.STATUS.CONNECTED, null, result.latency);
-                Config.setModelInfo({
-                    name: model.name,
-                    provider: model.provider,
-                    model: result.data.model || model.id
-                });
-                return parsed;
-            })
-            .catch(function (err) {
-                Config.setStatus(Config.STATUS.ERROR, err.message);
-                throw err;
+        try {
+            var result = await makeRequest(url, headers, body, options);
+            var parsed = parseResponse(result.data, model.name);
+            Config.setStatus(Config.STATUS.CONNECTED, null, result.latency);
+            Config.setModelInfo({
+                name: model.name,
+                provider: model.provider,
+                model: result.data.model || model.id
             });
+            return parsed;
+        } catch (err) {
+            Config.setStatus(Config.STATUS.ERROR, err.message);
+            throw err;
+        }
     }
 
     // ---------------------------------------------------------------------------
@@ -315,14 +310,14 @@ window.NexvoraAIService = (function () {
     //   1. TamilAI backend: POST /translate with { tamil } → { tamil, english }
     //   2. Generic: uses chat with translation prompt as fallback
     // ---------------------------------------------------------------------------
-    function translateText(text, targetLang, sourceLang, options) {
+    async function translateText(text, targetLang, sourceLang, options) {
         options = options || {};
         var validation = validateModel('translate');
         if (!validation.valid) {
             // Fallback: try chat capability for translation via prompt
             var chatValidation = validateModel('chat');
             if (!chatValidation.valid) {
-                return Promise.reject(validation.error);
+                throw validation.error;
             }
             // Use chat with translation prompt
             var systemPrompt = 'You are a professional translator. Translate the following text' +
@@ -343,7 +338,7 @@ window.NexvoraAIService = (function () {
         } else {
             url = Config.buildUrl(Config.ENDPOINTS.translate, model);
         }
-        if (!url) return Promise.reject(createError(ServiceError.NO_API_CONFIG));
+        if (!url) throw createError(ServiceError.NO_API_CONFIG);
 
         var headers = Config.buildHeaders(model);
 
@@ -353,30 +348,24 @@ window.NexvoraAIService = (function () {
             try {
                 body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, text));
             } catch (e) {
-                // Fallback to default format if template is invalid
                 body = { tamil: text };
             }
         } else {
-            // Default TamilAI backend format: { tamil: "text" }
             body = { tamil: text };
         }
 
-        return makeRequest(url, headers, body, options)
-            .then(function (result) {
-                // TamilAI backend returns { tamil, english }
-                var data = result.data;
-                if (data && data.english !== undefined) {
-                    return {
-                        content: data.english,
-                        model: model.name,
-                        usage: null,
-                        finishReason: null,
-                        source: data.tamil || text
-                    };
-                }
-                // Fallback to generic response parsing
-                return parseResponse(data, model.name);
-            });
+        var result = await makeRequest(url, headers, body, options);
+        var data = result.data;
+        if (data && data.english !== undefined) {
+            return {
+                content: data.english,
+                model: model.name,
+                usage: null,
+                finishReason: null,
+                source: data.tamil || text
+            };
+        }
+        return parseResponse(data, model.name);
     }
 
     // ---------------------------------------------------------------------------
