@@ -196,142 +196,51 @@ window.NexvoraAPIConfig = (function () {
     }
 
     // ---------------------------------------------------------------------------
-    // Health check (non-destructive, no model logic)
-    // For custom providers with requestBodyTemplate: sends POST with test data.
-    // For custom providers without template: tries GET reachability check.
-    // For standard providers: uses the global /health endpoint.
+    // Health check — always POST, never GET (backends reject GET on chat endpoints)
     // ---------------------------------------------------------------------------
     function checkHealth(model) {
         var config = loadConfig();
         var timeout = config.timeout || 30000;
 
-        // Custom providers: send a test POST request
+        // Determine the URL to test
+        var modelUrl;
         if (model && model.endpoint) {
-            var modelUrl = model.endpoint.replace(/\/+$/, '');
-            setStatus(STATUS.CONNECTING);
-            var headers = buildHeaders(model);
-
-            // Build test body based on model capabilities
-            var testBody;
-            var caps = model.capabilities || [];
-            var hasChatCap = caps.some(function (c) { return c === 'chat'; });
-
-            if (hasChatCap) {
-                // Chat-capable model: send standard chat test body
-                testBody = {
-                    model: model.modelId || model.id,
-                    messages: [{ role: 'user', content: '\u0B85\u0BA9\u0BCD' }],
-                    max_tokens: 10,
-                    stream: false
-                };
-            } else if (model.requestBodyTemplate) {
-                // Template-based model: use template with test data
-                try {
-                    testBody = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, '\u0B85\u0BA9\u0BCD'));
-                } catch (e) {
-                    testBody = { tamil: '\u0B85\u0BA9\u0BCD' };
-                }
-            } else {
-                // Simple reachability check
-                testBody = null;
-            }
-
-            // If no body to send, do a GET reachability check
-            if (!testBody) {
-                return new Promise(function (resolve) {
-                    var controller = null;
-                    var timeoutId = null;
-                    if (typeof AbortController !== 'undefined') {
-                        controller = new AbortController();
-                        timeoutId = setTimeout(function () { controller.abort(); }, timeout);
-                    }
-                    var fetchOptions = { method: 'GET', headers: headers };
-                    if (controller) fetchOptions.signal = controller.signal;
-                    var start = Date.now();
-                    fetch(modelUrl, fetchOptions)
-                        .then(function (res) {
-                            if (timeoutId) clearTimeout(timeoutId);
-                            var latency = Date.now() - start;
-                            if (res.ok || res.status === 405 || res.status === 404 || res.status === 422) {
-                                setStatus(STATUS.CONNECTED, null, latency);
-                            } else {
-                                setStatus(STATUS.ERROR, 'HTTP ' + res.status);
-                            }
-                            resolve(getStatus());
-                        })
-                        .catch(function (err) {
-                            if (timeoutId) clearTimeout(timeoutId);
-                            setStatus(STATUS.ERROR, err.name === 'AbortError' ? 'Timeout' : (err.message || 'Connection failed'));
-                            resolve(getStatus());
-                        });
-                });
-            }
-
-            return new Promise(function (resolve) {
-                var controller = null;
-                var timeoutId = null;
-
-                if (typeof AbortController !== 'undefined') {
-                    controller = new AbortController();
-                    timeoutId = setTimeout(function () { controller.abort(); }, timeout);
-                }
-
-                var fetchOptions = {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify(testBody)
-                };
-                if (controller) fetchOptions.signal = controller.signal;
-
-                var start = Date.now();
-
-                fetch(modelUrl, fetchOptions)
-                    .then(function (res) {
-                        if (timeoutId) clearTimeout(timeoutId);
-                        var latency = Date.now() - start;
-
-                        if (!res.ok) {
-                            var errBody = '';
-                            return res.text().then(function (text) {
-                                errBody = text;
-                                setStatus(STATUS.ERROR, 'HTTP ' + res.status + (errBody ? ': ' + errBody.slice(0, 200) : ''));
-                                resolve(getStatus());
-                            });
-                        }
-
-                        return res.json().then(function (data) {
-                            // Accept any valid JSON response as connected
-                            // For chat models: check for choices array
-                            // For translation models: check for english field
-                            if (data && (data.choices || data.english !== undefined || data.content || data.response)) {
-                                setStatus(STATUS.CONNECTED, null, latency);
-                            } else {
-                                setStatus(STATUS.CONNECTED, null, latency);
-                            }
-                            resolve(getStatus());
-                        });
-                    })
-                    .catch(function (err) {
-                        if (timeoutId) clearTimeout(timeoutId);
-                        if (err.name === 'AbortError') {
-                            setStatus(STATUS.TIMEOUT, 'Request timed out after ' + timeout + 'ms');
-                        } else {
-                            setStatus(STATUS.ERROR, err.message || 'Connection failed');
-                        }
-                        resolve(getStatus());
-                    });
-            });
+            modelUrl = model.endpoint.replace(/\/+$/, '');
+        } else {
+            modelUrl = buildUrl(ENDPOINTS.health, model);
         }
-
-        // Standard providers: use global /health endpoint
-        var url = buildUrl(ENDPOINTS.health, model);
-        if (!url) {
+        if (!modelUrl) {
             setStatus(STATUS.DISCONNECTED, 'No API URL configured');
             return Promise.resolve(getStatus());
         }
 
         setStatus(STATUS.CONNECTING);
         var headers = buildHeaders(model);
+
+        // Build test body — always POST, never GET
+        var testBody;
+        var caps = (model && model.capabilities) || [];
+        var hasChatCap = caps.some(function (c) { return c === 'chat'; });
+
+        if (hasChatCap) {
+            // Chat-capable model: send standard chat test body
+            testBody = {
+                model: (model && (model.modelId || model.id)) || 'tamilai',
+                messages: [{ role: 'user', content: '\u0B85\u0BA9\u0BCD' }],
+                max_tokens: 10,
+                stream: false
+            };
+        } else if (model && model.requestBodyTemplate) {
+            // Template-based model: use template with test data
+            try {
+                testBody = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, '\u0B85\u0BA9\u0BCD'));
+            } catch (e) {
+                testBody = { tamil: '\u0B85\u0BA9\u0BCD' };
+            }
+        } else {
+            // Default: send a minimal POST to check reachability
+            testBody = { model: 'test', messages: [{ role: 'user', content: 'hi' }], max_tokens: 1 };
+        }
 
         return new Promise(function (resolve) {
             var controller = null;
@@ -343,24 +252,32 @@ window.NexvoraAPIConfig = (function () {
             }
 
             var fetchOptions = {
-                method: 'GET',
-                headers: headers
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(testBody)
             };
             if (controller) fetchOptions.signal = controller.signal;
 
             var start = Date.now();
 
-            fetch(url, fetchOptions)
+            fetch(modelUrl, fetchOptions)
                 .then(function (res) {
                     if (timeoutId) clearTimeout(timeoutId);
                     var latency = Date.now() - start;
-                    if (res.ok) {
-                        setStatus(STATUS.CONNECTED, null, latency);
-                        return res.json().catch(function () { return {}; });
-                    } else {
-                        setStatus(STATUS.ERROR, 'HTTP ' + res.status);
+
+                    if (!res.ok) {
+                        var errBody = '';
+                        return res.text().then(function (text) {
+                            errBody = text;
+                            setStatus(STATUS.ERROR, 'HTTP ' + res.status + (errBody ? ': ' + errBody.slice(0, 200) : ''));
+                            resolve(getStatus());
+                        });
                     }
-                    resolve(getStatus());
+
+                    return res.json().then(function (data) {
+                        setStatus(STATUS.CONNECTED, null, latency);
+                        resolve(getStatus());
+                    });
                 })
                 .catch(function (err) {
                     if (timeoutId) clearTimeout(timeoutId);

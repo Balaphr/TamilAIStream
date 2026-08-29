@@ -31,8 +31,7 @@ window.NexvoraModelManager = (function () {
             capabilities: ['chat', 'translation'],
             maxTokens: 4096,
             enabled: true,
-            isDefault: true,
-            requestBodyTemplate: '{"tamil": "{{input}}"}'
+            isDefault: true
         }
     ];
 
@@ -83,6 +82,12 @@ window.NexvoraModelManager = (function () {
                 // Force-add missing capabilities from defaults
                 if (def.capabilities && (!m.capabilities || m.capabilities.length === 0)) {
                     m.capabilities = def.capabilities.slice();
+                    changed = true;
+                }
+                // Force-remove stale requestBodyTemplate from chat-capable models
+                // (old defaults had a translation template on a chat endpoint, causing wrong requests)
+                if (m.requestBodyTemplate && def.capabilities && def.capabilities.indexOf('chat') !== -1 && !def.requestBodyTemplate) {
+                    delete m.requestBodyTemplate;
                     changed = true;
                 }
             }
@@ -383,9 +388,22 @@ window.NexvoraModelManager = (function () {
                 headers['Authorization'] = 'Bearer ' + m.apiKey;
             }
 
-            // Custom providers with requestBodyTemplate: send POST with test data
+            // Always use POST — never GET (backends reject GET on chat/translation endpoints)
             var fetchOptions;
-            if (m.requestBodyTemplate) {
+            var caps = m.capabilities || [];
+            var hasChatCap = caps.some(function (c) { return c === 'chat'; });
+
+            if (hasChatCap) {
+                // Chat-capable model: send standard chat test body
+                var testBody = {
+                    model: m.modelId || m.id,
+                    messages: [{ role: 'user', content: '\u0B85\u0BA9\u0BCD' }],
+                    max_tokens: 10,
+                    stream: false
+                };
+                fetchOptions = { method: 'POST', headers: headers, body: JSON.stringify(testBody) };
+            } else if (m.requestBodyTemplate) {
+                // Template-based model: use template with test data
                 var testBody;
                 try {
                     testBody = JSON.parse(m.requestBodyTemplate.replace(/\{\{input\}\}/g, '\u0B85\u0BA9\u0BCD'));
@@ -394,7 +412,9 @@ window.NexvoraModelManager = (function () {
                 }
                 fetchOptions = { method: 'POST', headers: headers, body: JSON.stringify(testBody) };
             } else {
-                fetchOptions = { method: 'GET', headers: headers };
+                // Default: minimal POST to check reachability
+                var testBody = { model: 'test', messages: [{ role: 'user', content: 'hi' }], max_tokens: 1 };
+                fetchOptions = { method: 'POST', headers: headers, body: JSON.stringify(testBody) };
             }
             if (controller) fetchOptions.signal = controller.signal;
 
