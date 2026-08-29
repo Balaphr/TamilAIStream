@@ -130,18 +130,20 @@ window.NexvoraAPIConfig = (function () {
         var base = '';
 
         if (model && model.endpoint) {
-            // Use model-specific endpoint (full URL)
             base = model.endpoint.replace(/\/+$/, '');
         } else if (config.baseUrl) {
-            // Use global API base URL
             base = config.baseUrl.replace(/\/+$/, '');
         } else {
-            return null; // No URL configured
+            return null;
         }
 
-        // If the path looks like a full URL, use it directly
         if (path.startsWith('http://') || path.startsWith('https://')) {
             return path;
+        }
+
+        // If base already ends with the path, don't append (prevents /v1/chat/completions/v1/chat/completions)
+        if (base.length >= path.length && base.slice(-path.length) === path) {
+            return base;
         }
 
         return base + path;

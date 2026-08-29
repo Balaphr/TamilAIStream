@@ -233,8 +233,20 @@ window.NexvoraModelManager = (function () {
         }
 
         var body;
-        if (model.requestBodyTemplate) {
-            // Extract last user message text for template
+        var caps = model.capabilities || [];
+        var hasChatCap = caps.some(function (c) { return c === 'chat'; });
+
+        if (hasChatCap) {
+            // Chat capability: send standard OpenAI-compatible body regardless of template
+            body = {
+                model: model.modelId || model.id,
+                messages: messages,
+                max_tokens: options.maxTokens || model.maxTokens || 4096,
+                temperature: options.temperature || 0.7,
+                stream: false
+            };
+        } else if (model.requestBodyTemplate) {
+            // Non-chat with template: use request body template
             var inputText = '';
             for (var i = messages.length - 1; i >= 0; i--) {
                 if (messages[i].role === 'user') {
@@ -247,21 +259,13 @@ window.NexvoraModelManager = (function () {
             } catch (e) {
                 body = { tamil: inputText };
             }
-        } else if (model.provider === 'custom' || model.provider === 'TamilAI') {
-            body = {
-                model: model.modelId || model.id,
-                messages: messages,
-                max_tokens: options.maxTokens || model.maxTokens || 4096,
-                temperature: options.temperature || 0.7,
-                stream: !!options.stream
-            };
         } else {
             body = {
                 model: model.modelId || model.id,
                 messages: messages,
                 max_tokens: options.maxTokens || model.maxTokens || 4096,
                 temperature: options.temperature || 0.7,
-                stream: !!options.stream
+                stream: false
             };
         }
         if (options.systemPrompt) {

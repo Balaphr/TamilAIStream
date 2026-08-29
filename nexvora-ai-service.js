@@ -261,33 +261,45 @@ window.NexvoraAIService = (function () {
         var url;
         var body;
 
-        // Custom providers with requestBodyTemplate: use endpoint directly
-        if (model.requestBodyTemplate) {
-            url = model.endpoint.replace(/\/+$/, '');
+        // Check if model has chat capability
+        var caps = model.capabilities || [];
+        var hasChatCap = caps.some(function (c) { return c === 'chat'; });
 
-            // Extract the last user message text for the template
-            var inputText = '';
-            for (var i = messages.length - 1; i >= 0; i--) {
-                if (messages[i].role === 'user') {
-                    inputText = messages[i].content;
-                    break;
+        if (model.provider === 'custom' || model.provider === 'TamilAI') {
+            // Custom/TamilAI providers: use model endpoint directly
+            url = model.endpoint ? model.endpoint.replace(/\/+$/, '') : null;
+            if (hasChatCap) {
+                // Chat capability: send standard OpenAI-compatible chat body
+                body = {
+                    model: model.modelId || model.id,
+                    messages: messages,
+                    max_tokens: options.maxTokens || model.maxTokens || Config.DEFAULTS.maxTokens,
+                    temperature: options.temperature !== undefined ? options.temperature : Config.DEFAULTS.temperature,
+                    stream: false
+                };
+            } else if (model.requestBodyTemplate) {
+                // Non-chat with template: use request body template (e.g. translation)
+                var inputText = '';
+                for (var i = messages.length - 1; i >= 0; i--) {
+                    if (messages[i].role === 'user') {
+                        inputText = messages[i].content;
+                        break;
+                    }
                 }
+                try {
+                    body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, inputText));
+                } catch (e) {
+                    body = { tamil: inputText };
+                }
+            } else {
+                // Fallback: standard chat body
+                body = {
+                    model: model.modelId || model.id,
+                    messages: messages
+                };
             }
-
-            try {
-                body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, inputText));
-            } catch (e) {
-                body = { tamil: inputText };
-            }
-        } else if (model.provider === 'custom' || model.provider === 'TamilAI') {
-            // Custom providers without template: use endpoint directly with simplified body
-            url = model.endpoint.replace(/\/+$/, '');
-            body = {
-                messages: messages,
-                model: model.modelId || model.id
-            };
         } else {
-            // Standard OpenAI-compatible providers: append /v1/chat/completions
+            // Standard OpenAI-compatible providers: use buildUrl with /v1/chat/completions
             url = Config.buildUrl(Config.ENDPOINTS.chat, model);
             body = {
                 model: model.modelId || model.id,
