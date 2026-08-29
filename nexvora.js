@@ -56,6 +56,7 @@ window.NexvoraAI = (function () {
     var isGenerating = false;
     var speechRecognition = null;
     var isRecording = false;
+    var translationMode = false;
 
     function lsGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
     function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* ignore */ } }
@@ -624,7 +625,14 @@ window.NexvoraAI = (function () {
                 var tool = this.dataset.tool;
                 if (tool === 'more') {
                     navigateTo('tools');
+                } else if (tool === 'translate') {
+                    translationMode = true;
+                    startNewChat('Translation');
+                    var input = $('#nexvoraInput');
+                    if (input) { input.placeholder = 'Enter Tamil text to translate...'; input.focus(); }
+                    showToast('Translation mode — type Tamil text to translate to English', 'info');
                 } else {
+                    translationMode = false;
                     startNewChat();
                     showToast(tool.charAt(0).toUpperCase() + tool.slice(1) + ' tool ready — type your request', 'info');
                 }
@@ -790,10 +798,17 @@ window.NexvoraAI = (function () {
         quickActions.forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var action = this.dataset.action;
-                if (action === 'new-chat') { startNewChat(); }
+                if (action === 'new-chat') { translationMode = false; startNewChat(); }
+                else if (action === 'translate') {
+                    translationMode = true;
+                    startNewChat('Translation');
+                    var input = $('#nexvoraInput');
+                    if (input) { input.placeholder = 'Enter Tamil text to translate...'; input.focus(); }
+                    showToast('Translation mode — type Tamil text to translate to English', 'info');
+                }
                 else if (action === 'projects') { showProjectModal(); }
                 else if (action === 'prompts') { navigateTo('prompts'); }
-                else { startNewChat(); showToast(action.charAt(0).toUpperCase() + action.slice(1) + ' ready — type your request', 'info'); }
+                else { translationMode = false; startNewChat(); showToast(action.charAt(0).toUpperCase() + action.slice(1) + ' ready — type your request', 'info'); }
                 closeSidebar();
             });
         });
@@ -1440,7 +1455,11 @@ window.NexvoraAI = (function () {
         renderChatList(); showWelcome();
         navigateTo('chat');
         var input = $('#nexvoraInput');
-        if (input) { input.value = ''; input.focus(); }
+        if (input) {
+            input.value = '';
+            input.placeholder = translationMode ? 'Enter Tamil text to translate...' : 'Message Nexvora AI...';
+            input.focus();
+        }
     }
 
     function openChat(chatId) {
@@ -1645,6 +1664,41 @@ window.NexvoraAI = (function () {
     function generateResponse(chat, userText) {
         isGenerating = true; showLoading(true);
 
+        // Translation mode: use the translation service directly
+        if (translationMode && typeof NexvoraAIService !== 'undefined') {
+            NexvoraAIService.translateText(userText, 'en', 'ta')
+                .then(function (result) {
+                    isGenerating = false; showLoading(false);
+                    var assistantMsg = {
+                        id: 'msg-' + Date.now(),
+                        role: 'assistant',
+                        content: '**Translation:**\n\n' + result.content +
+                            (result.source ? '\n\n**Original:** ' + result.source : ''),
+                        model: result.model || 'TamilAI Translator',
+                        timestamp: Date.now()
+                    };
+                    chat.messages.push(assistantMsg);
+                    updateChat(chat.id, { messages: chat.messages });
+                    appendMessageToDOM(assistantMsg);
+                    scrollToBottom();
+                    renderDashboard();
+                    updateConnectionStatus();
+                })
+                .catch(function (err) {
+                    isGenerating = false; showLoading(false);
+                    var errorContent = getNotConnectedMessage(err);
+                    var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
+                    chat.messages.push(errorMsg);
+                    updateChat(chat.id, { messages: chat.messages });
+                    appendMessageToDOM(errorMsg);
+                    scrollToBottom();
+                    showToast(err.message || 'Translation error', 'error');
+                    updateConnectionStatus();
+                });
+            return;
+        }
+
+        // Standard chat mode
         // Validate via service layer before attempting
         if (typeof NexvoraAIService !== 'undefined') {
             var validation = NexvoraAIService.validateModel('chat');

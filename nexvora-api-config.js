@@ -21,6 +21,8 @@ window.NexvoraAPIConfig = (function () {
     // Environment variable support (Vite-compatible)
     // In production, replace these with actual env vars or a runtime config endpoint.
     // ---------------------------------------------------------------------------
+    var DEFAULT_BASE_URL = 'https://api.tamilai.stream';
+
     var env = {
         AI_API_URL:      (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AI_API_URL)      || '',
         AI_API_KEY:      (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AI_API_KEY)      || '',
@@ -35,15 +37,15 @@ window.NexvoraAPIConfig = (function () {
     var ENDPOINTS = {
         // Chat completions (OpenAI-compatible)
         chat:               '/v1/chat/completions',
-        // Translation
-        translate:          '/v1/translate',
+        // Translation (TamilAI backend: POST /translate)
+        translate:          '/translate',
         // Summarization
         summarize:          '/v1/summarize',
         // Document analysis
         analyzeDocument:    '/v1/analyze',
-        // Model info / health check
+        // Model info / health check (TamilAI backend: GET /health)
         models:             '/v1/models',
-        health:             '/v1/health',
+        health:             '/health',
         // Embeddings (future)
         embeddings:         '/v1/embeddings'
     };
@@ -93,7 +95,7 @@ window.NexvoraAPIConfig = (function () {
     function loadConfig() {
         var saved = lsGetJSON(STORAGE_KEY) || {};
         return {
-            baseUrl:    saved.baseUrl    || env.AI_API_URL    || '',
+            baseUrl:    saved.baseUrl    || env.AI_API_URL    || DEFAULT_BASE_URL,
             apiKey:     saved.apiKey     || env.AI_API_KEY    || '',
             timeout:    saved.timeout    || DEFAULTS.timeout,
             stream:     saved.stream     || env.AI_STREAM === 'true',
@@ -272,7 +274,7 @@ window.NexvoraAPIConfig = (function () {
         // Quick check
         isConfigured: function () {
             var config = loadConfig();
-            return !!(config.baseUrl || config.apiKey);
+            return !!(config.baseUrl);
         }
     };
 

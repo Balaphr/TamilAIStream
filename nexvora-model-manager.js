@@ -18,17 +18,17 @@ window.NexvoraModelManager = (function () {
     var STORAGE_KEY = 'nexvora_models';
     var ACTIVE_MODEL_KEY = 'nexvora_active_model';
 
-    // --- Default models (placeholder, no real API keys) ---
+    // --- Default models (TamilAI Translation pre-configured) ---
     var DEFAULT_MODELS = [
         {
-            id: 'nexvora-default',
-            name: 'Nexvora Default',
-            modelId: 'nexvora-default',
+            id: 'tamilai-translator',
+            name: 'TamilAI Translator',
+            modelId: 'tamilai-translator',
             endpoint: '',
-            provider: 'Built-in',
+            provider: 'TamilAI',
             apiKey: '',
-            languages: ['en'],
-            capabilities: ['chat'],
+            languages: ['ta', 'en'],
+            capabilities: ['translate', 'chat'],
             maxTokens: 4096,
             enabled: true,
             isDefault: true
@@ -242,7 +242,7 @@ window.NexvoraModelManager = (function () {
         lsSet(STORAGE_KEY, DEFAULT_MODELS.map(function (m) {
             return Object.assign({}, m, { createdAt: Date.now() });
         }));
-        lsSet(ACTIVE_MODEL_KEY, 'nexvora-default');
+        lsSet(ACTIVE_MODEL_KEY, 'tamilai-translator');
     }
 
     // --- Connection status tracking ---

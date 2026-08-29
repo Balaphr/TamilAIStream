@@ -269,6 +269,9 @@ window.NexvoraAIService = (function () {
 
     // ---------------------------------------------------------------------------
     // SERVICE: translateText
+    // Supports two backend formats:
+    //   1. TamilAI backend: POST /translate with { tamil } → { tamil, english }
+    //   2. Generic: uses chat with translation prompt as fallback
     // ---------------------------------------------------------------------------
     function translateText(text, targetLang, sourceLang, options) {
         options = options || {};
@@ -294,16 +297,25 @@ window.NexvoraAIService = (function () {
         if (!url) return Promise.reject(createError(ServiceError.NO_API_CONFIG));
 
         var headers = Config.buildHeaders(model);
-        var body = {
-            text: text,
-            source: sourceLang || 'auto',
-            target: targetLang,
-            model: model.modelId || model.id
-        };
+
+        // TamilAI backend format: { tamil: "text" }
+        var body = { tamil: text };
 
         return makeRequest(url, headers, body, options)
             .then(function (result) {
-                return parseResponse(result.data, model.name);
+                // TamilAI backend returns { tamil, english }
+                var data = result.data;
+                if (data && data.english !== undefined) {
+                    return {
+                        content: data.english,
+                        model: model.name,
+                        usage: null,
+                        finishReason: null,
+                        source: data.tamil || text
+                    };
+                }
+                // Fallback to generic response parsing
+                return parseResponse(data, model.name);
             });
     }
 

@@ -423,7 +423,7 @@
                         <div class="nexvora-tc-icon"><i class="fa-solid fa-language"></i></div>
                         <h4>Translation</h4>
                         <p>Translate between languages</p>
-                        <span class="nexvora-tc-badge soon">Coming Soon</span>
+                        <span class="nexvora-tc-badge active">Active</span>
                     </div>
                     <div class="nexvora-tool-card" data-tool="writer">
                         <div class="nexvora-tc-icon"><i class="fa-solid fa-pen-fancy"></i></div>
@@ -640,9 +640,9 @@
                         <div class="nexvora-setting-row">
                             <div class="nexvora-setting-info">
                                 <span class="nexvora-setting-label">API Base URL</span>
-                                <span class="nexvora-setting-desc">Base URL for your AI backend (e.g. http://127.0.0.1:8000)</span>
+                                <span class="nexvora-setting-desc">Base URL for your AI backend (e.g. https://api.tamilai.stream)</span>
                             </div>
-                            <input type="url" id="nexvoraApiUrl" class="nexvora-input-inline" placeholder="http://127.0.0.1:8000">
+                            <input type="url" id="nexvoraApiUrl" class="nexvora-input-inline" placeholder="https://api.tamilai.stream">
                         </div>
                         <div class="nexvora-setting-row">
                             <div class="nexvora-setting-info">
@@ -864,6 +864,7 @@
                                 <label for="nexvoraMdlProvider">Provider <span class="nexvora-required">*</span></label>
                                 <select id="nexvoraMdlProvider" required>
                                     <option value="">Select provider...</option>
+                                    <option value="TamilAI">TamilAI</option>
                                     <option value="openai">OpenAI</option>
                                     <option value="anthropic">Anthropic</option>
                                     <option value="google">Google</option>
@@ -886,7 +887,7 @@
                         </div>
                         <div class="nexvora-form-note">
                             <i class="fa-solid fa-circle-info"></i>
-                            <span>Examples: <code>http://127.0.0.1:8000/v1/chat/completions</code> (local) or <code>https://api.tamilai.stream/v1/chat/completions</code> (production)</span>
+                            <span>Examples: <code>https://api.tamilai.stream</code> (TamilAI) or <code>http://127.0.0.1:8000</code> (local)</span>
                         </div>
                         <div class="nexvora-input-group">
                             <label for="nexvoraMdlApiKey">API Key</label>
