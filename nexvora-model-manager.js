@@ -24,14 +24,15 @@ window.NexvoraModelManager = (function () {
             id: 'tamilai-translator',
             name: 'TamilAI Translator',
             modelId: 'tamilai-translator',
-            endpoint: '',
+            endpoint: 'https://api.tamilai.stream/translate',
             provider: 'TamilAI',
             apiKey: '',
             languages: ['ta', 'en'],
             capabilities: ['translate', 'chat'],
             maxTokens: 4096,
             enabled: true,
-            isDefault: true
+            isDefault: true,
+            requestBodyTemplate: '{"tamil": "{{input}}"}'
         }
     ];
 
@@ -80,6 +81,7 @@ window.NexvoraModelManager = (function () {
             maxTokens: parseInt(config.maxTokens, 10) || 4096,
             enabled: config.enabled !== false,
             isDefault: config.isDefault || false,
+            requestBodyTemplate: config.requestBodyTemplate || '',
             createdAt: Date.now()
         };
         models.push(newModel);
@@ -109,6 +111,7 @@ window.NexvoraModelManager = (function () {
                 if (updates.maxTokens !== undefined) models[i].maxTokens = parseInt(updates.maxTokens, 10);
                 if (updates.enabled !== undefined) models[i].enabled = updates.enabled;
                 if (updates.isDefault !== undefined) models[i].isDefault = updates.isDefault;
+                if (updates.requestBodyTemplate !== undefined) models[i].requestBodyTemplate = updates.requestBodyTemplate;
                 models[i].updatedAt = Date.now();
                 lsSet(STORAGE_KEY, models);
                 return models[i];
@@ -191,13 +194,39 @@ window.NexvoraModelManager = (function () {
             return Promise.reject(new Error('Model "' + model.name + '" has no API endpoint configured. Edit it in Model Manager.'));
         }
 
-        var body = {
-            model: model.modelId || model.id,
-            messages: messages,
-            max_tokens: options.maxTokens || model.maxTokens || 4096,
-            temperature: options.temperature || 0.7,
-            stream: !!options.stream
-        };
+        var body;
+        if (model.requestBodyTemplate) {
+            // Custom template: replace {{input}} with messages
+            try {
+                var inputJson = JSON.stringify({ messages: messages, model: model.modelId || model.id });
+                body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, inputJson));
+            } catch (e) {
+                // Fallback to standard format
+                body = {
+                    model: model.modelId || model.id,
+                    messages: messages,
+                    max_tokens: options.maxTokens || model.maxTokens || 4096,
+                    temperature: options.temperature || 0.7,
+                    stream: !!options.stream
+                };
+            }
+        } else if (model.provider === 'custom' || model.provider === 'TamilAI') {
+            body = {
+                model: model.modelId || model.id,
+                messages: messages,
+                max_tokens: options.maxTokens || model.maxTokens || 4096,
+                temperature: options.temperature || 0.7,
+                stream: !!options.stream
+            };
+        } else {
+            body = {
+                model: model.modelId || model.id,
+                messages: messages,
+                max_tokens: options.maxTokens || model.maxTokens || 4096,
+                temperature: options.temperature || 0.7,
+                stream: !!options.stream
+            };
+        }
         if (options.systemPrompt) {
             body.messages = [{ role: 'system', content: options.systemPrompt }].concat(body.messages);
         }
@@ -227,7 +256,7 @@ window.NexvoraModelManager = (function () {
                 };
             }
             return {
-                content: data.response || data.content || data.text || JSON.stringify(data),
+                content: data.response || data.content || data.text || data.english || JSON.stringify(data),
                 model: data.model || model.name,
                 usage: data.usage || null
             };
@@ -296,8 +325,8 @@ window.NexvoraModelManager = (function () {
 
         var config = window.NexvoraAPIConfig;
         if (!config) {
-            setConnectionStatus(m.id, 'no-config', null);
-            return Promise.resolve({ connected: false, message: 'API configuration not available' });
+            // No config module — try direct fetch as a last resort
+            return testConnectionDirect(m);
         }
 
         return config.checkHealth(m).then(function (result) {
@@ -306,11 +335,54 @@ window.NexvoraModelManager = (function () {
                 return { connected: true, latency: result.latency, message: 'Connected' };
             } else {
                 setConnectionStatus(m.id, 'error', null);
-                return { connected: false, message: result.error || 'Connection failed' };
+                return { connected: false, message: result.lastError || result.error || 'Connection failed' };
             }
         }).catch(function (err) {
             setConnectionStatus(m.id, 'error', null);
             return { connected: false, message: err.message || 'Connection failed' };
+        });
+    }
+
+    // --- Direct connection test fallback (no config module needed) ---
+    function testConnectionDirect(m) {
+        var controller = null;
+        var timeoutId = null;
+        var timeout = 5000;
+
+        return new Promise(function (resolve) {
+            if (typeof AbortController !== 'undefined') {
+                controller = new AbortController();
+                timeoutId = setTimeout(function () { controller.abort(); }, timeout);
+            }
+
+            var headers = { 'Content-Type': 'application/json' };
+            if (m.apiKey) {
+                headers['Authorization'] = 'Bearer ' + m.apiKey;
+            }
+
+            var fetchOptions = { method: 'GET', headers: headers };
+            if (controller) fetchOptions.signal = controller.signal;
+
+            var start = Date.now();
+
+            fetch(m.endpoint, fetchOptions)
+                .then(function (res) {
+                    if (timeoutId) clearTimeout(timeoutId);
+                    var latency = Date.now() - start;
+                    // Accept any response (even 405/404) — server is reachable
+                    if (res.ok || res.status === 405 || res.status === 404 || res.status === 422) {
+                        setConnectionStatus(m.id, 'connected', latency);
+                        resolve({ connected: true, latency: latency, message: 'Connected' });
+                    } else {
+                        setConnectionStatus(m.id, 'error', null);
+                        resolve({ connected: false, message: 'HTTP ' + res.status });
+                    }
+                })
+                .catch(function (err) {
+                    if (timeoutId) clearTimeout(timeoutId);
+                    setConnectionStatus(m.id, 'error', null);
+                    resolve({ connected: false, message: err.message || 'Connection failed' });
+                });
         });
     }
 

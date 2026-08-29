@@ -77,7 +77,11 @@ window.NexvoraAIService = (function () {
         }
 
         if (!model.endpoint) {
-            // Check if global API URL is configured
+            // Custom/Other models must have their own endpoint
+            if (model.provider === 'custom' || model.provider === 'TamilAI') {
+                return { valid: false, error: createError(ServiceError.NO_ENDPOINT) };
+            }
+            // Standard providers: check if global API URL is configured
             var config = Config.load();
             if (!config.baseUrl) {
                 return { valid: false, error: createError(ServiceError.NO_API_CONFIG) };
@@ -207,9 +211,20 @@ window.NexvoraAIService = (function () {
             };
         }
 
+        // TamilAI translation format: { tamil, english }
+        if (data.tamil !== undefined && data.english !== undefined) {
+            return {
+                content: data.english,
+                model: modelName || 'TamilAI Translator',
+                usage: null,
+                finishReason: null,
+                source: data.tamil
+            };
+        }
+
         // Fallback
         return {
-            content: data.response || data.content || data.text || data.output || JSON.stringify(data),
+            content: data.response || data.content || data.text || data.output || data.english || JSON.stringify(data),
             model: data.model || modelName || 'unknown',
             usage: data.usage || null,
             finishReason: null
@@ -235,14 +250,41 @@ window.NexvoraAIService = (function () {
         }
 
         var headers = Config.buildHeaders(model);
-        var body = {
-            model: model.modelId || model.id,
-            messages: messages,
-            max_tokens: options.maxTokens || model.maxTokens || Config.DEFAULTS.maxTokens,
-            temperature: options.temperature !== undefined ? options.temperature : Config.DEFAULTS.temperature,
-            top_p: options.topP || Config.DEFAULTS.topP,
-            stream: options.stream || false
-        };
+
+        // Build request body based on provider type
+        var body;
+        if (model.requestBodyTemplate) {
+            // Custom template: replace {{input}} with messages
+            try {
+                var inputJson = JSON.stringify({ messages: messages, model: model.modelId || model.id });
+                body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, inputJson));
+            } catch (e) {
+                // Fallback to standard format
+                body = {
+                    model: model.modelId || model.id,
+                    messages: messages,
+                    max_tokens: options.maxTokens || model.maxTokens || Config.DEFAULTS.maxTokens,
+                    temperature: options.temperature !== undefined ? options.temperature : Config.DEFAULTS.temperature,
+                    stream: options.stream || false
+                };
+            }
+        } else if (model.provider === 'custom' || model.provider === 'TamilAI') {
+            // Custom providers: send raw messages as-is, let the backend handle format
+            body = {
+                messages: messages,
+                model: model.modelId || model.id
+            };
+        } else {
+            // Standard OpenAI-compatible format
+            body = {
+                model: model.modelId || model.id,
+                messages: messages,
+                max_tokens: options.maxTokens || model.maxTokens || Config.DEFAULTS.maxTokens,
+                temperature: options.temperature !== undefined ? options.temperature : Config.DEFAULTS.temperature,
+                top_p: options.topP || Config.DEFAULTS.topP,
+                stream: options.stream || false
+            };
+        }
 
         if (options.systemPrompt) {
             body.messages = [{ role: 'system', content: options.systemPrompt }].concat(body.messages);
@@ -298,8 +340,19 @@ window.NexvoraAIService = (function () {
 
         var headers = Config.buildHeaders(model);
 
-        // TamilAI backend format: { tamil: "text" }
-        var body = { tamil: text };
+        // Build request body: use template if available, otherwise default TamilAI format
+        var body;
+        if (model.requestBodyTemplate) {
+            try {
+                body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, text));
+            } catch (e) {
+                // Fallback to default format if template is invalid
+                body = { tamil: text };
+            }
+        } else {
+            // Default TamilAI backend format: { tamil: "text" }
+            body = { tamil: text };
+        }
 
         return makeRequest(url, headers, body, options)
             .then(function (result) {

@@ -2401,6 +2401,7 @@ window.NexvoraAI = (function () {
             $('#nexvoraMdlMaxTokens').value = model.maxTokens || 4096;
             $('#nexvoraMdlEnabled').checked = model.enabled !== false;
             $('#nexvoraMdlDefault').checked = !!model.isDefault;
+            if ($('#nexvoraMdlTemplate')) $('#nexvoraMdlTemplate').value = model.requestBodyTemplate || '';
 
             // Set capabilities checkboxes
             var caps = model.capabilities || ['chat'];
@@ -2446,6 +2447,7 @@ window.NexvoraAI = (function () {
         var maxTokens = ($('#nexvoraMdlMaxTokens') || {}).value;
         var enabled = ($('#nexvoraMdlEnabled') || {}).checked;
         var isDefault = ($('#nexvoraMdlDefault') || {}).checked;
+        var requestBodyTemplate = ($('#nexvoraMdlTemplate') || {}).value.trim();
 
         // Collect capabilities from checkboxes
         var capabilities = [];
@@ -2502,7 +2504,8 @@ window.NexvoraAI = (function () {
             maxTokens: maxTokens,
             capabilities: capabilities,
             enabled: enabled,
-            isDefault: isDefault
+            isDefault: isDefault,
+            requestBodyTemplate: requestBodyTemplate
         };
 
         // Handle languages as array

@@ -193,9 +193,62 @@ window.NexvoraAPIConfig = (function () {
 
     // ---------------------------------------------------------------------------
     // Health check (non-destructive, no model logic)
+    // For custom providers: tries the model endpoint directly with GET.
+    // For standard providers: uses the global /health endpoint.
     // ---------------------------------------------------------------------------
     function checkHealth(model) {
         var config = loadConfig();
+
+        // Custom providers: test the model's own endpoint directly
+        if (model && model.endpoint) {
+            var modelUrl = model.endpoint.replace(/\/+$/, '');
+            setStatus(STATUS.CONNECTING);
+            var headers = buildHeaders(model);
+            var timeout = config.timeout;
+
+            return new Promise(function (resolve) {
+                var controller = null;
+                var timeoutId = null;
+
+                if (typeof AbortController !== 'undefined') {
+                    controller = new AbortController();
+                    timeoutId = setTimeout(function () { controller.abort(); }, Math.min(timeout, 5000));
+                }
+
+                var fetchOptions = {
+                    method: 'GET',
+                    headers: headers
+                };
+                if (controller) fetchOptions.signal = controller.signal;
+
+                var start = Date.now();
+
+                fetch(modelUrl, fetchOptions)
+                    .then(function (res) {
+                        if (timeoutId) clearTimeout(timeoutId);
+                        var latency = Date.now() - start;
+                        if (res.ok || res.status === 405 || res.status === 404 || res.status === 422) {
+                            // 405 Method Not Allowed, 404, 422 are acceptable — server is reachable
+                            setStatus(STATUS.CONNECTED, null, latency);
+                            resolve(getStatus());
+                        } else {
+                            setStatus(STATUS.ERROR, 'HTTP ' + res.status);
+                            resolve(getStatus());
+                        }
+                    })
+                    .catch(function (err) {
+                        if (timeoutId) clearTimeout(timeoutId);
+                        if (err.name === 'AbortError') {
+                            setStatus(STATUS.TIMEOUT, 'Request timed out');
+                        } else {
+                            setStatus(STATUS.ERROR, err.message || 'Connection failed');
+                        }
+                        resolve(getStatus());
+                    });
+            });
+        }
+
+        // Standard providers: use global /health endpoint
         var url = buildUrl(ENDPOINTS.health, model);
         if (!url) {
             setStatus(STATUS.DISCONNECTED, 'No API URL configured');

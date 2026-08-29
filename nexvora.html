@@ -919,21 +919,21 @@
                         </div>
                         <div class="nexvora-input-group">
                             <label for="nexvoraMdlEndpoint">API Endpoint <span class="nexvora-required">*</span></label>
-                            <input type="url" id="nexvoraMdlEndpoint" placeholder="http://127.0.0.1:8000/v1/chat/completions" required>
-                            <span class="nexvora-form-hint">Full URL to the chat completions endpoint</span>
+                            <input type="url" id="nexvoraMdlEndpoint" placeholder="https://api.tamilai.stream/translate" required>
+                            <span class="nexvora-form-hint">Full URL to the API endpoint (e.g. chat completions, translation, etc.)</span>
                             <span class="nexvora-form-error nexvora-hidden" id="nexvoraMdlEndpointError"></span>
                         </div>
                         <div class="nexvora-form-note">
                             <i class="fa-solid fa-circle-info"></i>
-                            <span>Examples: <code>https://api.tamilai.stream</code> (TamilAI) or <code>http://127.0.0.1:8000</code> (local)</span>
+                            <span>Examples: <code>https://api.tamilai.stream/translate</code> (translation) or <code>http://127.0.0.1:8000/v1/chat/completions</code> (chat)</span>
                         </div>
                         <div class="nexvora-input-group">
                             <label for="nexvoraMdlApiKey">API Key</label>
                             <div class="nexvora-pass-wrap">
-                                <input type="password" id="nexvoraMdlApiKey" placeholder="sk-...">
+                                <input type="password" id="nexvoraMdlApiKey" placeholder="sk-... (optional for some providers)">
                                 <button type="button" class="nexvora-pass-toggle" id="nexvoraMdlKeyToggle"><i class="fa-solid fa-eye"></i></button>
                             </div>
-                            <span class="nexvora-form-hint">Stored locally only. Never sent to third parties.</span>
+                            <span class="nexvora-form-hint">Optional for self-hosted backends. Stored locally only.</span>
                         </div>
                         <div class="nexvora-form-row">
                             <div class="nexvora-input-group">
@@ -953,6 +953,11 @@
                                 </div>
                                 <span class="nexvora-form-hint">What this model can do</span>
                             </div>
+                        </div>
+                        <div class="nexvora-input-group">
+                            <label for="nexvoraMdlTemplate">Request Body Template</label>
+                            <input type="text" id="nexvoraMdlTemplate" placeholder='{"tamil": "{{input}}"}'>
+                            <span class="nexvora-form-hint">Custom request body for non-chat APIs. Use <code>{{input}}</code> as placeholder for the user input.</span>
                         </div>
                         <div class="nexvora-form-row">
                             <div class="nexvora-input-group">
