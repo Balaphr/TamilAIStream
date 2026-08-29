@@ -20,7 +20,13 @@
 
 window.NexvoraAIService = (function () {
 
-    var Config = window.NexvoraAPIConfig;
+    // Lazy getter — always reads fresh from window so load order doesn't matter
+    function getConfig() {
+        if (!window.NexvoraAPIConfig) {
+            throw new Error('NexvoraAPIConfig module not loaded. Ensure nexvora-api-config.js loads before nexvora-ai-service.js.');
+        }
+        return window.NexvoraAPIConfig;
+    }
     var Manager = null; // Set after ModelManager loads
 
     // ---------------------------------------------------------------------------
@@ -78,7 +84,7 @@ window.NexvoraAIService = (function () {
 
         if (!model.endpoint) {
             // If no endpoint, check if global API URL can serve as fallback
-            var config = Config.load();
+            var config = getConfig().load();
             if (config.baseUrl) {
                 // Global config available — use it as the endpoint fallback
                 model.endpoint = config.baseUrl;
@@ -111,10 +117,10 @@ window.NexvoraAIService = (function () {
     // ---------------------------------------------------------------------------
     async function makeRequest(url, headers, body, options) {
         options = options || {};
-        var config = Config.load();
-        var timeout = options.timeout || config.timeout || Config.DEFAULTS.timeout;
-        var retries = options.retries !== undefined ? options.retries : Config.DEFAULTS.retries;
-        var retryDelay = options.retryDelay || Config.DEFAULTS.retryDelay;
+        var config = getConfig().load();
+        var timeout = options.timeout || config.timeout || getConfig().DEFAULTS.timeout;
+        var retries = options.retries !== undefined ? options.retries : getConfig().DEFAULTS.retries;
+        var retryDelay = options.retryDelay || getConfig().DEFAULTS.retryDelay;
 
         var lastError = null;
 
@@ -247,7 +253,7 @@ window.NexvoraAIService = (function () {
         }
 
         var model = validation.model;
-        var headers = Config.buildHeaders(model);
+        var headers = getConfig().buildHeaders(model);
         var url;
         var body;
 
@@ -255,9 +261,9 @@ window.NexvoraAIService = (function () {
         if (model.endpoint) {
             url = model.endpoint.replace(/\/+$/, '');
         } else {
-            var cfg = Config.load();
+            var cfg = getConfig().load();
             if (cfg.baseUrl) {
-                url = Config.buildUrl(Config.ENDPOINTS.chat, model);
+                url = getConfig().buildUrl(getConfig().ENDPOINTS.chat, model);
             }
         }
 
@@ -270,12 +276,12 @@ window.NexvoraAIService = (function () {
 
         // Only add optional params if they have explicit values
         if (options.maxTokens || model.maxTokens) {
-            body.max_tokens = options.maxTokens || model.maxTokens || Config.DEFAULTS.maxTokens;
+            body.max_tokens = options.maxTokens || model.maxTokens || getConfig().DEFAULTS.maxTokens;
         }
         if (options.temperature !== undefined) {
             body.temperature = options.temperature;
         } else {
-            body.temperature = Config.DEFAULTS.temperature;
+            body.temperature = getConfig().DEFAULTS.temperature;
         }
 
         if (!url) {
@@ -286,20 +292,20 @@ window.NexvoraAIService = (function () {
             body.messages = [{ role: 'system', content: options.systemPrompt }].concat(body.messages);
         }
 
-        Config.setStatus(Config.STATUS.CONNECTING);
+        getConfig().setStatus(getConfig().STATUS.CONNECTING);
 
         try {
             var result = await makeRequest(url, headers, body, options);
             var parsed = parseResponse(result.data, model.name);
-            Config.setStatus(Config.STATUS.CONNECTED, null, result.latency);
-            Config.setModelInfo({
+            getConfig().setStatus(getConfig().STATUS.CONNECTED, null, result.latency);
+            getConfig().setModelInfo({
                 name: model.name,
                 provider: model.provider,
                 model: result.data.model || model.id
             });
             return parsed;
         } catch (err) {
-            Config.setStatus(Config.STATUS.ERROR, err.message);
+            getConfig().setStatus(getConfig().STATUS.ERROR, err.message);
             throw err;
         }
     }
@@ -336,11 +342,11 @@ window.NexvoraAIService = (function () {
         if (model.requestBodyTemplate || model.provider === 'custom' || model.provider === 'TamilAI') {
             url = model.endpoint ? model.endpoint.replace(/\/+$/, '') : null;
         } else {
-            url = Config.buildUrl(Config.ENDPOINTS.translate, model);
+            url = getConfig().buildUrl(getConfig().ENDPOINTS.translate, model);
         }
         if (!url) throw createError(ServiceError.NO_API_CONFIG);
 
-        var headers = Config.buildHeaders(model);
+        var headers = getConfig().buildHeaders(model);
 
         // Build request body: use template if available, otherwise default TamilAI format
         var body;
@@ -389,10 +395,10 @@ window.NexvoraAIService = (function () {
         }
 
         var model = validation.model;
-        var url = Config.buildUrl(Config.ENDPOINTS.summarize, model);
+        var url = getConfig().buildUrl(getConfig().ENDPOINTS.summarize, model);
         if (!url) return Promise.reject(createError(ServiceError.NO_API_CONFIG));
 
-        var headers = Config.buildHeaders(model);
+        var headers = getConfig().buildHeaders(model);
         var body = {
             text: text,
             maxLength: options.maxLength || 200,
@@ -425,10 +431,10 @@ window.NexvoraAIService = (function () {
         }
 
         var model = validation.model;
-        var url = Config.buildUrl(Config.ENDPOINTS.analyzeDocument, model);
+        var url = getConfig().buildUrl(getConfig().ENDPOINTS.analyzeDocument, model);
         if (!url) return Promise.reject(createError(ServiceError.NO_API_CONFIG));
 
-        var headers = Config.buildHeaders(model);
+        var headers = getConfig().buildHeaders(model);
         var body = {
             content: content,
             analysisType: options.type || 'full',
@@ -463,10 +469,10 @@ window.NexvoraAIService = (function () {
     function checkConnection(model) {
         var m = model || getActiveModel();
         if (!m) {
-            Config.setStatus(Config.STATUS.DISCONNECTED, 'No model configured');
-            return Promise.resolve(Config.getStatus());
+            getConfig().setStatus(getConfig().STATUS.DISCONNECTED, 'No model configured');
+            return Promise.resolve(getConfig().getStatus());
         }
-        return Config.checkHealth(m);
+        return getConfig().checkHealth(m);
     }
 
     // ---------------------------------------------------------------------------
@@ -474,7 +480,7 @@ window.NexvoraAIService = (function () {
     // ---------------------------------------------------------------------------
     function getModelStatus() {
         var model = getActiveModel();
-        var configStatus = Config.getStatus();
+        var configStatus = getConfig().getStatus();
 
         if (!model) {
             return {
@@ -496,7 +502,7 @@ window.NexvoraAIService = (function () {
             };
         }
 
-        if (!model.endpoint && !Config.isConfigured()) {
+        if (!model.endpoint && !getConfig().isConfigured()) {
             return {
                 status: 'not-configured',
                 label: model.name,
@@ -506,7 +512,7 @@ window.NexvoraAIService = (function () {
             };
         }
 
-        if (configStatus.status === Config.STATUS.CONNECTED) {
+        if (configStatus.status === getConfig().STATUS.CONNECTED) {
             return {
                 status: 'connected',
                 label: model.name,
@@ -516,7 +522,7 @@ window.NexvoraAIService = (function () {
             };
         }
 
-        if (configStatus.status === Config.STATUS.ERROR) {
+        if (configStatus.status === getConfig().STATUS.ERROR) {
             return {
                 status: 'error',
                 label: model.name,
@@ -557,7 +563,7 @@ window.NexvoraAIService = (function () {
         ServiceError:       ServiceError,
 
         // Config reference
-        Config:             Config
+        getConfig:           getConfig
     };
 
 })();

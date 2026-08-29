@@ -75,6 +75,16 @@ window.NexvoraModelManager = (function () {
                         changed = true;
                     }
                 });
+                // Force-update stale endpoints from old /translate to new /v1/chat/completions
+                if (m.endpoint && def.endpoint && m.endpoint.indexOf('/v1/chat/completions') === -1 && def.endpoint.indexOf('/v1/chat/completions') !== -1) {
+                    m.endpoint = def.endpoint;
+                    changed = true;
+                }
+                // Force-add missing capabilities from defaults
+                if (def.capabilities && (!m.capabilities || m.capabilities.length === 0)) {
+                    m.capabilities = def.capabilities.slice();
+                    changed = true;
+                }
             }
         });
         if (changed) lsSet(STORAGE_KEY, models);
