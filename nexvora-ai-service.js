@@ -77,21 +77,28 @@ window.NexvoraAIService = (function () {
         }
 
         if (!model.endpoint) {
-            // Custom/Other models must have their own endpoint
-            if (model.provider === 'custom' || model.provider === 'TamilAI') {
-                return { valid: false, error: createError(ServiceError.NO_ENDPOINT) };
-            }
-            // Standard providers: check if global API URL is configured
+            // If no endpoint, check if global API URL can serve as fallback
             var config = Config.load();
-            if (!config.baseUrl) {
+            if (config.baseUrl) {
+                // Global config available — use it as the endpoint fallback
+                model.endpoint = config.baseUrl;
+            } else if (model.provider === 'custom' || model.provider === 'TamilAI') {
+                return { valid: false, error: createError(ServiceError.NO_ENDPOINT) };
+            } else {
                 return { valid: false, error: createError(ServiceError.NO_API_CONFIG) };
             }
         }
 
         if (requiredCapability) {
             var caps = model.capabilities || [];
+            // Normalize capability names for comparison (translate === translation, etc.)
+            var normalizedRequired = requiredCapability === 'translate' ? 'translation' : requiredCapability;
+            var hasCapability = caps.some(function (c) {
+                var nc = c === 'translate' ? 'translation' : c;
+                return nc === normalizedRequired;
+            });
             // 'chat' is always available as a base capability
-            if (requiredCapability !== 'chat' && caps.length > 0 && caps.indexOf(requiredCapability) === -1) {
+            if (normalizedRequired !== 'chat' && caps.length > 0 && !hasCapability) {
                 return { valid: false, error: createError(ServiceError.CAPABILITY_MISSING, 'Required: ' + requiredCapability) };
             }
         }
@@ -238,44 +245,50 @@ window.NexvoraAIService = (function () {
         options = options || {};
         var validation = validateModel('chat');
         if (!validation.valid) {
+            // If chat capability fails but translation is available, try translate fallback
+            var translateValidation = validateModel('translation');
+            if (translateValidation.valid && messages.length > 0) {
+                var lastMsg = messages[messages.length - 1];
+                if (lastMsg && lastMsg.content) {
+                    return translateText(lastMsg.content, 'en', 'ta', options);
+                }
+            }
             return Promise.reject(validation.error);
         }
 
         var model = validation.model;
-        var config = Config.load();
-        var url = Config.buildUrl(Config.ENDPOINTS.chat, model);
-
-        if (!url) {
-            return Promise.reject(createError(ServiceError.NO_API_CONFIG));
-        }
-
         var headers = Config.buildHeaders(model);
-
-        // Build request body based on provider type
+        var url;
         var body;
+
+        // Custom providers with requestBodyTemplate: use endpoint directly
         if (model.requestBodyTemplate) {
-            // Custom template: replace {{input}} with messages
+            url = model.endpoint.replace(/\/+$/, '');
+
+            // Extract the last user message text for the template
+            var inputText = '';
+            for (var i = messages.length - 1; i >= 0; i--) {
+                if (messages[i].role === 'user') {
+                    inputText = messages[i].content;
+                    break;
+                }
+            }
+
             try {
-                var inputJson = JSON.stringify({ messages: messages, model: model.modelId || model.id });
-                body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, inputJson));
+                body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, inputText));
             } catch (e) {
-                // Fallback to standard format
-                body = {
-                    model: model.modelId || model.id,
-                    messages: messages,
-                    max_tokens: options.maxTokens || model.maxTokens || Config.DEFAULTS.maxTokens,
-                    temperature: options.temperature !== undefined ? options.temperature : Config.DEFAULTS.temperature,
-                    stream: options.stream || false
-                };
+                body = { tamil: inputText };
             }
         } else if (model.provider === 'custom' || model.provider === 'TamilAI') {
-            // Custom providers: send raw messages as-is, let the backend handle format
+            // Custom providers without template: use endpoint directly with simplified body
+            url = model.endpoint.replace(/\/+$/, '');
             body = {
                 messages: messages,
                 model: model.modelId || model.id
             };
         } else {
-            // Standard OpenAI-compatible format
+            // Standard OpenAI-compatible providers: append /v1/chat/completions
+            url = Config.buildUrl(Config.ENDPOINTS.chat, model);
             body = {
                 model: model.modelId || model.id,
                 messages: messages,
@@ -286,7 +299,11 @@ window.NexvoraAIService = (function () {
             };
         }
 
-        if (options.systemPrompt) {
+        if (!url) {
+            return Promise.reject(createError(ServiceError.NO_API_CONFIG));
+        }
+
+        if (options.systemPrompt && body.messages) {
             body.messages = [{ role: 'system', content: options.systemPrompt }].concat(body.messages);
         }
 
@@ -335,7 +352,14 @@ window.NexvoraAIService = (function () {
         }
 
         var model = validation.model;
-        var url = Config.buildUrl(Config.ENDPOINTS.translate, model);
+
+        // Use model endpoint directly if it's a custom provider (endpoint IS the full URL)
+        var url;
+        if (model.requestBodyTemplate || model.provider === 'custom' || model.provider === 'TamilAI') {
+            url = model.endpoint ? model.endpoint.replace(/\/+$/, '') : null;
+        } else {
+            url = Config.buildUrl(Config.ENDPOINTS.translate, model);
+        }
         if (!url) return Promise.reject(createError(ServiceError.NO_API_CONFIG));
 
         var headers = Config.buildHeaders(model);

@@ -21,14 +21,14 @@ window.NexvoraModelManager = (function () {
     // --- Default models (TamilAI Translation pre-configured) ---
     var DEFAULT_MODELS = [
         {
-            id: 'tamilai-translator',
-            name: 'TamilAI Translator',
-            modelId: 'tamilai-translator',
+            id: 'tamil-translation',
+            name: 'Tamil Translation',
+            modelId: 'tamil-translation',
             endpoint: 'https://api.tamilai.stream/translate',
-            provider: 'TamilAI',
+            provider: 'custom',
             apiKey: '',
             languages: ['ta', 'en'],
-            capabilities: ['translate', 'chat'],
+            capabilities: ['translation'],
             maxTokens: 4096,
             enabled: true,
             isDefault: true,
@@ -49,7 +49,28 @@ window.NexvoraModelManager = (function () {
                 return Object.assign({}, m, { createdAt: Date.now() });
             });
             lsSet(STORAGE_KEY, models);
+            return models;
         }
+
+        // Merge saved models with defaults to fill in missing fields
+        // (handles upgrades where new fields like endpoint, requestBodyTemplate were added)
+        var defaultsById = {};
+        DEFAULT_MODELS.forEach(function (d) { defaultsById[d.id] = d; });
+        var changed = false;
+        models.forEach(function (m) {
+            var def = defaultsById[m.id];
+            if (def) {
+                // Merge any missing fields from defaults
+                Object.keys(def).forEach(function (key) {
+                    if (m[key] === undefined || m[key] === null || m[key] === '') {
+                        m[key] = def[key];
+                        changed = true;
+                    }
+                });
+            }
+        });
+        if (changed) lsSet(STORAGE_KEY, models);
+
         return models;
     }
 
@@ -196,10 +217,19 @@ window.NexvoraModelManager = (function () {
 
         var body;
         if (model.requestBodyTemplate) {
-            // Custom template: replace {{input}} with messages
+            // Extract last user message text for template
+            var inputText = '';
+            for (var i = messages.length - 1; i >= 0; i--) {
+                if (messages[i].role === 'user') {
+                    inputText = messages[i].content;
+                    break;
+                }
+            }
             try {
-                var inputJson = JSON.stringify({ messages: messages, model: model.modelId || model.id });
-                body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, inputJson));
+                body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, inputText));
+            } catch (e) {
+                body = { tamil: inputText };
+            }
             } catch (e) {
                 // Fallback to standard format
                 body = {
@@ -288,7 +318,7 @@ window.NexvoraModelManager = (function () {
         lsSet(STORAGE_KEY, DEFAULT_MODELS.map(function (m) {
             return Object.assign({}, m, { createdAt: Date.now() });
         }));
-        lsSet(ACTIVE_MODEL_KEY, 'tamilai-translator');
+        lsSet(ACTIVE_MODEL_KEY, 'tamil-translation');
     }
 
     // --- Connection status tracking ---
@@ -347,7 +377,7 @@ window.NexvoraModelManager = (function () {
     function testConnectionDirect(m) {
         var controller = null;
         var timeoutId = null;
-        var timeout = 5000;
+        var timeout = 30000;
 
         return new Promise(function (resolve) {
             if (typeof AbortController !== 'undefined') {
@@ -360,7 +390,19 @@ window.NexvoraModelManager = (function () {
                 headers['Authorization'] = 'Bearer ' + m.apiKey;
             }
 
-            var fetchOptions = { method: 'GET', headers: headers };
+            // Custom providers with requestBodyTemplate: send POST with test data
+            var fetchOptions;
+            if (m.requestBodyTemplate) {
+                var testBody;
+                try {
+                    testBody = JSON.parse(m.requestBodyTemplate.replace(/\{\{input\}\}/g, '\u0B85\u0BA9\u0BCD'));
+                } catch (e) {
+                    testBody = { tamil: '\u0B85\u0BA9\u0BCD' };
+                }
+                fetchOptions = { method: 'POST', headers: headers, body: JSON.stringify(testBody) };
+            } else {
+                fetchOptions = { method: 'GET', headers: headers };
+            }
             if (controller) fetchOptions.signal = controller.signal;
 
             var start = Date.now();
@@ -369,19 +411,37 @@ window.NexvoraModelManager = (function () {
                 .then(function (res) {
                     if (timeoutId) clearTimeout(timeoutId);
                     var latency = Date.now() - start;
-                    // Accept any response (even 405/404) — server is reachable
-                    if (res.ok || res.status === 405 || res.status === 404 || res.status === 422) {
-                        setConnectionStatus(m.id, 'connected', latency);
-                        resolve({ connected: true, latency: latency, message: 'Connected' });
-                    } else {
-                        setConnectionStatus(m.id, 'error', null);
-                        resolve({ connected: false, message: 'HTTP ' + res.status });
+
+                    if (!res.ok) {
+                        return res.text().then(function (text) {
+                            setConnectionStatus(m.id, 'error', null);
+                            resolve({ connected: false, message: 'HTTP ' + res.status + (text ? ': ' + text.slice(0, 200) : '') });
+                        });
                     }
+
+                    if (m.requestBodyTemplate) {
+                        return res.json().then(function (data) {
+                            if (data && data.english !== undefined) {
+                                setConnectionStatus(m.id, 'connected', latency);
+                                resolve({ connected: true, latency: latency, message: 'Connected' });
+                            } else {
+                                setConnectionStatus(m.id, 'error', null);
+                                resolve({ connected: false, message: 'API returned unexpected response \u2014 expected "english" field' });
+                            }
+                        });
+                    }
+
+                    setConnectionStatus(m.id, 'connected', latency);
+                    resolve({ connected: true, latency: latency, message: 'Connected' });
                 })
                 .catch(function (err) {
                     if (timeoutId) clearTimeout(timeoutId);
                     setConnectionStatus(m.id, 'error', null);
-                    resolve({ connected: false, message: err.message || 'Connection failed' });
+                    if (err.name === 'AbortError') {
+                        resolve({ connected: false, message: 'Request timed out after ' + timeout + 'ms' });
+                    } else {
+                        resolve({ connected: false, message: err.message || 'Connection failed' });
+                    }
                 });
         });
     }
