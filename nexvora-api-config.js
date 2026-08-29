@@ -15,8 +15,6 @@
 //   Frontend UI → AI Service Layer → Backend API → AI Model
 // ============================================================================
 
-try {
-
 window.NexvoraAPIConfig = (function () {
 
     // ---------------------------------------------------------------------------
@@ -26,11 +24,11 @@ window.NexvoraAPIConfig = (function () {
     var DEFAULT_BASE_URL = 'https://api.tamilai.stream';
 
     var env = {
-        AI_API_URL:      '',
-        AI_API_KEY:      '',
-        AI_API_TIMEOUT:  '30000',
-        AI_STREAM:       'false',
-        AI_FALLBACK_URL: ''
+        AI_API_URL:      (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AI_API_URL)      || '',
+        AI_API_KEY:      (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AI_API_KEY)      || '',
+        AI_API_TIMEOUT:  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AI_API_TIMEOUT)  || '30000',
+        AI_STREAM:       (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AI_STREAM)       || 'false',
+        AI_FALLBACK_URL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AI_FALLBACK_URL)  || ''
     };
 
     // ---------------------------------------------------------------------------
@@ -96,15 +94,8 @@ window.NexvoraAPIConfig = (function () {
 
     function loadConfig() {
         var saved = lsGetJSON(STORAGE_KEY) || {};
-
-        // Always ensure baseUrl is a valid absolute URL — never empty or relative
-        var baseUrl = saved.baseUrl || env.AI_API_URL || '';
-        if (!baseUrl || !/^https?:\/\/.+/i.test(baseUrl)) {
-            baseUrl = DEFAULT_BASE_URL;
-        }
-
         return {
-            baseUrl:    baseUrl,
+            baseUrl:    saved.baseUrl    || env.AI_API_URL    || DEFAULT_BASE_URL,
             apiKey:     saved.apiKey     || env.AI_API_KEY    || '',
             timeout:    saved.timeout    || DEFAULTS.timeout,
             stream:     saved.stream     || env.AI_STREAM === 'true',
@@ -203,69 +194,138 @@ window.NexvoraAPIConfig = (function () {
     }
 
     // ---------------------------------------------------------------------------
-    // Health check — always POST, never GET (backends reject GET on chat endpoints)
+    // Health check (non-destructive, no model logic)
+    // For custom providers with requestBodyTemplate: sends POST with test data.
+    // For custom providers without template: tries GET reachability check.
+    // For standard providers: uses the global /health endpoint.
     // ---------------------------------------------------------------------------
     function checkHealth(model) {
         var config = loadConfig();
         var timeout = config.timeout || 30000;
 
-        // Determine the URL to test
-        var modelUrl;
-        if (model && model.endpoint) {
-            // If model endpoint contains /v1/chat/completions, use it directly
-            // Otherwise it's stale — use config.baseUrl + /v1/chat/completions
-            if (model.endpoint.indexOf('/v1/chat/completions') !== -1) {
-                modelUrl = model.endpoint.replace(/\/+$/, '');
-            } else {
-                modelUrl = null;
-            }
-        }
-        if (!modelUrl) {
-            if (config.baseUrl) {
-                modelUrl = config.baseUrl.replace(/\/+$/, '') + '/v1/chat/completions';
-            } else {
-                modelUrl = buildUrl(ENDPOINTS.health, model);
-            }
-        }
-        if (!modelUrl) {
-            setStatus(STATUS.DISCONNECTED, 'No API URL configured');
-            return Promise.resolve(getStatus());
-        }
+        // Custom providers with a request body template: send POST with test data
+        if (model && model.endpoint && model.requestBodyTemplate) {
+            var modelUrl = model.endpoint.replace(/\/+$/, '');
+            setStatus(STATUS.CONNECTING);
+            var headers = buildHeaders(model);
 
-        // Guard: never send a request to a root or relative URL
-        if (!/^https?:\/\/.+/i.test(modelUrl)) {
-            console.error('[NexvoraAPIConfig] checkHealth: refusing invalid URL:', modelUrl);
-            setStatus(STATUS.ERROR, 'Invalid API URL: ' + modelUrl);
-            return Promise.resolve(getStatus());
-        }
-
-        setStatus(STATUS.CONNECTING);
-        var headers = buildHeaders(model);
-
-        // Build test body — always POST, never GET
-        var testBody;
-        var caps = (model && model.capabilities) || [];
-        var hasChatCap = caps.some(function (c) { return c === 'chat'; });
-
-        if (hasChatCap) {
-            // Chat-capable model: send standard chat test body
-            testBody = {
-                model: (model && (model.modelId || model.id)) || 'tamilai',
-                messages: [{ role: 'user', content: '\u0B85\u0BA9\u0BCD' }],
-                max_tokens: 10,
-                stream: false
-            };
-        } else if (model && model.requestBodyTemplate) {
-            // Template-based model: use template with test data
+            // Build test body from template using Tamil test phrase
+            var testBody;
             try {
                 testBody = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, '\u0B85\u0BA9\u0BCD'));
             } catch (e) {
                 testBody = { tamil: '\u0B85\u0BA9\u0BCD' };
             }
-        } else {
-            // Default: send a minimal POST to check reachability
-            testBody = { model: 'test', messages: [{ role: 'user', content: 'hi' }], max_tokens: 1 };
+
+            return new Promise(function (resolve) {
+                var controller = null;
+                var timeoutId = null;
+
+                if (typeof AbortController !== 'undefined') {
+                    controller = new AbortController();
+                    timeoutId = setTimeout(function () { controller.abort(); }, timeout);
+                }
+
+                var fetchOptions = {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(testBody)
+                };
+                if (controller) fetchOptions.signal = controller.signal;
+
+                var start = Date.now();
+
+                fetch(modelUrl, fetchOptions)
+                    .then(function (res) {
+                        if (timeoutId) clearTimeout(timeoutId);
+                        var latency = Date.now() - start;
+
+                        if (!res.ok) {
+                            var errBody = '';
+                            return res.text().then(function (text) {
+                                errBody = text;
+                                setStatus(STATUS.ERROR, 'HTTP ' + res.status + (errBody ? ': ' + errBody.slice(0, 200) : ''));
+                                resolve(getStatus());
+                            });
+                        }
+
+                        return res.json().then(function (data) {
+                            if (data && data.english !== undefined) {
+                                setStatus(STATUS.CONNECTED, null, latency);
+                            } else {
+                                setStatus(STATUS.ERROR, 'API returned unexpected response — expected "english" field');
+                            }
+                            resolve(getStatus());
+                        });
+                    })
+                    .catch(function (err) {
+                        if (timeoutId) clearTimeout(timeoutId);
+                        if (err.name === 'AbortError') {
+                            setStatus(STATUS.TIMEOUT, 'Request timed out after ' + timeout + 'ms');
+                        } else {
+                            setStatus(STATUS.ERROR, err.message || 'Connection failed');
+                        }
+                        resolve(getStatus());
+                    });
+            });
         }
+
+        // Custom providers with endpoint but no template: simple GET reachability check
+        if (model && model.endpoint) {
+            var modelUrl = model.endpoint.replace(/\/+$/, '');
+            setStatus(STATUS.CONNECTING);
+            var headers = buildHeaders(model);
+
+            return new Promise(function (resolve) {
+                var controller = null;
+                var timeoutId = null;
+
+                if (typeof AbortController !== 'undefined') {
+                    controller = new AbortController();
+                    timeoutId = setTimeout(function () { controller.abort(); }, timeout);
+                }
+
+                var fetchOptions = {
+                    method: 'GET',
+                    headers: headers
+                };
+                if (controller) fetchOptions.signal = controller.signal;
+
+                var start = Date.now();
+
+                fetch(modelUrl, fetchOptions)
+                    .then(function (res) {
+                        if (timeoutId) clearTimeout(timeoutId);
+                        var latency = Date.now() - start;
+                        if (res.ok || res.status === 405 || res.status === 404 || res.status === 422) {
+                            setStatus(STATUS.CONNECTED, null, latency);
+                            resolve(getStatus());
+                        } else {
+                            setStatus(STATUS.ERROR, 'HTTP ' + res.status);
+                            resolve(getStatus());
+                        }
+                    })
+                    .catch(function (err) {
+                        if (timeoutId) clearTimeout(timeoutId);
+                        if (err.name === 'AbortError') {
+                            setStatus(STATUS.TIMEOUT, 'Request timed out after ' + timeout + 'ms');
+                        } else {
+                            setStatus(STATUS.ERROR, err.message || 'Connection failed');
+                        }
+                        resolve(getStatus());
+                    });
+            });
+        }
+
+        // Standard providers: use global /health endpoint
+        var url = buildUrl(ENDPOINTS.health, model);
+        if (!url) {
+            setStatus(STATUS.DISCONNECTED, 'No API URL configured');
+            return Promise.resolve(getStatus());
+        }
+
+        setStatus(STATUS.CONNECTING);
+        var headers = buildHeaders(model);
 
         return new Promise(function (resolve) {
             var controller = null;
@@ -277,32 +337,24 @@ window.NexvoraAPIConfig = (function () {
             }
 
             var fetchOptions = {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(testBody)
+                method: 'GET',
+                headers: headers
             };
             if (controller) fetchOptions.signal = controller.signal;
 
             var start = Date.now();
 
-            fetch(modelUrl, fetchOptions)
+            fetch(url, fetchOptions)
                 .then(function (res) {
                     if (timeoutId) clearTimeout(timeoutId);
                     var latency = Date.now() - start;
-
-                    if (!res.ok) {
-                        var errBody = '';
-                        return res.text().then(function (text) {
-                            errBody = text;
-                            setStatus(STATUS.ERROR, 'HTTP ' + res.status + (errBody ? ': ' + errBody.slice(0, 200) : ''));
-                            resolve(getStatus());
-                        });
-                    }
-
-                    return res.json().then(function (data) {
+                    if (res.ok) {
                         setStatus(STATUS.CONNECTED, null, latency);
-                        resolve(getStatus());
-                    });
+                        return res.json().catch(function () { return {}; });
+                    } else {
+                        setStatus(STATUS.ERROR, 'HTTP ' + res.status);
+                    }
+                    resolve(getStatus());
                 })
                 .catch(function (err) {
                     if (timeoutId) clearTimeout(timeoutId);
@@ -348,25 +400,3 @@ window.NexvoraAPIConfig = (function () {
     };
 
 })();
-
-} catch (e) {
-    console.error('[NexvoraAPIConfig] Failed to initialize:', e);
-    // Provide a fallback so downstream code doesn't crash
-    window.NexvoraAPIConfig = window.NexvoraAPIConfig || {
-        ENDPOINTS: { chat: '/v1/chat/completions', translate: '/translate', health: '/health', models: '/v1/models' },
-        DEFAULTS: { temperature: 0.7, maxTokens: 4096, timeout: 30000, retries: 2, retryDelay: 1000 },
-        STATUS: { DISCONNECTED: 'disconnected', CONNECTING: 'connecting', CONNECTED: 'connected', ERROR: 'error', TIMEOUT: 'timeout' },
-        load: function () { return { baseUrl: '', apiKey: '', timeout: 30000, stream: false, fallbackUrl: '', headers: {} }; },
-        save: function () {},
-        update: function (u) { return this.load(); },
-        buildUrl: function (p) { return p; },
-        buildHeaders: function () { return { 'Content-Type': 'application/json' }; },
-        getStatus: function () { return { status: 'error', lastChecked: null, lastError: 'Config init failed', latency: null, modelInfo: null }; },
-        setStatus: function () {},
-        setModelInfo: function () {},
-        checkHealth: function () { return Promise.resolve(this.getStatus()); },
-        isConfigured: function () { return false; }
-    };
-}
-
-console.log('[NexvoraAPIConfig] Loaded. window.NexvoraAPIConfig =', typeof window.NexvoraAPIConfig);
