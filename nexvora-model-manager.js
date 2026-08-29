@@ -43,7 +43,12 @@ window.NexvoraModelManager = (function () {
 
     // --- Model CRUD ---
     function getAllModels() {
-        var models = lsGetJSON(STORAGE_KEY);
+        var models;
+        try {
+            models = lsGetJSON(STORAGE_KEY);
+        } catch (e) {
+            models = null;
+        }
         if (!models || !Array.isArray(models) || models.length === 0) {
             models = DEFAULT_MODELS.map(function (m) {
                 return Object.assign({}, m, { createdAt: Date.now() });
@@ -51,6 +56,10 @@ window.NexvoraModelManager = (function () {
             lsSet(STORAGE_KEY, models);
             return models;
         }
+
+        // Remove any null/undefined/corrupt entries
+        var cleaned = models.filter(function (m) { return m && typeof m === 'object' && m.id; });
+        if (cleaned.length !== models.length) { models = cleaned; lsSet(STORAGE_KEY, models); }
 
         // Merge saved models with defaults to fill in missing fields
         // (handles upgrades where new fields like endpoint, requestBodyTemplate were added)
@@ -60,7 +69,6 @@ window.NexvoraModelManager = (function () {
         models.forEach(function (m) {
             var def = defaultsById[m.id];
             if (def) {
-                // Merge any missing fields from defaults
                 Object.keys(def).forEach(function (key) {
                     if (m[key] === undefined || m[key] === null || m[key] === '') {
                         m[key] = def[key];
@@ -88,10 +96,19 @@ window.NexvoraModelManager = (function () {
 
     function addModel(config) {
         var models = getAllModels();
+        var newId = config.id || config.modelId || ('model-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6));
+
+        // Prevent duplicate IDs — append suffix if needed
+        var existingIds = {};
+        models.forEach(function (m) { existingIds[m.id] = true; });
+        if (existingIds[newId]) {
+            newId = newId + '-' + Date.now();
+        }
+
         var newModel = {
-            id: config.id || ('model-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6)),
+            id: newId,
             name: config.name || 'Untitled Model',
-            modelId: config.modelId || config.id || ('model-' + Date.now()),
+            modelId: config.modelId || newId,
             endpoint: config.endpoint || '',
             provider: config.provider || '',
             apiKey: config.apiKey || '',

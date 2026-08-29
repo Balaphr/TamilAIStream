@@ -2389,7 +2389,8 @@ window.NexvoraAI = (function () {
         // Clear previous errors
         var endpointError = $('#nexvoraMdlEndpointError');
         if (endpointError) endpointError.classList.add('nexvora-hidden');
-        $$('.nexvora-input-error').forEach(function (el) { el.classList.remove('nexvora-input-error'); });
+        var errEls = $$('.nexvora-input-error');
+        for (var ei = 0; ei < errEls.length; ei++) { errEls[ei].classList.remove('nexvora-input-error'); }
 
         if (model) {
             $('#nexvoraMdlName').value = model.name || '';
@@ -2434,20 +2435,30 @@ window.NexvoraAI = (function () {
         // Clear previous errors
         var endpointError = $('#nexvoraMdlEndpointError');
         if (endpointError) endpointError.classList.add('nexvora-hidden');
-        $$('.nexvora-input-group input, .nexvora-input-group select').forEach(function (el) {
-            el.classList.remove('nexvora-input-error');
-        });
+        var errEls = $$('.nexvora-input-error');
+        for (var ei = 0; ei < errEls.length; ei++) { errEls[ei].classList.remove('nexvora-input-error'); }
 
-        var name = ($('#nexvoraMdlName') || {}).value.trim();
-        var modelId = ($('#nexvoraMdlId') || {}).value.trim();
-        var endpoint = ($('#nexvoraMdlEndpoint') || {}).value.trim();
-        var provider = ($('#nexvoraMdlProvider') || {}).value;
-        var apiKey = ($('#nexvoraMdlApiKey') || {}).value.trim();
-        var langs = ($('#nexvoraMdlLangs') || {}).value;
-        var maxTokens = ($('#nexvoraMdlMaxTokens') || {}).value;
-        var enabled = ($('#nexvoraMdlEnabled') || {}).checked;
-        var isDefault = ($('#nexvoraMdlDefault') || {}).checked;
-        var requestBodyTemplate = ($('#nexvoraMdlTemplate') || {}).value.trim();
+        var nameEl = $('#nexvoraMdlName');
+        var idEl = $('#nexvoraMdlId');
+        var endpointEl = $('#nexvoraMdlEndpoint');
+        var providerEl = $('#nexvoraMdlProvider');
+        var apiKeyEl = $('#nexvoraMdlApiKey');
+        var langsEl = $('#nexvoraMdlLangs');
+        var maxTokensEl = $('#nexvoraMdlMaxTokens');
+        var enabledEl = $('#nexvoraMdlEnabled');
+        var defaultEl = $('#nexvoraMdlDefault');
+        var templateEl = $('#nexvoraMdlTemplate');
+
+        var name = (nameEl || {}).value ? nameEl.value.trim() : '';
+        var modelId = (idEl || {}).value ? idEl.value.trim() : '';
+        var endpoint = (endpointEl || {}).value ? endpointEl.value.trim() : '';
+        var provider = (providerEl || {}).value || '';
+        var apiKey = (apiKeyEl || {}).value ? apiKeyEl.value.trim() : '';
+        var langs = (langsEl || {}).value || '';
+        var maxTokens = (maxTokensEl || {}).value || '';
+        var enabled = (enabledEl || {}).checked !== false;
+        var isDefault = (defaultEl || {}).checked || false;
+        var requestBodyTemplate = (templateEl || {}).value ? templateEl.value.trim() : '';
 
         // Collect capabilities from checkboxes
         var capabilities = [];
@@ -2462,26 +2473,26 @@ window.NexvoraAI = (function () {
         var errors = [];
         if (!name) {
             errors.push('Model name is required');
-            ($('#nexvoraMdlName') || {}).classList.add('nexvora-input-error');
+            if (nameEl) nameEl.classList.add('nexvora-input-error');
         }
         if (!modelId) {
             errors.push('Model ID is required');
-            ($('#nexvoraMdlId') || {}).classList.add('nexvora-input-error');
+            if (idEl) idEl.classList.add('nexvora-input-error');
         }
         if (!provider) {
             errors.push('Provider is required');
-            ($('#nexvoraMdlProvider') || {}).classList.add('nexvora-input-error');
+            if (providerEl) providerEl.classList.add('nexvora-input-error');
         }
         if (!endpoint) {
             errors.push('API endpoint is required');
-            ($('#nexvoraMdlEndpoint') || {}).classList.add('nexvora-input-error');
+            if (endpointEl) endpointEl.classList.add('nexvora-input-error');
         } else {
             // URL validation
             var urlPattern = /^https?:\/\/.+/i;
             var localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?(\/.*)?$/i;
             if (!urlPattern.test(endpoint) && !localhostPattern.test(endpoint)) {
                 errors.push('Invalid URL format. Must start with http:// or https://');
-                ($('#nexvoraMdlEndpoint') || {}).classList.add('nexvora-input-error');
+                if (endpointEl) endpointEl.classList.add('nexvora-input-error');
                 if (endpointError) {
                     endpointError.textContent = 'Invalid URL. Example: http://127.0.0.1:8000/v1/chat/completions';
                     endpointError.classList.remove('nexvora-hidden');
@@ -2513,15 +2524,23 @@ window.NexvoraAI = (function () {
             config.languages = config.languages.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
         }
 
-        if (editingModelId) {
-            NexvoraModelManager.updateModel(editingModelId, config);
-            showToast('Model updated successfully', 'success');
-        } else {
-            config.id = config.modelId || undefined;
-            NexvoraModelManager.addModel(config);
-            showToast('Model added successfully', 'success');
+        try {
+            if (editingModelId) {
+                NexvoraModelManager.updateModel(editingModelId, config);
+                showToast('Model updated successfully', 'success');
+            } else {
+                config.id = config.modelId || undefined;
+                NexvoraModelManager.addModel(config);
+                showToast('Model added successfully', 'success');
+            }
+            hideModelModal();
+            try { renderModelManagerCards(); } catch (e) { console.error('[Nexvora] renderModelManagerCards error:', e); }
+            try { renderModelSelector(); } catch (e) { console.error('[Nexvora] renderModelSelector error:', e); }
+            try { renderDashboard(); } catch (e) { console.error('[Nexvora] renderDashboard error:', e); }
+        } catch (e) {
+            console.error('[Nexvora] saveModelFromForm error:', e);
+            showToast('Failed to save model: ' + (e.message || 'Unknown error'), 'error');
         }
-        hideModelModal(); renderModelManagerCards(); renderModelSelector(); renderDashboard();
     }
 
     // --- Project Modal ---
