@@ -15,6 +15,8 @@
 //   Frontend UI → AI Service Layer → Backend API → AI Model
 // ============================================================================
 
+try {
+
 window.NexvoraAPIConfig = (function () {
 
     // ---------------------------------------------------------------------------
@@ -24,11 +26,11 @@ window.NexvoraAPIConfig = (function () {
     var DEFAULT_BASE_URL = 'https://api.tamilai.stream';
 
     var env = {
-        AI_API_URL:      (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AI_API_URL)      || '',
-        AI_API_KEY:      (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AI_API_KEY)      || '',
-        AI_API_TIMEOUT:  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AI_API_TIMEOUT)  || '30000',
-        AI_STREAM:       (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AI_STREAM)       || 'false',
-        AI_FALLBACK_URL: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_AI_FALLBACK_URL)  || ''
+        AI_API_URL:      '',
+        AI_API_KEY:      '',
+        AI_API_TIMEOUT:  '30000',
+        AI_STREAM:       'false',
+        AI_FALLBACK_URL: ''
     };
 
     // ---------------------------------------------------------------------------
@@ -404,3 +406,25 @@ window.NexvoraAPIConfig = (function () {
     };
 
 })();
+
+} catch (e) {
+    console.error('[NexvoraAPIConfig] Failed to initialize:', e);
+    // Provide a fallback so downstream code doesn't crash
+    window.NexvoraAPIConfig = window.NexvoraAPIConfig || {
+        ENDPOINTS: { chat: '/v1/chat/completions', translate: '/translate', health: '/health', models: '/v1/models' },
+        DEFAULTS: { temperature: 0.7, maxTokens: 4096, timeout: 30000, retries: 2, retryDelay: 1000 },
+        STATUS: { DISCONNECTED: 'disconnected', CONNECTING: 'connecting', CONNECTED: 'connected', ERROR: 'error', TIMEOUT: 'timeout' },
+        load: function () { return { baseUrl: '', apiKey: '', timeout: 30000, stream: false, fallbackUrl: '', headers: {} }; },
+        save: function () {},
+        update: function (u) { return this.load(); },
+        buildUrl: function (p) { return p; },
+        buildHeaders: function () { return { 'Content-Type': 'application/json' }; },
+        getStatus: function () { return { status: 'error', lastChecked: null, lastError: 'Config init failed', latency: null, modelInfo: null }; },
+        setStatus: function () {},
+        setModelInfo: function () {},
+        checkHealth: function () { return Promise.resolve(this.getStatus()); },
+        isConfigured: function () { return false; }
+    };
+}
+
+console.log('[NexvoraAPIConfig] Loaded. window.NexvoraAPIConfig =', typeof window.NexvoraAPIConfig);

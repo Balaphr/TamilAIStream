@@ -21,9 +21,25 @@
 window.NexvoraAIService = (function () {
 
     // Lazy getter — always reads fresh from window so load order doesn't matter
+    var _fallbackConfig = {
+        ENDPOINTS: { chat: '/v1/chat/completions', translate: '/translate', health: '/health', models: '/v1/models' },
+        DEFAULTS: { temperature: 0.7, maxTokens: 4096, timeout: 30000, retries: 2, retryDelay: 1000 },
+        STATUS: { DISCONNECTED: 'disconnected', CONNECTING: 'connecting', CONNECTED: 'connected', ERROR: 'error', TIMEOUT: 'timeout' },
+        load: function () { return { baseUrl: '', apiKey: '', timeout: 30000, stream: false, fallbackUrl: '', headers: {} }; },
+        save: function () {},
+        update: function () { return this.load(); },
+        buildUrl: function (p) { return p; },
+        buildHeaders: function () { return { 'Content-Type': 'application/json' }; },
+        getStatus: function () { return { status: 'error', lastChecked: null, lastError: 'Config not loaded', latency: null, modelInfo: null }; },
+        setStatus: function () {},
+        setModelInfo: function () {},
+        checkHealth: function () { return Promise.resolve(this.getStatus()); },
+        isConfigured: function () { return false; }
+    };
     function getConfig() {
         if (!window.NexvoraAPIConfig) {
-            throw new Error('NexvoraAPIConfig module not loaded. Ensure nexvora-api-config.js loads before nexvora-ai-service.js.');
+            console.warn('[NexvoraAIService] NexvoraAPIConfig not found on window, using fallback config');
+            return _fallbackConfig;
         }
         return window.NexvoraAPIConfig;
     }
