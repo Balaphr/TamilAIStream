@@ -20,7 +20,29 @@
 
 window.NexvoraAIService = (function () {
 
-    var Config = window.NexvoraAPIConfig;
+    // Lazy getter — always reads fresh from window so load order doesn't matter
+    var _fallbackConfig = {
+        ENDPOINTS: { chat: '/v1/chat/completions', translate: '/translate', health: '/health', models: '/v1/models' },
+        DEFAULTS: { temperature: 0.7, maxTokens: 4096, timeout: 30000, retries: 2, retryDelay: 1000 },
+        STATUS: { DISCONNECTED: 'disconnected', CONNECTING: 'connecting', CONNECTED: 'connected', ERROR: 'error', TIMEOUT: 'timeout' },
+        load: function () { return { baseUrl: '', apiKey: '', timeout: 30000, stream: false, fallbackUrl: '', headers: {} }; },
+        save: function () {},
+        update: function () { return this.load(); },
+        buildUrl: function (p) { return p; },
+        buildHeaders: function () { return { 'Content-Type': 'application/json' }; },
+        getStatus: function () { return { status: 'error', lastChecked: null, lastError: 'Config not loaded', latency: null, modelInfo: null }; },
+        setStatus: function () {},
+        setModelInfo: function () {},
+        checkHealth: function () { return Promise.resolve(this.getStatus()); },
+        isConfigured: function () { return false; }
+    };
+    function getConfig() {
+        if (!window.NexvoraAPIConfig) {
+            console.warn('[NexvoraAIService] NexvoraAPIConfig not found on window, using fallback config');
+            return _fallbackConfig;
+        }
+        return window.NexvoraAPIConfig;
+    }
     var Manager = null; // Set after ModelManager loads
 
     // ---------------------------------------------------------------------------
@@ -78,7 +100,7 @@ window.NexvoraAIService = (function () {
 
         if (!model.endpoint) {
             // If no endpoint, check if global API URL can serve as fallback
-            var config = Config.load();
+            var config = getConfig().load();
             if (config.baseUrl) {
                 // Global config available — use it as the endpoint fallback
                 model.endpoint = config.baseUrl;
@@ -109,18 +131,24 @@ window.NexvoraAIService = (function () {
     // ---------------------------------------------------------------------------
     // HTTP request with timeout and retries
     // ---------------------------------------------------------------------------
-    function makeRequest(url, headers, body, options) {
+    async function makeRequest(url, headers, body, options) {
         options = options || {};
-        var config = Config.load();
-        var timeout = options.timeout || config.timeout || Config.DEFAULTS.timeout;
-        var retries = options.retries !== undefined ? options.retries : Config.DEFAULTS.retries;
-        var retryDelay = options.retryDelay || Config.DEFAULTS.retryDelay;
+        var config = getConfig().load();
+        var timeout = options.timeout || config.timeout || getConfig().DEFAULTS.timeout;
+        var retries = options.retries !== undefined ? options.retries : getConfig().DEFAULTS.retries;
+        var retryDelay = options.retryDelay || getConfig().DEFAULTS.retryDelay;
 
-        function attempt(retriesLeft) {
-            return new Promise(function (resolve, reject) {
-                var controller = null;
-                var timeoutId = null;
+        var lastError = null;
 
+        for (var attempt = 0; attempt <= retries; attempt++) {
+            if (attempt > 0) {
+                await new Promise(function (r) { setTimeout(r, retryDelay); });
+            }
+
+            var controller = null;
+            var timeoutId = null;
+
+            try {
                 if (typeof AbortController !== 'undefined') {
                     controller = new AbortController();
                     timeoutId = setTimeout(function () { controller.abort(); }, timeout);
@@ -134,62 +162,52 @@ window.NexvoraAIService = (function () {
                 if (controller) fetchOptions.signal = controller.signal;
 
                 var start = Date.now();
+                var res = await fetch(url, fetchOptions);
+                if (timeoutId) clearTimeout(timeoutId);
+                var latency = Date.now() - start;
 
-                fetch(url, fetchOptions)
-                    .then(function (res) {
-                        if (timeoutId) clearTimeout(timeoutId);
-                        var latency = Date.now() - start;
+                if (!res.ok) {
+                    var errorText = '';
+                    try { errorText = await res.text(); } catch (e) { /* ignore */ }
+                    var errDetail = { status: res.status, body: errorText, latency: latency };
 
-                        if (!res.ok) {
-                            return res.text().then(function (text) {
-                                var errDetail = { status: res.status, body: text, latency: latency };
+                    // Retry on 5xx errors
+                    if (res.status >= 500 && attempt < retries) {
+                        lastError = createError(ServiceError.API_ERROR, errDetail);
+                        continue;
+                    }
 
-                                // Retry on 5xx errors
-                                if (res.status >= 500 && retriesLeft > 0) {
-                                    return new Promise(function (resolveRetry) {
-                                        setTimeout(function () {
-                                            attempt(retriesLeft - 1).then(resolveRetry).catch(resolveRetry);
-                                        }, retryDelay);
-                                    });
-                                }
+                    throw createError(ServiceError.API_ERROR, errDetail);
+                }
 
-                                reject(createError(ServiceError.API_ERROR, errDetail));
-                            });
-                        }
+                var data = await res.json();
+                return { data: data, latency: latency };
 
-                        return res.json();
-                    })
-                    .then(function (data) {
-                        resolve({ data: data, latency: Date.now() - start });
-                    })
-                    .catch(function (err) {
-                        if (timeoutId) clearTimeout(timeoutId);
+            } catch (err) {
+                if (timeoutId) clearTimeout(timeoutId);
 
-                        if (err.code) {
-                            // Already a ServiceError
-                            reject(err);
-                            return;
-                        }
+                // Already a ServiceError from above — throw immediately (unless retrying 5xx)
+                if (err.code && err.code !== 'TIMEOUT' && err.code !== 'NETWORK_ERROR') {
+                    throw err;
+                }
 
-                        if (err.name === 'AbortError') {
-                            reject(createError(ServiceError.TIMEOUT, { timeout: timeout }));
-                            return;
-                        }
+                if (err.name === 'AbortError') {
+                    throw createError(ServiceError.TIMEOUT, { timeout: timeout });
+                }
 
-                        // Network error — retry
-                        if (retriesLeft > 0) {
-                            setTimeout(function () {
-                                attempt(retriesLeft - 1).then(resolve).catch(reject);
-                            }, retryDelay);
-                            return;
-                        }
+                lastError = err;
 
-                        reject(createError(ServiceError.NETWORK_ERROR, { original: err.message }));
-                    });
-            });
+                // Network/fetch error — retry if attempts remain
+                if (attempt < retries) {
+                    continue;
+                }
+
+                throw createError(ServiceError.NETWORK_ERROR, { original: err.message });
+            }
         }
 
-        return attempt(retries);
+        // Should not reach here, but just in case
+        throw lastError || createError(ServiceError.NETWORK_ERROR, { original: 'Request failed' });
     }
 
     // ---------------------------------------------------------------------------
@@ -241,107 +259,93 @@ window.NexvoraAIService = (function () {
     // ---------------------------------------------------------------------------
     // SERVICE: sendChatMessage
     // ---------------------------------------------------------------------------
-    function sendChatMessage(messages, options) {
+    async function sendChatMessage(messages, options) {
         options = options || {};
+
+        // Always use standard chat format — never use requestBodyTemplate for chat
         var validation = validateModel('chat');
         if (!validation.valid) {
-            // If chat capability fails but translation is available, try translate fallback
-            var translateValidation = validateModel('translation');
-            if (translateValidation.valid && messages.length > 0) {
-                var lastMsg = messages[messages.length - 1];
-                if (lastMsg && lastMsg.content) {
-                    return translateText(lastMsg.content, 'en', 'ta', options);
-                }
-            }
-            return Promise.reject(validation.error);
+            throw validation.error;
         }
 
         var model = validation.model;
-        var headers = Config.buildHeaders(model);
+        console.log('[NexvoraAIService] Active model:', JSON.stringify({ id: model.id, name: model.name, endpoint: model.endpoint, modelId: model.modelId, apiKey: model.apiKey ? '(set)' : '(empty)', capabilities: model.capabilities }));
+        var headers = getConfig().buildHeaders(model);
         var url;
         var body;
 
-        // Check if model has chat capability
-        var caps = model.capabilities || [];
-        var hasChatCap = caps.some(function (c) { return c === 'chat'; });
-
-        if (model.provider === 'custom' || model.provider === 'TamilAI') {
-            // Custom/TamilAI providers: always build URL from config.baseUrl for chat
-            if (hasChatCap) {
-                // Chat capability: always use config.baseUrl + /v1/chat/completions
-                var base = model.endpoint ? model.endpoint.replace(/\/+$/, '') : '';
-                if (base.indexOf('/v1/chat/completions') === -1) {
-                    base = Config.load().baseUrl ? Config.load().baseUrl.replace(/\/+$/, '') : '';
-                    url = base ? base + '/v1/chat/completions' : null;
-                } else {
-                    url = base;
-                }
-                body = {
-                    model: model.modelId || model.id,
-                    messages: messages,
-                    max_tokens: options.maxTokens || model.maxTokens || Config.DEFAULTS.maxTokens,
-                    temperature: options.temperature !== undefined ? options.temperature : Config.DEFAULTS.temperature,
-                    stream: false
-                };
-            } else if (model.requestBodyTemplate) {
-                // Non-chat with template: use request body template (e.g. translation)
-                var inputText = '';
-                for (var i = messages.length - 1; i >= 0; i--) {
-                    if (messages[i].role === 'user') {
-                        inputText = messages[i].content;
-                        break;
-                    }
-                }
-                try {
-                    body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, inputText));
-                } catch (e) {
-                    body = { tamil: inputText };
-                }
+        // Build the URL: always use config.baseUrl + /v1/chat/completions
+        // Never use model.endpoint for chat — it may be stale (e.g. /translate from a previous session)
+        var cfg = getConfig().load();
+        if (model.endpoint) {
+            // If model endpoint already contains /v1/chat/completions, use it directly
+            if (model.endpoint.indexOf('/v1/chat/completions') !== -1) {
+                url = model.endpoint.replace(/\/+$/, '');
             } else {
-                // Fallback: standard chat body
-                body = {
-                    model: model.modelId || model.id,
-                    messages: messages
-                };
+                // Model endpoint is stale — use config.baseUrl instead
+                url = null;
             }
+        }
+        if (!url) {
+            if (cfg.baseUrl) {
+                url = cfg.baseUrl.replace(/\/+$/, '') + '/v1/chat/completions';
+            }
+        }
+
+        // Always build standard OpenAI-compatible chat body
+        body = {
+            model: model.modelId || model.id,
+            messages: messages,
+            stream: false
+        };
+
+        // Only add optional params if they have explicit values
+        if (options.maxTokens || model.maxTokens) {
+            body.max_tokens = options.maxTokens || model.maxTokens || getConfig().DEFAULTS.maxTokens;
+        }
+        if (options.temperature !== undefined) {
+            body.temperature = options.temperature;
         } else {
-            // Standard OpenAI-compatible providers: use buildUrl with /v1/chat/completions
-            url = Config.buildUrl(Config.ENDPOINTS.chat, model);
-            body = {
-                model: model.modelId || model.id,
-                messages: messages,
-                max_tokens: options.maxTokens || model.maxTokens || Config.DEFAULTS.maxTokens,
-                temperature: options.temperature !== undefined ? options.temperature : Config.DEFAULTS.temperature,
-                top_p: options.topP || Config.DEFAULTS.topP,
-                stream: options.stream || false
-            };
+            body.temperature = getConfig().DEFAULTS.temperature;
         }
 
         if (!url) {
-            return Promise.reject(createError(ServiceError.NO_API_CONFIG));
+            throw createError(ServiceError.NO_API_CONFIG);
+        }
+
+        // Guard: never send a request to a root or relative URL
+        if (!/^https?:\/\/.+/i.test(url)) {
+            console.error('[NexvoraAIService] sendChatMessage: refusing invalid URL:', url);
+            throw createError(ServiceError.NO_API_CONFIG);
         }
 
         if (options.systemPrompt && body.messages) {
             body.messages = [{ role: 'system', content: options.systemPrompt }].concat(body.messages);
         }
 
-        Config.setStatus(Config.STATUS.CONNECTING);
+        // Diagnostic logging
+        console.log('[NexvoraAIService] sendChatMessage → URL:', url);
+        console.log('[NexvoraAIService] sendChatMessage → Method: POST');
+        console.log('[NexvoraAIService] sendChatMessage → Headers:', JSON.stringify(headers));
+        console.log('[NexvoraAIService] sendChatMessage → Body:', JSON.stringify(body));
 
-        return makeRequest(url, headers, body, options)
-            .then(function (result) {
-                var parsed = parseResponse(result.data, model.name);
-                Config.setStatus(Config.STATUS.CONNECTED, null, result.latency);
-                Config.setModelInfo({
-                    name: model.name,
-                    provider: model.provider,
-                    model: result.data.model || model.id
-                });
-                return parsed;
-            })
-            .catch(function (err) {
-                Config.setStatus(Config.STATUS.ERROR, err.message);
-                throw err;
+        getConfig().setStatus(getConfig().STATUS.CONNECTING);
+
+        try {
+            var result = await makeRequest(url, headers, body, options);
+            var parsed = parseResponse(result.data, model.name);
+            getConfig().setStatus(getConfig().STATUS.CONNECTED, null, result.latency);
+            getConfig().setModelInfo({
+                name: model.name,
+                provider: model.provider,
+                model: result.data.model || model.id
             });
+            return parsed;
+        } catch (err) {
+            console.error('[NexvoraAIService] sendChatMessage error:', err.code, err.message, err.detail);
+            getConfig().setStatus(getConfig().STATUS.ERROR, err.message);
+            throw err;
+        }
     }
 
     // ---------------------------------------------------------------------------
@@ -350,14 +354,14 @@ window.NexvoraAIService = (function () {
     //   1. TamilAI backend: POST /translate with { tamil } → { tamil, english }
     //   2. Generic: uses chat with translation prompt as fallback
     // ---------------------------------------------------------------------------
-    function translateText(text, targetLang, sourceLang, options) {
+    async function translateText(text, targetLang, sourceLang, options) {
         options = options || {};
         var validation = validateModel('translate');
         if (!validation.valid) {
             // Fallback: try chat capability for translation via prompt
             var chatValidation = validateModel('chat');
             if (!chatValidation.valid) {
-                return Promise.reject(validation.error);
+                throw validation.error;
             }
             // Use chat with translation prompt
             var systemPrompt = 'You are a professional translator. Translate the following text' +
@@ -376,11 +380,11 @@ window.NexvoraAIService = (function () {
         if (model.requestBodyTemplate || model.provider === 'custom' || model.provider === 'TamilAI') {
             url = model.endpoint ? model.endpoint.replace(/\/+$/, '') : null;
         } else {
-            url = Config.buildUrl(Config.ENDPOINTS.translate, model);
+            url = getConfig().buildUrl(getConfig().ENDPOINTS.translate, model);
         }
-        if (!url) return Promise.reject(createError(ServiceError.NO_API_CONFIG));
+        if (!url) throw createError(ServiceError.NO_API_CONFIG);
 
-        var headers = Config.buildHeaders(model);
+        var headers = getConfig().buildHeaders(model);
 
         // Build request body: use template if available, otherwise default TamilAI format
         var body;
@@ -388,30 +392,24 @@ window.NexvoraAIService = (function () {
             try {
                 body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, text));
             } catch (e) {
-                // Fallback to default format if template is invalid
                 body = { tamil: text };
             }
         } else {
-            // Default TamilAI backend format: { tamil: "text" }
             body = { tamil: text };
         }
 
-        return makeRequest(url, headers, body, options)
-            .then(function (result) {
-                // TamilAI backend returns { tamil, english }
-                var data = result.data;
-                if (data && data.english !== undefined) {
-                    return {
-                        content: data.english,
-                        model: model.name,
-                        usage: null,
-                        finishReason: null,
-                        source: data.tamil || text
-                    };
-                }
-                // Fallback to generic response parsing
-                return parseResponse(data, model.name);
-            });
+        var result = await makeRequest(url, headers, body, options);
+        var data = result.data;
+        if (data && data.english !== undefined) {
+            return {
+                content: data.english,
+                model: model.name,
+                usage: null,
+                finishReason: null,
+                source: data.tamil || text
+            };
+        }
+        return parseResponse(data, model.name);
     }
 
     // ---------------------------------------------------------------------------
@@ -435,10 +433,10 @@ window.NexvoraAIService = (function () {
         }
 
         var model = validation.model;
-        var url = Config.buildUrl(Config.ENDPOINTS.summarize, model);
+        var url = getConfig().buildUrl(getConfig().ENDPOINTS.summarize, model);
         if (!url) return Promise.reject(createError(ServiceError.NO_API_CONFIG));
 
-        var headers = Config.buildHeaders(model);
+        var headers = getConfig().buildHeaders(model);
         var body = {
             text: text,
             maxLength: options.maxLength || 200,
@@ -471,10 +469,10 @@ window.NexvoraAIService = (function () {
         }
 
         var model = validation.model;
-        var url = Config.buildUrl(Config.ENDPOINTS.analyzeDocument, model);
+        var url = getConfig().buildUrl(getConfig().ENDPOINTS.analyzeDocument, model);
         if (!url) return Promise.reject(createError(ServiceError.NO_API_CONFIG));
 
-        var headers = Config.buildHeaders(model);
+        var headers = getConfig().buildHeaders(model);
         var body = {
             content: content,
             analysisType: options.type || 'full',
@@ -509,10 +507,10 @@ window.NexvoraAIService = (function () {
     function checkConnection(model) {
         var m = model || getActiveModel();
         if (!m) {
-            Config.setStatus(Config.STATUS.DISCONNECTED, 'No model configured');
-            return Promise.resolve(Config.getStatus());
+            getConfig().setStatus(getConfig().STATUS.DISCONNECTED, 'No model configured');
+            return Promise.resolve(getConfig().getStatus());
         }
-        return Config.checkHealth(m);
+        return getConfig().checkHealth(m);
     }
 
     // ---------------------------------------------------------------------------
@@ -520,7 +518,7 @@ window.NexvoraAIService = (function () {
     // ---------------------------------------------------------------------------
     function getModelStatus() {
         var model = getActiveModel();
-        var configStatus = Config.getStatus();
+        var configStatus = getConfig().getStatus();
 
         if (!model) {
             return {
@@ -542,7 +540,7 @@ window.NexvoraAIService = (function () {
             };
         }
 
-        if (!model.endpoint && !Config.isConfigured()) {
+        if (!model.endpoint && !getConfig().isConfigured()) {
             return {
                 status: 'not-configured',
                 label: model.name,
@@ -552,7 +550,7 @@ window.NexvoraAIService = (function () {
             };
         }
 
-        if (configStatus.status === Config.STATUS.CONNECTED) {
+        if (configStatus.status === getConfig().STATUS.CONNECTED) {
             return {
                 status: 'connected',
                 label: model.name,
@@ -562,7 +560,7 @@ window.NexvoraAIService = (function () {
             };
         }
 
-        if (configStatus.status === Config.STATUS.ERROR) {
+        if (configStatus.status === getConfig().STATUS.ERROR) {
             return {
                 status: 'error',
                 label: model.name,
@@ -603,7 +601,7 @@ window.NexvoraAIService = (function () {
         ServiceError:       ServiceError,
 
         // Config reference
-        Config:             Config
+        getConfig:           getConfig
     };
 
 })();

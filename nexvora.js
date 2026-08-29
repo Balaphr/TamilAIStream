@@ -1740,83 +1740,75 @@ window.NexvoraAI = (function () {
         generateResponse(chat, text);
     }
 
-    function generateResponse(chat, userText) {
+    async function generateResponse(chat, userText) {
         isGenerating = true; showLoading(true);
+        showThinkingMessage();
 
-        // Translation mode: use the translation service directly
-        if (translationMode && typeof NexvoraAIService !== 'undefined') {
-            NexvoraAIService.translateText(userText, 'en', 'ta')
-                .then(function (result) {
-                    isGenerating = false; showLoading(false);
-                    var assistantMsg = {
-                        id: 'msg-' + Date.now(),
-                        role: 'assistant',
-                        content: '**Translation:**\n\n' + result.content +
-                            (result.source ? '\n\n**Original:** ' + result.source : ''),
-                        model: result.model || 'TamilAI Translator',
-                        timestamp: Date.now()
-                    };
-                    chat.messages.push(assistantMsg);
-                    updateChat(chat.id, { messages: chat.messages });
-                    appendMessageToDOM(assistantMsg);
-                    scrollToBottom();
-                    renderDashboard();
-                    updateConnectionStatus();
-                })
-                .catch(function (err) {
-                    isGenerating = false; showLoading(false);
-                    var errorContent = getNotConnectedMessage(err);
-                    var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
-                    chat.messages.push(errorMsg);
-                    updateChat(chat.id, { messages: chat.messages });
-                    appendMessageToDOM(errorMsg);
-                    scrollToBottom();
-                    showToast(err.message || 'Translation error', 'error');
-                    updateConnectionStatus();
-                });
-            return;
-        }
-
-        // Standard chat mode
-        // Validate via service layer before attempting
-        if (typeof NexvoraAIService !== 'undefined') {
-            var validation = NexvoraAIService.validateModel('chat');
-            if (!validation.valid) {
-                isGenerating = false; showLoading(false);
-                var errorContent = getNotConnectedMessage(validation.error);
-                var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
-                chat.messages.push(errorMsg);
-                updateChat(chat.id, { messages: chat.messages });
-                appendMessageToDOM(errorMsg);
-                scrollToBottom();
-                return;
-            }
-        }
-
-        var messages = chat.messages.map(function (m) { return { role: m.role, content: m.content }; });
-
-        NexvoraModelManager.sendRequest(messages, { temperature: 0.7 })
-            .then(function (response) {
-                isGenerating = false; showLoading(false);
-                var assistantMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: response.content, model: response.model, timestamp: Date.now() };
+        try {
+            // Translation mode: use the translation service directly
+            if (translationMode && typeof NexvoraAIService !== 'undefined') {
+                var result = await NexvoraAIService.translateText(userText, 'en', 'ta');
+                var assistantMsg = {
+                    id: 'msg-' + Date.now(),
+                    role: 'assistant',
+                    content: '**Translation:**\n\n' + result.content +
+                        (result.source ? '\n\n**Original:** ' + result.source : ''),
+                    model: result.model || 'TamilAI Translator',
+                    timestamp: Date.now()
+                };
                 chat.messages.push(assistantMsg);
                 updateChat(chat.id, { messages: chat.messages });
                 appendMessageToDOM(assistantMsg);
                 scrollToBottom();
                 renderDashboard();
                 updateConnectionStatus();
-            })
-            .catch(function (err) {
-                isGenerating = false; showLoading(false);
-                var errorContent = getNotConnectedMessage(err);
-                var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
-                chat.messages.push(errorMsg);
-                updateChat(chat.id, { messages: chat.messages });
-                appendMessageToDOM(errorMsg);
-                scrollToBottom();
-                showToast(err.message || 'Connection error', 'error');
-                updateConnectionStatus();
-            });
+                return;
+            }
+
+            // Standard chat mode
+            // Validate via service layer before attempting
+            if (typeof NexvoraAIService !== 'undefined') {
+                var validation = NexvoraAIService.validateModel('chat');
+                if (!validation.valid) {
+                    var errContent = getNotConnectedMessage(validation.error);
+                    var errMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errContent, model: '', timestamp: Date.now() };
+                    chat.messages.push(errMsg);
+                    updateChat(chat.id, { messages: chat.messages });
+                    appendMessageToDOM(errMsg);
+                    scrollToBottom();
+                    return;
+                }
+            }
+
+            var messages = chat.messages.map(function (m) { return { role: m.role, content: m.content }; });
+
+            var response = await NexvoraModelManager.sendRequest(messages, { temperature: 0.7 });
+            var assistantMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: response.content, model: response.model, timestamp: Date.now() };
+            chat.messages.push(assistantMsg);
+            updateChat(chat.id, { messages: chat.messages });
+            appendMessageToDOM(assistantMsg);
+            scrollToBottom();
+            renderDashboard();
+            updateConnectionStatus();
+
+        } catch (err) {
+            console.error('[Nexvora] generateResponse error:', err.code, err.message, err.detail);
+            var errorContent = getNotConnectedMessage(err);
+            var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
+            chat.messages.push(errorMsg);
+            updateChat(chat.id, { messages: chat.messages });
+            appendMessageToDOM(errorMsg);
+            scrollToBottom();
+            var toastMsg = err.message || 'Connection error';
+            if (err.detail && err.detail.status) toastMsg += ' (HTTP ' + err.detail.status + ')';
+            showToast(toastMsg, 'error');
+            updateConnectionStatus();
+
+        } finally {
+            isGenerating = false;
+            showLoading(false);
+            removeThinkingMessage();
+        }
     }
 
     // Build user-friendly "not connected" messages
@@ -1876,10 +1868,31 @@ window.NexvoraAI = (function () {
         }
     }
 
-    function stopGeneration() { isGenerating = false; showLoading(false); }
+    function stopGeneration() { isGenerating = false; showLoading(false); removeThinkingMessage(); }
     function showLoading(show) {
         var el = $('#nexvoraLoading');
         if (el) { if (show) el.classList.remove('nexvora-hidden'); else el.classList.add('nexvora-hidden'); }
+    }
+    function showThinkingMessage() {
+        var container = $('#nexvoraMessages');
+        if (!container) return null;
+        hideWelcome();
+        var div = document.createElement('div');
+        div.className = 'nexvora-message assistant nexvora-thinking-msg';
+        div.id = 'nexvoraThinkingMsg';
+        div.innerHTML = '<div class="nexvora-message-avatar"><i class="fa-solid fa-bolt"></i></div>' +
+            '<div class="nexvora-message-body"><div class="nexvora-message-header">' +
+            '<span class="nexvora-message-sender">Nexvora AI</span>' +
+            '</div><div class="nexvora-message-content">' +
+            '<div class="nexvora-thinking-dots"><span></span><span></span><span></span></div>' +
+            '</div></div>';
+        container.appendChild(div);
+        scrollToBottom();
+        return div;
+    }
+    function removeThinkingMessage() {
+        var el = document.getElementById('nexvoraThinkingMsg');
+        if (el && el.parentNode) el.parentNode.removeChild(el);
     }
     function scrollToBottom() {
         if (!settings.autoScroll) return;
@@ -2555,6 +2568,7 @@ window.NexvoraAI = (function () {
 
     // --- Settings ---
     function initSettingsListeners() {
+        console.log('[Nexvora] initSettingsListeners called');
         var themeSelect = $('#nexvoraThemeSelect');
         if (themeSelect) {
             themeSelect.value = settings.theme;
@@ -2647,6 +2661,7 @@ window.NexvoraAI = (function () {
 
         // API Configuration
         if (typeof NexvoraAPIConfig !== 'undefined') {
+            console.log('[Nexvora] NexvoraAPIConfig found, setting up API Configuration');
             var apiConfig = NexvoraAPIConfig.load();
             var apiUrlInput = $('#nexvoraApiUrl');
             var apiKeyInput = $('#nexvoraApiKey');
@@ -2683,7 +2698,7 @@ window.NexvoraAI = (function () {
                     // URL validation
                     if (url && !/^https?:\/\/.+/i.test(url)) {
                         showToast('Invalid URL. Must start with http:// or https://', 'error');
-                        this.value = apiConfig.baseUrl || '';
+                        this.value = NexvoraAPIConfig.load().baseUrl || '';
                         return;
                     }
                     NexvoraAPIConfig.update({ baseUrl: url });
@@ -2708,32 +2723,136 @@ window.NexvoraAI = (function () {
             var testApiBtn = $('#nexvoraTestApiConnection');
             if (testApiBtn) {
                 testApiBtn.addEventListener('click', function () {
-                    if (!apiConfig.baseUrl && !apiUrlInput.value.trim()) {
-                        showToast('No API URL configured. Enter your backend URL first.', 'error');
-                        return;
-                    }
-                    testApiBtn.disabled = true;
-                    testApiBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
-                    apiStatusEl.className = 'nexvora-api-status nexvora-api-status-testing';
-                    apiStatusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
+                    try {
+                        console.log('[Nexvora] Test Connection clicked');
 
-                    NexvoraAPIConfig.checkHealth().then(function (status) {
-                        testApiBtn.disabled = false;
-                        testApiBtn.innerHTML = '<i class="fa-solid fa-plug"></i> Test';
-                        updateApiStatusDisplay();
-                        renderDashboard();
-                        if (status.status === 'connected') {
-                            showToast('API connected! Latency: ' + (status.latency || '?') + 'ms', 'success');
-                        } else {
-                            showToast('API not reachable: ' + (status.lastError || 'Check your backend URL'), 'error');
+                        // Always read fresh config from localStorage + current input values
+                        var freshConfig = NexvoraAPIConfig.load();
+                        var baseUrl = (apiUrlInput && apiUrlInput.value.trim()) || freshConfig.baseUrl || '';
+                        var apiKey = (apiKeyInput && apiKeyInput.value.trim()) || freshConfig.apiKey || '';
+
+                        console.log('[Nexvora] baseUrl:', baseUrl, 'apiKey:', apiKey ? '(set)' : '(empty)');
+
+                        if (!baseUrl) {
+                            showToast('No API URL configured. Enter your backend URL first.', 'error');
+                            return;
                         }
-                    }).catch(function () {
+
+                        // Save any unsaved input values before testing
+                        if (apiUrlInput && apiUrlInput.value.trim()) {
+                            NexvoraAPIConfig.update({ baseUrl: apiUrlInput.value.trim() });
+                        }
+                        if (apiKeyInput && apiKeyInput.value.trim()) {
+                            NexvoraAPIConfig.update({ apiKey: apiKeyInput.value.trim() });
+                        }
+
+                        // Show visual feedback IMMEDIATELY
+                        testApiBtn.disabled = true;
+                        testApiBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
+                        if (apiStatusEl) {
+                            apiStatusEl.className = 'nexvora-api-status nexvora-api-status-testing';
+                            apiStatusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
+                        }
+
+                        // Build URL: append /v1/chat/completions to base URL
+                        var cleanBase = baseUrl.replace(/\/+$/, '');
+                        if (cleanBase.indexOf('/v1/chat/completions') === -1) {
+                            cleanBase = cleanBase + '/v1/chat/completions';
+                        }
+
+                        // Guard: never send a request to a root or relative URL
+                        if (!/^https?:\/\/.+/i.test(cleanBase)) {
+                            showToast('Invalid API URL: ' + cleanBase + '. Enter a full URL like https://api.tamilai.stream', 'error');
+                            testApiBtn.disabled = false;
+                            testApiBtn.innerHTML = '<i class="fa-solid fa-plug"></i> Test';
+                            return;
+                        }
+
+                        console.log('[Nexvora] POST to:', cleanBase);
+
+                        var headers = { 'Content-Type': 'application/json' };
+                        if (apiKey) {
+                            headers['Authorization'] = 'Bearer ' + apiKey;
+                        }
+
+                        var body = {
+                            model: 'tamilai',
+                            messages: [{ role: 'user', content: 'test' }],
+                            max_tokens: 5,
+                            stream: false
+                        };
+
+                        var timeout = parseInt(apiTimeoutInput && apiTimeoutInput.value, 10) || freshConfig.timeout || 30000;
+                        var controller = null;
+                        var timeoutId = null;
+
+                        if (typeof AbortController !== 'undefined') {
+                            controller = new AbortController();
+                            timeoutId = setTimeout(function () { controller.abort(); }, timeout);
+                        }
+
+                        var start = Date.now();
+
+                        fetch(cleanBase, {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify(body),
+                            signal: controller ? controller.signal : undefined
+                        })
+                        .then(function (res) {
+                            if (timeoutId) clearTimeout(timeoutId);
+                            var latency = Date.now() - start;
+                            console.log('[Nexvora] Response:', res.status, res.statusText);
+
+                            if (!res.ok) {
+                                return res.text().then(function (text) {
+                                    var errMsg = 'HTTP ' + res.status;
+                                    if (text) errMsg += ': ' + text.slice(0, 200);
+                                    console.log('[Nexvora] Error response:', errMsg);
+                                    NexvoraAPIConfig.setStatus(NexvoraAPIConfig.STATUS.ERROR, errMsg);
+                                    testApiBtn.disabled = false;
+                                    testApiBtn.innerHTML = '<i class="fa-solid fa-plug"></i> Test';
+                                    if (apiStatusEl) updateApiStatusDisplay();
+                                    showToast('Connection failed — ' + errMsg, 'error');
+                                });
+                            }
+
+                            return res.json().then(function (data) {
+                                console.log('[Nexvora] Success:', JSON.stringify(data).slice(0, 200));
+                                NexvoraAPIConfig.setStatus(NexvoraAPIConfig.STATUS.CONNECTED, null, latency);
+                                testApiBtn.disabled = false;
+                                testApiBtn.innerHTML = '<i class="fa-solid fa-plug"></i> Test';
+                                if (apiStatusEl) updateApiStatusDisplay();
+                                renderDashboard();
+                                showToast('API connected! Latency: ' + latency + 'ms', 'success');
+                            });
+                        })
+                        .catch(function (err) {
+                            if (timeoutId) clearTimeout(timeoutId);
+                            console.error('[Nexvora] Fetch error:', err);
+                            var errMsg = err.name === 'AbortError'
+                                ? 'Request timed out after ' + timeout + 'ms'
+                                : (err.message || 'Connection failed');
+                            // CORS errors show as TypeError with generic message
+                            if (err instanceof TypeError && !err.name.includes('Abort')) {
+                                errMsg = 'Network/CORS error — ensure your backend allows cross-origin requests from this origin';
+                            }
+                            NexvoraAPIConfig.setStatus(NexvoraAPIConfig.STATUS.ERROR, errMsg);
+                            testApiBtn.disabled = false;
+                            testApiBtn.innerHTML = '<i class="fa-solid fa-plug"></i> Test';
+                            if (apiStatusEl) updateApiStatusDisplay();
+                            showToast('Connection failed — ' + errMsg, 'error');
+                        });
+                    } catch (e) {
+                        console.error('[Nexvora] Test Connection handler error:', e);
                         testApiBtn.disabled = false;
                         testApiBtn.innerHTML = '<i class="fa-solid fa-plug"></i> Test';
-                        updateApiStatusDisplay();
-                        showToast('Connection test failed', 'error');
-                    });
+                        showToast('Test connection error: ' + e.message, 'error');
+                    }
                 });
+                console.log('[Nexvora] Test Connection handler attached');
+            } else {
+                console.warn('[Nexvora] #nexvoraTestApiConnection button NOT FOUND');
             }
         }
     }
