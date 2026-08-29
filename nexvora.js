@@ -375,6 +375,10 @@ window.NexvoraAI = (function () {
         if (googleBtn) googleBtn.addEventListener('click', function () { handleGoogleLogin(); });
         var guestBtn = $('#nexvoraGuestLogin');
         if (guestBtn) guestBtn.addEventListener('click', function () { handleGuestLogin(); });
+        var adminLoginBtn = $('#nexvoraAdminLogin');
+        if (adminLoginBtn) adminLoginBtn.addEventListener('click', function () { handleAdminLogin(); });
+        var adminDashBtn = $('#nexvoraAdminDashboard');
+        if (adminDashBtn) adminDashBtn.addEventListener('click', function () { handleAdminDashboard(); });
     }
 
     function handleLogin() {
@@ -446,6 +450,79 @@ window.NexvoraAI = (function () {
     function handleGuestLogin() {
         Auth.createSession({ email: 'guest@nexvora.ai', name: 'Guest User' }, false, true);
         showApp(); showToast('Continuing as Guest', 'info');
+    }
+
+    var ADMIN_EMAIL = 'admin@tamilaistream.com';
+    var ADMIN_PASSWORD = 'Admin@123';
+    var ADMIN_NAME = 'Admin User';
+
+    function handleAdminLogin() {
+        var btn = $('#nexvoraAdminLogin');
+        if (!btn) return;
+        btn.classList.add('loading');
+        btn.disabled = true;
+        var originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Logging in...';
+        try {
+            var users = JSON.parse(localStorage.getItem('tamilAIStream_users') || '[]');
+            var user = null;
+            for (var i = 0; i < users.length; i++) {
+                if (users[i].email === ADMIN_EMAIL && users[i].password === ADMIN_PASSWORD) { user = users[i]; break; }
+            }
+            if (!user) {
+                user = { uid: 'admin-nexvora', email: ADMIN_EMAIL, name: ADMIN_NAME, password: ADMIN_PASSWORD };
+                users.push(user);
+                localStorage.setItem('tamilAIStream_users', JSON.stringify(users));
+            }
+            Auth.createSession({ email: user.email, name: user.name, avatar: user.avatar || '' }, true);
+            localStorage.setItem('adminSession', JSON.stringify({
+                username: ADMIN_EMAIL, email: ADMIN_EMAIL, displayName: ADMIN_NAME,
+                loginTime: Date.now(), expiry: Date.now() + (24 * 60 * 60 * 1000)
+            }));
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            showApp();
+            showToast('Welcome Admin!', 'success');
+        } catch (e) {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            showToast('Admin login failed', 'error');
+        }
+    }
+
+    function handleAdminDashboard() {
+        var btn = $('#nexvoraAdminDashboard');
+        if (!btn) return;
+        btn.classList.add('loading');
+        btn.disabled = true;
+        var originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Opening...';
+        try {
+            var users = JSON.parse(localStorage.getItem('tamilAIStream_users') || '[]');
+            var user = null;
+            for (var i = 0; i < users.length; i++) {
+                if (users[i].email === ADMIN_EMAIL && users[i].password === ADMIN_PASSWORD) { user = users[i]; break; }
+            }
+            if (!user) {
+                user = { uid: 'admin-nexvora', email: ADMIN_EMAIL, name: ADMIN_NAME, password: ADMIN_PASSWORD };
+                users.push(user);
+                localStorage.setItem('tamilAIStream_users', JSON.stringify(users));
+            }
+            Auth.createSession({ email: user.email, name: user.name, avatar: user.avatar || '' }, true);
+            localStorage.setItem('adminSession', JSON.stringify({
+                username: ADMIN_EMAIL, email: ADMIN_EMAIL, displayName: ADMIN_NAME,
+                loginTime: Date.now(), expiry: Date.now() + (24 * 60 * 60 * 1000)
+            }));
+            showToast('Opening Admin Dashboard...', 'success');
+            setTimeout(function () { window.location.href = 'dashboard.html'; }, 600);
+        } catch (e) {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            showToast('Failed to open dashboard', 'error');
+        }
     }
 
     // --- App Initialization ---
@@ -702,6 +779,8 @@ window.NexvoraAI = (function () {
             if (input.type === 'password') { input.type = 'text'; icon.className = 'fa-solid fa-eye-slash'; }
             else { input.type = 'password'; icon.className = 'fa-solid fa-eye'; }
         });
+
+        initModelManagerListeners();
 
         var projectForm = $('#nexvoraProjectForm');
         if (projectForm) projectForm.addEventListener('submit', function (e) {
@@ -1959,6 +2038,64 @@ window.NexvoraAI = (function () {
     }
 
     // --- Model Manager ---
+    var modelSearchQuery = '';
+    var modelFilterProvider = '';
+    var modelFilterStatus = '';
+
+    function getModelStats() {
+        var models = NexvoraModelManager.getAllModels();
+        var enabled = models.filter(function (m) { return m.enabled; });
+        var statuses = NexvoraModelManager.getConnectionStatus ? models.map(function (m) {
+            return NexvoraModelManager.getConnectionStatus(m.id);
+        }) : [];
+        var connected = statuses.filter(function (s) { return s.status === 'connected'; }).length;
+        return { total: models.length, active: enabled.length, connected: connected };
+    }
+
+    function populateProviderFilter() {
+        var select = $('#nexvoraModelFilterProvider');
+        if (!select) return;
+        var models = NexvoraModelManager.getAllModels();
+        var providers = {};
+        models.forEach(function (m) { if (m.provider) providers[m.provider] = true; });
+        var current = select.value;
+        select.innerHTML = '<option value="">All Providers</option>';
+        Object.keys(providers).sort().forEach(function (p) {
+            var opt = document.createElement('option');
+            opt.value = p; opt.textContent = p;
+            select.appendChild(opt);
+        });
+        select.value = current;
+    }
+
+    function updateModelStats() {
+        var stats = getModelStats();
+        var totalEl = $('#nexvoraModelTotal');
+        var activeEl = $('#nexvoraModelActive');
+        var connectedEl = $('#nexvoraModelConnected');
+        if (totalEl) totalEl.textContent = stats.total;
+        if (activeEl) activeEl.textContent = stats.active;
+        if (connectedEl) connectedEl.textContent = stats.connected;
+    }
+
+    function filterModels(models) {
+        return models.filter(function (m) {
+            if (modelSearchQuery) {
+                var q = modelSearchQuery.toLowerCase();
+                var matchName = (m.name || '').toLowerCase().indexOf(q) !== -1;
+                var matchId = (m.modelId || m.id || '').toLowerCase().indexOf(q) !== -1;
+                var matchProvider = (m.provider || '').toLowerCase().indexOf(q) !== -1;
+                var matchEndpoint = (m.endpoint || '').toLowerCase().indexOf(q) !== -1;
+                if (!matchName && !matchId && !matchProvider && !matchEndpoint) return false;
+            }
+            if (modelFilterProvider && m.provider !== modelFilterProvider) return false;
+            if (modelFilterStatus === 'enabled' && !m.enabled) return false;
+            if (modelFilterStatus === 'disabled' && m.enabled) return false;
+            if (modelFilterStatus === 'default' && !m.isDefault) return false;
+            return true;
+        });
+    }
+
     function renderModelManagerCards() {
         var container = $('#nexvoraModelsContent');
         if (!container) return;
@@ -1973,10 +2110,14 @@ window.NexvoraAI = (function () {
             return;
         }
 
-        var models = NexvoraModelManager.getAllModels();
+        updateModelStats();
+        populateProviderFilter();
 
-        // Professional empty state
-        if (models.length === 0 || (models.length === 1 && models[0].id === 'nexvora-default')) {
+        var allModels = NexvoraModelManager.getAllModels();
+        var models = filterModels(allModels);
+
+        // Professional empty state (no models at all)
+        if (allModels.length === 0) {
             container.innerHTML = '<div class="nexvora-model-empty-state">' +
                 '<div class="nexvora-model-empty-icon"><i class="fa-solid fa-microchip"></i></div>' +
                 '<h3>No AI Models Configured</h3>' +
@@ -1995,6 +2136,15 @@ window.NexvoraAI = (function () {
                 '<div><strong>Test Connection</strong><br>Verify everything works</div>' +
                 '</div>' +
                 '</div>' +
+                '</div>';
+            return;
+        }
+
+        // No search results
+        if (models.length === 0) {
+            container.innerHTML = '<div class="nexvora-model-no-results">' +
+                '<i class="fa-solid fa-magnifying-glass"></i>' +
+                '<p>No models match your search or filter.</p>' +
                 '</div>';
             return;
         }
@@ -2049,14 +2199,13 @@ window.NexvoraAI = (function () {
                 (m.capabilities || []).map(function (c) {
                     var capClass = 'nexvora-chip-cap';
                     if (c === 'chat') capClass += ' nexvora-chip-chat';
-                    else if (c === 'translation') capClass += ' nexvora-chip-translation';
+                    else if (c === 'translation' || c === 'translate') capClass += ' nexvora-chip-translation';
                     else if (c === 'writing') capClass += ' nexvora-chip-writing';
                     else if (c === 'summarization') capClass += ' nexvora-chip-summarization';
                     else if (c === 'documents') capClass += ' nexvora-chip-documents';
                     else if (c === 'coding') capClass += ' nexvora-chip-coding';
                     return '<span class="' + capClass + '">' + escapeHtml(c) + '</span>';
                 }).join('') +
-                '<span class="nexvora-chip-cap nexvora-chip-chat">chat</span>' +
                 '</div>' +
                 '</div>' +
                 '<div class="nexvora-model-card-section">' +
@@ -2075,10 +2224,12 @@ window.NexvoraAI = (function () {
                 '</div>' +
                 '<div class="nexvora-model-card-actions">' +
                 '<button class="nexvora-model-card-test" data-id="' + m.id + '" title="Test Connection"><i class="fa-solid fa-plug"></i> Test</button>' +
+                (!m.isDefault ? '<button class="nexvora-model-card-setdefault" data-id="' + m.id + '" title="Set as Default"><i class="fa-solid fa-star"></i></button>' : '') +
                 '<button class="nexvora-model-card-toggle" data-id="' + m.id + '" title="' + (m.enabled ? 'Disable' : 'Enable') + '">' +
                 '<i class="fa-solid fa-' + (m.enabled ? 'toggle-on' : 'toggle-off') + '"></i>' +
                 '</button>' +
                 '<button class="nexvora-model-card-edit" data-id="' + m.id + '" title="Edit"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="nexvora-model-card-duplicate" data-id="' + m.id + '" title="Duplicate"><i class="fa-solid fa-copy"></i></button>' +
                 (!m.isDefault ? '<button class="nexvora-model-card-delete" data-id="' + m.id + '" title="Delete"><i class="fa-solid fa-trash"></i></button>' : '') +
                 '</div>' +
                 '</div>';
@@ -2088,6 +2239,23 @@ window.NexvoraAI = (function () {
                 e.stopPropagation();
                 testModelConnection(m);
             });
+
+            var setDefaultBtn = card.querySelector('.nexvora-model-card-setdefault');
+            if (setDefaultBtn) {
+                setDefaultBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    NexvoraModelManager.updateModel(m.id, { isDefault: true });
+                    // Remove default from all others
+                    NexvoraModelManager.getAllModels().forEach(function (other) {
+                        if (other.id !== m.id && other.isDefault) {
+                            NexvoraModelManager.updateModel(other.id, { isDefault: false });
+                        }
+                    });
+                    renderModelManagerCards();
+                    renderModelSelector();
+                    showToast(m.name + ' set as default model', 'success');
+                });
+            }
 
             card.querySelector('.nexvora-model-card-toggle').addEventListener('click', function (e) {
                 e.stopPropagation();
@@ -2102,6 +2270,20 @@ window.NexvoraAI = (function () {
                 showModelModal(m);
             });
 
+            var dupBtn = card.querySelector('.nexvora-model-card-duplicate');
+            if (dupBtn) {
+                dupBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var copy = NexvoraModelManager.duplicateModel(m.id);
+                    if (copy) {
+                        renderModelManagerCards();
+                        renderModelSelector();
+                        populateProviderFilter();
+                        showToast('Model duplicated as "' + copy.name + '"', 'success');
+                    }
+                });
+            }
+
             var deleteBtn = card.querySelector('.nexvora-model-card-delete');
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', function (e) {
@@ -2110,6 +2292,7 @@ window.NexvoraAI = (function () {
                         NexvoraModelManager.removeModel(m.id);
                         renderModelManagerCards();
                         renderModelSelector();
+                        populateProviderFilter();
                         showToast('Model deleted', 'success');
                     }
                 });
@@ -2117,6 +2300,30 @@ window.NexvoraAI = (function () {
 
             container.appendChild(card);
         });
+    }
+
+    function initModelManagerListeners() {
+        var searchInput = $('#nexvoraModelSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                modelSearchQuery = this.value.trim();
+                renderModelManagerCards();
+            });
+        }
+        var providerFilter = $('#nexvoraModelFilterProvider');
+        if (providerFilter) {
+            providerFilter.addEventListener('change', function () {
+                modelFilterProvider = this.value;
+                renderModelManagerCards();
+            });
+        }
+        var statusFilter = $('#nexvoraModelFilterStatus');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', function () {
+                modelFilterStatus = this.value;
+                renderModelManagerCards();
+            });
+        }
     }
 
     function testModelConnection(model) {

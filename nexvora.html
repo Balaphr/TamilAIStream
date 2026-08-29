@@ -42,6 +42,20 @@
                         <span>Continue as Guest</span>
                     </button>
                 </div>
+                <div class="nexvora-admin-access">
+                    <div class="nexvora-admin-header">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>Admin Account</span>
+                    </div>
+                    <button class="nexvora-admin-login-btn" id="nexvoraAdminLogin" type="button">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Quick Admin Login</span>
+                    </button>
+                    <button class="nexvora-admin-login-btn nexvora-admin-open-dashboard" id="nexvoraAdminDashboard" type="button">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Open Admin Dashboard</span>
+                    </button>
+                </div>
                 <div class="nexvora-auth-divider"><span>or sign in with email</span></div>
                 <form id="nexvoraLoginForm" novalidate>
                     <div class="nexvora-input-group">
@@ -728,6 +742,30 @@
                 <div class="nexvora-view-header">
                     <h2><i class="fa-solid fa-microchip"></i> Model Manager</h2>
                     <button class="nexvora-btn-primary" id="nexvoraAddModel"><i class="fa-solid fa-plus"></i> Add Model</button>
+                </div>
+                <!-- Stats Bar -->
+                <div class="nexvora-model-stats" id="nexvoraModelStats">
+                    <div class="nexvora-model-stat"><span class="nexvora-model-stat-val" id="nexvoraModelTotal">0</span><span class="nexvora-model-stat-lbl">Total</span></div>
+                    <div class="nexvora-model-stat"><span class="nexvora-model-stat-val" id="nexvoraModelActive">0</span><span class="nexvora-model-stat-lbl">Active</span></div>
+                    <div class="nexvora-model-stat"><span class="nexvora-model-stat-val" id="nexvoraModelConnected">0</span><span class="nexvora-model-stat-lbl">Connected</span></div>
+                </div>
+                <!-- Search & Filter Bar -->
+                <div class="nexvora-model-toolbar">
+                    <div class="nexvora-model-search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="nexvoraModelSearch" placeholder="Search models by name, provider, or ID...">
+                    </div>
+                    <div class="nexvora-model-filters">
+                        <select id="nexvoraModelFilterProvider" class="nexvora-select nexvora-model-filter-select">
+                            <option value="">All Providers</option>
+                        </select>
+                        <select id="nexvoraModelFilterStatus" class="nexvora-select nexvora-model-filter-select">
+                            <option value="">All Status</option>
+                            <option value="enabled">Active</option>
+                            <option value="disabled">Disabled</option>
+                            <option value="default">Default</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="nexvora-models-content" id="nexvoraModelsContent"></div>
             </div>

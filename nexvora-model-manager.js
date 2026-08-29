@@ -128,6 +128,23 @@ window.NexvoraModelManager = (function () {
         }
     }
 
+    function duplicateModel(id) {
+        var original = getModelById(id);
+        if (!original) return null;
+        var copy = Object.assign({}, original, {
+            id: 'model-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+            name: original.name + ' (Copy)',
+            isDefault: false,
+            enabled: true,
+            createdAt: Date.now()
+        });
+        delete copy.updatedAt;
+        var models = getAllModels();
+        models.push(copy);
+        lsSet(STORAGE_KEY, models);
+        return copy;
+    }
+
     // --- Active model selection ---
     function getActiveModel() {
         var activeId = lsGet(ACTIVE_MODEL_KEY);
@@ -329,6 +346,7 @@ window.NexvoraModelManager = (function () {
         addModel: addModel,
         updateModel: updateModel,
         removeModel: removeModel,
+        duplicateModel: duplicateModel,
         getActiveModel: getActiveModel,
         setActiveModel: setActiveModel,
         sendRequest: sendRequest,

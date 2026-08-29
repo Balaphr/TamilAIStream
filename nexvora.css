@@ -137,6 +137,44 @@ a:hover { text-decoration: underline; }
 }
 .nexvora-auth-guest:hover { background: var(--nv-surface-hover); }
 
+.nexvora-admin-access {
+    margin: 16px 0;
+    padding: 14px;
+    background: var(--nv-surface);
+    border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius);
+}
+.nexvora-admin-header {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600;
+    color: var(--nv-text-secondary); margin-bottom: 12px;
+}
+.nexvora-admin-header i { color: #6c5ce7; }
+.nexvora-admin-login-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 10px; border-radius: var(--nv-radius-sm);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all var(--nv-transition);
+    background: linear-gradient(135deg, #6c5ce7, #5a4bd1);
+    color: #fff; border: none;
+    box-shadow: 0 4px 14px rgba(108, 92, 231, 0.3);
+}
+.nexvora-admin-login-btn:hover {
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.5);
+    transform: translateY(-1px);
+}
+.nexvora-admin-open-dashboard {
+    margin-top: 8px;
+    background: var(--nv-surface);
+    color: var(--nv-text);
+    border: 1px solid var(--nv-border);
+    box-shadow: none;
+}
+.nexvora-admin-open-dashboard:hover {
+    background: var(--nv-surface-hover);
+    box-shadow: none;
+}
+
 .nexvora-auth-divider {
     display: flex; align-items: center; gap: 12px;
     margin: 20px 0; color: var(--nv-text-muted); font-size: 12px;
@@ -1104,8 +1142,64 @@ a:hover { text-decoration: underline; }
 /* ============================================================================
    MODEL MANAGER VIEW
    ============================================================================ */
+/* --- Model Manager Stats --- */
+.nexvora-model-stats {
+    display: flex; gap: 16px; padding: 16px 28px 0;
+}
+.nexvora-model-stat {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 10px 20px; border-radius: var(--nv-radius);
+    background: var(--nv-surface); border: 1px solid var(--nv-border);
+    min-width: 80px;
+}
+.nexvora-model-stat-val {
+    font-size: 20px; font-weight: 700; color: var(--nv-accent-light);
+}
+.nexvora-model-stat-lbl {
+    font-size: 11px; color: var(--nv-text-muted); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-top: 2px;
+}
+
+/* --- Model Manager Toolbar --- */
+.nexvora-model-toolbar {
+    display: flex; gap: 12px; padding: 16px 28px; align-items: center;
+    flex-wrap: wrap;
+}
+.nexvora-model-search {
+    flex: 1; min-width: 200px; position: relative;
+}
+.nexvora-model-search i {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--nv-text-muted); font-size: 13px; pointer-events: none;
+}
+.nexvora-model-search input {
+    width: 100%; padding: 9px 12px 9px 36px;
+    border-radius: var(--nv-radius); border: 1px solid var(--nv-border);
+    background: var(--nv-surface); color: var(--nv-text);
+    font-size: 13px; font-family: var(--nv-font);
+    transition: border-color var(--nv-transition);
+}
+.nexvora-model-search input:focus {
+    outline: none; border-color: var(--nv-accent);
+}
+.nexvora-model-search input::placeholder { color: var(--nv-text-muted); }
+.nexvora-model-filters {
+    display: flex; gap: 8px;
+}
+.nexvora-model-filter-select {
+    padding: 9px 12px; border-radius: var(--nv-radius);
+    border: 1px solid var(--nv-border); background: var(--nv-surface);
+    color: var(--nv-text); font-size: 13px; font-family: var(--nv-font);
+    min-width: 120px; cursor: pointer;
+    transition: border-color var(--nv-transition);
+}
+.nexvora-model-filter-select:focus {
+    outline: none; border-color: var(--nv-accent);
+}
+
+/* --- Model Manager Content --- */
 .nexvora-models-content {
-    flex: 1; overflow-y: auto; padding: 20px 28px;
+    flex: 1; overflow-y: auto; padding: 0 28px 20px;
     display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 16px; align-content: start;
 }
@@ -2192,11 +2286,55 @@ a:hover { text-decoration: underline; }
     opacity: 0.5;
     cursor: not-allowed;
 }
+.nexvora-model-card-default {
+    border-color: rgba(108,92,231,0.3);
+    background: linear-gradient(135deg, var(--nv-surface) 0%, rgba(108,92,231,0.04) 100%);
+}
+.nexvora-model-card-default .nexvora-model-card-header {
+    border-bottom: 1px solid rgba(108,92,231,0.1);
+    padding-bottom: 10px;
+}
+.nexvora-model-card-setdefault {
+    display: flex; align-items: center; gap: 4px;
+    padding: 6px 10px; border: none; border-radius: var(--nv-radius-sm);
+    background: var(--nv-surface); color: var(--nv-text-secondary);
+    font-size: 12px; font-family: var(--nv-font); cursor: pointer;
+    transition: all var(--nv-transition);
+}
+.nexvora-model-card-setdefault:hover {
+    background: rgba(108,92,231,0.1); color: var(--nv-accent);
+}
+.nexvora-model-card-duplicate {
+    display: flex; align-items: center; gap: 4px;
+    padding: 6px 10px; border: none; border-radius: var(--nv-radius-sm);
+    background: var(--nv-surface); color: var(--nv-text-secondary);
+    font-size: 12px; font-family: var(--nv-font); cursor: pointer;
+    transition: all var(--nv-transition);
+}
+.nexvora-model-card-duplicate:hover {
+    background: rgba(253,203,110,0.1); color: var(--nv-warning);
+}
+.nexvora-model-no-results {
+    grid-column: 1 / -1; text-align: center;
+    padding: 48px 20px; color: var(--nv-text-muted);
+}
+.nexvora-model-no-results i {
+    font-size: 40px; margin-bottom: 12px; opacity: 0.3; display: block;
+}
+.nexvora-model-no-results p { font-size: 14px; }
 
 @media (max-width: 768px) {
     .nexvora-model-card-meta { grid-template-columns: 1fr; }
     .nexvora-model-card-footer { flex-direction: column; gap: 8px; align-items: flex-start; }
     .nexvora-model-card-actions { width: 100%; justify-content: flex-end; }
+    .nexvora-model-stats { padding: 12px 16px 0; gap: 8px; }
+    .nexvora-model-stat { padding: 8px 14px; min-width: 60px; }
+    .nexvora-model-stat-val { font-size: 16px; }
+    .nexvora-model-toolbar { padding: 12px 16px; flex-direction: column; }
+    .nexvora-model-search { min-width: 100%; }
+    .nexvora-model-filters { width: 100%; }
+    .nexvora-model-filter-select { flex: 1; min-width: 0; }
+    .nexvora-models-content { padding: 0 16px 16px; grid-template-columns: 1fr; }
 }
 
 /* ============================================================================

@@ -388,6 +388,16 @@ input { font-family: inherit; }
     box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
 }
 
+.admin-nexvora-open-btn {
+    margin-top: 10px;
+    background: linear-gradient(135deg, #6c5ce7, #5a4bd1);
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.35);
+}
+
+.admin-nexvora-open-btn:hover {
+    box-shadow: 0 8px 24px rgba(108, 92, 231, 0.5);
+}
+
 /* ---------- Divider ---------- */
 .divider {
     display: flex;

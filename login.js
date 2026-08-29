@@ -959,6 +959,66 @@ async function openBuilderFromLogin() {
     }
 }
 
+/**
+ * Open Nexvora AI — ensures the admin account exists and navigates to /Nexvora.
+ */
+async function openNexvoraFromLogin() {
+    const btn = document.getElementById('openNexvoraBtn');
+    if (!btn) return;
+
+    btn.classList.add('loading');
+    btn.disabled = true;
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Opening Nexvora...';
+
+    try {
+        const rememberMe = DOM.rememberMe ? DOM.rememberMe.checked : true;
+        await applyPersistence(rememberMe);
+
+        let user = validateCredentials(DEMO_EMAIL, DEMO_PASSWORD);
+        if (!user) {
+            user = createUser(DEMO_EMAIL, DEMO_PASSWORD, DEMO_NAME);
+        }
+        if (!user) {
+            throw new Error('Failed to prepare admin session');
+        }
+
+        Auth.createSession({ name: user.name, email: user.email, photoURL: user.photoURL || '', uid: user.uid }, rememberMe, false);
+
+        localStorage.setItem('adminSession', JSON.stringify({
+            username: DEMO_EMAIL,
+            email: DEMO_EMAIL,
+            displayName: user.name,
+            loginTime: Date.now(),
+            expiry: Date.now() + (24 * 60 * 60 * 1000)
+        }));
+
+        try {
+            localStorage.setItem('tamilAIStream_user', JSON.stringify({
+                uid: user.uid || 'admin-local',
+                name: user.name || 'Admin',
+                email: user.email,
+                loginTime: Date.now(),
+                photoURL: user.photoURL || ''
+            }));
+            localStorage.setItem('tamilAIStream_loggedIn', 'true');
+        } catch (e) {
+            console.warn('Unable to sync website session:', e);
+        }
+
+        showToast('Opening Nexvora AI...', 'success');
+
+        setTimeout(() => {
+            window.location.href = 'Nexvora';
+        }, 600);
+    } catch (error) {
+        btn.innerHTML = originalHTML;
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        showToast(error.message || 'Failed to open Nexvora AI', 'error');
+    }
+}
+
 // Demo Copy Button
 function setupDemoCopyButtons() {
     document.querySelectorAll('.demo-copy-btn, .admin-copy-btn').forEach(btn => {
@@ -1012,6 +1072,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupDemoCopyButtons();
     document.getElementById('demoLoginBtn')?.addEventListener('click', quickDemoLogin);
     document.getElementById('openBuilderBtn')?.addEventListener('click', openBuilderFromLogin);
+    document.getElementById('openNexvoraBtn')?.addEventListener('click', openNexvoraFromLogin);
     
     seedDemoAccount();
     
