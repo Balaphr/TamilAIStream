@@ -91,6 +91,16 @@ window.NexvoraModelManager = (function () {
                     changed = true;
                 }
             }
+            // Force-clean stale endpoints for ALL models that have chat capability
+            // but whose endpoint doesn't point to /v1/chat/completions
+            if (m.capabilities && m.capabilities.indexOf('chat') !== -1 && m.endpoint &&
+                m.endpoint.indexOf('/v1/chat/completions') === -1) {
+                // If model endpoint is stale, use the default chat endpoint
+                if (def.endpoint && def.endpoint.indexOf('/v1/chat/completions') !== -1) {
+                    m.endpoint = def.endpoint;
+                    changed = true;
+                }
+            }
         });
         if (changed) lsSet(STORAGE_KEY, models);
 
@@ -262,9 +272,23 @@ window.NexvoraModelManager = (function () {
         var headers = { 'Content-Type': 'application/json' };
         if (model.apiKey) {
             headers['Authorization'] = 'Bearer ' + model.apiKey;
+        } else if (window.NexvoraAPIConfig) {
+            var globalCfg = window.NexvoraAPIConfig.load();
+            if (globalCfg.apiKey) {
+                headers['Authorization'] = 'Bearer ' + globalCfg.apiKey;
+            }
         }
 
-        return fetch(model.endpoint, {
+        // Build URL: always use config.baseUrl + chat endpoint if model endpoint is stale
+        var endpoint = model.endpoint || '';
+        if (endpoint.indexOf('/v1/chat/completions') === -1 && window.NexvoraAPIConfig) {
+            var gCfg = window.NexvoraAPIConfig.load();
+            if (gCfg.baseUrl) {
+                endpoint = gCfg.baseUrl.replace(/\/+$/, '') + '/v1/chat/completions';
+            }
+        }
+
+        return fetch(endpoint, {
             method: 'POST',
             headers: headers,
             body: JSON.stringify(body)
@@ -386,6 +410,20 @@ window.NexvoraModelManager = (function () {
             var headers = { 'Content-Type': 'application/json' };
             if (m.apiKey) {
                 headers['Authorization'] = 'Bearer ' + m.apiKey;
+            } else if (window.NexvoraAPIConfig) {
+                var globalCfg = window.NexvoraAPIConfig.load();
+                if (globalCfg.apiKey) {
+                    headers['Authorization'] = 'Bearer ' + globalCfg.apiKey;
+                }
+            }
+
+            // Build URL: always use config.chat endpoint if model endpoint is stale
+            var endpoint = m.endpoint || '';
+            if (endpoint.indexOf('/v1/chat/completions') === -1 && window.NexvoraAPIConfig) {
+                var gCfg = window.NexvoraAPIConfig.load();
+                if (gCfg.baseUrl) {
+                    endpoint = gCfg.baseUrl.replace(/\/+$/, '') + '/v1/chat/completions';
+                }
             }
 
             // Always use POST — never GET (backends reject GET on chat/translation endpoints)
@@ -420,7 +458,7 @@ window.NexvoraModelManager = (function () {
 
             var start = Date.now();
 
-            fetch(m.endpoint, fetchOptions)
+            fetch(endpoint, fetchOptions)
                 .then(function (res) {
                     if (timeoutId) clearTimeout(timeoutId);
                     var latency = Date.now() - start;

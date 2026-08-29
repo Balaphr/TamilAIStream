@@ -205,9 +205,20 @@ window.NexvoraAPIConfig = (function () {
         // Determine the URL to test
         var modelUrl;
         if (model && model.endpoint) {
-            modelUrl = model.endpoint.replace(/\/+$/, '');
-        } else {
-            modelUrl = buildUrl(ENDPOINTS.health, model);
+            // If model endpoint contains /v1/chat/completions, use it directly
+            // Otherwise it's stale — use config.baseUrl + /v1/chat/completions
+            if (model.endpoint.indexOf('/v1/chat/completions') !== -1) {
+                modelUrl = model.endpoint.replace(/\/+$/, '');
+            } else {
+                modelUrl = null;
+            }
+        }
+        if (!modelUrl) {
+            if (config.baseUrl) {
+                modelUrl = config.baseUrl.replace(/\/+$/, '') + '/v1/chat/completions';
+            } else {
+                modelUrl = buildUrl(ENDPOINTS.health, model);
+            }
         }
         if (!modelUrl) {
             setStatus(STATUS.DISCONNECTED, 'No API URL configured');

@@ -274,13 +274,21 @@ window.NexvoraAIService = (function () {
         var url;
         var body;
 
-        // Build the URL: use model endpoint directly, or fall back to global config
+        // Build the URL: always use config.baseUrl + /v1/chat/completions
+        // Never use model.endpoint for chat — it may be stale (e.g. /translate from a previous session)
+        var cfg = getConfig().load();
         if (model.endpoint) {
-            url = model.endpoint.replace(/\/+$/, '');
-        } else {
-            var cfg = getConfig().load();
+            // If model endpoint already contains /v1/chat/completions, use it directly
+            if (model.endpoint.indexOf('/v1/chat/completions') !== -1) {
+                url = model.endpoint.replace(/\/+$/, '');
+            } else {
+                // Model endpoint is stale — use config.baseUrl instead
+                url = null;
+            }
+        }
+        if (!url) {
             if (cfg.baseUrl) {
-                url = getConfig().buildUrl(getConfig().ENDPOINTS.chat, model);
+                url = cfg.baseUrl.replace(/\/+$/, '') + '/v1/chat/completions';
             }
         }
 
