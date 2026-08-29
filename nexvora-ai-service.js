@@ -313,6 +313,12 @@ window.NexvoraAIService = (function () {
             throw createError(ServiceError.NO_API_CONFIG);
         }
 
+        // Guard: never send a request to a root or relative URL
+        if (!/^https?:\/\/.+/i.test(url)) {
+            console.error('[NexvoraAIService] sendChatMessage: refusing invalid URL:', url);
+            throw createError(ServiceError.NO_API_CONFIG);
+        }
+
         if (options.systemPrompt && body.messages) {
             body.messages = [{ role: 'system', content: options.systemPrompt }].concat(body.messages);
         }

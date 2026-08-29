@@ -96,8 +96,15 @@ window.NexvoraAPIConfig = (function () {
 
     function loadConfig() {
         var saved = lsGetJSON(STORAGE_KEY) || {};
+
+        // Always ensure baseUrl is a valid absolute URL — never empty or relative
+        var baseUrl = saved.baseUrl || env.AI_API_URL || '';
+        if (!baseUrl || !/^https?:\/\/.+/i.test(baseUrl)) {
+            baseUrl = DEFAULT_BASE_URL;
+        }
+
         return {
-            baseUrl:    saved.baseUrl    || env.AI_API_URL    || DEFAULT_BASE_URL,
+            baseUrl:    baseUrl,
             apiKey:     saved.apiKey     || env.AI_API_KEY    || '',
             timeout:    saved.timeout    || DEFAULTS.timeout,
             stream:     saved.stream     || env.AI_STREAM === 'true',
@@ -222,6 +229,13 @@ window.NexvoraAPIConfig = (function () {
         }
         if (!modelUrl) {
             setStatus(STATUS.DISCONNECTED, 'No API URL configured');
+            return Promise.resolve(getStatus());
+        }
+
+        // Guard: never send a request to a root or relative URL
+        if (!/^https?:\/\/.+/i.test(modelUrl)) {
+            console.error('[NexvoraAPIConfig] checkHealth: refusing invalid URL:', modelUrl);
+            setStatus(STATUS.ERROR, 'Invalid API URL: ' + modelUrl);
             return Promise.resolve(getStatus());
         }
 

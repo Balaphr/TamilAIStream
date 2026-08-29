@@ -2760,6 +2760,14 @@ window.NexvoraAI = (function () {
                             cleanBase = cleanBase + '/v1/chat/completions';
                         }
 
+                        // Guard: never send a request to a root or relative URL
+                        if (!/^https?:\/\/.+/i.test(cleanBase)) {
+                            showToast('Invalid API URL: ' + cleanBase + '. Enter a full URL like https://api.tamilai.stream', 'error');
+                            testApiBtn.disabled = false;
+                            testApiBtn.innerHTML = '<i class="fa-solid fa-plug"></i> Test';
+                            return;
+                        }
+
                         console.log('[Nexvora] POST to:', cleanBase);
 
                         var headers = { 'Content-Type': 'application/json' };

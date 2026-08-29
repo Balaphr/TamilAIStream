@@ -288,6 +288,11 @@ window.NexvoraModelManager = (function () {
             }
         }
 
+        // Guard: never send a request to a root or relative URL
+        if (!endpoint || !/^https?:\/\/.+/i.test(endpoint)) {
+            return Promise.reject(new Error('Invalid API endpoint: ' + (endpoint || '(empty)') + '. Configure a valid URL in Settings.'));
+        }
+
         return fetch(endpoint, {
             method: 'POST',
             headers: headers,
@@ -424,6 +429,13 @@ window.NexvoraModelManager = (function () {
                 if (gCfg.baseUrl) {
                     endpoint = gCfg.baseUrl.replace(/\/+$/, '') + '/v1/chat/completions';
                 }
+            }
+
+            // Guard: never send a request to a root or relative URL
+            if (!endpoint || !/^https?:\/\/.+/i.test(endpoint)) {
+                setConnectionStatus(m.id, 'error', null);
+                resolve({ connected: false, message: 'Invalid API endpoint: ' + (endpoint || '(empty)') + '. Configure a valid URL in Settings.' });
+                return;
             }
 
             // Always use POST — never GET (backends reject GET on chat/translation endpoints)
