@@ -22,13 +22,13 @@ window.NexvoraModelManager = (function () {
     var DEFAULT_MODELS = [
         {
             id: 'tamil-translation',
-            name: 'Tamil Translation',
-            modelId: 'tamil-translation',
-            endpoint: 'https://api.tamilai.stream/translate',
+            name: 'TamilAI Chat',
+            modelId: 'tamilai',
+            endpoint: 'https://api.tamilai.stream/v1/chat/completions',
             provider: 'custom',
             apiKey: '',
             languages: ['ta', 'en'],
-            capabilities: ['translation'],
+            capabilities: ['chat', 'translation'],
             maxTokens: 4096,
             enabled: true,
             isDefault: true,
@@ -232,42 +232,14 @@ window.NexvoraModelManager = (function () {
             return Promise.reject(new Error('Model "' + model.name + '" has no API endpoint configured. Edit it in Model Manager.'));
         }
 
-        var body;
-        var caps = model.capabilities || [];
-        var hasChatCap = caps.some(function (c) { return c === 'chat'; });
-
-        if (hasChatCap) {
-            // Chat capability: send standard OpenAI-compatible body regardless of template
-            body = {
-                model: model.modelId || model.id,
-                messages: messages,
-                max_tokens: options.maxTokens || model.maxTokens || 4096,
-                temperature: options.temperature || 0.7,
-                stream: false
-            };
-        } else if (model.requestBodyTemplate) {
-            // Non-chat with template: use request body template
-            var inputText = '';
-            for (var i = messages.length - 1; i >= 0; i--) {
-                if (messages[i].role === 'user') {
-                    inputText = messages[i].content;
-                    break;
-                }
-            }
-            try {
-                body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, inputText));
-            } catch (e) {
-                body = { tamil: inputText };
-            }
-        } else {
-            body = {
-                model: model.modelId || model.id,
-                messages: messages,
-                max_tokens: options.maxTokens || model.maxTokens || 4096,
-                temperature: options.temperature || 0.7,
-                stream: false
-            };
-        }
+        // Always use standard OpenAI-compatible chat body — never use requestBodyTemplate for chat
+        var body = {
+            model: model.modelId || model.id,
+            messages: messages,
+            max_tokens: options.maxTokens || model.maxTokens || 4096,
+            temperature: options.temperature || 0.7,
+            stream: false
+        };
         if (options.systemPrompt) {
             body.messages = [{ role: 'system', content: options.systemPrompt }].concat(body.messages);
         }

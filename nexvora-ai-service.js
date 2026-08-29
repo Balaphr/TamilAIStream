@@ -243,16 +243,10 @@ window.NexvoraAIService = (function () {
     // ---------------------------------------------------------------------------
     function sendChatMessage(messages, options) {
         options = options || {};
+
+        // Always use standard chat format — never use requestBodyTemplate for chat
         var validation = validateModel('chat');
         if (!validation.valid) {
-            // If chat capability fails but translation is available, try translate fallback
-            var translateValidation = validateModel('translation');
-            if (translateValidation.valid && messages.length > 0) {
-                var lastMsg = messages[messages.length - 1];
-                if (lastMsg && lastMsg.content) {
-                    return translateText(lastMsg.content, 'en', 'ta', options);
-                }
-            }
             return Promise.reject(validation.error);
         }
 
@@ -261,54 +255,31 @@ window.NexvoraAIService = (function () {
         var url;
         var body;
 
-        // Check if model has chat capability
-        var caps = model.capabilities || [];
-        var hasChatCap = caps.some(function (c) { return c === 'chat'; });
-
-        if (model.provider === 'custom' || model.provider === 'TamilAI') {
-            // Custom/TamilAI providers: use model endpoint directly
-            url = model.endpoint ? model.endpoint.replace(/\/+$/, '') : null;
-            if (hasChatCap) {
-                // Chat capability: send standard OpenAI-compatible chat body
-                body = {
-                    model: model.modelId || model.id,
-                    messages: messages,
-                    max_tokens: options.maxTokens || model.maxTokens || Config.DEFAULTS.maxTokens,
-                    temperature: options.temperature !== undefined ? options.temperature : Config.DEFAULTS.temperature,
-                    stream: false
-                };
-            } else if (model.requestBodyTemplate) {
-                // Non-chat with template: use request body template (e.g. translation)
-                var inputText = '';
-                for (var i = messages.length - 1; i >= 0; i--) {
-                    if (messages[i].role === 'user') {
-                        inputText = messages[i].content;
-                        break;
-                    }
-                }
-                try {
-                    body = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, inputText));
-                } catch (e) {
-                    body = { tamil: inputText };
-                }
-            } else {
-                // Fallback: standard chat body
-                body = {
-                    model: model.modelId || model.id,
-                    messages: messages
-                };
-            }
+        // Build the URL: use model endpoint directly, or fall back to global config
+        if (model.endpoint) {
+            url = model.endpoint.replace(/\/+$/, '');
         } else {
-            // Standard OpenAI-compatible providers: use buildUrl with /v1/chat/completions
-            url = Config.buildUrl(Config.ENDPOINTS.chat, model);
-            body = {
-                model: model.modelId || model.id,
-                messages: messages,
-                max_tokens: options.maxTokens || model.maxTokens || Config.DEFAULTS.maxTokens,
-                temperature: options.temperature !== undefined ? options.temperature : Config.DEFAULTS.temperature,
-                top_p: options.topP || Config.DEFAULTS.topP,
-                stream: options.stream || false
-            };
+            var config = Config.load();
+            if (config.baseUrl) {
+                url = Config.buildUrl(Config.ENDPOINTS.chat, model);
+            }
+        }
+
+        // Always build standard OpenAI-compatible chat body
+        body = {
+            model: model.modelId || model.id,
+            messages: messages,
+            stream: false
+        };
+
+        // Only add optional params if they have explicit values
+        if (options.maxTokens || model.maxTokens) {
+            body.max_tokens = options.maxTokens || model.maxTokens || Config.DEFAULTS.maxTokens;
+        }
+        if (options.temperature !== undefined) {
+            body.temperature = options.temperature;
+        } else {
+            body.temperature = Config.DEFAULTS.temperature;
         }
 
         if (!url) {

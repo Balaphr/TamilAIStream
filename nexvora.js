@@ -1742,38 +1742,53 @@ window.NexvoraAI = (function () {
 
     function generateResponse(chat, userText) {
         isGenerating = true; showLoading(true);
+        var thinkingEl = null;
+
+        function finishSuccess(assistantMsg) {
+            try {
+                isGenerating = false; showLoading(false); removeThinkingMessage();
+                chat.messages.push(assistantMsg);
+                updateChat(chat.id, { messages: chat.messages });
+                appendMessageToDOM(assistantMsg);
+                scrollToBottom();
+                renderDashboard();
+                updateConnectionStatus();
+            } catch (e) {
+                isGenerating = false; showLoading(false); removeThinkingMessage();
+            }
+        }
+
+        function finishError(err, prefix) {
+            try {
+                isGenerating = false; showLoading(false); removeThinkingMessage();
+                var errorContent = getNotConnectedMessage(err);
+                var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
+                chat.messages.push(errorMsg);
+                updateChat(chat.id, { messages: chat.messages });
+                appendMessageToDOM(errorMsg);
+                scrollToBottom();
+                showToast(err.message || (prefix || 'Error'), 'error');
+                updateConnectionStatus();
+            } catch (e) {
+                isGenerating = false; showLoading(false); removeThinkingMessage();
+            }
+        }
 
         // Translation mode: use the translation service directly
         if (translationMode && typeof NexvoraAIService !== 'undefined') {
+            thinkingEl = showThinkingMessage();
             NexvoraAIService.translateText(userText, 'en', 'ta')
                 .then(function (result) {
-                    isGenerating = false; showLoading(false);
-                    var assistantMsg = {
+                    finishSuccess({
                         id: 'msg-' + Date.now(),
                         role: 'assistant',
                         content: '**Translation:**\n\n' + result.content +
                             (result.source ? '\n\n**Original:** ' + result.source : ''),
                         model: result.model || 'TamilAI Translator',
                         timestamp: Date.now()
-                    };
-                    chat.messages.push(assistantMsg);
-                    updateChat(chat.id, { messages: chat.messages });
-                    appendMessageToDOM(assistantMsg);
-                    scrollToBottom();
-                    renderDashboard();
-                    updateConnectionStatus();
+                    });
                 })
-                .catch(function (err) {
-                    isGenerating = false; showLoading(false);
-                    var errorContent = getNotConnectedMessage(err);
-                    var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
-                    chat.messages.push(errorMsg);
-                    updateChat(chat.id, { messages: chat.messages });
-                    appendMessageToDOM(errorMsg);
-                    scrollToBottom();
-                    showToast(err.message || 'Translation error', 'error');
-                    updateConnectionStatus();
-                });
+                .catch(function (err) { finishError(err, 'Translation error'); });
             return;
         }
 
@@ -1782,41 +1797,19 @@ window.NexvoraAI = (function () {
         if (typeof NexvoraAIService !== 'undefined') {
             var validation = NexvoraAIService.validateModel('chat');
             if (!validation.valid) {
-                isGenerating = false; showLoading(false);
-                var errorContent = getNotConnectedMessage(validation.error);
-                var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
-                chat.messages.push(errorMsg);
-                updateChat(chat.id, { messages: chat.messages });
-                appendMessageToDOM(errorMsg);
-                scrollToBottom();
+                finishError(validation.error);
                 return;
             }
         }
 
         var messages = chat.messages.map(function (m) { return { role: m.role, content: m.content }; });
 
+        thinkingEl = showThinkingMessage();
         NexvoraModelManager.sendRequest(messages, { temperature: 0.7 })
             .then(function (response) {
-                isGenerating = false; showLoading(false);
-                var assistantMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: response.content, model: response.model, timestamp: Date.now() };
-                chat.messages.push(assistantMsg);
-                updateChat(chat.id, { messages: chat.messages });
-                appendMessageToDOM(assistantMsg);
-                scrollToBottom();
-                renderDashboard();
-                updateConnectionStatus();
+                finishSuccess({ id: 'msg-' + Date.now(), role: 'assistant', content: response.content, model: response.model, timestamp: Date.now() });
             })
-            .catch(function (err) {
-                isGenerating = false; showLoading(false);
-                var errorContent = getNotConnectedMessage(err);
-                var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
-                chat.messages.push(errorMsg);
-                updateChat(chat.id, { messages: chat.messages });
-                appendMessageToDOM(errorMsg);
-                scrollToBottom();
-                showToast(err.message || 'Connection error', 'error');
-                updateConnectionStatus();
-            });
+            .catch(function (err) { finishError(err, 'Connection error'); });
     }
 
     // Build user-friendly "not connected" messages
@@ -1876,10 +1869,31 @@ window.NexvoraAI = (function () {
         }
     }
 
-    function stopGeneration() { isGenerating = false; showLoading(false); }
+    function stopGeneration() { isGenerating = false; showLoading(false); removeThinkingMessage(); }
     function showLoading(show) {
         var el = $('#nexvoraLoading');
         if (el) { if (show) el.classList.remove('nexvora-hidden'); else el.classList.add('nexvora-hidden'); }
+    }
+    function showThinkingMessage() {
+        var container = $('#nexvoraMessages');
+        if (!container) return null;
+        hideWelcome();
+        var div = document.createElement('div');
+        div.className = 'nexvora-message assistant nexvora-thinking-msg';
+        div.id = 'nexvoraThinkingMsg';
+        div.innerHTML = '<div class="nexvora-message-avatar"><i class="fa-solid fa-bolt"></i></div>' +
+            '<div class="nexvora-message-body"><div class="nexvora-message-header">' +
+            '<span class="nexvora-message-sender">Nexvora AI</span>' +
+            '</div><div class="nexvora-message-content">' +
+            '<div class="nexvora-thinking-dots"><span></span><span></span><span></span></div>' +
+            '</div></div>';
+        container.appendChild(div);
+        scrollToBottom();
+        return div;
+    }
+    function removeThinkingMessage() {
+        var el = document.getElementById('nexvoraThinkingMsg');
+        if (el && el.parentNode) el.parentNode.removeChild(el);
     }
     function scrollToBottom() {
         if (!settings.autoScroll) return;
