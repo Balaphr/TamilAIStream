@@ -99,16 +99,12 @@ window.NexvoraAIService = (function () {
         }
 
         if (!model.endpoint) {
-            // If no endpoint, check if global API URL can serve as fallback
+            // If no endpoint, check if global API config is available — service layer will use getChatEndpoint()
             var config = getConfig().load();
-            if (config.baseUrl) {
-                // Global config available — use it as the endpoint fallback
-                model.endpoint = config.baseUrl;
-            } else if (model.provider === 'custom' || model.provider === 'TamilAI') {
-                return { valid: false, error: createError(ServiceError.NO_ENDPOINT) };
-            } else {
+            if (!config.baseUrl && model.provider !== 'custom' && model.provider !== 'TamilAI') {
                 return { valid: false, error: createError(ServiceError.NO_API_CONFIG) };
             }
+            // Don't set model.endpoint to baseUrl — the service uses getChatEndpoint() directly
         }
 
         if (requiredCapability) {
@@ -262,80 +258,45 @@ window.NexvoraAIService = (function () {
     async function sendChatMessage(messages, options) {
         options = options || {};
 
-        // Always use standard chat format — never use requestBodyTemplate for chat
         var validation = validateModel('chat');
         if (!validation.valid) {
             throw validation.error;
         }
 
         var model = validation.model;
-        console.log('[NexvoraAIService] Active model:', JSON.stringify({ id: model.id, name: model.name, endpoint: model.endpoint, modelId: model.modelId, apiKey: model.apiKey ? '(set)' : '(empty)', capabilities: model.capabilities }));
-        var headers = getConfig().buildHeaders(model);
-        var url;
-        var body;
+        var C = getConfig();
+        var url = C.getChatEndpoint();
+        var headers = C.getAuthHeaders(model);
+        var key = C.getApiKey(model);
 
-        // Build the URL: always use config.baseUrl + /v1/chat/completions
-        // Never use model.endpoint for chat — it may be stale (e.g. /translate from a previous session)
-        var cfg = getConfig().load();
-        if (model.endpoint) {
-            // If model endpoint already contains /v1/chat/completions, use it directly
-            if (model.endpoint.indexOf('/v1/chat/completions') !== -1) {
-                url = model.endpoint.replace(/\/+$/, '');
-            } else {
-                // Model endpoint is stale — use config.baseUrl instead
-                url = null;
-            }
-        }
-        if (!url) {
-            if (cfg.baseUrl) {
-                url = cfg.baseUrl.replace(/\/+$/, '') + '/v1/chat/completions';
-            }
-        }
+        console.log('[NexvoraAIService] sendChatMessage → URL:', url, '| method: POST | auth:', key ? 'Bearer ****' + key.slice(-4) : '(none)');
 
-        // Always build standard OpenAI-compatible chat body
-        body = {
+        var body = {
             model: model.modelId || model.id,
             messages: messages,
             stream: false
         };
 
-        // Only add optional params if they have explicit values
         if (options.maxTokens || model.maxTokens) {
-            body.max_tokens = options.maxTokens || model.maxTokens || getConfig().DEFAULTS.maxTokens;
+            body.max_tokens = options.maxTokens || model.maxTokens || C.DEFAULTS.maxTokens;
         }
         if (options.temperature !== undefined) {
             body.temperature = options.temperature;
         } else {
-            body.temperature = getConfig().DEFAULTS.temperature;
-        }
-
-        if (!url) {
-            throw createError(ServiceError.NO_API_CONFIG);
-        }
-
-        // Guard: never send a request to a root or relative URL
-        if (!/^https?:\/\/.+/i.test(url)) {
-            console.error('[NexvoraAIService] sendChatMessage: refusing invalid URL:', url);
-            throw createError(ServiceError.NO_API_CONFIG);
+            body.temperature = C.DEFAULTS.temperature;
         }
 
         if (options.systemPrompt && body.messages) {
             body.messages = [{ role: 'system', content: options.systemPrompt }].concat(body.messages);
         }
 
-        // Diagnostic logging
-        console.log('[NexvoraAIService] sendChatMessage → URL:', url);
-        console.log('[NexvoraAIService] sendChatMessage → Method: POST');
-        console.log('[NexvoraAIService] sendChatMessage → Headers:', JSON.stringify(headers));
-        console.log('[NexvoraAIService] sendChatMessage → Body:', JSON.stringify(body));
-
-        getConfig().setStatus(getConfig().STATUS.CONNECTING);
+        C.setStatus(C.STATUS.CONNECTING);
 
         try {
             var result = await makeRequest(url, headers, body, options);
             var parsed = parseResponse(result.data, model.name);
-            getConfig().setStatus(getConfig().STATUS.CONNECTED, null, result.latency);
-            getConfig().setModelInfo({
+            C.setStatus(C.STATUS.CONNECTED, null, result.latency);
+            C.setModelInfo({
                 name: model.name,
                 provider: model.provider,
                 model: result.data.model || model.id
@@ -343,7 +304,7 @@ window.NexvoraAIService = (function () {
             return parsed;
         } catch (err) {
             console.error('[NexvoraAIService] sendChatMessage error:', err.code, err.message, err.detail);
-            getConfig().setStatus(getConfig().STATUS.ERROR, err.message);
+            C.setStatus(C.STATUS.ERROR, err.message);
             throw err;
         }
     }

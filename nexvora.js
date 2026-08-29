@@ -2731,7 +2731,7 @@ window.NexvoraAI = (function () {
                         var baseUrl = (apiUrlInput && apiUrlInput.value.trim()) || freshConfig.baseUrl || '';
                         var apiKey = (apiKeyInput && apiKeyInput.value.trim()) || freshConfig.apiKey || '';
 
-                        console.log('[Nexvora] baseUrl:', baseUrl, 'apiKey:', apiKey ? '(set)' : '(empty)');
+                        console.log('[Nexvora] Test Connection — baseUrl:', baseUrl, '| apiKey:', apiKey ? '(set)' : '(empty)');
 
                         if (!baseUrl) {
                             showToast('No API URL configured. Enter your backend URL first.', 'error');
@@ -2746,33 +2746,21 @@ window.NexvoraAI = (function () {
                             NexvoraAPIConfig.update({ apiKey: apiKeyInput.value.trim() });
                         }
 
+                        // Use centralized helpers — single source of truth
+                        var url = NexvoraAPIConfig.getChatEndpoint();
+                        var headers = { 'Content-Type': 'application/json' };
+                        if (apiKey) {
+                            headers['Authorization'] = 'Bearer ' + apiKey;
+                        }
+
+                        console.log('[Nexvora] POST to:', url, '| auth:', apiKey ? 'Bearer ****' + apiKey.slice(-4) : '(none)');
+
                         // Show visual feedback IMMEDIATELY
                         testApiBtn.disabled = true;
                         testApiBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
                         if (apiStatusEl) {
                             apiStatusEl.className = 'nexvora-api-status nexvora-api-status-testing';
                             apiStatusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
-                        }
-
-                        // Build URL: append /v1/chat/completions to base URL
-                        var cleanBase = baseUrl.replace(/\/+$/, '');
-                        if (cleanBase.indexOf('/v1/chat/completions') === -1) {
-                            cleanBase = cleanBase + '/v1/chat/completions';
-                        }
-
-                        // Guard: never send a request to a root or relative URL
-                        if (!/^https?:\/\/.+/i.test(cleanBase)) {
-                            showToast('Invalid API URL: ' + cleanBase + '. Enter a full URL like https://api.tamilai.stream', 'error');
-                            testApiBtn.disabled = false;
-                            testApiBtn.innerHTML = '<i class="fa-solid fa-plug"></i> Test';
-                            return;
-                        }
-
-                        console.log('[Nexvora] POST to:', cleanBase);
-
-                        var headers = { 'Content-Type': 'application/json' };
-                        if (apiKey) {
-                            headers['Authorization'] = 'Bearer ' + apiKey;
                         }
 
                         var body = {
@@ -2793,7 +2781,7 @@ window.NexvoraAI = (function () {
 
                         var start = Date.now();
 
-                        fetch(cleanBase, {
+                        fetch(url, {
                             method: 'POST',
                             headers: headers,
                             body: JSON.stringify(body),

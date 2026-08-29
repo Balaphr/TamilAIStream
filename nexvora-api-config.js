@@ -185,6 +185,35 @@ window.NexvoraAPIConfig = (function () {
     }
 
     // ---------------------------------------------------------------------------
+    // Centralized endpoint + auth helpers (single source of truth)
+    // Every code path must use these — never build URLs or headers elsewhere.
+    // ---------------------------------------------------------------------------
+    var CHAT_PATH = '/v1/chat/completions';
+
+    function getChatEndpoint() {
+        var config = loadConfig();
+        var base = (config.baseUrl || DEFAULT_BASE_URL).replace(/\/+$/, '');
+        return base + CHAT_PATH;
+    }
+
+    function getApiKey(model) {
+        if (model && model.apiKey) return model.apiKey;
+        var config = loadConfig();
+        return config.apiKey || '';
+    }
+
+    function getAuthHeaders(model) {
+        var headers = { 'Content-Type': 'application/json' };
+        var key = getApiKey(model);
+        if (key) headers['Authorization'] = 'Bearer ' + key;
+        var config = loadConfig();
+        if (config.headers) {
+            Object.keys(config.headers).forEach(function (k) { headers[k] = config.headers[k]; });
+        }
+        return headers;
+    }
+
+    // ---------------------------------------------------------------------------
     // Connection status
     // ---------------------------------------------------------------------------
     function getStatus() {
@@ -203,69 +232,26 @@ window.NexvoraAPIConfig = (function () {
     }
 
     // ---------------------------------------------------------------------------
-    // Health check — always POST, never GET (backends reject GET on chat endpoints)
+    // Health check — always POST to /v1/chat/completions, always with auth
     // ---------------------------------------------------------------------------
     function checkHealth(model) {
         var config = loadConfig();
         var timeout = config.timeout || 30000;
 
-        // Determine the URL to test
-        var modelUrl;
-        if (model && model.endpoint) {
-            // If model endpoint contains /v1/chat/completions, use it directly
-            // Otherwise it's stale — use config.baseUrl + /v1/chat/completions
-            if (model.endpoint.indexOf('/v1/chat/completions') !== -1) {
-                modelUrl = model.endpoint.replace(/\/+$/, '');
-            } else {
-                modelUrl = null;
-            }
-        }
-        if (!modelUrl) {
-            if (config.baseUrl) {
-                modelUrl = config.baseUrl.replace(/\/+$/, '') + '/v1/chat/completions';
-            } else {
-                modelUrl = buildUrl(ENDPOINTS.health, model);
-            }
-        }
-        if (!modelUrl) {
-            setStatus(STATUS.DISCONNECTED, 'No API URL configured');
-            return Promise.resolve(getStatus());
-        }
+        var url = getChatEndpoint();
+        var headers = getAuthHeaders(model);
+        var key = getApiKey(model);
 
-        // Guard: never send a request to a root or relative URL
-        if (!/^https?:\/\/.+/i.test(modelUrl)) {
-            console.error('[NexvoraAPIConfig] checkHealth: refusing invalid URL:', modelUrl);
-            setStatus(STATUS.ERROR, 'Invalid API URL: ' + modelUrl);
-            return Promise.resolve(getStatus());
-        }
+        console.log('[NexvoraAPIConfig] checkHealth → URL:', url, '| method: POST | auth:', key ? 'Bearer ****' + key.slice(-4) : '(none)');
 
         setStatus(STATUS.CONNECTING);
-        var headers = buildHeaders(model);
 
-        // Build test body — always POST, never GET
-        var testBody;
-        var caps = (model && model.capabilities) || [];
-        var hasChatCap = caps.some(function (c) { return c === 'chat'; });
-
-        if (hasChatCap) {
-            // Chat-capable model: send standard chat test body
-            testBody = {
-                model: (model && (model.modelId || model.id)) || 'tamilai',
-                messages: [{ role: 'user', content: '\u0B85\u0BA9\u0BCD' }],
-                max_tokens: 10,
-                stream: false
-            };
-        } else if (model && model.requestBodyTemplate) {
-            // Template-based model: use template with test data
-            try {
-                testBody = JSON.parse(model.requestBodyTemplate.replace(/\{\{input\}\}/g, '\u0B85\u0BA9\u0BCD'));
-            } catch (e) {
-                testBody = { tamil: '\u0B85\u0BA9\u0BCD' };
-            }
-        } else {
-            // Default: send a minimal POST to check reachability
-            testBody = { model: 'test', messages: [{ role: 'user', content: 'hi' }], max_tokens: 1 };
-        }
+        var testBody = {
+            model: (model && (model.modelId || model.id)) || 'tamilai',
+            messages: [{ role: 'user', content: '\u0B85\u0BA9\u0BCD' }],
+            max_tokens: 10,
+            stream: false
+        };
 
         return new Promise(function (resolve) {
             var controller = null;
@@ -285,16 +271,15 @@ window.NexvoraAPIConfig = (function () {
 
             var start = Date.now();
 
-            fetch(modelUrl, fetchOptions)
+            fetch(url, fetchOptions)
                 .then(function (res) {
                     if (timeoutId) clearTimeout(timeoutId);
                     var latency = Date.now() - start;
+                    console.log('[NexvoraAPIConfig] checkHealth → HTTP', res.status);
 
                     if (!res.ok) {
-                        var errBody = '';
                         return res.text().then(function (text) {
-                            errBody = text;
-                            setStatus(STATUS.ERROR, 'HTTP ' + res.status + (errBody ? ': ' + errBody.slice(0, 200) : ''));
+                            setStatus(STATUS.ERROR, 'HTTP ' + res.status + (text ? ': ' + text.slice(0, 200) : ''));
                             resolve(getStatus());
                         });
                     }
@@ -324,6 +309,7 @@ window.NexvoraAPIConfig = (function () {
         ENDPOINTS: ENDPOINTS,
         DEFAULTS: DEFAULTS,
         STATUS: STATUS,
+        CHAT_PATH: CHAT_PATH,
 
         // Config management
         load: loadConfig,
@@ -333,6 +319,9 @@ window.NexvoraAPIConfig = (function () {
         // URL & headers
         buildUrl: buildUrl,
         buildHeaders: buildHeaders,
+        getChatEndpoint: getChatEndpoint,
+        getApiKey: getApiKey,
+        getAuthHeaders: getAuthHeaders,
 
         // Connection status
         getStatus: getStatus,
