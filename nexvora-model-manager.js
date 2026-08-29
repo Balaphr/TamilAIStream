@@ -345,21 +345,22 @@ window.NexvoraModelManager = (function () {
             return Promise.resolve({ connected: false, message: 'No model configured' });
         }
 
-        if (!m.endpoint) {
-            setConnectionStatus(m.id, 'no-endpoint', null);
-            return Promise.resolve({ connected: false, message: 'No API endpoint configured' });
+        // Ensure we have an API key — without it the backend returns 404
+        var C = window.NexvoraAPIConfig;
+        var key = C ? C.getApiKey(m) : (m.apiKey || '');
+        if (!key) {
+            setConnectionStatus(m.id, 'error', null);
+            return Promise.resolve({ connected: false, message: 'No API key configured. Enter your API key in Settings first.' });
         }
 
         setConnectionStatus(m.id, 'testing', null);
 
-        var config = window.NexvoraAPIConfig;
-        if (!config) {
-            // No config module — try direct fetch as a last resort
+        if (!C) {
             return testConnectionDirect(m);
         }
 
-        return config.checkHealth(m).then(function (result) {
-            if (result.status === config.STATUS.CONNECTED) {
+        return C.checkHealth(m).then(function (result) {
+            if (result.status === C.STATUS.CONNECTED) {
                 setConnectionStatus(m.id, 'connected', result.latency);
                 return { connected: true, latency: result.latency, message: 'Connected' };
             } else {

@@ -2708,6 +2708,13 @@ window.NexvoraAI = (function () {
             }
             if (apiKeyInput) {
                 apiKeyInput.value = apiConfig.apiKey || '';
+                // Save on every keystroke (input event fires immediately, not just on blur)
+                apiKeyInput.addEventListener('input', function () {
+                    var val = this.value.trim();
+                    if (val) {
+                        NexvoraAPIConfig.update({ apiKey: val });
+                    }
+                });
                 apiKeyInput.addEventListener('change', function () {
                     NexvoraAPIConfig.update({ apiKey: this.value.trim() });
                     showToast('API key updated (stored locally only)', 'success');
@@ -2735,6 +2742,11 @@ window.NexvoraAI = (function () {
 
                         if (!baseUrl) {
                             showToast('No API URL configured. Enter your backend URL first.', 'error');
+                            return;
+                        }
+
+                        if (!apiKey) {
+                            showToast('No API key configured. Enter your API key in the field above first.', 'error');
                             return;
                         }
 
