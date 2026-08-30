@@ -644,9 +644,9 @@ a,
     .tamilai-bottom-nav {
         display: flex;
     }
-    /* Add padding to main content for bottom nav */
+    /* Add padding to main content for bottom nav + mini player */
     .ytm-main-content {
-        padding-bottom: 76px;
+        padding-bottom: calc(56px + 64px + env(safe-area-inset-bottom, 0) + 12px);
     }
 }
 
@@ -679,11 +679,8 @@ a,
     }
 }
 
-/* When global player is visible, move bottom nav up */
-body.gp-visible .tamilai-bottom-nav,
-body.gp-active .tamilai-bottom-nav {
-    bottom: 72px;
-}
+/* Bottom nav ALWAYS stays at bottom:0 — never move it up.
+   The mini player sits ABOVE the nav via its own bottom offset. */
 
 /* ============================================
    FIX: Remove old bottom nav force-hide conflicts
@@ -1051,13 +1048,9 @@ img[loading="lazy"] {
         padding-bottom: calc(8px + env(safe-area-inset-bottom, 20px)) !important;
         bottom: 0 !important;
     }
-    body.gp-active .tamilai-bottom-nav,
-    body.gp-visible .tamilai-bottom-nav {
-        bottom: 0 !important;
-    }
-    /* Ensure content is never hidden behind nav */
+    /* Ensure content is never hidden behind nav + player */
     .ytm-main-content {
-        padding-bottom: calc(80px + env(safe-area-inset-bottom, 20px)) !important;
+        padding-bottom: calc(56px + 64px + env(safe-area-inset-bottom, 20px) + 12px) !important;
     }
 }
 

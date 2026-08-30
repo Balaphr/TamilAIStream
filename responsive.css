@@ -165,10 +165,10 @@ body {
     .station-art { height: 130px; }
     .station-art img { width: 70px; height: 70px; }
 
-    /* Bottom spacing for main content */
+    /* Bottom spacing for main content — must clear bottom nav + mini player */
     .ytm-page,
     .ytm-page-home {
-        padding-bottom: calc(60px + 52px + 8px + 16px);
+        padding-bottom: calc(56px + 64px + env(safe-area-inset-bottom, 0) + 12px);
     }
 
     /* Mobile bottom nav — equal width items */

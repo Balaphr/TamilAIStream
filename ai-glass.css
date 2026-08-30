@@ -2292,10 +2292,10 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.45);
     padding: 0 18px;
 }
-.gp-mini.gp-hidden { transform: translateY(calc(100% + 30px)); }
-.gp-mini.visible { transform: translateY(0); }
-body.gp-active { padding-bottom: 88px; }
-body.gp-active .tamilai-bottom-nav { bottom: 72px; }
+.gp-mini.gp-hidden { transform: translateX(-50%) translateY(calc(100% + 30px)); opacity: 0; pointer-events: none; }
+.gp-mini.visible { transform: translateX(-50%) translateY(0); }
+body.gp-active { padding-bottom: 0; }
+/* Bottom nav NEVER moves — mini player sits above it via its own bottom offset */
 .site-footer { display: none; }
 .gp-mini-inner { display: flex; align-items: center; gap: 12px; max-width: 1400px; margin: 0 auto; padding: 8px 0; }
 .gp-mini-artwork { width: 52px; height: 52px; border-radius: 12px; }
@@ -2767,7 +2767,7 @@ body.ai-light .ai-sec-title, body.ai-light .ai-hero-title, body.ai-light .ai-pla
 body.ai-light .ai-playlist-count, body.ai-light .ai-song-artist, body.ai-light .ai-song-dur, body.ai-light .ai-fm-meta, body.ai-light .ai-news-meta, body.ai-light .ai-hero-sub, body.ai-light .ai-hero-artist { color: rgba(22, 24, 74, 0.6); }
 
 /* App-side overrides to fully remove the old page-home look */
-.ytm-page-home { padding-bottom: 0; }
+.ytm-page-home { padding-bottom: calc(56px + 64px + env(safe-area-inset-bottom, 0) + 12px); }
 #page-home .home-categories { display: none; }
 #pwaHomeHeader { display: none; }
 .ytm-page-home .section[data-section] { display: none !important; }
