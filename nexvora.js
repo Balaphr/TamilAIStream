@@ -2721,9 +2721,9 @@ window.NexvoraAI = (function () {
                 });
             }
             if (apiTimeoutInput) {
-                apiTimeoutInput.value = apiConfig.timeout || 30000;
+                apiTimeoutInput.value = apiConfig.timeout || 120000;
                 apiTimeoutInput.addEventListener('change', function () {
-                    NexvoraAPIConfig.update({ timeout: parseInt(this.value, 10) || 30000 });
+                    NexvoraAPIConfig.update({ timeout: parseInt(this.value, 10) || 120000 });
                 });
             }
 
@@ -2782,7 +2782,7 @@ window.NexvoraAI = (function () {
                             stream: false
                         };
 
-                        var timeout = parseInt(apiTimeoutInput && apiTimeoutInput.value, 10) || freshConfig.timeout || 30000;
+                        var timeout = parseInt(apiTimeoutInput && apiTimeoutInput.value, 10) || freshConfig.timeout || 120000;
                         var controller = null;
                         var timeoutId = null;
 
@@ -2792,6 +2792,7 @@ window.NexvoraAI = (function () {
                         }
 
                         var start = Date.now();
+                        console.log('[Nexvora] Test Connection — timeout:', timeout + 'ms', '| model:', body.model);
 
                         fetch(url, {
                             method: 'POST',
@@ -2802,7 +2803,7 @@ window.NexvoraAI = (function () {
                         .then(function (res) {
                             if (timeoutId) clearTimeout(timeoutId);
                             var latency = Date.now() - start;
-                            console.log('[Nexvora] Response:', res.status, res.statusText);
+                            console.log('[Nexvora] Test Connection response:', res.status, '| latency:', latency + 'ms');
 
                             if (!res.ok) {
                                 return res.text().then(function (text) {
@@ -2829,9 +2830,10 @@ window.NexvoraAI = (function () {
                         })
                         .catch(function (err) {
                             if (timeoutId) clearTimeout(timeoutId);
-                            console.error('[Nexvora] Fetch error:', err);
+                            var latency = Date.now() - start;
+                            console.error('[Nexvora] Test Connection fetch error:', err.name, '|', err.message, '| elapsed:', latency + 'ms');
                             var errMsg = err.name === 'AbortError'
-                                ? 'Request timed out after ' + timeout + 'ms'
+                                ? 'AI request timed out after ' + (timeout / 1000) + ' seconds'
                                 : (err.message || 'Connection failed');
                             // CORS errors show as TypeError with generic message
                             if (err instanceof TypeError && !err.name.includes('Abort')) {

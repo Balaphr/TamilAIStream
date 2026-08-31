@@ -23,9 +23,9 @@ window.NexvoraAIService = (function () {
     // Lazy getter — always reads fresh from window so load order doesn't matter
     var _fallbackConfig = {
         ENDPOINTS: { chat: '/v1/chat/completions', translate: '/translate', health: '/health', models: '/v1/models' },
-        DEFAULTS: { temperature: 0.7, maxTokens: 4096, timeout: 30000, retries: 2, retryDelay: 1000 },
+        DEFAULTS: { temperature: 0.7, maxTokens: 4096, timeout: 120000, retries: 2, retryDelay: 1000 },
         STATUS: { DISCONNECTED: 'disconnected', CONNECTING: 'connecting', CONNECTED: 'connected', ERROR: 'error', TIMEOUT: 'timeout' },
-        load: function () { return { baseUrl: '', apiKey: '', timeout: 30000, stream: false, fallbackUrl: '', headers: {} }; },
+        load: function () { return { baseUrl: '', apiKey: '', timeout: 120000, stream: false, fallbackUrl: '', headers: {} }; },
         save: function () {},
         update: function () { return this.load(); },
         buildUrl: function (p) { return p; },
@@ -71,7 +71,7 @@ window.NexvoraAIService = (function () {
         NO_API_CONFIG:      { code: 'NO_API_CONFIG',      message: 'API not configured. Set the API URL in Settings or Model Manager.' },
         MODEL_DISABLED:     { code: 'MODEL_DISABLED',     message: 'Active model is disabled. Enable it in Model Manager.' },
         CAPABILITY_MISSING: { code: 'CAPABILITY_MISSING', message: 'Active model does not support this capability.' },
-        TIMEOUT:            { code: 'TIMEOUT',            message: 'Request timed out. Check your network and API endpoint.' },
+        TIMEOUT:            { code: 'TIMEOUT',            message: 'AI request timed out after 120 seconds. Check your network and API endpoint.' },
         NETWORK_ERROR:      { code: 'NETWORK_ERROR',      message: 'Network error. Check your internet connection.' },
         API_ERROR:          { code: 'API_ERROR',          message: 'API returned an error.' },
         NOT_CONNECTED:      { code: 'NOT_CONNECTED',      message: 'AI backend not connected. Configure your API endpoint in Settings.' }
@@ -133,11 +133,15 @@ window.NexvoraAIService = (function () {
         var timeout = options.timeout || config.timeout || getConfig().DEFAULTS.timeout;
         var retries = options.retries !== undefined ? options.retries : getConfig().DEFAULTS.retries;
         var retryDelay = options.retryDelay || getConfig().DEFAULTS.retryDelay;
+        var modelName = body && body.model ? body.model : 'unknown';
 
         var lastError = null;
 
+        console.log('[NexvoraAIService] makeRequest → URL:', url, '| timeout:', timeout + 'ms', '| model:', modelName, '| retries:', retries);
+
         for (var attempt = 0; attempt <= retries; attempt++) {
             if (attempt > 0) {
+                console.log('[NexvoraAIService] retry attempt', attempt, 'of', retries);
                 await new Promise(function (r) { setTimeout(r, retryDelay); });
             }
 
@@ -162,10 +166,14 @@ window.NexvoraAIService = (function () {
                 if (timeoutId) clearTimeout(timeoutId);
                 var latency = Date.now() - start;
 
+                console.log('[NexvoraAIService] fetch completed in', latency + 'ms', '| HTTP', res.status, '| attempt:', attempt + 1);
+
                 if (!res.ok) {
                     var errorText = '';
                     try { errorText = await res.text(); } catch (e) { /* ignore */ }
                     var errDetail = { status: res.status, body: errorText, latency: latency };
+
+                    console.error('[NexvoraAIService] HTTP error:', res.status, '| body:', errorText.slice(0, 200));
 
                     // Retry on 5xx errors
                     if (res.status >= 500 && attempt < retries) {
@@ -177,6 +185,7 @@ window.NexvoraAIService = (function () {
                 }
 
                 var data = await res.json();
+                console.log('[NexvoraAIService] response parsed successfully');
                 return { data: data, latency: latency };
 
             } catch (err) {
@@ -188,9 +197,11 @@ window.NexvoraAIService = (function () {
                 }
 
                 if (err.name === 'AbortError') {
-                    throw createError(ServiceError.TIMEOUT, { timeout: timeout });
+                    console.error('[NexvoraAIService] request aborted after', timeout + 'ms timeout');
+                    throw createError(ServiceError.TIMEOUT, { timeout: timeout, message: 'AI request timed out after ' + (timeout / 1000) + ' seconds' });
                 }
 
+                console.error('[NexvoraAIService] fetch error:', err.message, '| attempt:', attempt + 1);
                 lastError = err;
 
                 // Network/fetch error — retry if attempts remain

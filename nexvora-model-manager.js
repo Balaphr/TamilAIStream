@@ -377,7 +377,7 @@ window.NexvoraModelManager = (function () {
     function testConnectionDirect(m) {
         var controller = null;
         var timeoutId = null;
-        var timeout = 30000;
+        var timeout = 120000;
 
         return new Promise(function (resolve) {
             if (typeof AbortController !== 'undefined') {

@@ -28,7 +28,7 @@ window.NexvoraAPIConfig = (function () {
     var env = {
         AI_API_URL:      '',
         AI_API_KEY:      '',
-        AI_API_TIMEOUT:  '30000',
+        AI_API_TIMEOUT:  '120000',
         AI_STREAM:       'false',
         AI_FALLBACK_URL: ''
     };
@@ -61,7 +61,7 @@ window.NexvoraAPIConfig = (function () {
         topP:           1.0,
         frequencyPenalty: 0,
         presencePenalty:  0,
-        timeout:        parseInt(env.AI_API_TIMEOUT, 10) || 30000,
+        timeout:        parseInt(env.AI_API_TIMEOUT, 10) || 120000,
         retries:        2,
         retryDelay:     1000
     };
@@ -236,7 +236,7 @@ window.NexvoraAPIConfig = (function () {
     // ---------------------------------------------------------------------------
     function checkHealth(model) {
         var config = loadConfig();
-        var timeout = config.timeout || 30000;
+        var timeout = config.timeout || DEFAULTS.timeout;
 
         var url = getChatEndpoint();
         var headers = getAuthHeaders(model);
@@ -343,9 +343,9 @@ window.NexvoraAPIConfig = (function () {
     // Provide a fallback so downstream code doesn't crash
     window.NexvoraAPIConfig = window.NexvoraAPIConfig || {
         ENDPOINTS: { chat: '/v1/chat/completions', translate: '/translate', health: '/health', models: '/v1/models' },
-        DEFAULTS: { temperature: 0.7, maxTokens: 4096, timeout: 30000, retries: 2, retryDelay: 1000 },
+        DEFAULTS: { temperature: 0.7, maxTokens: 4096, timeout: 120000, retries: 2, retryDelay: 1000 },
         STATUS: { DISCONNECTED: 'disconnected', CONNECTING: 'connecting', CONNECTED: 'connected', ERROR: 'error', TIMEOUT: 'timeout' },
-        load: function () { return { baseUrl: '', apiKey: '', timeout: 30000, stream: false, fallbackUrl: '', headers: {} }; },
+        load: function () { return { baseUrl: '', apiKey: '', timeout: 120000, stream: false, fallbackUrl: '', headers: {} }; },
         save: function () {},
         update: function (u) { return this.load(); },
         buildUrl: function (p) { return p; },
