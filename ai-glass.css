@@ -778,8 +778,9 @@
     scroll-behavior: smooth;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
     padding: 8px 20px 16px;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
 }
 .ai-evergreen-grid::-webkit-scrollbar { display: none; }
 
@@ -1004,9 +1005,10 @@
     padding: 8px 20px 20px;
     overflow-x: auto;
     overflow-y: hidden;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
     cursor: grab;
 }
 .new-album-row::-webkit-scrollbar { display: none; }
@@ -1203,8 +1205,9 @@
     overflow-y: hidden;
     scroll-behavior: auto;
     scrollbar-width: none;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
 }
 .recently-added-track::-webkit-scrollbar { display: none; }
 .ra-song-card {
@@ -1294,7 +1297,6 @@
 .ra-song-card:hover .ra-song-play { opacity: 1; transform: translateY(0); }
 @media (max-width: 480px) {
     .recently-added-track { padding: 6px 14px 14px; gap: 8px; }
-    .ra-song-card { width: 145px; padding: 8px; }
 }
 
 /* Recently Added: CSS marquee auto-scroll (mobile) */
@@ -1316,7 +1318,7 @@
 @media (max-width: 480px) {
     .ai-playlist-card { flex: 0 0 145px; width: 145px; }
     .ai-song-card { flex: 0 0 145px; width: 145px; }
-    .ra-song-card { width: 145px; }
+    .ra-song-card { width: 145px; padding: 8px; }
     .ai-playlist-name { font-size: 0.78rem; }
     .ai-playlist-count { font-size: 0.68rem; }
     .ai-song-title { font-size: 0.78rem; }
@@ -1552,9 +1554,10 @@
     gap: 14px;
     padding: 8px 20px 16px;
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
 }
 .ai-card-row::-webkit-scrollbar { display: none; }
 
@@ -2055,9 +2058,10 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
     gap: 14px;
     padding: 8px 20px 16px;
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
 }
 .ai-recent-row::-webkit-scrollbar { display: none; }
 .ai-song-card {
@@ -2298,7 +2302,6 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
 }
 .gp-mini.gp-hidden { transform: translateX(-50%) translateY(calc(100% + 30px)); opacity: 0; pointer-events: none; }
 .gp-mini.visible { transform: translateX(-50%) translateY(0); }
-body.gp-active { padding-bottom: 0; }
 /* Bottom nav NEVER moves — mini player sits above it via its own bottom offset */
 .site-footer { display: none; }
 .gp-mini-inner { display: flex; align-items: center; gap: 12px; max-width: 1400px; margin: 0 auto; padding: 8px 0; }
@@ -2711,6 +2714,7 @@ body.gp-active { padding-bottom: 0; }
 }
 @media (max-width: 767px) {
     .ai-decade-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 14px 16px; }
+    .ai-card-row { gap: 10px; }
 }
 @media (max-width: 420px) {
     .ai-decade-cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }

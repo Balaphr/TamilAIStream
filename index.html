@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Critical inline CSS: card dimensions to prevent layout shift from deferred ai-glass.css -->
+    <style>
+        .ai-song-card, .ai-playlist-card, .new-album-card, .ra-song-card, .eg-card { flex: 0 0 180px; width: 180px; }
+        .ai-song-art, .ai-playlist-art, .eg-card-art, .new-album-art-wrap, .ra-song-art { aspect-ratio: 1; overflow: hidden; }
+        .ai-recent-row, .ai-card-row, .ai-evergreen-grid, .new-album-row, .recently-added-track { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+        @media (max-width: 768px) { .ai-song-card, .ai-playlist-card, .new-album-card, .ra-song-card, .eg-card { flex: 0 0 160px; width: 160px; } }
+        @media (max-width: 480px) { .ai-song-card, .ai-playlist-card, .new-album-card, .ra-song-card, .eg-card { flex: 0 0 145px; width: 145px; } }
+    </style>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NTDWNFKXRE"></script>
     <script>
@@ -1109,7 +1117,7 @@
         <span class="tamilai-nav-label">Radio</span>
     </button>
     <button class="tamilai-nav-item" data-page="search" aria-label="Search">
-        <div class="tamilai-nav-icon-wrap"><i class="fas fa-magnifying-glass"></i></div>
+        <div class="tamilai-nav-icon"><i class="fas fa-magnifying-glass"></i></div>
         <span class="tamilai-nav-label">Search</span>
     </button>
     <button class="tamilai-nav-item" data-page="music" aria-label="Library">

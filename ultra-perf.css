@@ -1208,7 +1208,6 @@ body {
 
 /* Prevent jank during scroll */
 .song-card,
-.ai-song-card,
 .ai-rec-song,
 .station-card,
 .slide-card,
@@ -1216,6 +1215,10 @@ body {
     contain: layout style;
     content-visibility: auto;
     contain-intrinsic-size: 80px 120px;
+}
+.ai-song-card {
+    contain: layout style;
+    contain-intrinsic-size: 180px 260px;
 }
 
 /* Smooth image loading without blink */

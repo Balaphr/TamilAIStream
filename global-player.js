@@ -519,6 +519,9 @@ const GlobalPlayer = (() => {
             }
         }, 3000);
     }
+    function stopPlayStateSync() {
+        if (_syncInterval) { clearInterval(_syncInterval); _syncInterval = null; }
+    }
 
     function hookAudioSources() {
         hookAudioPlayer();
@@ -1286,16 +1289,17 @@ const GlobalPlayer = (() => {
         const ctx = canvas.getContext('2d');
         canvas.width = 80;
         canvas.height = 32;
-        function draw() {
+        let _miniWaveLast = 0;
+        const _miniWaveInterval = 50;
+        function draw(ts) {
             const actuallyPlaying = state.isPlaying && window.audioPlayer && !window.audioPlayer.paused;
             if (document.hidden || !actuallyPlaying) {
                 if (_lyricsRAF) { cancelAnimationFrame(_lyricsRAF); _lyricsRAF = null; }
                 return;
             }
+            if (ts - _miniWaveLast < _miniWaveInterval) { _lyricsRAF = requestAnimationFrame(draw); return; }
+            _miniWaveLast = ts;
             ctx.clearRect(0, 0, 80, 32);
-            // Analyser data is unavailable (audio plays on the direct hardware
-            // path by design). Fall back to a cheap pseudo-waveform so the UI
-            // still feels alive while playing — same approach as EQ bars.
             const freqData = (typeof window.analyserNode !== 'undefined' && window.analyserNode) ? (() => { try { const d = new Uint8Array(window.analyserNode.frequencyBinCount); window.analyserNode.getByteFrequencyData(d); return d; } catch(e) { return null; } })() : null;
             const bars = 16;
             const barW = 80 / bars;
@@ -1309,7 +1313,7 @@ const GlobalPlayer = (() => {
             }
             _lyricsRAF = requestAnimationFrame(draw);
         }
-        draw();
+        draw(0);
     }
 
     function cycleTheme() {

@@ -262,9 +262,10 @@
     width: 2.5px;
     background: linear-gradient(180deg, #34d399, #3b82f6);
     border-radius: 2px;
-    height: 3px;
+    height: 14px;
     animation: mapEqBar 1s ease-in-out infinite;
     animation-play-state: paused;
+    transform-origin: bottom;
 }
 
 .map-eq.playing span {
@@ -277,8 +278,8 @@
 .map-eq span:nth-child(4) { animation-delay: 0.1s; }
 
 @keyframes mapEqBar {
-    0%, 100% { height: 3px; }
-    50% { height: 14px; }
+    0%, 100% { transform: scaleY(0.21); }
+    50% { transform: scaleY(1); }
 }
 
 .map-info {
