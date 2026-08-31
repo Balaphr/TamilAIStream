@@ -618,11 +618,98 @@ const PlayerEngine = (() => {
         if (_saveInterval) return;
         _saveInterval = setInterval(() => {
             if (state.isPlaying) saveStateImmediate();
-        }, 60000);
+        }, 120000);
     }
 
     function stopSaveInterval() {
         if (_saveInterval) { clearInterval(_saveInterval); _saveInterval = null; }
+    }
+
+    function restoreAudioFromState() {
+        try {
+            if (!audio) initAudio();
+            const saved = JSON.parse(localStorage.getItem('player_engine_state') || '{}');
+            if (!saved || !saved.currentTrack) return false;
+            const track = saved.currentTrack;
+            const url = track.streamUrl || track.audioUrl || track.url;
+            if (!url) return false;
+            // Set audio source without playing
+            audio.src = url;
+            audio.volume = saved.volume !== undefined ? saved.volume : 0.8;
+            audio.muted = saved.muted || false;
+            if (saved.speed) audio.playbackRate = saved.speed;
+            // Restore position after metadata loads
+            const position = saved.playbackPosition || 0;
+            const onMeta = () => {
+                audio.removeEventListener('loadedmetadata', onMeta);
+                try { if (position > 0 && isFinite(position)) audio.currentTime = position; } catch(e) {}
+            };
+            audio.addEventListener('loadedmetadata', onMeta);
+            // Update state
+            state.currentTrack = track;
+            state.queue = saved.queue || [];
+            state.queueIndex = saved.queueIndex !== undefined ? saved.queueIndex : -1;
+            state.shuffle = saved.shuffle || false;
+            state.repeat = saved.repeat || 'off';
+            state.volume = audio.volume;
+            state.playbackPosition = position;
+            state.duration = saved.duration || 0;
+            state.isPlaying = false;
+            return true;
+        } catch(e) { return false; }
+    }
+
+    function showResumeDialog() {
+        try {
+            const saved = JSON.parse(localStorage.getItem('player_engine_state') || '{}');
+            if (!saved || !saved.currentTrack) return false;
+            const track = saved.currentTrack;
+            const url = track.streamUrl || track.audioUrl || track.url;
+            if (!url) return false;
+            // Don't show if no meaningful position was saved
+            if (!saved.playbackPosition || saved.playbackPosition < 2) return false;
+            // Don't show if the saved state is more than 24 hours old
+            if (saved.timestamp && (Date.now() - saved.timestamp > 86400000)) return false;
+
+            const title = track.title || track.name || 'Unknown';
+            const artist = track.artist || '';
+            const position = saved.playbackPosition || 0;
+            const minutes = Math.floor(position / 60);
+            const seconds = Math.floor(position % 60);
+            const posStr = minutes + ':' + String(seconds).padStart(2, '0');
+
+            // Create resume dialog
+            const overlay = document.createElement('div');
+            overlay.id = 'resumePlaybackOverlay';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);';
+            overlay.innerHTML = `
+                <div style="background:linear-gradient(135deg,#0d1117,#161b22);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px 24px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);font-family:Inter,system-ui,sans-serif;">
+                    <div style="width:64px;height:64px;border-radius:16px;margin:0 auto 16px;background:linear-gradient(135deg,#34d399,#10b981);display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-headphones" style="font-size:28px;color:#fff;"></i>
+                    </div>
+                    <h3 style="color:#fff;font-size:17px;font-weight:700;margin:0 0 6px;">Continue Listening?</h3>
+                    <p style="color:rgba(255,255,255,0.5);font-size:13px;margin:0 0 4px;">You stopped here</p>
+                    <p style="color:#fff;font-size:15px;font-weight:600;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${title}</p>
+                    <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:0 0 4px;">${artist} at ${posStr}</p>
+                    <div style="display:flex;gap:10px;margin-top:20px;">
+                        <button id="resumePlaybackStartOver" style="flex:1;padding:12px 0;border:1px solid rgba(255,255,255,0.15);border-radius:12px;background:transparent;color:rgba(255,255,255,0.7);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">Start Over</button>
+                        <button id="resumePlaybackResume" style="flex:1;padding:12px 0;border:none;border-radius:12px;background:linear-gradient(135deg,#34d399,#10b981);color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;">Resume</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            return new Promise((resolve) => {
+                document.getElementById('resumePlaybackResume').addEventListener('click', () => {
+                    overlay.remove();
+                    resolve(true);
+                });
+                document.getElementById('resumePlaybackStartOver').addEventListener('click', () => {
+                    overlay.remove();
+                    resolve(false);
+                });
+            });
+        } catch(e) { return false; }
     }
 
     function init() {
@@ -635,6 +722,13 @@ const PlayerEngine = (() => {
                 saveStateImmediate();
             }
         });
+
+        // Restore audio from saved state (without playing)
+        const hasSavedTrack = restoreAudioFromState();
+        if (hasSavedTrack) {
+            // Emit initial state so UI can show the saved track info
+            emit('trackChange', state);
+        }
     }
 
     return {
@@ -654,6 +748,7 @@ const PlayerEngine = (() => {
         getAudioElement, getAudioContext, getAnalyser, getState,
         toggleAIAutomation, autoRecommendNext, cycleColorTheme, getColorTheme,
         saveState, saveStateImmediate,
+        restoreAudioFromState, showResumeDialog,
         EQ_BANDS,
         get audio() { return audio; },
         get isPlaying() { return state.isPlaying; },

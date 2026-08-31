@@ -1433,6 +1433,25 @@
             GlobalPlayer.init();
             AIMusicAssistant.init();
             if (typeof PremiumNowPlaying !== 'undefined') PremiumNowPlaying.init();
+            // Show resume dialog if there was a previous playback session
+            try {
+                const wasPlaying = JSON.parse(localStorage.getItem('player_engine_state') || '{}');
+                if (wasPlaying && wasPlaying.currentTrack && wasPlaying.playbackPosition > 2 && wasPlaying.timestamp && (Date.now() - wasPlaying.timestamp < 86400000)) {
+                    setTimeout(async () => {
+                        const resume = await PlayerEngine.showResumeDialog();
+                        if (resume) {
+                            // Resume playback from saved position — play() will use the restored audio src
+                            try { await PlayerEngine.play(); } catch(e) { /* autoplay blocked */ }
+                        } else {
+                            // Start over — clear the saved position but keep the track info
+                            const st = JSON.parse(localStorage.getItem('player_engine_state') || '{}');
+                            st.playbackPosition = 0;
+                            st.isPlaying = false;
+                            localStorage.setItem('player_engine_state', JSON.stringify(st));
+                        }
+                    }, 800);
+                }
+            } catch(e) {}
         });
     </script>
     <script defer src="premium-landing.js"></script>

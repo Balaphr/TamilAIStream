@@ -1176,7 +1176,7 @@ a:hover {
         bottom: calc(56px + env(safe-area-inset-bottom, 0));
         width: calc(100% - 16px);
         border-radius: 16px;
-        z-index: 1900;
+        z-index: 9998;
     }
     .gp-mini-inner { padding: 8px 12px; gap: 8px; }
     .gp-mini-artwork { width: 42px; height: 42px; border-radius: 10px; }
@@ -1190,7 +1190,7 @@ a:hover {
     .gp-mini-progress:hover { height: 6px; top: -5px; }
     .gp-mini-time { display: none; }
 
-    .gp-expanded { z-index: 2200; }
+    .gp-expanded { z-index: 99999; }
     .gp-exp-container {
         padding: 10px 16px;
         padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
@@ -1236,6 +1236,15 @@ body.gp-active {
     padding-bottom: 100px;
 }
 @media (max-width: 640px) {
+    body.gp-active {
+        padding-bottom: calc(56px + 64px + env(safe-area-inset-bottom, 0) + 12px);
+    }
+}
+/* Always ensure bottom nav space even when mini player is hidden */
+@media (max-width: 1024px) {
+    body {
+        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    }
     body.gp-active {
         padding-bottom: calc(56px + 64px + env(safe-area-inset-bottom, 0) + 12px);
     }

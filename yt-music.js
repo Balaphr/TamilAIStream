@@ -460,13 +460,23 @@ const YTMusic = {
             bar.className = 'ytm-eq-bar';
             bars.appendChild(bar);
         }
-        const draw = () => {
+        let _lastFrameTime = 0;
+        const FPS_LIMIT = 24;
+        const frameInterval = 1000 / FPS_LIMIT;
+        const draw = (timestamp) => {
             const actuallyPlaying = this.isPlaying && window.audioPlayer && !window.audioPlayer.paused;
             if (document.hidden || !actuallyPlaying) {
                 if (this.visualizerFrame) cancelAnimationFrame(this.visualizerFrame);
                 this.visualizerFrame = null;
                 return;
             }
+            // Throttle to target FPS to reduce CPU usage
+            const elapsed = timestamp - _lastFrameTime;
+            if (elapsed < frameInterval) {
+                this.visualizerFrame = requestAnimationFrame(draw);
+                return;
+            }
+            _lastFrameTime = timestamp - (elapsed % frameInterval);
             const width = canvas.clientWidth;
             const height = canvas.clientHeight;
             ctx.clearRect(0, 0, width, height);
@@ -505,7 +515,6 @@ const YTMusic = {
                 }
                 ctx.globalAlpha = 1;
             } else {
-                // Idle state — draw a static flat line (no animation, saves CPU)
                 ctx.strokeStyle = gradient;
                 ctx.lineWidth = 2;
                 ctx.globalAlpha = 0.25;
@@ -533,7 +542,7 @@ const YTMusic = {
 
             this.visualizerFrame = requestAnimationFrame(draw);
         };
-        draw();
+        draw(0);
     },
 
     stopVisualizer() {

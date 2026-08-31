@@ -3430,11 +3430,11 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
 /* --- Mobile Bottom Navigation: Apple Music-style --- */
 .tamilai-bottom-nav {
     display: none;
-    position: fixed;
-    bottom: 0;
+    position: fixed !important;
+    bottom: 0 !important;
     left: 0;
     right: 0;
-    z-index: 1800;
+    z-index: 9999 !important;
     background: rgba(8, 12, 22, 0.92);
     backdrop-filter: blur(16px) saturate(200%);
     -webkit-backdrop-filter: blur(16px) saturate(200%);

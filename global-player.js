@@ -517,7 +517,7 @@ const GlobalPlayer = (() => {
                 state.isPlaying = realPlaying;
                 updatePlayUI(realPlaying);
             }
-        }, 1000);
+        }, 3000);
     }
 
     function hookAudioSources() {
@@ -1175,13 +1175,22 @@ const GlobalPlayer = (() => {
 
         const mainCtx = setupCanvas(canvas);
         const waveCtx = setupCanvas(waveCanvas);
+        let _lastVFrame = 0;
+        const VFPS = 20;
+        const vInterval = 1000 / VFPS;
 
-        function draw() {
+        function draw(ts) {
             const actuallyPlaying = state.isPlaying && window.audioPlayer && !window.audioPlayer.paused;
             if (document.hidden || !isExpanded || !actuallyPlaying) {
                 if (waveformRAF) { cancelAnimationFrame(waveformRAF); waveformRAF = null; }
                 return;
             }
+            const elapsed = ts - _lastVFrame;
+            if (elapsed < vInterval) {
+                waveformRAF = requestAnimationFrame(draw);
+                return;
+            }
+            _lastVFrame = ts - (elapsed % vInterval);
             const freqData = (typeof window.analyserNode !== 'undefined' && window.analyserNode) ? (() => { try { const d = new Uint8Array(window.analyserNode.frequencyBinCount); window.analyserNode.getByteFrequencyData(d); return d; } catch(e) { return null; } })() : null;
 
             if (canvas && mainCtx) {
@@ -1226,7 +1235,7 @@ const GlobalPlayer = (() => {
 
             waveformRAF = requestAnimationFrame(draw);
         }
-        draw();
+        waveformRAF = requestAnimationFrame(draw);
     }
 
     function stopVisualizer() { if (waveformRAF) cancelAnimationFrame(waveformRAF); }

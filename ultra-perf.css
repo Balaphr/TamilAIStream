@@ -643,6 +643,11 @@ a,
 @media (max-width: 1024px) {
     .tamilai-bottom-nav {
         display: flex;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0;
+        right: 0;
+        z-index: 9999 !important;
     }
     /* Add padding to main content for bottom nav + mini player */
     .ytm-main-content {
@@ -1031,6 +1036,13 @@ a,
     .ai-yearly-section {
         content-visibility: auto;
         contain-intrinsic-size: 0 400px;
+    }
+    /* Reduce paint area for player elements */
+    .gp-mini {
+        contain: layout style;
+    }
+    .tamilai-bottom-nav {
+        contain: layout style;
     }
 }
 
