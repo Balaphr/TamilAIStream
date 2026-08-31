@@ -2775,8 +2775,11 @@ window.NexvoraAI = (function () {
                             apiStatusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...';
                         }
 
+                        var activeModel = window.NexvoraModelManager ? window.NexvoraModelManager.getActiveModel() : null;
+                        var modelId = (activeModel && (activeModel.modelId || activeModel.id)) || 'qwen3-4b';
+
                         var body = {
-                            model: 'tamilai',
+                            model: modelId,
                             messages: [{ role: 'user', content: 'test' }],
                             max_tokens: 5,
                             stream: false
@@ -2792,7 +2795,7 @@ window.NexvoraAI = (function () {
                         }
 
                         var start = Date.now();
-                        console.log('[Nexvora] Test Connection — timeout:', timeout + 'ms', '| model:', body.model);
+                        console.log('[Nexvora] Test Connection — timeout:', timeout + 'ms', '| model:', modelId);
 
                         fetch(url, {
                             method: 'POST',

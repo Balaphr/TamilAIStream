@@ -247,7 +247,7 @@ window.NexvoraAPIConfig = (function () {
         setStatus(STATUS.CONNECTING);
 
         var testBody = {
-            model: (model && (model.modelId || model.id)) || 'tamilai',
+            model: (model && (model.modelId || model.id)) || 'qwen3-4b',
             messages: [{ role: 'user', content: '\u0B85\u0BA9\u0BCD' }],
             max_tokens: 10,
             stream: false

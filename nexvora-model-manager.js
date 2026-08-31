@@ -18,20 +18,33 @@ window.NexvoraModelManager = (function () {
     var STORAGE_KEY = 'nexvora_models';
     var ACTIVE_MODEL_KEY = 'nexvora_active_model';
 
-    // --- Default models (TamilAI Translation pre-configured) ---
+    // --- Default models (TamilAI pre-configured) ---
     var DEFAULT_MODELS = [
         {
-            id: 'tamil-translation',
+            id: 'tamil-chat',
             name: 'TamilAI Chat',
-            modelId: 'tamilai',
+            modelId: 'qwen3-4b',
             endpoint: 'https://api.tamilai.stream/v1/chat/completions',
             provider: 'custom',
             apiKey: '',
             languages: ['ta', 'en'],
-            capabilities: ['chat', 'translation'],
+            capabilities: ['chat'],
             maxTokens: 4096,
             enabled: true,
             isDefault: true
+        },
+        {
+            id: 'tamil-translation',
+            name: 'TamilAI Translator',
+            modelId: 'tamilai-translator',
+            endpoint: 'https://api.tamilai.stream/v1/chat/completions',
+            provider: 'custom',
+            apiKey: '',
+            languages: ['ta', 'en'],
+            capabilities: ['translate', 'translation'],
+            maxTokens: 4096,
+            enabled: true,
+            isDefault: false
         }
     ];
 
@@ -74,6 +87,11 @@ window.NexvoraModelManager = (function () {
                         changed = true;
                     }
                 });
+                // Force-correct modelId for default models — display labels must never leak into API requests
+                if (def.modelId && m.modelId !== def.modelId) {
+                    m.modelId = def.modelId;
+                    changed = true;
+                }
             }
             // Force ALL chat-capable models to use the correct endpoint
             // This prevents stale /translate or wrong endpoints from causing 404s
@@ -317,7 +335,7 @@ window.NexvoraModelManager = (function () {
         lsSet(STORAGE_KEY, DEFAULT_MODELS.map(function (m) {
             return Object.assign({}, m, { createdAt: Date.now() });
         }));
-        lsSet(ACTIVE_MODEL_KEY, 'tamil-translation');
+        lsSet(ACTIVE_MODEL_KEY, 'tamil-chat');
     }
 
     // --- Connection status tracking ---
@@ -392,12 +410,15 @@ window.NexvoraModelManager = (function () {
 
             console.log('[NexvoraModelManager] testConnectionDirect → URL:', url, '| auth:', key ? 'Bearer ****' + key.slice(-4) : '(none)');
 
+            var modelId = m.modelId || m.id;
             var testBody = {
-                model: m.modelId || m.id,
+                model: modelId,
                 messages: [{ role: 'user', content: '\u0B85\u0BA9\u0BCD' }],
                 max_tokens: 10,
                 stream: false
             };
+
+            console.log('[NexvoraModelManager] testConnectionDirect → modelId:', modelId);
 
             var fetchOptions = { method: 'POST', headers: headers, body: JSON.stringify(testBody) };
             if (controller) fetchOptions.signal = controller.signal;
