@@ -510,6 +510,7 @@ const GlobalPlayer = (() => {
     function startPlayStateSync() {
         if (_syncInterval) return;
         _syncInterval = setInterval(() => {
+            if (document.hidden) return;
             const ap = window.audioPlayer;
             if (!ap) return;
             const realPlaying = !ap.paused;

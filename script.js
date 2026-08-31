@@ -5074,7 +5074,7 @@ function renderRecentlyAdded(songs) {
     function _urResetAuto(track, dotsWrap) {
         clearInterval(_urTimer);
         if (_urPauseAuto) return;
-        _urTimer = setInterval(() => _urNext(track, dotsWrap), _urAutoMs);
+        _urTimer = setInterval(() => { if (!document.hidden) _urNext(track, dotsWrap); }, _urAutoMs);
     }
 
     function _urBindControls(viewport, track, dotsWrap) {

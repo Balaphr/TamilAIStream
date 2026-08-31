@@ -700,7 +700,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 40px 24px;
+    padding: 24px 24px;
     max-width: 600px;
     margin: 0 auto;
     width: 100%;
@@ -708,12 +708,12 @@
 
 .ytm-fs-artwork {
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
     aspect-ratio: 1;
     border-radius: var(--ytm-radius-lg);
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    margin-bottom: 40px;
+    margin-bottom: 32px;
     position: relative;
 }
 
@@ -2780,7 +2780,7 @@
     }
     
     .ytm-fs-artwork {
-        max-width: 300px;
+        max-width: 400px;
     }
     
     .ytm-fs-song-title {
@@ -2834,7 +2834,7 @@
     }
     
     .ytm-fs-artwork {
-        max-width: 250px;
+        max-width: 350px;
     }
     
     .ytm-fs-song-title {
@@ -3440,6 +3440,10 @@
    Home Page Active State
    ============================================ */
 body.home-active .ytm-ticker {
+    display: none !important;
+}
+
+body.radio-active .ytm-ticker {
     display: none !important;
 }
 

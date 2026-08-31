@@ -36,6 +36,12 @@ window.PremiumNowPlaying = (() => {
     }
 
     function drawVisualizer(ctx, canvas) {
+        /* Pause when tab is hidden — save CPU/battery */
+        if (document.hidden) {
+            _vizRAF = requestAnimationFrame(() => drawVisualizer(ctx, canvas));
+            return;
+        }
+
         const w = canvas.width, h = canvas.height;
         const cx = w / 2, cy = h / 2;
         const ap = getAudio();

@@ -596,6 +596,7 @@ const YTMusic = {
         }
         this.currentPage = page;
         document.body.classList.toggle('home-active', page === 'home');
+        document.body.classList.toggle('radio-active', page === 'radio');
         // Premium nav active state (top nav clusters + mobile menu)
         document.querySelectorAll('.premium-nav-item[data-page]').forEach(item => {
             item.classList.toggle('active', item.dataset.page === page);
