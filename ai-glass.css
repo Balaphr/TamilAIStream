@@ -1014,31 +1014,31 @@
 
 .new-album-card {
     position: relative;
-    flex: 0 0 340px;
-    width: 340px;
-    border-radius: 20px;
+    flex: 0 0 180px;
+    width: 180px;
+    border-radius: 14px;
     background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(24px) saturate(1.5);
-    -webkit-backdrop-filter: blur(24px) saturate(1.5);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     overflow: hidden;
     cursor: pointer;
     scroll-snap-align: start;
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s, box-shadow 0.3s;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(168, 85, 247, 0) inset;
+    transition: transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94), border-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
 }
 .new-album-card:hover {
-    transform: translateY(-6px) scale(1.02);
-    border-color: rgba(168, 85, 247, 0.35);
-    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45), 0 0 30px rgba(168, 85, 247, 0.08);
+    transform: translateY(-6px) scale(1.03);
+    border-color: rgba(168,85,247,0.3);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45), 0 0 30px -10px rgba(168,85,247,0.2);
 }
-.new-album-card:active { transform: scale(0.98); transition-duration: 0.1s; }
+.new-album-card:active { transform: scale(0.95); transition-duration: 0.08s; }
 
-/* Album Art Container */
+/* Album Art Container — square ratio matching Evergreen */
 .new-album-art-wrap {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 1;
     overflow: hidden;
     background: linear-gradient(135deg, #0d1a2e, #1a0a2e);
 }
@@ -1056,11 +1056,11 @@
 /* Inner small thumbnail with play button */
 .new-album-thumb {
     position: absolute;
-    bottom: 16px;
-    left: 16px;
-    width: 90px;
-    height: 90px;
-    border-radius: 14px;
+    bottom: 12px;
+    left: 12px;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
     overflow: hidden;
     background: linear-gradient(135deg, #1a0a2e, #0d1f2d);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
@@ -1103,16 +1103,16 @@
 /* Spatial Audio / Dolby Atmos badges */
 .new-album-badges {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 8px;
+    right: 8px;
     display: flex;
-    gap: 6px;
+    gap: 4px;
     z-index: 2;
 }
 .new-album-badge {
-    padding: 4px 10px;
-    border-radius: 8px;
-    font-size: 0.58rem;
+    padding: 3px 7px;
+    border-radius: 6px;
+    font-size: 0.5rem;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -1130,67 +1130,69 @@
     border: 1px solid rgba(168, 85, 247, 0.3);
 }
 
-/* Album Info */
+/* Album Info — compact to match Evergreen */
 .new-album-info {
-    padding: 18px 20px 20px;
+    padding: 10px 12px 12px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 3px;
 }
 .new-album-label {
-    font-size: 0.6rem;
+    font-size: 0.5rem;
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.35);
 }
 .new-album-name {
-    font-size: 1.15rem;
-    font-weight: 800;
+    font-size: 0.82rem;
+    font-weight: 700;
     color: rgba(255, 255, 255, 0.95);
     line-height: 1.2;
     letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .new-album-artist {
-    font-size: 0.82rem;
+    font-size: 0.72rem;
     font-weight: 600;
-    color: var(--ai-cyan, #22d3ee);
-    letter-spacing: 0.02em;
+    color: rgba(255,255,255,0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .new-album-desc {
-    font-size: 0.74rem;
-    color: rgba(255, 255, 255, 0.45);
-    line-height: 1.5;
-    margin-top: 4px;
+    display: none;
 }
 .new-album-meta {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-top: 6px;
+    gap: 6px;
+    margin-top: 4px;
 }
 .new-album-meta-item {
     display: flex;
     align-items: center;
-    gap: 5px;
-    font-size: 0.65rem;
+    gap: 4px;
+    font-size: 0.55rem;
     color: rgba(255, 255, 255, 0.3);
 }
-.new-album-meta-item i { font-size: 0.6rem; }
+.new-album-meta-item i { font-size: 0.5rem; }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .new-album-card { flex: 0 0 300px; width: 300px; }
-    .new-album-thumb { width: 76px; height: 76px; }
-    .new-album-name { font-size: 1rem; }
+    .new-album-card { flex: 0 0 160px; width: 160px; }
+    .new-album-thumb { width: 48px; height: 48px; }
+    .new-album-name { font-size: 0.78rem; }
 }
 @media (max-width: 480px) {
-    .new-album-row { padding: 6px 14px 16px; gap: 14px; }
-    .new-album-card { flex: 0 0 280px; width: 280px; border-radius: 16px; }
-    .new-album-thumb { width: 68px; height: 68px; border-radius: 12px; bottom: 12px; left: 12px; }
-    .new-album-info { padding: 14px 16px 16px; }
-    .new-album-name { font-size: 0.92rem; }
-    .new-album-play-btn { width: 32px; height: 32px; font-size: 11px; }
+    .new-album-row { padding: 6px 12px 12px; gap: 10px; }
+    .new-album-card { flex: 0 0 145px; width: 145px; border-radius: 12px; }
+    .new-album-thumb { width: 42px; height: 42px; border-radius: 10px; bottom: 10px; left: 10px; }
+    .new-album-info { padding: 8px 10px 10px; }
+    .new-album-name { font-size: 0.74rem; }
+    .new-album-play-btn { width: 30px; height: 30px; font-size: 11px; }
 }
 
 .recently-added-track {
@@ -1309,10 +1311,12 @@
 @media (max-width: 768px) {
     .ai-playlist-card { flex: 0 0 160px; width: 160px; }
     .ai-song-card { flex: 0 0 160px; width: 160px; }
+    .ra-song-card { width: 160px; }
 }
 @media (max-width: 480px) {
     .ai-playlist-card { flex: 0 0 145px; width: 145px; }
     .ai-song-card { flex: 0 0 145px; width: 145px; }
+    .ra-song-card { width: 145px; }
     .ai-playlist-name { font-size: 0.78rem; }
     .ai-playlist-count { font-size: 0.68rem; }
     .ai-song-title { font-size: 0.78rem; }

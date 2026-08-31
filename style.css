@@ -269,10 +269,10 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 .station-card.recommended:hover { border-color: rgba(16,185,129,0.4); box-shadow: 0 12px 40px rgba(16,185,129,0.15); }
 
 .station-art {
-    position: relative; width: 100%; height: 150px; display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
+    position: relative; width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; background: linear-gradient(135deg, #1a0a2e, #0d1f2d);
 }
-.station-art img { width: 80px; height: 80px; object-fit: contain; }
+.station-art img { width: 100%; height: 100%; object-fit: cover; }
 .station-play-overlay {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,0.4); opacity: 0; transition: opacity var(--transition-base);
@@ -838,7 +838,6 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     .hit-artist-img { width: 70px; height: 70px; }
     .hit-name { font-size: 0.9rem; }
     .station-card { width: 160px; }
-    .station-art { height: 130px; }
     .slide-card { padding: 24px; }
     .slide-info h3 { font-size: 1.1rem; }
     .slide-art { width: 100px; height: 100px; }
@@ -859,7 +858,6 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     .hit-count { font-size: 0.7rem; }
     .hit-play-btn, .hit-shuffle-btn, .hit-fav-btn { width: 44px; height: 44px; font-size: 16px; }
     .station-card { width: 150px; }
-    .station-art { height: 120px; }
     .recent-item { padding: 10px 12px; }
     .recent-thumb { width: 40px; height: 40px; }
     .slider-controls { display: none; }
