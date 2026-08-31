@@ -1793,6 +1793,7 @@ window.AIHome = (() => {
         // Greeting hero bar sits at the top of Home. Idempotent — builds once,
         // then only updates greeting/date/quote text in place.
         if (typeof renderGreetingSection === 'function') renderGreetingSection();
+        if (typeof window.renderUpcomingReleases === 'function') renderUpcomingReleases();
         renderNewAlbums();
         renderOneTapRadio();
         renderRecentlyAdded();
@@ -1828,7 +1829,7 @@ window.AIHome = (() => {
             'tamilAIStream_moods', 'tamilAIStream_aiRadio',
             'tamilAIStream_splash', 'tamilAIStream_playerPrefs',
             'tamilAIStream_navigation', 'tamilAIStream_sectionsOrder',
-            'tamilAIStream_miniPlayerSettings'
+            'tamilAIStream_miniPlayerSettings', 'tamilAIStream_upcomingReleases'
         ];
         window.addEventListener('storage', (e) => {
             if (e.key && contentKeys.indexOf(e.key) !== -1) refresh();

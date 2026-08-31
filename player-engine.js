@@ -617,7 +617,7 @@ const PlayerEngine = (() => {
     function startSaveInterval() {
         if (_saveInterval) return;
         _saveInterval = setInterval(() => {
-            if (state.isPlaying) saveStateImmediate();
+            if (!document.hidden && state.isPlaying) saveStateImmediate();
         }, 120000);
     }
 
