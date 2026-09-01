@@ -2808,7 +2808,7 @@ window.NexvoraAI = (function () {
                             stream: false
                         };
 
-                        var timeout = parseInt(apiTimeoutInput && apiTimeoutInput.value, 10) || freshConfig.timeout || 120000;
+                        var timeout = Math.max(parseInt(apiTimeoutInput && apiTimeoutInput.value, 10) || freshConfig.timeout || 120000, 120000);
                         var controller = null;
                         var timeoutId = null;
 

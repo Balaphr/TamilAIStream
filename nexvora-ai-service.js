@@ -135,7 +135,8 @@ window.NexvoraAIService = (function () {
     async function makeRequest(url, headers, body, options) {
         options = options || {};
         var config = getConfig().load();
-        var timeout = options.timeout || config.timeout || getConfig().DEFAULTS.timeout || 120000;
+        var rawTimeout = options.timeout || config.timeout || getConfig().DEFAULTS.timeout || 120000;
+        var timeout = Math.max(rawTimeout, 120000);
         var retries = options.retries !== undefined ? options.retries : getConfig().DEFAULTS.retries;
         var retryDelay = options.retryDelay || getConfig().DEFAULTS.retryDelay;
         var modelName = body && body.model ? body.model : 'unknown';

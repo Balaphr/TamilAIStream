@@ -105,10 +105,14 @@ window.NexvoraAPIConfig = (function () {
             baseUrl = DEFAULT_BASE_URL;
         }
 
+        // Enforce minimum 120s timeout for AI requests — never use a lower saved value
+        var rawTimeout = saved.timeout || DEFAULTS.timeout || REQUEST_TIMEOUT;
+        var timeout = Math.max(rawTimeout, REQUEST_TIMEOUT);
+
         return {
             baseUrl:    baseUrl,
             apiKey:     saved.apiKey     || env.AI_API_KEY    || '',
-            timeout:    saved.timeout    || DEFAULTS.timeout || REQUEST_TIMEOUT,
+            timeout:    timeout,
             stream:     saved.stream     || env.AI_STREAM === 'true',
             fallbackUrl: saved.fallbackUrl || env.AI_FALLBACK_URL || '',
             headers:    saved.headers    || {}
@@ -238,7 +242,7 @@ window.NexvoraAPIConfig = (function () {
     // ---------------------------------------------------------------------------
     function checkHealth(model) {
         var config = loadConfig();
-        var timeout = config.timeout || DEFAULTS.timeout || REQUEST_TIMEOUT;
+        var timeout = Math.max(config.timeout || DEFAULTS.timeout || REQUEST_TIMEOUT, REQUEST_TIMEOUT);
 
         var url = getChatEndpoint();
         var headers = getAuthHeaders(model);

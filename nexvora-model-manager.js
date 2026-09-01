@@ -283,11 +283,16 @@ window.NexvoraModelManager = (function () {
             body.messages = [{ role: 'system', content: options.systemPrompt }].concat(body.messages);
         }
 
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function () { controller.abort(); }, 120000);
+
         return fetch(url, {
             method: 'POST',
             headers: headers,
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            signal: controller.signal
         }).then(function (res) {
+            clearTimeout(timeoutId);
             if (!res.ok) {
                 return res.text().then(function (text) {
                     throw new Error('API error ' + res.status + ': ' + text);
@@ -295,6 +300,7 @@ window.NexvoraModelManager = (function () {
             }
             return res.json();
         }).then(function (data) {
+            clearTimeout(timeoutId);
             if (data.choices && data.choices[0]) {
                 return {
                     content: data.choices[0].message ? data.choices[0].message.content : data.choices[0].text || '',
@@ -307,6 +313,9 @@ window.NexvoraModelManager = (function () {
                 model: data.model || model.name,
                 usage: data.usage || null
             };
+        }).catch(function (err) {
+            clearTimeout(timeoutId);
+            throw err;
         });
     }
 
