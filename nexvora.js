@@ -1623,6 +1623,11 @@ window.NexvoraAI = (function () {
     function renderMarkdown(text) {
         if (!text) return '';
         var html = escapeHtml(text);
+
+        // Unescape markdown characters that escapeHtml left intact but the API may have pre-escaped
+        // e.g. \*\*bold\*\* → **bold**, \### heading → ### heading, \- item → - item
+        html = html.replace(/\\([*_`#>\-\[\]()~])/g, '$1');
+
         html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function (match, lang, code) {
             return '<pre><code class="language-' + lang + '">' + code.trim() + '</code></pre>';
         });
@@ -1747,15 +1752,34 @@ window.NexvoraAI = (function () {
         try {
             // Translation mode: use the translation service directly
             if (translationMode && typeof NexvoraAIService !== 'undefined') {
+                var activeModel = NexvoraModelManager.getActiveModel();
+                var isTranslatorModel = activeModel && activeModel.modelId === 'tamilai-translator';
+
                 var result = await NexvoraAIService.translateText(userText, 'en', 'ta');
-                var assistantMsg = {
-                    id: 'msg-' + Date.now(),
-                    role: 'assistant',
-                    content: '**Translation:**\n\n' + result.content +
-                        (result.source ? '\n\n**Original:** ' + result.source : ''),
-                    model: result.model || 'TamilAI Translator',
-                    timestamp: Date.now()
-                };
+                var assistantMsg;
+
+                if (isTranslatorModel) {
+                    // Translator model: show Translation: prefix
+                    assistantMsg = {
+                        id: 'msg-' + Date.now(),
+                        role: 'assistant',
+                        content: '**Translation:**\n\n' + result.content +
+                            (result.source ? '\n\n**Original:** ' + result.source : ''),
+                        model: result.model || 'TamilAI Translator',
+                        timestamp: Date.now()
+                    };
+                } else {
+                    // Non-translator model used in translation mode (e.g. qwen3-4b fallback):
+                    // render as a normal assistant response — no Translation: label
+                    assistantMsg = {
+                        id: 'msg-' + Date.now(),
+                        role: 'assistant',
+                        content: result.content,
+                        model: result.model || (activeModel && activeModel.name) || 'AI',
+                        timestamp: Date.now()
+                    };
+                }
+
                 chat.messages.push(assistantMsg);
                 updateChat(chat.id, { messages: chat.messages });
                 appendMessageToDOM(assistantMsg);
@@ -1783,7 +1807,22 @@ window.NexvoraAI = (function () {
             var messages = chat.messages.map(function (m) { return { role: m.role, content: m.content }; });
 
             var response = await NexvoraModelManager.sendRequest(messages, { temperature: 0.7 });
-            var assistantMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: response.content, model: response.model, timestamp: Date.now() };
+
+            // Strip translation-specific prefixes if the active model is NOT a translator
+            var activeModel = NexvoraModelManager.getActiveModel();
+            var content = response.content || '';
+            if (activeModel && activeModel.modelId !== 'tamilai-translator') {
+                content = content.replace(/^\s*\*{0,2}Translation:\*{0,2}\s*\n*/i, '');
+                content = content.replace(/^\s*\*{0,2}Original:\*{0,2}\s*\n*/i, '');
+            }
+
+            var assistantMsg = {
+                id: 'msg-' + Date.now(),
+                role: 'assistant',
+                content: content,
+                model: (activeModel && activeModel.name) || response.model || 'AI',
+                timestamp: Date.now()
+            };
             chat.messages.push(assistantMsg);
             updateChat(chat.id, { messages: chat.messages });
             appendMessageToDOM(assistantMsg);
