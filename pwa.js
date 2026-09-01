@@ -102,7 +102,14 @@
         console.warn('[PWA] registration failed', err);
       });
 
-    // A new SW has taken control – just show a banner; the user can refresh manually.
+    // Auto-reload when a new SW takes control after SKIP_WAITING
+    var _reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (_reloading) return;
+      _reloading = true;
+      // Small delay to let the new SW finish activation
+      setTimeout(function () { window.location.reload(); }, 200);
+    });
   }
 
   /* ============================================================
@@ -230,7 +237,7 @@
       registration.waiting.postMessage({ type: 'SKIP_WAITING' });
     }
 
-    // 3. Do not auto-reload; the banner stays visible for manual refresh.
+    // 3. controllerchange listener (registered above) will auto-reload the page.
   }
 
   /* ============================================================

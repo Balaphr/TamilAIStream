@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
-import { readdirSync, copyFileSync, existsSync, mkdirSync, statSync } from 'fs'
+import { readdirSync, copyFileSync, existsSync, mkdirSync, statSync, writeFileSync } from 'fs'
 
 const vanillaFiles = [
   'ultra-perf.js',
@@ -30,6 +30,19 @@ function skipVanillaTransform() {
       if (vanillaFiles.includes(fileName)) {
         return { code, map: null }
       }
+    }
+  }
+}
+
+function stampBuildVersion() {
+  return {
+    name: 'stamp-build-version',
+    enforce: 'pre',
+    buildStart() {
+      const version = Date.now().toString()
+      const versionFile = resolve('src', 'build-version.js')
+      writeFileSync(versionFile, `export const BUILD_VERSION = '${version}';\n`)
+      console.log(`[stamp-build-version] BUILD_VERSION = ${version}`)
     }
   }
 }
@@ -108,7 +121,7 @@ function copyVanillaScripts() {
 export default defineConfig({
   root: '.',
   publicDir: 'public',
-  plugins: [skipVanillaTransform(), copyVanillaScripts()],
+  plugins: [stampBuildVersion(), skipVanillaTransform(), copyVanillaScripts()],
   build: {
     outDir: 'dist',
     rollupOptions: {
