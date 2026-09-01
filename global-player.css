@@ -1258,10 +1258,13 @@ a:hover {
    ============================================ */
 @media (max-width: 640px) {
     .gp-mini {
+        bottom: calc(56px + env(safe-area-inset-bottom, 0));
+        width: 100%;
+        border-radius: 0;
+        z-index: 10001;
+    }
+    body.home-active .gp-mini {
         bottom: env(safe-area-inset-bottom, 0);
-        width: calc(100% - 16px);
-        border-radius: 16px;
-        z-index: 9998;
     }
     .gp-mini-inner { padding: 8px 12px; gap: 8px; }
     .gp-mini-artwork { width: 42px; height: 42px; border-radius: 10px; }

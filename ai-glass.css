@@ -2326,10 +2326,18 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
         transform: translateX(0) translateY(0);
         opacity: 1;
     }
+    /* Home page: bottom nav hidden, mini player at very bottom */
+    body.home-active .gp-mini {
+        bottom: env(safe-area-inset-bottom, 0);
+    }
 }
 @media (display-mode: standalone) and (max-width: 640px) {
     .gp-mini {
         bottom: calc(56px + env(safe-area-inset-bottom, 20px));
+    }
+    /* Home page PWA: bottom nav hidden, mini player at very bottom */
+    body.home-active .gp-mini {
+        bottom: env(safe-area-inset-bottom, 20px);
     }
 }
 /* Hide bottom nav on Home page only */
