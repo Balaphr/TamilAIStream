@@ -1001,8 +1001,8 @@
 .new-album-section { overflow: hidden; }
 .new-album-row {
     display: flex;
-    gap: 18px;
-    padding: 8px 20px 20px;
+    gap: 14px;
+    padding: 8px 20px 16px;
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x proximity;
@@ -1184,6 +1184,7 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+    .new-album-row { gap: 12px; padding: 8px 16px 14px; }
     .new-album-card { flex: 0 0 160px; width: 160px; }
     .new-album-thumb { width: 48px; height: 48px; }
     .new-album-name { font-size: 0.78rem; }
@@ -1295,8 +1296,11 @@
     z-index: 2;
 }
 .ra-song-card:hover .ra-song-play { opacity: 1; transform: translateY(0); }
+@media (max-width: 768px) {
+    .recently-added-track { gap: 12px; padding: 8px 16px 14px; }
+}
 @media (max-width: 480px) {
-    .recently-added-track { padding: 6px 14px 14px; gap: 8px; }
+    .recently-added-track { padding: 6px 12px 12px; gap: 10px; }
 }
 
 /* Recently Added: CSS marquee auto-scroll (mobile) */
@@ -2714,7 +2718,7 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
 }
 @media (max-width: 767px) {
     .ai-decade-cards { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 14px 16px; }
-    .ai-card-row { gap: 10px; }
+    .ai-card-row { gap: 12px; }
 }
 @media (max-width: 420px) {
     .ai-decade-cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }

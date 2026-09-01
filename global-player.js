@@ -268,22 +268,25 @@ const GlobalPlayer = (() => {
                         </button>
                     </div>
                 </div>
-                <div class="gp-exp-artwork-wrap">
-                    <div class="gp-exp-artwork-particles">
+                <div class="gp-exp-artwork-section">
+                    <div class="gp-exp-artwork-particles" id="gpExpParticles">
                         <span></span><span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span>
                     </div>
-                    <div class="gp-exp-artwork" id="gpExpArtwork">
-                        <div class="gp-exp-artwork-ai-ring"></div>
-                        <div class="gp-exp-art-img" id="gpExpArtImg"></div>
-                        <div class="gp-exp-art-glow"></div>
+                    <div class="gp-exp-artwork-wrap">
+                        <div class="gp-exp-artwork" id="gpExpArtwork">
+                            <div class="gp-exp-artwork-ai-ring"></div>
+                            <div class="gp-exp-art-img" id="gpExpArtImg"></div>
+                            <div class="gp-exp-art-glow"></div>
+                        </div>
+                        <canvas class="gp-exp-visualizer" id="gpExpVisualizer"></canvas>
                     </div>
-                    <canvas class="gp-exp-visualizer" id="gpExpVisualizer"></canvas>
-                    </div>
-                    <div class="gp-exp-info">
-                        <div class="gp-exp-title" id="gpExpTitle">Select a song</div>
-                        <div class="gp-exp-artist" id="gpExpArtist">Tamil AI Stream</div>
-                        <div class="gp-exp-movie" id="gpExpMovie">Tamil AI Stream</div>
-                        <button class="gp-exp-why-btn" onclick="if(typeof showWhyThisSong==='function'){const t=state.track||getCurrentTrackFromScript();showWhyThisSong(t);}"><i class="fas fa-lightbulb"></i> Why this song?</button>
+                </div>
+                <div class="gp-exp-info">
+                    <div class="gp-exp-title" id="gpExpTitle">Select a song</div>
+                    <div class="gp-exp-artist" id="gpExpArtist">Tamil AI Stream</div>
+                    <div class="gp-exp-movie" id="gpExpMovie">Tamil AI Stream</div>
+                    <button class="gp-exp-why-btn" onclick="if(typeof showWhyThisSong==='function'){const t=state.track||getCurrentTrackFromScript();showWhyThisSong(t);}"><i class="fas fa-lightbulb"></i> Why this song?</button>
                     <div class="gp-exp-live" id="gpExpLive" style="display:none;">
                         <span class="gp-live-dot"></span><span>LIVE FM</span>
                     </div>
@@ -1040,6 +1043,7 @@ const GlobalPlayer = (() => {
         if (isExpanded) return;
         isExpanded = true;
         expandedEl?.classList.add('open');
+        document.body.classList.add('gp-player-open');
         document.body.style.overflow = 'hidden';
         startVisualizer();
         // Sync state from script.js before updating UI to ensure full-screen
@@ -1054,6 +1058,7 @@ const GlobalPlayer = (() => {
         if (!isExpanded) return;
         isExpanded = false;
         expandedEl?.classList.remove('open');
+        document.body.classList.remove('gp-player-open');
         document.body.style.overflow = '';
         stopVisualizer();
     }

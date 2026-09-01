@@ -26,10 +26,7 @@ body {
     color: white;
 }
 
-/* ---- Bottom Navigation (Mobile) — REMOVED ---- */
-.tamilai-bottom-nav {
-    display: none !important;
-}
+/* ---- Bottom Navigation (Mobile) — Styles consolidated in ultra-perf.css ---- */
 .ytm-bottom-nav-items {
     display: flex;
     justify-content: space-around;
@@ -157,28 +154,7 @@ body {
         padding-bottom: calc(56px + 64px + env(safe-area-inset-bottom, 0) + 12px);
     }
 
-    /* Mobile bottom nav — equal width items */
-    .tamilai-bottom-nav {
-        justify-content: space-around;
-        padding: 2px 0;
-    }
-    .tamilai-nav-item {
-        padding: 7px 0 5px;
-        flex: 1;
-        min-width: 0;
-    }
-    .tamilai-nav-icon,
-    .tamilai-nav-icon-wrap {
-        width: 30px;
-        height: 30px;
-        font-size: 15px;
-    }
-    .tamilai-nav-label {
-        font-size: 9px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+    /* Mobile bottom nav — base styles consolidated in ultra-perf.css */
 
     /* AI FAB above bottom nav — clear the player */
     .ytm-ai-fab {
@@ -786,8 +762,6 @@ body {
    ============================================ */
 @media (max-width: 640px) and (orientation: landscape) {
     .ytm-bottom-nav { display: none; }
-    /* Bottom nav removed — player replaces it */
-    .tamilai-bottom-nav { display: none !important; }
     .tamilai-nav-item { padding: 4px 0 2px; min-height: 40px; }
     .tamilai-nav-icon { width: 24px; height: 24px; font-size: 14px; }
     .tamilai-nav-label { font-size: 8px; }
@@ -881,8 +855,6 @@ body {
 @media (max-width: 640px) {
 /* 1. The old bottom navigation is removed on mobile */
     .ytm-bottom-nav { display: none !important; }
-    /* 2. Tamil AI bottom nav also removed */
-    .tamilai-bottom-nav { display: none !important; }
 
     /* 2. Top bar opens up to hold brand + nav row + search row */
     .ytm-top-nav {
