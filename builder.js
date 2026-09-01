@@ -522,6 +522,7 @@ function navigateTo(page) {
         'notifications': 'notificationsPage',
         'splash': 'splashPage',
         'player': 'playerPage',
+        'navigation': 'navigationPage',
         'sections': 'sectionsPage',
         'ads': 'adsPage',
         'upcomingReleases': 'upcomingReleasesPage',
@@ -566,6 +567,7 @@ function _loadPageData(page) {
     if (page === 'notifications') loadNotifications();
     if (page === 'splash') loadSplashSettings();
     if (page === 'player') loadPlayerPrefs();
+    if (page === 'navigation') loadNavigation();
     if (page === 'sections') loadSectionsOrder();
     if (page === 'ads') loadAdsTable();
     if (page === 'upcomingReleases') loadUpcomingReleasesTable();
@@ -5876,6 +5878,40 @@ function savePlayerPrefs(e) {
         surroundEffect: document.getElementById('prefSurroundEffect').value === 'true'
     });
     showToast('Player settings saved', 'success');
+    syncToLiveWebsite();
+    return false;
+}
+
+// ============================================
+// Navigation Settings
+// ============================================
+function loadNavigation() {
+    const n = DataStore.getNavigation();
+    document.getElementById('navShowHome').value = n.showHome !== false ? 'true' : 'false';
+    document.getElementById('navShowExplore').value = n.showExplore !== false ? 'true' : 'false';
+    document.getElementById('navShowLibrary').value = n.showLibrary !== false ? 'true' : 'false';
+    document.getElementById('navShowSearch').value = n.showSearch !== false ? 'true' : 'false';
+    document.getElementById('navShowLiked').value = n.showLiked !== false ? 'true' : 'false';
+    document.getElementById('navShowStations').value = n.showStations !== false ? 'true' : 'false';
+    document.getElementById('navShowArtists').value = n.showArtists !== false ? 'true' : 'false';
+    document.getElementById('navShowHistory').value = n.showHistory !== false ? 'true' : 'false';
+    document.getElementById('navShowPlaylists').value = n.showPlaylists !== false ? 'true' : 'false';
+}
+
+function saveNavigation(e) {
+    e.preventDefault();
+    DataStore.setNavigation({
+        showHome: document.getElementById('navShowHome').value === 'true',
+        showExplore: document.getElementById('navShowExplore').value === 'true',
+        showLibrary: document.getElementById('navShowLibrary').value === 'true',
+        showSearch: document.getElementById('navShowSearch').value === 'true',
+        showLiked: document.getElementById('navShowLiked').value === 'true',
+        showStations: document.getElementById('navShowStations').value === 'true',
+        showArtists: document.getElementById('navShowArtists').value === 'true',
+        showHistory: document.getElementById('navShowHistory').value === 'true',
+        showPlaylists: document.getElementById('navShowPlaylists').value === 'true'
+    });
+    showToast('Navigation settings saved', 'success');
     syncToLiveWebsite();
     return false;
 }

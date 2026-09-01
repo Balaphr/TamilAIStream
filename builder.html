@@ -233,6 +233,9 @@
                             <button class="builder-sidebar-item" data-page="settings">
                                 <i class="fas fa-cog"></i> Site Settings
                             </button>
+                            <button class="builder-sidebar-item" data-page="navigation">
+                                <i class="fas fa-navicon"></i> Navigation
+                            </button>
                             <button class="builder-sidebar-item" data-page="moods">
                                 <i class="fas fa-smile"></i> Moods & Genres
                             </button>
@@ -1725,6 +1728,35 @@
                                     </div>
                                     <div class="form-actions">
                                         <button type="submit" class="builder-btn primary"><i class="fas fa-save"></i> Save Player Sections</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Settings Page -->
+                    <div class="builder-page" id="navigationPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Navigation</h1>
+                            <p class="builder-page-subtitle">Show or hide navigation items on the website</p>
+                        </div>
+                        <div class="builder-content-card">
+                            <div class="builder-card-header"><h3>Navigation Items</h3></div>
+                            <div class="builder-card-body">
+                                <form id="navigationForm" onsubmit="return saveNavigation(event)">
+                                    <div class="form-grid">
+                                        <div class="form-group"><label class="form-label">Home</label><select class="form-input" id="navShowHome"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Explore</label><select class="form-input" id="navShowExplore"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Library</label><select class="form-input" id="navShowLibrary"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Search</label><select class="form-input" id="navShowSearch"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Liked Songs</label><select class="form-input" id="navShowLiked"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Stations</label><select class="form-input" id="navShowStations"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Artists</label><select class="form-input" id="navShowArtists"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">History</label><select class="form-input" id="navShowHistory"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                        <div class="form-group"><label class="form-label">Playlists</label><select class="form-input" id="navShowPlaylists"><option value="true">Visible</option><option value="false">Hidden</option></select></div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="builder-btn primary"><i class="fas fa-save"></i> Save Navigation</button>
                                     </div>
                                 </form>
                             </div>

@@ -1322,6 +1322,10 @@ body.gp-active {
 }
 @media (max-width: 640px) {
     body.gp-active {
+        padding-bottom: calc(56px + 64px + env(safe-area-inset-bottom, 0) + 12px);
+    }
+    /* Home page: bottom nav hidden, less padding needed */
+    body.gp-active.home-active {
         padding-bottom: calc(64px + env(safe-area-inset-bottom, 0) + 12px);
     }
 }
