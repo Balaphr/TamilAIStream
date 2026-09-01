@@ -23,9 +23,9 @@ window.NexvoraAIService = (function () {
     // Lazy getter — always reads fresh from window so load order doesn't matter
     var _fallbackConfig = {
         ENDPOINTS: { chat: '/v1/chat/completions', translate: '/translate', health: '/health', models: '/v1/models' },
-        DEFAULTS: { temperature: 0.7, maxTokens: 4096, timeout: 120000, retries: 2, retryDelay: 1000 },
+        DEFAULTS: { temperature: 0.7, maxTokens: 4096, timeout: 300000, retries: 2, retryDelay: 1000 },
         STATUS: { DISCONNECTED: 'disconnected', CONNECTING: 'connecting', CONNECTED: 'connected', ERROR: 'error', TIMEOUT: 'timeout' },
-        load: function () { return { baseUrl: '', apiKey: '', timeout: 120000, stream: false, fallbackUrl: '', headers: {} }; },
+        load: function () { return { baseUrl: '', apiKey: '', timeout: 300000, stream: false, fallbackUrl: '', headers: {} }; },
         save: function () {},
         update: function () { return this.load(); },
         buildUrl: function (p) { return p; },
@@ -127,6 +127,8 @@ window.NexvoraAIService = (function () {
     // ---------------------------------------------------------------------------
     // HTTP request with timeout and retries
     // ---------------------------------------------------------------------------
+    var _requestCounter = 0;
+
     async function makeRequest(url, headers, body, options) {
         options = options || {};
         var config = getConfig().load();
@@ -135,23 +137,35 @@ window.NexvoraAIService = (function () {
         var retryDelay = options.retryDelay || getConfig().DEFAULTS.retryDelay;
         var modelName = body && body.model ? body.model : 'unknown';
 
+        // Per-request tracking
+        var requestId = 'req-' + (++_requestCounter) + '-' + Date.now().toString(36);
+        var requestStartTime = Date.now();
+        var activeController = null;
+        var requestTimedOut = false;
+
         var lastError = null;
 
-        console.log('[NexvoraAIService] makeRequest → URL:', url, '| timeout:', timeout + 'ms', '| model:', modelName, '| retries:', retries);
+        console.log('[NexvoraAIService] [' + requestId + '] makeRequest → URL:', url, '| timeout:', timeout + 'ms', '| model:', modelName, '| retries:', retries);
 
         for (var attempt = 0; attempt <= retries; attempt++) {
             if (attempt > 0) {
-                console.log('[NexvoraAIService] retry attempt', attempt, 'of', retries);
+                console.log('[NexvoraAIService] [' + requestId + '] retry attempt', attempt, 'of', retries);
                 await new Promise(function (r) { setTimeout(r, retryDelay); });
             }
 
             var controller = null;
             var timeoutId = null;
+            requestTimedOut = false;
 
             try {
                 if (typeof AbortController !== 'undefined') {
                     controller = new AbortController();
-                    timeoutId = setTimeout(function () { controller.abort(); }, timeout);
+                    activeController = controller;
+                    requestTimedOut = false;
+                    timeoutId = setTimeout(function () {
+                        requestTimedOut = true;
+                        controller.abort();
+                    }, timeout);
                 }
 
                 var fetchOptions = {
@@ -164,16 +178,17 @@ window.NexvoraAIService = (function () {
                 var start = Date.now();
                 var res = await fetch(url, fetchOptions);
                 if (timeoutId) clearTimeout(timeoutId);
+                activeController = null;
                 var latency = Date.now() - start;
 
-                console.log('[NexvoraAIService] fetch completed in', latency + 'ms', '| HTTP', res.status, '| attempt:', attempt + 1);
+                console.log('[NexvoraAIService] [' + requestId + '] fetch completed in', latency + 'ms', '| HTTP', res.status, '| attempt:', attempt + 1);
 
                 if (!res.ok) {
                     var errorText = '';
                     try { errorText = await res.text(); } catch (e) { /* ignore */ }
-                    var errDetail = { status: res.status, body: errorText, latency: latency };
+                    var errDetail = { status: res.status, body: errorText, latency: latency, requestId: requestId };
 
-                    console.error('[NexvoraAIService] HTTP error:', res.status, '| body:', errorText.slice(0, 200));
+                    console.error('[NexvoraAIService] [' + requestId + '] HTTP error:', res.status, '| body:', errorText.slice(0, 200));
 
                     // Retry on 5xx errors
                     if (res.status >= 500 && attempt < retries) {
@@ -185,23 +200,43 @@ window.NexvoraAIService = (function () {
                 }
 
                 var data = await res.json();
-                console.log('[NexvoraAIService] response parsed successfully');
-                return { data: data, latency: latency };
+                var totalLatency = Date.now() - requestStartTime;
+                console.log('[NexvoraAIService] [' + requestId + '] response parsed successfully | total:', totalLatency + 'ms');
+                return { data: data, latency: latency, requestId: requestId };
 
             } catch (err) {
                 if (timeoutId) clearTimeout(timeoutId);
+                activeController = null;
 
                 // Already a ServiceError from above — throw immediately (unless retrying 5xx)
                 if (err.code && err.code !== 'TIMEOUT' && err.code !== 'NETWORK_ERROR') {
                     throw err;
                 }
 
-                if (err.name === 'AbortError') {
-                    console.error('[NexvoraAIService] request aborted after', timeout + 'ms timeout');
-                    throw createError(ServiceError.TIMEOUT, { timeout: timeout, message: 'AI request timed out after ' + (timeout / 1000) + ' seconds' });
+                // AbortError: either our timeout or external abort
+                if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+                    var abortElapsed = Date.now() - requestStartTime;
+                    if (requestTimedOut) {
+                        console.error('[NexvoraAIService] [' + requestId + '] TIMEOUT after', abortElapsed + 'ms (configured timeout:', timeout + 'ms)');
+                        throw createError(ServiceError.TIMEOUT, {
+                            timeout: timeout,
+                            elapsed: abortElapsed,
+                            requestId: requestId,
+                            message: 'AI request timed out after ' + (timeout / 1000) + ' seconds'
+                        });
+                    } else {
+                        // External abort (e.g. user cancelled)
+                        console.error('[NexvoraAIService] [' + requestId + '] ABORTED externally after', abortElapsed + 'ms');
+                        throw createError(ServiceError.TIMEOUT, {
+                            timeout: timeout,
+                            elapsed: abortElapsed,
+                            requestId: requestId,
+                            message: 'Request was cancelled'
+                        });
+                    }
                 }
 
-                console.error('[NexvoraAIService] fetch error:', err.message, '| attempt:', attempt + 1);
+                console.error('[NexvoraAIService] [' + requestId + '] fetch error:', err.message, '| attempt:', attempt + 1, '| name:', err.name);
                 lastError = err;
 
                 // Network/fetch error — retry if attempts remain
@@ -209,12 +244,12 @@ window.NexvoraAIService = (function () {
                     continue;
                 }
 
-                throw createError(ServiceError.NETWORK_ERROR, { original: err.message });
+                throw createError(ServiceError.NETWORK_ERROR, { original: err.message, requestId: requestId });
             }
         }
 
         // Should not reach here, but just in case
-        throw lastError || createError(ServiceError.NETWORK_ERROR, { original: 'Request failed' });
+        throw lastError || createError(ServiceError.NETWORK_ERROR, { original: 'Request failed', requestId: requestId });
     }
 
     // ---------------------------------------------------------------------------
@@ -552,6 +587,17 @@ window.NexvoraAIService = (function () {
     }
 
     // ---------------------------------------------------------------------------
+    // Request cancellation
+    // ---------------------------------------------------------------------------
+    function cancelActiveRequest() {
+        if (activeController) {
+            console.log('[NexvoraAIService] cancelling active request');
+            activeController.abort();
+            activeController = null;
+        }
+    }
+
+    // ---------------------------------------------------------------------------
     // PUBLIC API
     // ---------------------------------------------------------------------------
     return {
@@ -565,6 +611,9 @@ window.NexvoraAIService = (function () {
         // Connection management
         checkConnection:    checkConnection,
         getModelStatus:     getModelStatus,
+
+        // Request management
+        cancelActiveRequest: cancelActiveRequest,
 
         // Validation
         validateModel:      validateModel,

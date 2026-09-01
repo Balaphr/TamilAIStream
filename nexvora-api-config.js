@@ -61,7 +61,7 @@ window.NexvoraAPIConfig = (function () {
         topP:           1.0,
         frequencyPenalty: 0,
         presencePenalty:  0,
-        timeout:        parseInt(env.AI_API_TIMEOUT, 10) || 120000,
+        timeout:        parseInt(env.AI_API_TIMEOUT, 10) || 300000,
         retries:        2,
         retryDelay:     1000
     };

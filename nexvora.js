@@ -54,6 +54,7 @@ window.NexvoraAI = (function () {
     var settings = {};
     var currentChatId = null;
     var isGenerating = false;
+    var activeAbortController = null;
     var speechRecognition = null;
     var isRecording = false;
     var translationMode = false;
@@ -1793,7 +1794,22 @@ window.NexvoraAI = (function () {
 
         } catch (err) {
             console.error('[Nexvora] generateResponse error:', err.code, err.message, err.detail);
-            var errorContent = getNotConnectedMessage(err);
+
+            // Don't show "AI Model Not Connected" for abort/timeout/cancellation errors
+            var errorContent;
+            if (err.code === 'TIMEOUT' || (err.name === 'AbortError') || (err.message && err.message.indexOf('abort') !== -1)) {
+                var elapsed = err.detail && err.detail.elapsed ? err.detail.elapsed : null;
+                var timeoutSec = err.detail && err.detail.timeout ? err.detail.timeout / 1000 : 300;
+                errorContent = '**Request Cancelled**\n\n' +
+                    (err.message === 'Request was cancelled'
+                        ? 'The request was cancelled.'
+                        : 'The request timed out after ' + timeoutSec + ' seconds.') +
+                    (elapsed ? '\nElapsed: ' + (elapsed / 1000).toFixed(1) + 's' : '') +
+                    '\n\n**To fix:** Check your network connection and try again.';
+            } else {
+                errorContent = getNotConnectedMessage(err);
+            }
+
             var errorMsg = { id: 'msg-' + Date.now(), role: 'assistant', content: errorContent, model: '', timestamp: Date.now() };
             chat.messages.push(errorMsg);
             updateChat(chat.id, { messages: chat.messages });
@@ -1806,6 +1822,7 @@ window.NexvoraAI = (function () {
 
         } finally {
             isGenerating = false;
+            activeAbortController = null;
             showLoading(false);
             removeThinkingMessage();
         }
@@ -1868,7 +1885,16 @@ window.NexvoraAI = (function () {
         }
     }
 
-    function stopGeneration() { isGenerating = false; showLoading(false); removeThinkingMessage(); }
+    function stopGeneration() {
+        // Cancel the active AI request via service layer
+        if (typeof NexvoraAIService !== 'undefined' && NexvoraAIService.cancelActiveRequest) {
+            NexvoraAIService.cancelActiveRequest();
+        }
+        isGenerating = false;
+        activeAbortController = null;
+        showLoading(false);
+        removeThinkingMessage();
+    }
     function showLoading(show) {
         var el = $('#nexvoraLoading');
         if (el) { if (show) el.classList.remove('nexvora-hidden'); else el.classList.add('nexvora-hidden'); }
