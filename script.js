@@ -5023,7 +5023,7 @@ function renderRecentlyAdded(songs) {
 
         track.innerHTML = _urReleases.map((r, i) => {
             const imgHtml = r.image
-                ? `<img src="${r.image}" alt="${r.title || 'Release'}" loading="${i === 0 ? 'eager' : 'lazy'}" draggable="false" onerror="this.parentElement.innerHTML='<div class=\\'ur-slide-placeholder\\'><i class=\\'fas fa-music\\'></i></div>'">`
+                ? `<img src="${r.image}" alt="${r.title || 'Release'}" loading="${i === 0 ? 'eager' : 'lazy'}" draggable="false" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\\'ur-slide-placeholder\\'><i class=\\'fas fa-music\\'></i></div>'">`
                 : `<div class="ur-slide-placeholder"><i class="fas fa-music"></i></div>`;
             return `<div class="ur-slide" data-ur-index="${i}">
                 <div class="ur-slide-image">${imgHtml}</div>

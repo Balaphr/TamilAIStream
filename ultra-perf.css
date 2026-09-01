@@ -981,17 +981,28 @@ a,
     .ai-news-card:active {
         transition-duration: 0.06s !important;
     }
+    /* Keep splash + player transitions smooth in PWA */
+    .splash-overlay,
+    .splash-logo,
+    .splash-logo-wrap,
+    .splash-eq-bar,
+    .splash-loading-fill,
+    .splash-title,
+    .splash-subtitle,
+    .gp-mini,
+    .gp-mini.visible,
+    .gp-mini.gp-hidden {
+        animation-duration: inherit !important;
+        transition-duration: 0.4s !important;
+    }
     /* Kill ALL glass/blur effects in PWA */
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    /* Kill all floating / glowing effects */
+    /* Kill all floating / glowing effects (splash elements excluded — they need to animate) */
     .ai-hero-art,
     .ai-hero-art-ring,
     .ai-hero-wave,
     .splash-orb,
-    .splash-logo,
-    .splash-eq-bar,
-    .splash-loading-fill,
     .ai-live-dot,
     .ai-decade-icon,
     .ai-fm-eq-bar,

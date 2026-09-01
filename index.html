@@ -147,17 +147,64 @@
     <!-- Splash Screen Script (inline for instant execution) -->
     <script>
     (function() {
-        // First visit: show 4s premium logo animation. Returning visitors (this session): skip instantly.
+        // First visit: show 2.5s premium logo animation. Returning visitors (this session): skip instantly.
         var splashSeen = false;
         try { splashSeen = sessionStorage.getItem('tamilai_splash_seen') === '1'; } catch (e) {}
-        /* PWA standalone: always skip splash for instant resume */
-        var isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
-        const SPLASH_MIN_MS = (splashSeen || isStandalone) ? 0 : 4000;
+        const SPLASH_MIN_MS = splashSeen ? 0 : 2500;
         const overlay = document.getElementById('splashOverlay');
         const skipBtn = document.getElementById('splashSkip');
         if (!overlay) return;
 
-        let dismissed = false;
+        var dismissed = false;
+
+        /* ---------- Web Audio splash sound (respects autoplay policy) ---------- */
+        var _splashAudioCtx = null;
+        function playSplashSound() {
+            try {
+                var AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                _splashAudioCtx = new AudioCtx();
+                // If suspended (autoplay blocked), resume on first user interaction
+                if (_splashAudioCtx.state === 'suspended') {
+                    var resume = function() {
+                        _splashAudioCtx.resume();
+                        document.removeEventListener('touchstart', resume);
+                        document.removeEventListener('click', resume);
+                        document.removeEventListener('keydown', resume);
+                    };
+                    document.addEventListener('touchstart', resume, { once: true });
+                    document.addEventListener('click', resume, { once: true });
+                    document.addEventListener('keydown', resume, { once: true });
+                }
+                var ctx = _splashAudioCtx;
+                var t = ctx.currentTime;
+                // Layer 1: Soft whoosh (noise burst via oscillator)
+                var osc1 = ctx.createOscillator();
+                var gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(400, t);
+                osc1.frequency.exponentialRampToValueAtTime(900, t + 0.12);
+                osc1.frequency.exponentialRampToValueAtTime(300, t + 0.35);
+                gain1.gain.setValueAtTime(0, t);
+                gain1.gain.linearRampToValueAtTime(0.06, t + 0.03);
+                gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+                osc1.connect(gain1).connect(ctx.destination);
+                osc1.start(t);
+                osc1.stop(t + 0.45);
+                // Layer 2: Crystalline chime
+                var osc2 = ctx.createOscillator();
+                var gain2 = ctx.createGain();
+                osc2.type = 'triangle';
+                osc2.frequency.setValueAtTime(1200, t + 0.08);
+                osc2.frequency.exponentialRampToValueAtTime(1600, t + 0.2);
+                gain2.gain.setValueAtTime(0, t);
+                gain2.gain.linearRampToValueAtTime(0.04, t + 0.1);
+                gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+                osc2.connect(gain2).connect(ctx.destination);
+                osc2.start(t + 0.08);
+                osc2.stop(t + 0.5);
+            } catch(e) { /* Web Audio not available or blocked */ }
+        }
 
         /* ---------- Dismiss splash ---------- */
         function dismissSplash() {
@@ -212,6 +259,11 @@
 
         /* ---------- Skip button ---------- */
         skipBtn.addEventListener('click', dismissSplash);
+
+        /* ---------- Play splash sound on first visit ---------- */
+        if (!splashSeen) {
+            playSplashSound();
+        }
 
         /* ---------- Auto-dismiss after min time + DOM ready ---------- */
         var domReady;

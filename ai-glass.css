@@ -2304,9 +2304,35 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.45);
     padding: 0 18px;
 }
-.gp-mini.gp-hidden { transform: translateX(-50%) translateY(calc(100% + 30px)); opacity: 0; pointer-events: none; }
-.gp-mini.visible { transform: translateX(-50%) translateY(0); }
+.gp-mini.gp-hidden { transform: translateX(0) translateY(calc(100% + 20px)); opacity: 0; pointer-events: none; }
+.gp-mini.visible { transform: translateX(0) translateY(0); opacity: 1; }
 /* Bottom nav NEVER moves — mini player sits above it via its own bottom offset */
+/* Mobile/PWA: position mini player above bottom nav with safe-area */
+@media (max-width: 640px) {
+    .gp-mini {
+        bottom: calc(56px + env(safe-area-inset-bottom, 0));
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: none;
+        border-radius: 0;
+        transform: translateX(0) translateY(0);
+    }
+    .gp-mini.gp-hidden {
+        transform: translateX(0) translateY(calc(100% + 20px));
+        opacity: 0;
+        pointer-events: none;
+    }
+    .gp-mini.visible {
+        transform: translateX(0) translateY(0);
+        opacity: 1;
+    }
+}
+@media (display-mode: standalone) and (max-width: 640px) {
+    .gp-mini {
+        bottom: calc(56px + env(safe-area-inset-bottom, 20px));
+    }
+}
 .site-footer { display: none; }
 .gp-mini-inner { display: flex; align-items: center; gap: 12px; max-width: 1400px; margin: 0 auto; padding: 8px 0; }
 .gp-mini-artwork { width: 52px; height: 52px; border-radius: 12px; }
