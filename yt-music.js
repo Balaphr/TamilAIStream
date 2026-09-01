@@ -4,16 +4,6 @@
    Tamil AI Stream Enhanced UI
    ============================================ */
 
-function moveNavIndicator(activeItem) {
-    const indicator = document.getElementById('tamilaiNavIndicator');
-    const nav = document.getElementById('tamilaiBottomNav');
-    if (!indicator || !nav || !activeItem) return;
-    const navRect = nav.getBoundingClientRect();
-    const itemRect = activeItem.getBoundingClientRect();
-    const left = itemRect.left - navRect.left + (itemRect.width / 2) - 24;
-    indicator.style.left = left + 'px';
-}
-
 const YTMusic = {
     // State
     isPlaying: false,
@@ -156,26 +146,6 @@ const YTMusic = {
                 this.toggleMobileMenu(false);
             });
         });
-
-        // Premium bottom navigation
-        document.querySelectorAll('.tamilai-nav-item[data-page]').forEach(item => {
-            item.addEventListener('click', () => {
-                this.navigateTo(item.dataset.page);
-                // Update active state
-                document.querySelectorAll('.tamilai-nav-item').forEach(n => n.classList.remove('active'));
-                item.classList.add('active');
-                // Move indicator pill
-                if (typeof moveNavIndicator === 'function') moveNavIndicator(item);
-                // Scroll to top
-                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(e) {}
-            });
-        });
-
-        // Initialize indicator position on load
-        const activeNav = document.querySelector('.tamilai-nav-item.active');
-        if (activeNav && typeof moveNavIndicator === 'function') {
-            requestAnimationFrame(() => moveNavIndicator(activeNav));
-        }
 
         // Mobile header nav navigation (legacy compat)
         document.querySelectorAll('.ytm-mobile-nav-item[data-page]').forEach(item => {
@@ -619,15 +589,6 @@ const YTMusic = {
         document.querySelectorAll('.premium-nav-item[data-page]').forEach(item => {
             item.classList.toggle('active', item.dataset.page === page);
         });
-        // Bottom nav active state
-        document.querySelectorAll('.tamilai-nav-item[data-page]').forEach(item => {
-            item.classList.toggle('active', item.dataset.page === page);
-        });
-        // Move indicator pill to active tab
-        const activeBottomNav = document.querySelector('.tamilai-nav-item.active');
-        if (activeBottomNav && typeof moveNavIndicator === 'function') {
-            requestAnimationFrame(() => moveNavIndicator(activeBottomNav));
-        }
         // Legacy sidebar compat
         document.querySelectorAll('.ytm-sidebar-item[data-page]').forEach(item => {
             item.classList.toggle('active', item.dataset.page === page);

@@ -17,18 +17,10 @@
     pointer-events: none !important;
 }
 
-/* Hide bottom nav when expanded player is open */
-body.gp-player-open .tamilai-bottom-nav {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-}
-
 /* ============================================
    LAYOUT CONSTANTS — Single source of truth
-   Bottom nav height (mobile): ~56px + safe-area
    Mini player height (mobile): ~64px
-   Total space needed below content: nav + player + gap
+   Total space needed below content: player + gap
    ============================================ */
 
 :root {
@@ -1266,7 +1258,7 @@ a:hover {
    ============================================ */
 @media (max-width: 640px) {
     .gp-mini {
-        bottom: calc(56px + env(safe-area-inset-bottom, 0));
+        bottom: env(safe-area-inset-bottom, 0);
         width: calc(100% - 16px);
         border-radius: 16px;
         z-index: 9998;
@@ -1323,23 +1315,14 @@ a:hover {
 /* ============================================
    BODY PADDING for fixed player
    Desktop: just the mini player height
-   Mobile: bottom nav (56px) + mini player (~64px) + gap
+   Mobile: mini player (~64px) + gap
    ============================================ */
 body.gp-active {
     padding-bottom: 100px;
 }
 @media (max-width: 640px) {
     body.gp-active {
-        padding-bottom: calc(56px + 64px + env(safe-area-inset-bottom, 0) + 12px);
-    }
-}
-/* Always ensure bottom nav space even when mini player is hidden */
-@media (max-width: 1024px) {
-    body {
-        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
-    }
-    body.gp-active {
-        padding-bottom: calc(56px + 64px + env(safe-area-inset-bottom, 0) + 12px);
+        padding-bottom: calc(64px + env(safe-area-inset-bottom, 0) + 12px);
     }
 }
 

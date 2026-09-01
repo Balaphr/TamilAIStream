@@ -3428,14 +3428,6 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     border-color: rgba(239, 68, 68, 0.25);
 }
 
-/* --- Mobile Bottom Navigation: Consolidated in ultra-perf.css --- */
-/* Only media query visibility rule here — base styles in ultra-perf.css */
-@media (max-width: 1024px) {
-    .tamilai-bottom-nav {
-        display: flex;
-    }
-}
-
 /* ============================================================
    PREMIUM 3D NOW PLAYING — Apple Music-inspired
    ============================================================ */
@@ -3579,57 +3571,12 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
         width: 24px;
         height: 24px;
     }
-    .tamilai-bottom-nav {
-        display: flex;
-        justify-content: space-around;
-        align-items: stretch;
-    }
-    .tamilai-nav-item {
-        padding: 7px 0 5px;
-        flex: 1;
-        min-width: 0;
-    }
-    .tamilai-nav-icon,
-    .tamilai-nav-icon-wrap {
-        width: 30px;
-        height: 30px;
-        font-size: 15px;
-    }
-    .tamilai-nav-label {
-        font-size: 9.5px;
-    }
     .hide-mobile { display: none !important; }
 }
 
 /* Very small mobile */
 @media (max-width: 360px) {
-    .tamilai-nav-item {
-        padding: 6px 0 4px;
-    }
-    .tamilai-nav-icon,
-    .tamilai-nav-icon-wrap {
-        width: 26px;
-        height: 26px;
-        font-size: 13px;
-    }
-    .tamilai-nav-label {
-        font-size: 8.5px;
-    }
     .premium-topnav-title {
         font-size: 0.85rem;
-    }
-}
-
-/* Desktop: hide bottom nav */
-@media (min-width: 1025px) {
-    .tamilai-bottom-nav {
-        display: none !important;
-    }
-}
-
-/* PWA: ensure safe areas */
-@supports (padding: env(safe-area-inset-bottom)) {
-    .tamilai-bottom-nav {
-        padding-bottom: env(safe-area-inset-bottom);
     }
 }
