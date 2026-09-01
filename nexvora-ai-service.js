@@ -23,9 +23,10 @@ window.NexvoraAIService = (function () {
     // Lazy getter — always reads fresh from window so load order doesn't matter
     var _fallbackConfig = {
         ENDPOINTS: { chat: '/v1/chat/completions', translate: '/translate', health: '/health', models: '/v1/models' },
-        DEFAULTS: { temperature: 0.7, maxTokens: 4096, timeout: 300000, retries: 2, retryDelay: 1000 },
+        DEFAULTS: { temperature: 0.7, maxTokens: 4096, timeout: 120000, retries: 2, retryDelay: 1000 },
         STATUS: { DISCONNECTED: 'disconnected', CONNECTING: 'connecting', CONNECTED: 'connected', ERROR: 'error', TIMEOUT: 'timeout' },
-        load: function () { return { baseUrl: '', apiKey: '', timeout: 300000, stream: false, fallbackUrl: '', headers: {} }; },
+        REQUEST_TIMEOUT: 120000,
+        load: function () { return { baseUrl: '', apiKey: '', timeout: 120000, stream: false, fallbackUrl: '', headers: {} }; },
         save: function () {},
         update: function () { return this.load(); },
         buildUrl: function (p) { return p; },
@@ -34,7 +35,7 @@ window.NexvoraAIService = (function () {
         setStatus: function () {},
         setModelInfo: function () {},
         checkHealth: function () { return Promise.resolve(this.getStatus()); },
-        isConfigured: function () { return false; }
+        isConfigured: function () { return false }
     };
     function getConfig() {
         if (!window.NexvoraAPIConfig) {
@@ -71,7 +72,7 @@ window.NexvoraAIService = (function () {
         NO_API_CONFIG:      { code: 'NO_API_CONFIG',      message: 'API not configured. Set the API URL in Settings or Model Manager.' },
         MODEL_DISABLED:     { code: 'MODEL_DISABLED',     message: 'Active model is disabled. Enable it in Model Manager.' },
         CAPABILITY_MISSING: { code: 'CAPABILITY_MISSING', message: 'Active model does not support this capability.' },
-        TIMEOUT:            { code: 'TIMEOUT',            message: 'AI request timed out after 120 seconds. Check your network and API endpoint.' },
+        TIMEOUT:            { code: 'TIMEOUT',            message: 'AI request timed out. Check your network and API endpoint.' },
         NETWORK_ERROR:      { code: 'NETWORK_ERROR',      message: 'Network error. Check your internet connection.' },
         API_ERROR:          { code: 'API_ERROR',          message: 'API returned an error.' },
         NOT_CONNECTED:      { code: 'NOT_CONNECTED',      message: 'AI backend not connected. Configure your API endpoint in Settings.' }
@@ -128,11 +129,13 @@ window.NexvoraAIService = (function () {
     // HTTP request with timeout and retries
     // ---------------------------------------------------------------------------
     var _requestCounter = 0;
+    var _activeController = null;
+    var _activeTimeoutId = null;
 
     async function makeRequest(url, headers, body, options) {
         options = options || {};
         var config = getConfig().load();
-        var timeout = options.timeout || config.timeout || getConfig().DEFAULTS.timeout;
+        var timeout = options.timeout || config.timeout || getConfig().DEFAULTS.timeout || 120000;
         var retries = options.retries !== undefined ? options.retries : getConfig().DEFAULTS.retries;
         var retryDelay = options.retryDelay || getConfig().DEFAULTS.retryDelay;
         var modelName = body && body.model ? body.model : 'unknown';
@@ -140,9 +143,6 @@ window.NexvoraAIService = (function () {
         // Per-request tracking
         var requestId = 'req-' + (++_requestCounter) + '-' + Date.now().toString(36);
         var requestStartTime = Date.now();
-        var activeController = null;
-        var requestTimedOut = false;
-
         var lastError = null;
 
         console.log('[NexvoraAIService] [' + requestId + '] makeRequest → URL:', url, '| timeout:', timeout + 'ms', '| model:', modelName, '| retries:', retries);
@@ -153,32 +153,32 @@ window.NexvoraAIService = (function () {
                 await new Promise(function (r) { setTimeout(r, retryDelay); });
             }
 
-            var controller = null;
+            // Per-request AbortController — always fresh, never shared
+            var controller = new AbortController();
             var timeoutId = null;
-            requestTimedOut = false;
+            var requestTimedOut = false;
+
+            // Track for external cancellation (stopGeneration)
+            _activeController = controller;
 
             try {
-                if (typeof AbortController !== 'undefined') {
-                    controller = new AbortController();
-                    activeController = controller;
-                    requestTimedOut = false;
-                    timeoutId = setTimeout(function () {
-                        requestTimedOut = true;
-                        controller.abort();
-                    }, timeout);
-                }
+                // Set timeout — always create a fresh one per attempt
+                timeoutId = setTimeout(function () {
+                    requestTimedOut = true;
+                    console.warn('[NexvoraAIService] [' + requestId + '] timeout firing after', timeout + 'ms');
+                    controller.abort();
+                }, timeout);
+                _activeTimeoutId = timeoutId;
 
                 var fetchOptions = {
                     method: 'POST',
                     headers: headers,
-                    body: JSON.stringify(body)
+                    body: JSON.stringify(body),
+                    signal: controller.signal
                 };
-                if (controller) fetchOptions.signal = controller.signal;
 
                 var start = Date.now();
                 var res = await fetch(url, fetchOptions);
-                if (timeoutId) clearTimeout(timeoutId);
-                activeController = null;
                 var latency = Date.now() - start;
 
                 console.log('[NexvoraAIService] [' + requestId + '] fetch completed in', latency + 'ms', '| HTTP', res.status, '| attempt:', attempt + 1);
@@ -205,9 +205,6 @@ window.NexvoraAIService = (function () {
                 return { data: data, latency: latency, requestId: requestId };
 
             } catch (err) {
-                if (timeoutId) clearTimeout(timeoutId);
-                activeController = null;
-
                 // Already a ServiceError from above — throw immediately (unless retrying 5xx)
                 if (err.code && err.code !== 'TIMEOUT' && err.code !== 'NETWORK_ERROR') {
                     throw err;
@@ -225,7 +222,7 @@ window.NexvoraAIService = (function () {
                             message: 'AI request timed out after ' + (timeout / 1000) + ' seconds'
                         });
                     } else {
-                        // External abort (e.g. user cancelled)
+                        // External abort (user cancelled via stopGeneration)
                         console.error('[NexvoraAIService] [' + requestId + '] ABORTED externally after', abortElapsed + 'ms');
                         throw createError(ServiceError.TIMEOUT, {
                             timeout: timeout,
@@ -245,6 +242,12 @@ window.NexvoraAIService = (function () {
                 }
 
                 throw createError(ServiceError.NETWORK_ERROR, { original: err.message, requestId: requestId });
+
+            } finally {
+                // Always clean up timeout timer and controller reference
+                if (timeoutId) clearTimeout(timeoutId);
+                if (_activeTimeoutId === timeoutId) _activeTimeoutId = null;
+                if (_activeController === controller) _activeController = null;
             }
         }
 
@@ -590,10 +593,14 @@ window.NexvoraAIService = (function () {
     // Request cancellation
     // ---------------------------------------------------------------------------
     function cancelActiveRequest() {
-        if (activeController) {
+        if (_activeTimeoutId) {
+            clearTimeout(_activeTimeoutId);
+            _activeTimeoutId = null;
+        }
+        if (_activeController) {
             console.log('[NexvoraAIService] cancelling active request');
-            activeController.abort();
-            activeController = null;
+            _activeController.abort();
+            _activeController = null;
         }
     }
 

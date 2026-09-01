@@ -33,6 +33,8 @@ window.NexvoraAPIConfig = (function () {
         AI_FALLBACK_URL: ''
     };
 
+    var REQUEST_TIMEOUT = 120000; // 120 seconds — single source of truth for AI request timeout
+
     // ---------------------------------------------------------------------------
     // API Endpoints — all routes in one place
     // ---------------------------------------------------------------------------
@@ -61,7 +63,7 @@ window.NexvoraAPIConfig = (function () {
         topP:           1.0,
         frequencyPenalty: 0,
         presencePenalty:  0,
-        timeout:        parseInt(env.AI_API_TIMEOUT, 10) || 300000,
+        timeout:        parseInt(env.AI_API_TIMEOUT, 10) || REQUEST_TIMEOUT,
         retries:        2,
         retryDelay:     1000
     };
@@ -106,7 +108,7 @@ window.NexvoraAPIConfig = (function () {
         return {
             baseUrl:    baseUrl,
             apiKey:     saved.apiKey     || env.AI_API_KEY    || '',
-            timeout:    saved.timeout    || DEFAULTS.timeout,
+            timeout:    saved.timeout    || DEFAULTS.timeout || REQUEST_TIMEOUT,
             stream:     saved.stream     || env.AI_STREAM === 'true',
             fallbackUrl: saved.fallbackUrl || env.AI_FALLBACK_URL || '',
             headers:    saved.headers    || {}
@@ -236,7 +238,7 @@ window.NexvoraAPIConfig = (function () {
     // ---------------------------------------------------------------------------
     function checkHealth(model) {
         var config = loadConfig();
-        var timeout = config.timeout || DEFAULTS.timeout;
+        var timeout = config.timeout || DEFAULTS.timeout || REQUEST_TIMEOUT;
 
         var url = getChatEndpoint();
         var headers = getAuthHeaders(model);
@@ -310,6 +312,7 @@ window.NexvoraAPIConfig = (function () {
         DEFAULTS: DEFAULTS,
         STATUS: STATUS,
         CHAT_PATH: CHAT_PATH,
+        REQUEST_TIMEOUT: REQUEST_TIMEOUT,
 
         // Config management
         load: loadConfig,

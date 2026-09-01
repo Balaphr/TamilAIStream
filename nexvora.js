@@ -54,7 +54,6 @@ window.NexvoraAI = (function () {
     var settings = {};
     var currentChatId = null;
     var isGenerating = false;
-    var activeAbortController = null;
     var speechRecognition = null;
     var isRecording = false;
     var translationMode = false;
@@ -1822,7 +1821,6 @@ window.NexvoraAI = (function () {
 
         } finally {
             isGenerating = false;
-            activeAbortController = null;
             showLoading(false);
             removeThinkingMessage();
         }
@@ -1891,7 +1889,6 @@ window.NexvoraAI = (function () {
             NexvoraAIService.cancelActiveRequest();
         }
         isGenerating = false;
-        activeAbortController = null;
         showLoading(false);
         removeThinkingMessage();
     }
@@ -2815,10 +2812,8 @@ window.NexvoraAI = (function () {
                         var controller = null;
                         var timeoutId = null;
 
-                        if (typeof AbortController !== 'undefined') {
-                            controller = new AbortController();
-                            timeoutId = setTimeout(function () { controller.abort(); }, timeout);
-                        }
+                        controller = new AbortController();
+                        timeoutId = setTimeout(function () { controller.abort(); }, timeout);
 
                         var start = Date.now();
                         console.log('[Nexvora] Test Connection — timeout:', timeout + 'ms', '| model:', modelId);
@@ -2827,7 +2822,7 @@ window.NexvoraAI = (function () {
                             method: 'POST',
                             headers: headers,
                             body: JSON.stringify(body),
-                            signal: controller ? controller.signal : undefined
+                            signal: controller.signal
                         })
                         .then(function (res) {
                             if (timeoutId) clearTimeout(timeoutId);

@@ -393,15 +393,11 @@ window.NexvoraModelManager = (function () {
 
     // --- Direct connection test fallback (no config module needed) ---
     function testConnectionDirect(m) {
-        var controller = null;
-        var timeoutId = null;
         var timeout = 120000;
 
         return new Promise(function (resolve) {
-            if (typeof AbortController !== 'undefined') {
-                controller = new AbortController();
-                timeoutId = setTimeout(function () { controller.abort(); }, timeout);
-            }
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function () { controller.abort(); }, timeout);
 
             var C = window.NexvoraAPIConfig;
             var url = C ? C.getChatEndpoint() : 'https://api.tamilai.stream/v1/chat/completions';
@@ -418,16 +414,15 @@ window.NexvoraModelManager = (function () {
                 stream: false
             };
 
-            console.log('[NexvoraModelManager] testConnectionDirect → modelId:', modelId);
+            console.log('[NexvoraModelManager] testConnectionDirect → modelId:', modelId, '| timeout:', timeout + 'ms');
 
-            var fetchOptions = { method: 'POST', headers: headers, body: JSON.stringify(testBody) };
-            if (controller) fetchOptions.signal = controller.signal;
+            var fetchOptions = { method: 'POST', headers: headers, body: JSON.stringify(testBody), signal: controller.signal };
 
             var start = Date.now();
 
             fetch(url, fetchOptions)
                 .then(function (res) {
-                    if (timeoutId) clearTimeout(timeoutId);
+                    clearTimeout(timeoutId);
                     var latency = Date.now() - start;
 
                     if (!res.ok) {
@@ -443,10 +438,10 @@ window.NexvoraModelManager = (function () {
                     });
                 })
                 .catch(function (err) {
-                    if (timeoutId) clearTimeout(timeoutId);
+                    clearTimeout(timeoutId);
                     setConnectionStatus(m.id, 'error', null);
                     if (err.name === 'AbortError') {
-                        resolve({ connected: false, message: 'Request timed out after ' + timeout + 'ms' });
+                        resolve({ connected: false, message: 'Request timed out after ' + (timeout / 1000) + ' seconds' });
                     } else {
                         resolve({ connected: false, message: err.message || 'Connection failed' });
                     }
