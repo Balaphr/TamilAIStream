@@ -49,7 +49,7 @@ body {
 .ytm-page-home,
 .stations-track,
 .carousel-track,
-.recently-added-track,
+.sc-col-track,
 .home-categories,
 .ytm-sidebar,
 .premium-sidebar-content,
@@ -192,7 +192,7 @@ body {
    ============================================ */
 .stations-track,
 .carousel-track,
-.recently-added-track,
+.sc-col-track,
 .home-categories {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
@@ -201,7 +201,7 @@ body {
 
 .stations-track > *,
 .carousel-track > *,
-.recently-added-track > * {
+.sc-col-track > * {
     scroll-snap-align: start;
 }
 
@@ -465,7 +465,7 @@ a,
 
     .stations-track,
     .carousel-track,
-    .recently-added-track {
+    .sc-col-track {
         -webkit-overflow-scrolling: touch;
     }
 }
@@ -700,7 +700,7 @@ a,
     }
     .stations-track,
     .carousel-track,
-    .recently-added-track,
+    .sc-col-track,
     .home-categories {
         will-change: auto !important;
     }
@@ -1084,7 +1084,7 @@ img[src=""] {
 .featured-grid,
 .mood-grid,
 .decade-grid,
-.recently-added-viewport,
+.sc-col-viewport,
 .ai-radio-section,
 .bottom-nav,
 .global-player {
@@ -1096,7 +1096,7 @@ img[src=""] {
 /* Offscreen elements don't paint */
 @media (prefers-reduced-motion: no-preference) {
     .glass-card:not(:hover),
-    .recently-added-card:not(:hover),
+    .sc-card:not(:hover),
     .station-card:not(:hover),
     .featured-card:not(:hover),
     .mood-card:not(:hover),
@@ -1109,7 +1109,7 @@ img[src=""] {
 
 /* Only animate on hover/focus - saves CPU/GPU */
 .glass-card,
-.recently-added-card,
+.sc-card,
 .station-card,
 .featured-card,
 .mood-card,
@@ -1119,7 +1119,7 @@ img[src=""] {
     will-change: auto;
 }
 .glass-card:hover,
-.recently-added-card:hover,
+.sc-card:hover,
 .station-card:hover,
 .featured-card:hover,
 .mood-card:hover,
@@ -1196,7 +1196,7 @@ audio {
 
 /* Efficient text rendering */
 .glass-card,
-.recently-added-card,
+.sc-card,
 .station-card,
 .featured-card {
     text-rendering: optimizeSpeed;
@@ -1207,7 +1207,7 @@ audio {
 .featured-grid,
 .mood-grid,
 .decade-grid,
-.recently-added-track-list {
+.sc-col-track {
     contain: strict;
 }
 
@@ -1227,7 +1227,7 @@ audio {
 
 /* Efficient shadow - use drop-shadow filter for complex shapes */
 .glass-card:hover,
-.recently-added-card:hover {
+.sc-card:hover {
     filter: drop-shadow(0 16px 32px rgba(0,0,0,0.4));
 }
 
@@ -1256,7 +1256,7 @@ audio {
 .gp-mini-artwork,
 .gp-exp-artwork,
 .glass-card .card-artwork,
-.recently-added-card .card-image {
+.sc-card-art {
     transform-origin: center center;
 }
 

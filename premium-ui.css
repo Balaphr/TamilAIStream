@@ -1251,9 +1251,9 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
   .ytm-page-home .round-collection-name { font-size: 0.8rem; }
   .ytm-page-home .round-collection-count { font-size: 0.68rem; }
 
-  /* Recently Added marquee — larger stacked artwork */
-  .ytm-page-home .recently-added-card { width: 180px; }
-  .ytm-page-home .recently-added-card-art {
+  /* Songs collections — larger stacked artwork */
+  .ytm-page-home .sc-card { width: 180px; }
+  .ytm-page-home .sc-card-art {
     aspect-ratio: 1 / 1;
     border-radius: 16px;
   }

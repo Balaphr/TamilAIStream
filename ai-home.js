@@ -1710,78 +1710,89 @@ window.AIHome = (() => {
         }, 300);
     }
 
-    /* ---------------- Refresh + init ---------------- */
-    let _raPaused = false;
-    let _raInView = true; // IntersectionObserver: only animate when visible
-    let _raSpeed = 0.4; // kept for reference; CSS animation handles actual scroll
-    let _raTrackBound = false; // prevent duplicate event listeners
+    /* ---------------- Songs Collections: Dual Vertical Scroll ---------------- */
+    let _scPaused = false;
+    let _scInView = true;
+    let _scBound = false;
 
-    function renderRecentlyAdded() {
-        const section = document.getElementById('recentlyAddedSection');
-        const track = document.getElementById('recentlyAddedTrack');
-        if (!section || !track) return;
-        if (playerSections().recentlyAdded === false) { section.style.display = 'none'; return; }
+    function _scCardHTML(s, idx, total) {
+        const art = s.albumCover || s.thumbnail || s.artwork || '';
+        const name = (s.title || 'Untitled').slice(0, 30);
+        const artist = (s.artist || s.movie || '').slice(0, 28);
+        const artStyle = art ? `background-image:url('${art}')` : '';
+        const isNew = idx < total;
+        const songJson = JSON.stringify({ id: s.id, title: s.title, artist: s.artist, thumbnail: art, genre: s.genre, mood: s.mood }).replace(/'/g, '&#39;');
+        return `<div class="sc-card" data-song-id="${s.id}" onclick="if(typeof playSongById==='function')playSongById('${s.id}')">
+            <div class="sc-card-art" style="${artStyle}">${isNew ? '<span class="sc-card-new">NEW</span>' : ''}</div>
+            <button class="card-menu-trigger" onclick="event.stopPropagation();AIHome.openCardContextMenu(event, JSON.parse(this.dataset.song))" data-song='${songJson}' aria-label="More options"><i class="fas fa-ellipsis-vertical"></i></button>
+            <button class="sc-card-play" onclick="event.stopPropagation();if(typeof playSongById==='function')playSongById('${s.id}')"><i class="fas fa-play"></i></button>
+            <div class="sc-card-name">${name}</div>
+            <div class="sc-card-artist">${artist}</div>
+        </div>`;
+    }
+
+    function renderSongsCollections() {
+        const section = document.getElementById('songsCollectionsSection');
+        const leftTrack = document.getElementById('scTrackLeft');
+        const rightTrack = document.getElementById('scTrackRight');
+        if (!section || !leftTrack || !rightTrack) return;
 
         let songs = [];
         try { songs = DataStore.getSongs() || []; } catch (e) { return; }
         songs = songs.filter(s => s && (s.status === 'published' || s.status === 'active'));
         songs.sort((a, b) => new Date(b.createdAt || b.uploadedAt || 0) - new Date(a.createdAt || a.uploadedAt || 0));
-        const recent = songs.slice(0, 12);
+        const recent = songs.slice(0, 16);
         if (!recent.length) { section.style.display = 'none'; return; }
 
         section.style.display = 'block';
-        const items = recent.concat(recent);
-        track.innerHTML = items.map((s, i) => {
-            const art = s.albumCover || s.thumbnail || s.artwork || '';
-            const name = (s.title || 'Untitled').slice(0, 30);
-            const artist = (s.artist || s.movie || '').slice(0, 28);
-            const artStyle = art ? `background-image:url('${art}')` : '';
-            const isNew = i < recent.length;
-            const songJson = JSON.stringify({ id: s.id, title: s.title, artist: s.artist, thumbnail: art, genre: s.genre, mood: s.mood }).replace(/'/g, '&#39;');
-            return `<div class="ra-song-card" data-song-id="${s.id}" onclick="if(typeof playSongById==='function')playSongById('${s.id}')">
-                <div class="ra-song-art" style="${artStyle}">${isNew ? '<span class="ra-song-new">NEW</span>' : ''}</div>
-                <button class="card-menu-trigger" onclick="event.stopPropagation();AIHome.openCardContextMenu(event, JSON.parse(this.dataset.song))" data-song='${songJson}' aria-label="More options"><i class="fas fa-ellipsis-vertical"></i></button>
-                <button class="ra-song-play" onclick="event.stopPropagation();if(typeof playSongById==='function')playSongById('${s.id}')"><i class="fas fa-play"></i></button>
-                <div class="ra-song-name">${name}</div>
-                <div class="ra-song-artist">${artist}</div>
-            </div>`;
-        }).join('');
 
-        // Reset scroll and apply CSS marquee animation
-        track.scrollLeft = 0;
-        track.classList.remove('ra-autoscroll', 'ra-paused');
-        // Force reflow so the animation restarts cleanly after content change
-        void track.offsetWidth;
-        // Calculate duration: scroll half the content (mirrored items) at a pleasant speed
-        const halfWidth = track.scrollWidth / 2;
-        const duration = Math.max(20, halfWidth / 24); // ~24px/sec
-        track.style.setProperty('--ra-duration', duration + 's');
-        track.classList.add('ra-autoscroll');
-        _raPaused = false;
+        // Split songs into two halves for left/right columns
+        const mid = Math.ceil(recent.length / 2);
+        const leftSongs = recent.slice(0, mid);
+        const rightSongs = recent.slice(mid);
 
-        // Bind pause/resume events only once
-        if (!_raTrackBound) {
-            _raTrackBound = true;
-            // Battery/CPU: only run animation while the section is on screen
+        // Render left column (scroll up)
+        const leftHTML = leftSongs.map((s, i) => _scCardHTML(s, i, leftSongs.length)).join('');
+        leftTrack.innerHTML = leftHTML + leftHTML; // duplicate for loop
+
+        // Render right column (scroll down)
+        const rightHTML = rightSongs.map((s, i) => _scCardHTML(s, i, rightSongs.length)).join('');
+        rightTrack.innerHTML = rightHTML + rightHTML;
+
+        // Calculate scroll durations based on content height
+        [leftTrack, rightTrack].forEach(track => {
+            track.classList.remove('sc-autoscroll-up', 'sc-autoscroll-down', 'sc-paused');
+            void track.offsetWidth;
+            const halfHeight = track.scrollHeight / 2;
+            const duration = Math.max(18, halfHeight / 18); // ~18px/sec
+            track.style.setProperty('--sc-duration', duration + 's');
+        });
+        leftTrack.classList.add('sc-autoscroll-up');
+        rightTrack.classList.add('sc-autoscroll-down');
+        _scPaused = false;
+
+        // Bind pause/resume events once
+        if (!_scBound) {
+            _scBound = true;
+            const allTracks = [leftTrack, rightTrack];
+            const pauseAll = () => allTracks.forEach(t => t.classList.add('sc-paused'));
+            const resumeAll = () => { if (!_scPaused && _scInView) allTracks.forEach(t => t.classList.remove('sc-paused')); };
+
             if (typeof IntersectionObserver !== 'undefined') {
                 new IntersectionObserver((entries) => {
-                    _raInView = entries[0] && entries[0].isIntersecting;
-                    track.classList.toggle('ra-paused', !_raInView || _raPaused);
+                    _scInView = entries[0] && entries[0].isIntersecting;
+                    _scInView ? resumeAll() : pauseAll();
                 }, { rootMargin: '80px' }).observe(section);
             }
-            // Pause on touch
-            track.addEventListener('touchstart', () => { _raPaused = true; track.classList.add('ra-paused'); }, { passive: true });
-            track.addEventListener('touchend', () => { setTimeout(() => { _raPaused = false; track.classList.toggle('ra-paused', !_raInView); }, 800); }, { passive: true });
-            track.addEventListener('touchcancel', () => { setTimeout(() => { _raPaused = false; track.classList.toggle('ra-paused', !_raInView); }, 800); }, { passive: true });
 
-            // Pause on mouse hover
-            track.addEventListener('mouseenter', () => { _raPaused = true; track.classList.add('ra-paused'); });
-            track.addEventListener('mouseleave', () => { _raPaused = false; track.classList.toggle('ra-paused', !_raInView); });
-
-            // Pause when tab is hidden (save CPU/battery)
+            section.addEventListener('touchstart', () => { _scPaused = true; pauseAll(); }, { passive: true });
+            section.addEventListener('touchend', () => { setTimeout(() => { _scPaused = false; resumeAll(); }, 800); }, { passive: true });
+            section.addEventListener('touchcancel', () => { setTimeout(() => { _scPaused = false; resumeAll(); }, 800); }, { passive: true });
+            section.addEventListener('mouseenter', () => { _scPaused = true; pauseAll(); });
+            section.addEventListener('mouseleave', () => { _scPaused = false; resumeAll(); });
             document.addEventListener('visibilitychange', () => {
-                if (document.hidden) { _raPaused = true; track.classList.add('ra-paused'); }
-                else { _raPaused = false; track.classList.toggle('ra-paused', !_raInView); }
+                if (document.hidden) { _scPaused = true; pauseAll(); }
+                else { _scPaused = false; resumeAll(); }
             });
         }
     }
@@ -1796,7 +1807,7 @@ window.AIHome = (() => {
         if (typeof window.renderUpcomingReleases === 'function') renderUpcomingReleases();
         renderNewAlbums();
         renderOneTapRadio();
-        renderRecentlyAdded();
+        renderSongsCollections();
         renderMusicHero();
         renderTrendingPlaylists();
         renderLiveFm();

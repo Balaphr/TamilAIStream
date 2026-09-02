@@ -3,11 +3,11 @@
 <head>
     <!-- Critical inline CSS: card dimensions to prevent layout shift from deferred ai-glass.css -->
     <style>
-        .ai-song-card, .ai-playlist-card, .new-album-card, .ra-song-card, .eg-card { flex: 0 0 180px; width: 180px; }
-        .ai-song-art, .ai-playlist-art, .eg-card-art, .new-album-art-wrap, .ra-song-art { aspect-ratio: 1; overflow: hidden; }
-        .ai-recent-row, .ai-card-row, .ai-evergreen-grid, .new-album-row, .recently-added-track { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
-        @media (max-width: 768px) { .ai-song-card, .ai-playlist-card, .new-album-card, .ra-song-card, .eg-card { flex: 0 0 160px; width: 160px; } }
-        @media (max-width: 480px) { .ai-song-card, .ai-playlist-card, .new-album-card, .ra-song-card, .eg-card { flex: 0 0 145px; width: 145px; } }
+        .ai-song-card, .ai-playlist-card, .new-album-card, .sc-card, .eg-card { flex: 0 0 180px; width: 180px; }
+        .ai-song-art, .ai-playlist-art, .eg-card-art, .new-album-art-wrap, .sc-card-art { aspect-ratio: 1; overflow: hidden; }
+        .ai-recent-row, .ai-card-row, .ai-evergreen-grid, .new-album-row { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+        @media (max-width: 768px) { .ai-song-card, .ai-playlist-card, .new-album-card, .sc-card, .eg-card { flex: 0 0 160px; width: 160px; } }
+        @media (max-width: 480px) { .ai-song-card, .ai-playlist-card, .new-album-card, .sc-card, .eg-card { flex: 0 0 145px; width: 145px; } }
     </style>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NTDWNFKXRE"></script>
@@ -661,13 +661,40 @@
                     <!-- Ad Slot: Home -->
                     <div class="tas-ad-slot" id="tasAdHome" data-ad-location="home" style="display:none;"></div>
 
-                    <!-- Recently Added Songs (auto-populated from builder) -->
-                    <section class="ai-panel recently-added-section" data-section="ai-recently-added" id="recentlyAddedSection" style="display:none;">
+                    <!-- Songs Collections — Dual Vertical Scroll -->
+                    <section class="ai-panel songs-collections-section" data-section="ai-songs-collections" id="songsCollectionsSection" style="display:none;">
                         <div class="ai-sec-head">
-                            <h2 class="ai-sec-title"><i class="fas fa-clock-rotate-left"></i> Recently Added</h2>
+                            <h2 class="ai-sec-title"><i class="fas fa-layer-group"></i> Songs Collections</h2>
                         </div>
-                        <div class="recently-added-viewport" id="recentlyAddedViewport">
-                            <div class="recently-added-track" id="recentlyAddedTrack"></div>
+                        <div class="sc-wrap">
+                            <div class="sc-col sc-col-left">
+                                <div class="sc-col-viewport">
+                                    <div class="sc-col-track" id="scTrackLeft"></div>
+                                </div>
+                            </div>
+                            <div class="sc-center">
+                                <div class="sc-3d-scene">
+                                    <div class="sc-headphones">
+                                        <div class="sc-hp-band"></div>
+                                        <div class="sc-hp-cup sc-hp-cup-l">
+                                            <div class="sc-hp-cup-inner"></div>
+                                        </div>
+                                        <div class="sc-hp-cup sc-hp-cup-r">
+                                            <div class="sc-hp-cup-inner"></div>
+                                        </div>
+                                        <div class="sc-hp-pad sc-hp-pad-l"></div>
+                                        <div class="sc-hp-pad sc-hp-pad-r"></div>
+                                    </div>
+                                    <div class="sc-hp-glow"></div>
+                                    <div class="sc-hp-ring"></div>
+                                    <div class="sc-hp-ring sc-hp-ring-2"></div>
+                                </div>
+                            </div>
+                            <div class="sc-col sc-col-right">
+                                <div class="sc-col-viewport">
+                                    <div class="sc-col-track" id="scTrackRight"></div>
+                                </div>
+                            </div>
                         </div>
                     </section>
 

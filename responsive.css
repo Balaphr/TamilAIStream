@@ -565,10 +565,10 @@ body {
     /* Pagination */
     .page-btn { width: 44px; height: 44px; }
 
-    /* Recently added */
-    .recently-added-section .section-header { padding: 0 10px; }
-    .recently-added-card { width: 160px; }
-    .recently-added-card-play-btn { width: 44px; height: 44px; }
+    /* Songs collections */
+    .songs-collections-section .ai-sec-head { padding: 14px 14px 2px; }
+    .sc-card { padding: 8px; }
+    .sc-card-play { width: 26px; height: 26px; font-size: 10px; }
 
     /* Ticker */
     .ytm-ticker-item { padding: 0 8px; }
@@ -742,9 +742,10 @@ body {
     .songs-empty-title { font-size: 1rem; }
     .songs-empty-text { max-width: 240px; font-size: 0.85rem; }
 
-    /* Recently added */
-    .recently-added-card { width: 145px; }
-    .recently-added-card-play-btn { width: 40px; height: 40px; }
+    /* Songs collections */
+    .sc-card { padding: 6px; border-radius: 10px; }
+    .sc-card-name { font-size: 0.7rem; }
+    .sc-card-artist { font-size: 0.62rem; }
 
     /* Home main top spacing */
     .home-main { padding-top: 76px; }
