@@ -6414,6 +6414,7 @@ function scAddSong(side) {
     sel.value = '';
     loadSongsCollectionsPage();
     showToast('Song added to ' + side + ' column', 'success');
+    syncToLiveWebsite();
 }
 
 function scRemoveSong(side, idx) {
@@ -6424,6 +6425,7 @@ function scRemoveSong(side, idx) {
     DataStore.setSongsCollections(data);
     loadSongsCollectionsPage();
     showToast('Song removed', 'info');
+    syncToLiveWebsite();
 }
 
 function scMoveSong(side, idx, dir) {
@@ -6435,6 +6437,7 @@ function scMoveSong(side, idx, dir) {
     data[side] = list;
     DataStore.setSongsCollections(data);
     loadSongsCollectionsPage();
+    syncToLiveWebsite();
 }
 
 function saveSongsCollections() {

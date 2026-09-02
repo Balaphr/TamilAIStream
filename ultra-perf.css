@@ -1206,9 +1206,11 @@ audio {
 .station-grid,
 .featured-grid,
 .mood-grid,
-.decade-grid,
-.sc-col-track {
+.decade-grid {
     contain: strict;
+}
+.sc-col-track {
+    contain: layout style paint;
 }
 
 /* Optimize backdrop-filter - only on visible elements */
