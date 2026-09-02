@@ -1737,26 +1737,47 @@ window.AIHome = (() => {
         const rightTrack = document.getElementById('scTrackRight');
         if (!section || !leftTrack || !rightTrack) return;
 
-        let songs = [];
-        try { songs = DataStore.getSongs() || []; } catch (e) { return; }
-        songs = songs.filter(s => s && (s.status === 'published' || s.status === 'active'));
-        songs.sort((a, b) => new Date(b.createdAt || b.uploadedAt || 0) - new Date(a.createdAt || a.uploadedAt || 0));
-        const recent = songs.slice(0, 16);
-        if (!recent.length) { section.style.display = 'none'; return; }
+        // Read builder-configured songs collections data
+        let scData = { left: [], right: [], settings: {} };
+        try { scData = DataStore.getSongsCollections() || scData; } catch (e) {}
+
+        const allSongs = (DataStore.getSongs() || [])
+            .filter(s => s && (s.status === 'published' || s.status === 'active'));
+
+        function resolveSong(ref) {
+            if (!ref) return null;
+            if (typeof ref === 'object') return ref;
+            return allSongs.find(s => s.id === ref) || null;
+        }
+
+        let leftSongs = (scData.left || []).map(resolveSong).filter(Boolean);
+        let rightSongs = (scData.right || []).map(resolveSong).filter(Boolean);
+
+        // Fallback: if no builder data, auto-fill 5 each from latest songs
+        if (!leftSongs.length && !rightSongs.length) {
+            const sorted = [...allSongs].sort((a, b) =>
+                new Date(b.createdAt || b.uploadedAt || 0) - new Date(a.createdAt || a.uploadedAt || 0));
+            leftSongs = sorted.slice(0, 5);
+            rightSongs = sorted.slice(5, 10);
+        }
+
+        if (!leftSongs.length && !rightSongs.length) { section.style.display = 'none'; return; }
 
         section.style.display = 'block';
 
-        // Split songs into two halves for left/right columns
-        const mid = Math.ceil(recent.length / 2);
-        const leftSongs = recent.slice(0, mid);
-        const rightSongs = recent.slice(mid);
+        const settings = scData.settings || {};
+        const scrollSpeed = settings.scrollSpeed || 18;
 
-        // Render left column (scroll up)
-        const leftHTML = leftSongs.map((s, i) => _scCardHTML(s, i, leftSongs.length)).join('');
-        leftTrack.innerHTML = leftHTML + leftHTML; // duplicate for loop
+        function makeTrackHTML(songs) {
+            return songs.map(s => _scCardHTML(s, 0, 0)).join('');
+        }
 
-        // Render right column (scroll down)
-        const rightHTML = rightSongs.map((s, i) => _scCardHTML(s, i, rightSongs.length)).join('');
+        // Render left column (scroll up) — duplicate for seamless loop
+        const leftHTML = makeTrackHTML(leftSongs);
+        leftTrack.innerHTML = leftHTML + leftHTML;
+
+        // Render right column (scroll down) — duplicate for seamless loop
+        const rightHTML = makeTrackHTML(rightSongs);
         rightTrack.innerHTML = rightHTML + rightHTML;
 
         // Calculate scroll durations based on content height
@@ -1764,7 +1785,7 @@ window.AIHome = (() => {
             track.classList.remove('sc-autoscroll-up', 'sc-autoscroll-down', 'sc-paused');
             void track.offsetWidth;
             const halfHeight = track.scrollHeight / 2;
-            const duration = Math.max(18, halfHeight / 18); // ~18px/sec
+            const duration = Math.max(12, halfHeight / scrollSpeed);
             track.style.setProperty('--sc-duration', duration + 's');
         });
         leftTrack.classList.add('sc-autoscroll-up');
@@ -1907,7 +1928,8 @@ window.AIHome = (() => {
             'tamilAIStream_moods', 'tamilAIStream_aiRadio',
             'tamilAIStream_splash', 'tamilAIStream_playerPrefs',
             'tamilAIStream_navigation', 'tamilAIStream_sectionsOrder',
-            'tamilAIStream_miniPlayerSettings', 'tamilAIStream_upcomingReleases'
+            'tamilAIStream_miniPlayerSettings', 'tamilAIStream_upcomingReleases',
+            'tamilAIStream_songsCollections'
         ];
         window.addEventListener('storage', (e) => {
             if (e.key && contentKeys.indexOf(e.key) !== -1) refresh();

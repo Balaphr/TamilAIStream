@@ -927,6 +927,23 @@ const Site360 = (function () {
         });
 
         // ═══════════════════════════════════════════════
+        // SECTION 14b: SONGS COLLECTIONS
+        // ═══════════════════════════════════════════════
+        const scData = DataStore.getSongsCollections();
+        canvasElements.push({
+            id: 'el_sec_songs_collections', section: 'home', label: 'Songs Collections', icon: 'fa-layer-group',
+            category: 'section', source: 'siteSettings',
+            value: scData,
+            controls: [
+                { key: 'scVisible', label: 'Visible', type: 'toggle', value: true },
+                { key: 'scTitle', label: 'Section Title', type: 'text', value: (scData.settings || {}).title || 'Songs Collections' },
+                { key: 'scScrollSpeed', label: 'Scroll Speed (px/s)', type: 'range', value: (scData.settings || {}).scrollSpeed || 18, min: 5, max: 60 },
+                { key: 'scLeftCount', label: 'Left Column Songs', type: 'number', value: (scData.left || []).length, min: 0, max: 5 },
+                { key: 'scRightCount', label: 'Right Column Songs', type: 'number', value: (scData.right || []).length, min: 0, max: 5 }
+            ]
+        });
+
+        // ═══════════════════════════════════════════════
         // SECTION 15: LATEST RELEASES
         // ═══════════════════════════════════════════════
         canvasElements.push({

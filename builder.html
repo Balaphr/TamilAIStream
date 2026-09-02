@@ -248,6 +248,9 @@
                             <button class="builder-sidebar-item" data-page="newalbums">
                                 <i class="fas fa-record-vinyl"></i> New Albums
                             </button>
+                            <button class="builder-sidebar-item" data-page="songsCollections">
+                                <i class="fas fa-layer-group"></i> Songs Collections
+                            </button>
                         </div>
                     </div>
                     <div class="builder-sidebar-section">
@@ -925,6 +928,68 @@
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+
+                    <div class="builder-page" id="songsCollectionsPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title">Songs Collections</h1>
+                            <p class="builder-page-subtitle">Manage the dual vertical-scroll album cards on the home page</p>
+                        </div>
+
+                        <div class="builder-content-card">
+                            <div class="builder-card-header">
+                                <h3>Section Settings</h3>
+                            </div>
+                            <div class="builder-card-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Section Title</label>
+                                        <input type="text" class="form-input" id="scSectionTitle" value="Songs Collections" placeholder="Section heading">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Scroll Speed (px/sec)</label>
+                                        <input type="number" class="form-input" id="scScrollSpeed" value="18" min="5" max="60" placeholder="18">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                            <div class="builder-content-card">
+                                <div class="builder-card-header">
+                                    <h3>Left Column (Scrolls Up)</h3>
+                                </div>
+                                <div class="builder-card-body">
+                                    <div id="scLeftList" class="sc-builder-list"></div>
+                                    <div style="margin-top:12px;">
+                                        <label class="form-label">Add Song to Left</label>
+                                        <select class="form-input" id="scLeftSongSelect">
+                                            <option value="">— Select a song —</option>
+                                        </select>
+                                        <button class="builder-btn primary small" style="margin-top:8px;" onclick="scAddSong('left')"><i class="fas fa-plus"></i> Add</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="builder-content-card">
+                                <div class="builder-card-header">
+                                    <h3>Right Column (Scrolls Down)</h3>
+                                </div>
+                                <div class="builder-card-body">
+                                    <div id="scRightList" class="sc-builder-list"></div>
+                                    <div style="margin-top:12px;">
+                                        <label class="form-label">Add Song to Right</label>
+                                        <select class="form-input" id="scRightSongSelect">
+                                            <option value="">— Select a song —</option>
+                                        </select>
+                                        <button class="builder-btn primary small" style="margin-top:8px;" onclick="scAddSong('right')"><i class="fas fa-plus"></i> Add</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:16px;text-align:right;">
+                            <button class="builder-btn primary" onclick="saveSongsCollections()"><i class="fas fa-save"></i> Save Collections</button>
                         </div>
                     </div>
 

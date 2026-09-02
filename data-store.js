@@ -42,7 +42,8 @@ const DataStore = {
         FAVORITES: 'tamilAIStream_favorites',
         TRASH: 'tamilAIStream_trash',
         DELETED_IDS: 'tamilAIStream_deletedIds',
-        APPLICATION: 'tamilAIStream_application'
+        APPLICATION: 'tamilAIStream_application',
+        SONGS_COLLECTIONS: 'tamilAIStream_songsCollections'
     },
 
     get(key) {
@@ -196,6 +197,9 @@ const DataStore = {
 
     getUpcomingReleases() { return this._filterDeleted(this.get(this.KEYS.UPCOMING_RELEASES) || [], 'upcomingReleases'); },
     setUpcomingReleases(data) { this.set(this.KEYS.UPCOMING_RELEASES, data); },
+
+    getSongsCollections() { return this.get(this.KEYS.SONGS_COLLECTIONS) || { left: [], right: [], settings: {} }; },
+    setSongsCollections(data) { this.set(this.KEYS.SONGS_COLLECTIONS, data); },
 
     getNews() { return this.get(this.KEYS.NEWS) || []; },
     setNews(data) { this.set(this.KEYS.NEWS, data); },
@@ -419,6 +423,9 @@ init() {
         }
         if (!localStorage.getItem(this.KEYS.UPCOMING_RELEASES)) {
             this.setUpcomingReleases([]);
+        }
+        if (!localStorage.getItem(this.KEYS.SONGS_COLLECTIONS)) {
+            this.setSongsCollections({ left: [], right: [], settings: {} });
         }
         if (!localStorage.getItem(this.KEYS.TRASH)) {
             this.setTrash([]);

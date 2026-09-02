@@ -533,7 +533,8 @@ function navigateTo(page) {
         'musiccollections': 'musicCollectionsPage',
         'site360': 'site360Page',
         'aiwebflow': 'aiwebflowPage',
-        'application': 'applicationPage'
+        'application': 'applicationPage',
+        'songsCollections': 'songsCollectionsPage'
     };
 
     const pageId = pageMap[page];
@@ -559,6 +560,7 @@ function _loadPageData(page) {
     if (page === 'content') { loadFeatured(); loadTrending(); loadCategories(); loadArtistHits(); loadCollectionsTable('movies'); loadCollectionsTable('yearly'); loadCollectionsTable('latest'); loadAllSongs(); loadQuotes(); loadContentSectionStats(); }
     if (page === 'musiccollections') loadMusicCollections();
     if (page === 'newalbums') loadNewAlbums();
+    if (page === 'songsCollections') loadSongsCollectionsPage();
     if (page === 'images') loadAllImages();
     if (page === 'settings') loadSettings();
     if (page === 'moods') loadMoods();
@@ -1819,6 +1821,7 @@ async function _syncToLiveWebsiteActual() {
             'tamilAIStream_images', 'tamilAIStream_moviesCollections',
             'tamilAIStream_yearlyCollections', 'tamilAIStream_latestCollections',
             'tamilAIStream_musicCollections', 'tamilAIStream_upcomingReleases',
+            'tamilAIStream_songsCollections',
             'tamilAIStream_deletedIds', 'tamilAIStream_trash'
         ];
 
@@ -1886,6 +1889,7 @@ function saveDraft() {
             sectionsOrder: DataStore.getSectionsOrder(),
             miniPlayerSettings: DataStore.getMiniPlayerSettings(),
             advertisements: DataStore.getAdvertisements(),
+            songsCollections: DataStore.getSongsCollections(),
             savedAt: new Date().toISOString()
         };
         localStorage.setItem('builderDraft', JSON.stringify(draftData));
@@ -2002,6 +2006,7 @@ function discardChanges() {
             if (draftData.navigation) DataStore.setNavigation(draftData.navigation);
             if (draftData.sectionsOrder) DataStore.setSectionsOrder(draftData.sectionsOrder);
             if (draftData.miniPlayerSettings) DataStore.setMiniPlayerSettings(draftData.miniPlayerSettings);
+            if (draftData.songsCollections) DataStore.setSongsCollections(draftData.songsCollections);
         }
         publishState = 'draft';
         savePublishState();
@@ -6331,6 +6336,128 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// ============================================
+// Songs Collections — Builder CRUD
+// ============================================
+function loadSongsCollectionsPage() {
+    const data = DataStore.getSongsCollections();
+    const songs = (DataStore.getSongs() || [])
+        .filter(s => s && (s.status === 'published' || s.status === 'active'))
+        .sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+
+    // Populate song select dropdowns
+    ['scLeftSongSelect', 'scRightSongSelect'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = '<option value="">— Select a song —</option>' +
+            songs.map(s => `<option value="${s.id}">${s.title || 'Untitled'}${s.artist ? ' — ' + s.artist : ''}</option>`).join('');
+        sel.value = current;
+    });
+
+    // Render left list
+    _scRenderList('scLeftList', data.left || [], songs, 'left');
+    // Render right list
+    _scRenderList('scRightList', data.right || [], songs, 'right');
+
+    // Settings
+    const settings = data.settings || {};
+    document.getElementById('scSectionTitle').value = settings.title || 'Songs Collections';
+    document.getElementById('scScrollSpeed').value = settings.scrollSpeed || 18;
+}
+
+function _scRenderList(containerId, items, allSongs, side) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (!items.length) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:13px;">No songs added yet.</div>';
+        return;
+    }
+    container.innerHTML = items.map((ref, i) => {
+        const song = (typeof ref === 'object') ? ref : allSongs.find(s => s.id === ref);
+        if (!song) return '';
+        const art = song.albumCover || song.thumbnail || song.artwork || '';
+        return `<div class="sc-builder-item" data-side="${side}" data-idx="${i}" style="display:flex;align-items:center;gap:10px;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:6px;">
+            <div style="width:40px;height:40px;border-radius:6px;overflow:hidden;flex-shrink:0;background:rgba(255,255,255,0.08);">
+                ${art ? `<img src="${art}" alt="" style="width:100%;height:100%;object-fit:cover;">` :
+                '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#555;"><i class="fas fa-music"></i></div>'}
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${(song.title || 'Untitled').slice(0, 35)}</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${(song.artist || '').slice(0, 30)}</div>
+            </div>
+            <div style="display:flex;gap:4px;">
+                <button class="builder-btn small" onclick="scMoveSong('${side}',${i},-1)" title="Move Up"><i class="fas fa-arrow-up"></i></button>
+                <button class="builder-btn small" onclick="scMoveSong('${side}',${i},1)" title="Move Down"><i class="fas fa-arrow-down"></i></button>
+                <button class="builder-btn small danger" onclick="scRemoveSong('${side}',${i})" title="Remove"><i class="fas fa-times"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function scAddSong(side) {
+    const selId = side === 'left' ? 'scLeftSongSelect' : 'scRightSongSelect';
+    const sel = document.getElementById(selId);
+    if (!sel || !sel.value) { showToast('Select a song first', 'warning'); return; }
+    const songId = sel.value;
+    const data = DataStore.getSongsCollections();
+    const list = data[side] || [];
+    if (list.length >= 5) { showToast('Maximum 5 songs per column', 'warning'); return; }
+    if (list.includes(songId)) { showToast('Song already in this column', 'warning'); return; }
+    list.push(songId);
+    data[side] = list;
+    DataStore.setSongsCollections(data);
+    sel.value = '';
+    loadSongsCollectionsPage();
+    showToast('Song added to ' + side + ' column', 'success');
+}
+
+function scRemoveSong(side, idx) {
+    const data = DataStore.getSongsCollections();
+    const list = data[side] || [];
+    list.splice(idx, 1);
+    data[side] = list;
+    DataStore.setSongsCollections(data);
+    loadSongsCollectionsPage();
+    showToast('Song removed', 'info');
+}
+
+function scMoveSong(side, idx, dir) {
+    const data = DataStore.getSongsCollections();
+    const list = data[side] || [];
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= list.length) return;
+    [list[idx], list[newIdx]] = [list[newIdx], list[idx]];
+    data[side] = list;
+    DataStore.setSongsCollections(data);
+    loadSongsCollectionsPage();
+}
+
+function saveSongsCollections() {
+    const data = DataStore.getSongsCollections();
+    data.settings = {
+        title: (document.getElementById('scSectionTitle').value || 'Songs Collections').trim(),
+        scrollSpeed: parseInt(document.getElementById('scScrollSpeed').value) || 18
+    };
+    DataStore.setSongsCollections(data);
+    showToast('Songs Collections settings saved', 'success');
+    syncToLiveWebsite();
+}
+
+// Register in keysToSync and saveDraft
+(function() {
+    const origSync = window.syncToLiveWebsite;
+    if (typeof origSync === 'function') {
+        window.syncToLiveWebsite = function() {
+            origSync.apply(this, arguments);
+            try {
+                const key = 'tamilAIStream_songsCollections';
+                localStorage.setItem(key, localStorage.getItem(key) || 'null');
+            } catch (e) {}
+        };
+    }
+})();
 
 // Brand logo upload + preview
 document.addEventListener('DOMContentLoaded', function() {
