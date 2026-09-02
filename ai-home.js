@@ -1914,6 +1914,16 @@ window.AIHome = (() => {
         window.addEventListener('storage-sync', refresh);
         window.addEventListener('premium-sections-sync', refresh);
         window.addEventListener('tamilAIStream-content-synced', refresh);
+        // After R2 bootstrap completes, force a re-render so songs/upcoming
+        // collections picked up from R2 are displayed immediately.
+        if (typeof ContentSync !== 'undefined' && typeof ContentSync.onSync === 'function') {
+            ContentSync.onSync(function(result) {
+                if (result && result.changed) {
+                    setTimeout(refreshHome, 100);
+                    setTimeout(refreshHome, 500);
+                }
+            });
+        }
         // Only re-render when actual shared CONTENT changed. Playback state
         // (tamilAIStream_player_state) is written continuously while a song
         // plays and must NOT cause the Home sections to re-render/reshuffle.

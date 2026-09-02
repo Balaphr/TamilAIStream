@@ -534,7 +534,8 @@ function navigateTo(page) {
         'site360': 'site360Page',
         'aiwebflow': 'aiwebflowPage',
         'application': 'applicationPage',
-        'songsCollections': 'songsCollectionsPage'
+        'songsCollections': 'songsCollectionsPage',
+        'newalbums': 'newAlbumsPage'
     };
 
     const pageId = pageMap[page];
@@ -1821,7 +1822,7 @@ async function _syncToLiveWebsiteActual() {
             'tamilAIStream_images', 'tamilAIStream_moviesCollections',
             'tamilAIStream_yearlyCollections', 'tamilAIStream_latestCollections',
             'tamilAIStream_musicCollections', 'tamilAIStream_upcomingReleases',
-            'tamilAIStream_songsCollections',
+            'tamilAIStream_songsCollections', 'tamilAIStream_newAlbums',
             'tamilAIStream_deletedIds', 'tamilAIStream_trash'
         ];
 
@@ -1890,6 +1891,7 @@ function saveDraft() {
             miniPlayerSettings: DataStore.getMiniPlayerSettings(),
             advertisements: DataStore.getAdvertisements(),
             songsCollections: DataStore.getSongsCollections(),
+            newAlbums: DataStore.getNewAlbums(),
             savedAt: new Date().toISOString()
         };
         localStorage.setItem('builderDraft', JSON.stringify(draftData));
@@ -2007,6 +2009,7 @@ function discardChanges() {
             if (draftData.sectionsOrder) DataStore.setSectionsOrder(draftData.sectionsOrder);
             if (draftData.miniPlayerSettings) DataStore.setMiniPlayerSettings(draftData.miniPlayerSettings);
             if (draftData.songsCollections) DataStore.setSongsCollections(draftData.songsCollections);
+            if (draftData.newAlbums) DataStore.setNewAlbums(draftData.newAlbums);
         }
         publishState = 'draft';
         savePublishState();

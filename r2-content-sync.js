@@ -89,7 +89,8 @@
                 deletedIds: safeGet(global.DataStore.getDeletedIds?.bind(global.DataStore), {}),
                 trash: safeGet(global.DataStore.getTrash?.bind(global.DataStore), []),
                 songsCollections: safeGet(global.DataStore.getSongsCollections?.bind(global.DataStore), { left: [], right: [], settings: {} }),
-                upcomingReleases: safeGet(global.DataStore.getUpcomingReleases?.bind(global.DataStore), [])
+                upcomingReleases: safeGet(global.DataStore.getUpcomingReleases?.bind(global.DataStore), []),
+                newAlbums: safeGet(global.DataStore.getNewAlbums?.bind(global.DataStore), [])
             };
             return payload;
         }
@@ -123,6 +124,7 @@
             trash: readLocalStorage('tamilAIStream_trash', []),
             songsCollections: readLocalStorage('tamilAIStream_songsCollections', { left: [], right: [], settings: {} }),
             upcomingReleases: readLocalStorage('tamilAIStream_upcomingReleases', []),
+            newAlbums: readLocalStorage('tamilAIStream_newAlbums', []),
             playlists: readLocalStorage('ytm_playlists', []),
             likedSongs: readLocalStorage('ytm_likedSongs', []),
             history: readLocalStorage('ytm_history', []),
@@ -148,7 +150,7 @@
         const localTime = localPayload?.updatedAt ? new Date(localPayload.updatedAt).getTime() : 0;
         const remoteTime = remotePayload?.updatedAt ? new Date(remotePayload.updatedAt).getTime() : 0;
 
-        const sharedKeys = ['songs', 'stations', 'categories', 'featured', 'trending', 'artistHits', 'quotes', 'siteSettings', 'layout', 'images', 'moods', 'aiRadio', 'notifications', 'splash', 'playerPrefs', 'navigation', 'sectionsOrder', 'miniPlayerSettings', 'moviesCollections', 'yearlyCollections', 'latestCollections', 'musicCollections', 'advertisements', 'news', 'deletedIds', 'trash', 'songsCollections', 'upcomingReleases'];
+        const sharedKeys = ['songs', 'stations', 'categories', 'featured', 'trending', 'artistHits', 'quotes', 'siteSettings', 'layout', 'images', 'moods', 'aiRadio', 'notifications', 'splash', 'playerPrefs', 'navigation', 'sectionsOrder', 'miniPlayerSettings', 'moviesCollections', 'yearlyCollections', 'latestCollections', 'musicCollections', 'advertisements', 'news', 'deletedIds', 'trash', 'songsCollections', 'upcomingReleases', 'newAlbums'];
         const userKeys = ['likedSongs', 'playlists', 'history', 'queue', 'settings'];
 
         keys.forEach((key) => {
@@ -328,7 +330,8 @@
                 setDeletedIds: data.deletedIds || {},
                 setTrash: data.trash || [],
                 setSongsCollections: data.songsCollections || { left: [], right: [], settings: {} },
-                setUpcomingReleases: data.upcomingReleases || []
+                setUpcomingReleases: data.upcomingReleases || [],
+                setNewAlbums: data.newAlbums || []
             };
             Object.entries(setters).forEach(([method, value]) => {
                 if (typeof global.DataStore[method] === 'function') {
@@ -370,6 +373,7 @@
         writeLocalStorage('tamilAIStream_trash', data.trash || []);
         writeLocalStorage('tamilAIStream_songsCollections', data.songsCollections || { left: [], right: [], settings: {} });
         writeLocalStorage('tamilAIStream_upcomingReleases', data.upcomingReleases || []);
+        writeLocalStorage('tamilAIStream_newAlbums', data.newAlbums || []);
         writeLocalStorage('tamilAIStream_lastSyncedAt', payload?.updatedAt || new Date().toISOString());
     }
 
