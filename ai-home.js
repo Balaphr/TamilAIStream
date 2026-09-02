@@ -1797,6 +1797,72 @@ window.AIHome = (() => {
         }
     }
 
+    /* ---------------- Upcoming Releases Auto-Slider ---------------- */
+    let _urAutoTimer = null;
+    let _urAutoIndex = 0;
+    let _urAutoReleases = [];
+    let _urAutoBound = false;
+
+    function renderUpcomingReleasesAuto() {
+        const section = document.getElementById('urAutoSection');
+        const track = document.getElementById('urAutoTrack');
+        if (!section || !track) return;
+
+        _urAutoReleases = (DataStore.getUpcomingReleases() || [])
+            .filter(r => r && r.enabled !== false)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        if (_urAutoReleases.length === 0) { section.style.display = 'none'; return; }
+        section.style.display = 'block';
+
+        track.innerHTML = _urAutoReleases.map((r, i) => {
+            const imgHtml = r.image
+                ? `<img src="${r.image}" alt="${r.title || 'Release'}" loading="${i === 0 ? 'eager' : 'lazy'}" draggable="false" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\\'ur-slide-placeholder\\'><i class=\\'fas fa-music\\'></i></div>'">`
+                : `<div class="ur-slide-placeholder"><i class="fas fa-music"></i></div>`;
+            return `<div class="ur-slide${i === 0 ? ' active' : ''}" data-ur-auto-idx="${i}">
+                <div class="ur-slide-image">${imgHtml}</div>
+                ${r.title ? `<div class="ur-slide-overlay"><h3 class="ur-slide-title">${r.title}</h3>${r.subtitle ? `<p class="ur-slide-subtitle">${r.subtitle}</p>` : ''}</div>` : ''}
+            </div>`;
+        }).join('');
+
+        _urAutoIndex = 0;
+        _urAutoStartCycle(track);
+
+        if (!_urAutoBound) {
+            _urAutoBound = true;
+            if (typeof IntersectionObserver !== 'undefined') {
+                new IntersectionObserver((entries) => {
+                    if (entries[0] && entries[0].isIntersecting) _urAutoStartCycle(track);
+                    else _urAutoStopCycle();
+                }, { rootMargin: '100px' }).observe(section);
+            }
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) _urAutoStopCycle();
+                else if (document.getElementById('urAutoSection')) _urAutoStartCycle(track);
+            });
+            section.addEventListener('mouseenter', _urAutoStopCycle);
+            section.addEventListener('mouseleave', () => _urAutoStartCycle(track));
+            section.addEventListener('touchstart', _urAutoStopCycle, { passive: true });
+            section.addEventListener('touchend', () => setTimeout(() => _urAutoStartCycle(track), 3000), { passive: true });
+        }
+    }
+
+    function _urAutoStartCycle(track) {
+        _urAutoStopCycle();
+        if (_urAutoReleases.length < 2) return;
+        _urAutoTimer = setInterval(() => {
+            const slides = track.querySelectorAll('.ur-slide');
+            if (!slides.length) return;
+            slides[_urAutoIndex].classList.remove('active');
+            _urAutoIndex = (_urAutoIndex + 1) % slides.length;
+            slides[_urAutoIndex].classList.add('active');
+        }, 5000);
+    }
+
+    function _urAutoStopCycle() {
+        if (_urAutoTimer) { clearInterval(_urAutoTimer); _urAutoTimer = null; }
+    }
+
     function refreshHome() {
         stopHeroTimer();
         // Clear decade song cache so newly assigned songs appear
@@ -1805,6 +1871,7 @@ window.AIHome = (() => {
         // then only updates greeting/date/quote text in place.
         if (typeof renderGreetingSection === 'function') renderGreetingSection();
         if (typeof window.renderUpcomingReleases === 'function') renderUpcomingReleases();
+        renderUpcomingReleasesAuto();
         renderNewAlbums();
         renderOneTapRadio();
         renderSongsCollections();
