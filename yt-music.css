@@ -3135,12 +3135,13 @@
 /* ============================================
    Home Page Active State
    ============================================ */
-body.home-active .ytm-ticker {
+.ytm-ticker {
     display: none !important;
 }
 
+body.home-active .ytm-ticker,
 body.radio-active .ytm-ticker {
-    display: none !important;
+    display: flex !important;
 }
 
 body.home-active .ytm-main-content {
