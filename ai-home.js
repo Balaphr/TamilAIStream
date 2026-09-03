@@ -1891,7 +1891,6 @@ window.AIHome = (() => {
         // Greeting hero bar sits at the top of Home. Idempotent — builds once,
         // then only updates greeting/date/quote text in place.
         if (typeof renderGreetingSection === 'function') renderGreetingSection();
-        if (typeof window.renderUpcomingReleases === 'function') renderUpcomingReleases();
         renderUpcomingReleasesAuto();
         renderNewAlbums();
         renderOneTapRadio();

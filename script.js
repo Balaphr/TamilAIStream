@@ -2559,7 +2559,7 @@ function setupLayoutSync() {
             } else if (type.startsWith('made-for-') || type.startsWith('new-releases') ||
                        type.startsWith('top-charts') || type.startsWith('curated-playlists') ||
                        type.startsWith('recently-played') || type.startsWith('artist-essentials') ||
-                       type === 'ai-songs-collections') {
+                       type === 'ai-songs-collections' || type === 'ur-auto-slider') {
                 // Premium sections: show by default
                 section.style.display = '';
             } else {

@@ -770,6 +770,16 @@ a,
         animation-iteration-count: 1 !important;
         transition-duration: 0.12s !important;
     }
+    /* Keep Songs Collections vertical scroll animations alive in PWA */
+    .sc-autoscroll-up,
+    .sc-autoscroll-down {
+        animation-duration: var(--sc-duration, 30s) !important;
+        animation-iteration-count: infinite !important;
+        animation-play-state: running !important;
+    }
+    .sc-paused {
+        animation-play-state: paused !important;
+    }
     .ai-playlist-card,
     .ai-fm-card,
     .ai-song-card,
@@ -798,24 +808,46 @@ a,
     .splash-subtitle,
     .gp-mini,
     .gp-mini.visible,
-    .gp-mini.gp-hidden {
+    .gp-mini.gp-hidden,
+    .gp-mini *,
+    .gp-expanded,
+    .gp-expanded * {
         animation-duration: inherit !important;
         transition-duration: 0.4s !important;
     }
-    /* Kill ALL glass/blur effects in PWA */
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    /* Kill all floating / glowing effects (splash elements excluded — they need to animate) */
-    .ai-hero-art,
-    .ai-hero-art-ring,
-    .ai-hero-wave,
-    .splash-orb,
-    .ai-live-dot,
-    .ai-decade-icon,
-    .ai-fm-eq-bar,
-    .ai-song-pulse,
-    .gp-rainbow-line {
+    /* Preserve glassmorphism on player in PWA */
+    .gp-mini,
+    .gp-expanded {
+        backdrop-filter: blur(20px) saturate(1.8) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(1.8) !important;
+    }
+    /* Kill ALL glass/blur effects in PWA (except player) */
+    *:not(.gp-mini):not(.gp-expanded):not(.gp-mini *):not(.gp-expanded *)::before,
+    *:not(.gp-mini):not(.gp-expanded):not(.gp-mini *):not(.gp-expanded *)::after {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    /* Keep player animations alive in PWA */
+    .gp-mini-eq span,
+    .gp-mini-progress-bar,
+    .gp-mini-progress-thumb,
+    .gp-mini-wave canvas,
+    .gp-mini-play,
+    .gp-mini-prev,
+    .gp-mini-next,
+    .gp-mini-artwork,
+    .gp-rainbow-line,
+    .gp-mini-progress {
         animation: none !important;
+        animation-duration: inherit !important;
+        animation-iteration-count: inherit !important;
+        transition-duration: inherit !important;
+    }
+    .gp-mini-eq span {
+        animation: gpEq 0.8s ease-in-out infinite !important;
+    }
+    .gp-rainbow-line {
+        animation: gpRainbowLine 6s linear infinite !important;
     }
     /* Remove will-change from most elements */
     .ai-panel,
@@ -824,10 +856,13 @@ a,
     .ai-song-card,
     .ai-rec-song,
     .ai-news-card,
-    .ai-decade-card,
+    .ai-decade-card {
+        will-change: auto !important;
+    }
+    /* Keep will-change on player for smooth transforms */
     .gp-mini,
     .gp-expanded {
-        will-change: auto !important;
+        will-change: transform, opacity !important;
     }
     /* Content visibility for off-screen pages */
     .ytm-page:not(.ytm-page-home),
@@ -849,9 +884,12 @@ a,
     .ai-fm-card,
     .ai-playlist-card,
     .ai-song-card,
-    .ai-news-card,
-    .gp-mini {
+    .ai-news-card {
         box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+    }
+    /* Preserve player box-shadow */
+    .gp-mini {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(34, 211, 238, 0.04) inset !important;
     }
     .now-playing-bar {
         backdrop-filter: none !important;
