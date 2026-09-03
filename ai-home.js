@@ -1965,6 +1965,7 @@ window.AIHome = (() => {
         hookNavigation();
         bindDataSync();
         enhancePlayer();
+        initAIOrb();
         if (typeof YTMusic !== 'undefined') syncSidebar(YTMusic.currentPage || 'home');
     }
 
@@ -2151,6 +2152,215 @@ window.AIHome = (() => {
         try {
             return (DataStore.getSongs() || []).filter(s => s && (s.status === 'published' || s.status === 'active'));
         } catch (e) { return []; }
+    }
+
+    /* ============================================================
+       AI Orb — Animated Attraction Element
+       ============================================================ */
+    function initAIOrb() {
+        const orb = document.getElementById('aiOrb');
+        const wrap = document.getElementById('aiOrbWrap');
+        const panel = document.getElementById('aiOrbPanel');
+        const closeBtn = document.getElementById('aiOrbPanelClose');
+        const input = document.getElementById('aiOrbInput');
+        const sendBtn = document.getElementById('aiOrbSend');
+        const msgs = document.getElementById('aiOrbMessages');
+        const sugBox = document.getElementById('aiOrbSuggestions');
+        if (!orb || !panel) return;
+
+        let isOpen = false;
+
+        function openPanel() {
+            if (isOpen) return;
+            isOpen = true;
+            panel.classList.add('open');
+            wrap.classList.add('panel-open');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => { if (input) input.focus(); }, 450);
+        }
+        function closePanel() {
+            isOpen = false;
+            panel.classList.remove('open');
+            wrap.classList.remove('panel-open');
+            document.body.style.overflow = '';
+        }
+
+        orb.addEventListener('click', openPanel);
+        orb.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPanel(); } });
+        if (closeBtn) closeBtn.addEventListener('click', closePanel);
+
+        // Close on swipe-down on the panel header
+        let touchStartY = 0;
+        panel.addEventListener('touchstart', (e) => { touchStartY = e.touches[0].clientY; }, { passive: true });
+        panel.addEventListener('touchend', (e) => {
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            if (dy > 60 && panel.scrollTop <= 0) closePanel();
+        }, { passive: true });
+
+        // Escape key
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen) closePanel(); });
+
+        // Suggestion chips
+        if (sugBox) {
+            sugBox.addEventListener('click', (e) => {
+                const chip = e.target.closest('.ai-orb-suggestion');
+                if (chip && chip.dataset.q) handleOrbQuery(chip.dataset.q);
+            });
+        }
+
+        // Send button
+        if (sendBtn) sendBtn.addEventListener('click', () => {
+            const q = input ? input.value.trim() : '';
+            if (q) handleOrbQuery(q);
+        });
+
+        // Enter key
+        if (input) {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const q = input.value.trim();
+                    if (q) handleOrbQuery(q);
+                }
+            });
+        }
+
+        function handleOrbQuery(query) {
+            if (!query || !msgs) return;
+            if (input) { input.value = ''; input.blur(); }
+
+            // Add user message
+            msgs.innerHTML += `
+                <div class="ai-orb-msg ai-orb-msg-user">
+                    <div class="ai-orb-msg-avatar"><i class="fas fa-user"></i></div>
+                    <div class="ai-orb-msg-text">${escapeHtml(query)}</div>
+                </div>`;
+            msgs.scrollTop = msgs.scrollHeight;
+
+            // Hide suggestions after first query
+            if (sugBox) sugBox.style.display = 'none';
+
+            // Process with AI
+            setTimeout(() => processOrbQuery(query), 300);
+        }
+
+        function processOrbQuery(query) {
+            const songs = publishedSongs();
+            const q = query.toLowerCase();
+            let matched = [];
+            let responseText = '';
+
+            // Intent detection — delegate to AIMusicAssistant if available
+            if (typeof AIMusicAssistant !== 'undefined' && AIMusicAssistant.generateResponse) {
+                try {
+                    const result = AIMusicAssistant.generateResponse(query);
+                    if (result && result.cards && result.cards.length) {
+                        matched = result.cards.map(c => c.data || c).filter(s => s && (s.title || s.name));
+                        responseText = result.text || 'Here\'s what I found:';
+                    } else if (result && result.text) {
+                        responseText = result.text;
+                    }
+                } catch (e) {}
+            }
+
+            // Fallback: local matching
+            if (!matched.length) {
+                matched = songs.filter(s => {
+                    const text = ((s.title || '') + ' ' + (s.artist || s.singer || '') + ' ' + (s.movie || s.album || '') + ' ' + (s.genre || '') + ' ' + (s.mood || '') + ' ' + (s.language || '')).toLowerCase();
+                    return tokenizeOrb(q).some(t => text.includes(t));
+                });
+            }
+
+            // Mood-based shortcuts
+            if (!matched.length) {
+                const moodMap = {
+                    'relax': ['calm', 'peaceful', 'melody', 'soft', 'soothing'],
+                    'relaxing': ['calm', 'peaceful', 'melody', 'soft', 'soothing'],
+                    'romantic': ['love', 'romance', 'romantic', 'heart'],
+                    'love': ['love', 'romance', 'romantic', 'heart'],
+                    'energy': ['fast', 'energy', 'power', 'beat', 'dance'],
+                    'boost': ['fast', 'energy', 'power', 'beat', 'dance'],
+                    'party': ['dance', 'party', 'beat', 'fast'],
+                    'sad': ['sad', 'melancholy', 'pain', 'cry'],
+                    '90s': ['1990', '90s', 'nineties'],
+                    '80s': ['1980', '80s', 'eighties'],
+                    'latest': ['2024', '2025', '2026', 'new', 'latest', 'recent'],
+                    'ilaiyaraaja': ['ilaiyaraaja', 'ilayaraja'],
+                    'a.r.rahman': ['a.r.rahman', 'ar rahman', 'ar rahman'],
+                    'ar rahman': ['a.r.rahman', 'ar rahman', 'ar rahman'],
+                    ' Rahman': ['rahman'],
+                };
+                for (const [key, tags] of Object.entries(moodMap)) {
+                    if (q.includes(key)) {
+                        matched = songs.filter(s => {
+                            const text = ((s.title || '') + ' ' + (s.artist || s.singer || '') + ' ' + (s.movie || '') + ' ' + (s.genre || '') + ' ' + (s.mood || '')).toLowerCase();
+                            return tags.some(t => text.includes(t));
+                        });
+                        if (matched.length) { responseText = 'Here are some ' + key + ' songs:'; break; }
+                    }
+                }
+            }
+
+            // Shuffle and limit
+            matched = shuffleOrb(matched).slice(0, 8);
+
+            if (matched.length) {
+                if (!responseText) responseText = 'I found some songs for you:';
+                let songsHtml = matched.map((s, idx) => {
+                    const safeId = (s.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
+                    return `
+                    <div class="ai-orb-song-card" data-orb-play="${idx}">
+                        <div class="ai-orb-song-art"><img src="${escapeHtml(s.thumbnail || s.albumCover || s.cover || s.image || '')}" alt="" loading="lazy" onerror="this.style.display='none'"></div>
+                        <div class="ai-orb-song-info">
+                            <div class="ai-orb-song-name">${escapeHtml(s.title || s.name || 'Unknown')}</div>
+                            <div class="ai-orb-song-meta">${escapeHtml(s.artist || s.singer || '')}${s.movie ? ' · ' + escapeHtml(s.movie) : ''}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+                addOrbAiMsg(responseText + '<br>' + songsHtml);
+
+                // Bind play buttons via event delegation
+                msgs.querySelectorAll('[data-orb-play]').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const idx = parseInt(card.dataset.orbPlay, 10);
+                        if (matched[idx] && typeof window.playSong === 'function') {
+                            window.playSong(matched[idx], matched);
+                        }
+                    });
+                });
+
+                // Auto-play first result
+                if (matched.length && typeof window.playSong === 'function') {
+                    setTimeout(() => window.playSong(matched[0], matched), 800);
+                }
+            } else {
+                const fallback = 'I couldn\'t find exact matches for "' + escapeHtml(query) + '". Try asking for a mood (relaxing, romantic, energy), a decade (90s, 80s), or an artist name!';
+                addOrbAiMsg(fallback);
+            }
+
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+
+        function addOrbAiMsg(html) {
+            if (!msgs) return;
+            msgs.innerHTML += `
+                <div class="ai-orb-msg ai-orb-msg-ai">
+                    <div class="ai-orb-msg-avatar"><i class="fas fa-robot"></i></div>
+                    <div class="ai-orb-msg-text">${html}</div>
+                </div>`;
+        }
+
+        function tokenizeOrb(text) {
+            return text.replace(/[^\w\s\u0B80-\u0BFF]/g, ' ').split(/\s+/).filter(t => t.length > 1);
+        }
+
+        function shuffleOrb(arr) {
+            const a = arr.slice();
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
     }
 
     return { init, refreshHome, renderLiveFm, syncFmPlaying, renderDecadeCards, stopDecadeBot, openCardContextMenu, closeCardContextMenu };

@@ -618,6 +618,56 @@
                     <!-- Good Morning Section (top of Home) -->
                     <div class="greeting-section" data-section="greeting"></div>
 
+                    <!-- AI Orb — Attraction Element -->
+                    <div class="ai-orb-wrap" id="aiOrbWrap">
+                        <div class="ai-orb" id="aiOrb" role="button" tabindex="0" aria-label="Ask AI for music suggestions">
+                            <div class="ai-orb-rings" aria-hidden="true">
+                                <div class="ai-orb-ring ai-orb-ring-1"></div>
+                                <div class="ai-orb-ring ai-orb-ring-2"></div>
+                                <div class="ai-orb-ring ai-orb-ring-3"></div>
+                            </div>
+                            <div class="ai-orb-glow" aria-hidden="true"></div>
+                            <div class="ai-orb-core">
+                                <div class="ai-orb-wave" aria-hidden="true">
+                                    <span></span><span></span><span></span><span></span><span></span>
+                                </div>
+                                <div class="ai-orb-icon">
+                                    <i class="fas fa-wand-magic-sparkles"></i>
+                                </div>
+                            </div>
+                            <div class="ai-orb-label">
+                                <span class="ai-orb-label-text">What do you want to hear?</span>
+                                <span class="ai-orb-label-sub">Tap to ask AI</span>
+                            </div>
+                        </div>
+                        <div class="ai-orb-panel" id="aiOrbPanel">
+                            <div class="ai-orb-panel-header">
+                                <div class="ai-orb-panel-title"><i class="fas fa-sparkles"></i> AI Music Assistant</div>
+                                <button class="ai-orb-panel-close" id="aiOrbPanelClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+                            </div>
+                            <div class="ai-orb-panel-body" id="aiOrbPanelBody">
+                                <div class="ai-orb-panel-messages" id="aiOrbMessages">
+                                    <div class="ai-orb-msg ai-orb-msg-ai">
+                                        <div class="ai-orb-msg-avatar"><i class="fas fa-robot"></i></div>
+                                        <div class="ai-orb-msg-text">Hi! I can help you find the perfect music. Try asking me things like:<br><em>"Play relaxing Tamil songs"</em> or <em>"90s melodies"</em></div>
+                                    </div>
+                                </div>
+                                <div class="ai-orb-panel-suggestions" id="aiOrbSuggestions">
+                                    <button class="ai-orb-suggestion" data-q="play relaxing Tamil songs">Relaxing Tamil</button>
+                                    <button class="ai-orb-suggestion" data-q="play 90s melodies">90s Melodies</button>
+                                    <button class="ai-orb-suggestion" data-q="play romantic songs">Romantic</button>
+                                    <button class="ai-orb-suggestion" data-q="play energy boost">Energy Boost</button>
+                                    <button class="ai-orb-suggestion" data-q="play Ilaiyaraaja hits">Ilaiyaraaja</button>
+                                    <button class="ai-orb-suggestion" data-q="play latest Tamil songs">Latest Hits</button>
+                                </div>
+                            </div>
+                            <div class="ai-orb-panel-input">
+                                <input type="text" id="aiOrbInput" placeholder="e.g. play A.R. Rahman songs..." autocomplete="off">
+                                <button class="ai-orb-send" id="aiOrbSend" aria-label="Send"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- New Album Section -->
                     <section class="ai-panel new-album-section" data-section="ai-new-album" id="newAlbumSection" style="display:none;">
                         <div class="ai-sec-head">
