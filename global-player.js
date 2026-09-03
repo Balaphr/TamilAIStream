@@ -381,9 +381,13 @@ const GlobalPlayer = (() => {
     }
 
     function bindEvents() {
-        document.getElementById('gpMiniInfo')?.addEventListener('click', expand);
-        document.getElementById('gpMiniExpand')?.addEventListener('click', expand);
-        document.getElementById('gpMiniArtwork')?.addEventListener('click', expand);
+        // Entire mini-player is tappable to expand (except play/prev/next/fav buttons)
+        miniEl?.addEventListener('click', (e) => {
+            if (e.target.closest('.gp-mini-play') || e.target.closest('.gp-mini-prev') ||
+                e.target.closest('.gp-mini-next') || e.target.closest('.gp-mini-fav')) return;
+            expand();
+        });
+        document.getElementById('gpMiniExpand')?.addEventListener('click', (e) => { e.stopPropagation(); expand(); });
         document.getElementById('gpMiniPlay')?.addEventListener('click', togglePlay);
         document.getElementById('gpMiniPrev')?.addEventListener('click', playPrev);
         document.getElementById('gpMiniNext')?.addEventListener('click', playNext);

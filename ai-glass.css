@@ -2258,6 +2258,10 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(34, 211, 238, 0.04) inset;
     padding: 0 16px;
     transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+    cursor: pointer;
+}
+.gp-mini:active:not(:has(.gp-mini-play:active)):not(:has(.gp-mini-prev:active)):not(:has(.gp-mini-next:active)):not(:has(.gp-mini-fav:active)) {
+    transform: translateX(-50%) scale(0.985);
 }
 .gp-mini.gp-hidden { transform: translateX(-50%) translateY(calc(100% + 40px)); opacity: 0; pointer-events: none; }
 .gp-mini.visible { transform: translateX(-50%) translateY(0); opacity: 1; }
@@ -2287,6 +2291,9 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
         border-bottom: none;
         border-top: 1px solid rgba(255, 255, 255, 0.06);
         box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(34, 211, 238, 0.04) inset;
+    }
+    .gp-mini:active:not(:has(.gp-mini-play:active)):not(:has(.gp-mini-prev:active)):not(:has(.gp-mini-next:active)):not(:has(.gp-mini-fav:active)) {
+        transform: translateX(0) scale(0.985);
     }
     .gp-mini.gp-hidden {
         transform: translateX(0) translateY(calc(100% + 20px));
