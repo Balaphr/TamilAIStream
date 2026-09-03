@@ -2297,9 +2297,6 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
         transform: translateX(0) translateY(0);
         opacity: 1;
     }
-    body.home-active .gp-mini {
-        bottom: env(safe-area-inset-bottom, 0);
-    }
 }
 /* PWA standalone mobile: extra safe-area */
 @media (display-mode: standalone) and (max-width: 640px) {
@@ -2326,9 +2323,6 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
         transform: translateX(0) translateY(0);
         opacity: 1;
     }
-    body.home-active .gp-mini {
-        bottom: env(safe-area-inset-bottom, 20px);
-    }
 }
 /* PWA standalone desktop: keep centered pill */
 @media (display-mode: standalone) and (min-width: 641px) {
@@ -2346,10 +2340,7 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
         transform: translateX(-50%) translateY(0);
     }
 }
-/* Hide bottom nav on Home page only */
-body.home-active .tamilai-bottom-nav {
-    display: none !important;
-}
+/* Bottom nav always visible */
 .site-footer { display: none; }
 .gp-mini-inner { display: flex; align-items: center; gap: 10px; max-width: 1400px; margin: 0 auto; padding: 6px 0; }
 .gp-mini-artwork {

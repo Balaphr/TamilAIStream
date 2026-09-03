@@ -524,9 +524,13 @@
                         <div class="premium-sidebar-section">
                             <div class="premium-sidebar-section-title">Menu</div>
                             <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item active" data-page="home">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-house"></i></div>
+                                <span>Home</span>
+                                <div class="premium-sidebar-item-indicator"></div>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="music">
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-music"></i></div>
                                 <span>Music</span>
-                                <div class="premium-sidebar-item-indicator"></div>
                             </button>
                             <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="radio">
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-tower-broadcast"></i></div>
@@ -848,6 +852,11 @@
             <!-- ============ PAGE: LIBRARY ============ -->
             <div class="ytm-page ytm-page-library" id="page-library">
                 <div class="ytm-library-content" id="ytmLibraryContent"></div>
+            </div>
+
+            <!-- ============ PAGE: MUSIC (songs only) ============ -->
+            <div class="ytm-page ytm-page-music" id="page-music">
+                <div class="ytm-music-content" id="ytmMusicContent"></div>
             </div>
 
             <!-- ============ PAGE: LIKED ============ -->
@@ -1418,17 +1427,6 @@
 
     <!-- ============ TOAST CONTAINER ============ -->
     <div class="ytm-toast-container" id="ytmToastContainer"></div>
-
-    <!-- ============ RECENTLY ADDED SONGS TICKER ============ -->
-    <div class="ytm-ticker" id="ytmTicker">
-        <div class="ytm-ticker-label">
-            <i class="fas fa-music"></i>
-            <span>Recently Added</span>
-        </div>
-        <div class="ytm-ticker-viewport" id="ytmTickerViewport">
-            <div class="ytm-ticker-track" id="ytmTickerTrack"></div>
-        </div>
-    </div>
 
     <!-- ============ LISTENING HISTORY ============ -->
     <button class="lh-fab" id="lhFab" title="Listening History">

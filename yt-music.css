@@ -3144,10 +3144,6 @@ body.radio-active .ytm-ticker {
     display: flex !important;
 }
 
-body.home-active .ytm-main-content {
-    padding-bottom: 0 !important;
-}
-
 body.home-active .ytm-page-home {
     padding-bottom: 24px !important;
 }

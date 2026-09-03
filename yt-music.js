@@ -652,7 +652,7 @@ const YTMusic = {
                     TamilAIPremium.syncRadioState();
                 }
                 break;
-            case 'music': this.renderLibraryContent(); break;
+            case 'music': this.renderMusicContent(); break;
             case 'artists': this.renderArtistsContent(); break;
             case 'settings': this.renderSettingsPage(); break;
             case 'account': this.renderAccountPage(); break;
@@ -1488,6 +1488,38 @@ const YTMusic = {
             <div class="ytm-library-card" onclick="YTMusic.navigateTo('stations')"><div class="ytm-library-card-art" style="background:linear-gradient(135deg,#ff6b35,#f7931e)"><i class="fas fa-radio"></i></div><div class="ytm-library-card-info"><div class="ytm-library-card-title">Stations</div><div class="ytm-library-card-subtitle">${stations.length} stations</div></div></div>
             <div class="ytm-library-card" onclick="YTMusic.navigateTo('artists')"><div class="ytm-library-card-art" style="background:linear-gradient(135deg,#9c27b0,#673ab7)"><i class="fas fa-users"></i></div><div class="ytm-library-card-info"><div class="ytm-library-card-title">Artists</div><div class="ytm-library-card-subtitle">${artists.length} artists</div></div></div>
         </div>`;
+    },
+
+    renderMusicContent() {
+        const c = document.getElementById('ytmMusicContent');
+        if (!c) return;
+        const songs = (DataStore.getSongs() || []).filter(s => s && (s.status === 'published' || s.status === 'active'));
+        const sorted = [...songs].sort((a, b) => new Date(b.createdAt || b.uploadedAt || 0) - new Date(a.createdAt || a.uploadedAt || 0));
+        c.innerHTML = `
+            <div class="ytm-playlist-header"><div class="ytm-playlist-cover" style="background:linear-gradient(135deg,#22d3ee,#3b82f6)"><i class="fas fa-music"></i></div>
+                <div class="ytm-playlist-info"><div class="ytm-playlist-title">Music</div><div class="ytm-playlist-meta">${songs.length} songs</div>
+                    <div class="ytm-playlist-actions">
+                        <button class="ytm-playlist-play-btn" onclick="YTMusic.playAllMusic()"><i class="fas fa-play"></i> Play All</button>
+                        <button class="ytm-playlist-shuffle-btn" onclick="YTMusic.playAllMusic(true)"><i class="fas fa-shuffle"></i> Shuffle</button>
+                    </div>
+                </div>
+            </div>
+            <div class="ytm-playlist-tracks">
+                ${songs.length === 0 ? '<div class="ytm-queue-empty"><i class="fas fa-music"></i><p>No songs available</p></div>' : sorted.map((s, i) => `
+                    <div class="ytm-playlist-track ${this.currentTrack?.id === s.id ? 'playing' : ''}" onclick="YTMusic.playTrack(${JSON.stringify({id:s.id,title:s.title,artist:s.artist,thumbnail:s.thumbnail||s.albumCover||s.cover||'',genre:s.genre,mood:s.mood}).replace(/"/g, '&quot;')})">
+                        <div class="ytm-playlist-track-num">${i + 1}</div>
+                        <div class="ytm-playlist-track-thumb"><img src="${s.thumbnail || s.albumCover || s.cover || ''}" alt=""></div>
+                        <div class="ytm-playlist-track-info"><div class="ytm-playlist-track-title">${s.title || 'Unknown'}</div><div class="ytm-playlist-track-artist">${s.artist || ''}</div></div>
+                        <div class="ytm-playlist-track-duration">${this.formatTime(s.duration)}</div>
+                    </div>`).join('')}
+            </div>`;
+    },
+
+    playAllMusic(shuffle) {
+        const songs = (DataStore.getSongs() || []).filter(s => s && (s.status === 'published' || s.status === 'active'));
+        if (!songs.length) return;
+        const list = shuffle ? [...songs].sort(() => Math.random() - 0.5) : songs;
+        this.playTrack(list[0], list);
     },
 
     renderLikedContent() {

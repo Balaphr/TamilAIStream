@@ -1273,9 +1273,6 @@ a:hover {
         border-radius: 0;
         z-index: 10001;
     }
-    body.home-active .gp-mini {
-        bottom: env(safe-area-inset-bottom, 0);
-    }
     .gp-mini-inner { padding: 6px 10px; gap: 8px; }
     .gp-mini-artwork { width: 40px; height: 40px; border-radius: 8px; }
     .gp-mini-artwork::after { border-radius: 10px; }
@@ -1350,10 +1347,6 @@ body.gp-active {
 @media (max-width: 640px) {
     body.gp-active {
         padding-bottom: calc(56px + 60px + env(safe-area-inset-bottom, 0) + 8px);
-    }
-    /* Home page: bottom nav hidden, less padding needed */
-    body.gp-active.home-active {
-        padding-bottom: calc(60px + env(safe-area-inset-bottom, 0) + 8px);
     }
 }
 

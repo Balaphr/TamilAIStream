@@ -4557,8 +4557,6 @@ function renderAllDynamicContent() {
         initPWAHomeHeader();
 
         loadSongs(true).then(songs => {
-            renderTickerItems(songs);
-            renderRecentlyAdded(songs);
             renderUpcomingReleases();
             _isRenderingAll = false;
         });
@@ -4753,12 +4751,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Apply visual editor overrides from builder
     applyVEOverrides();
-    
-    // Initialize ticker
-    initTicker();
-
-    // Initialize recently added event listeners (hover/touch)
-    initRecentlyAdded();
 
     // Setup filter buttons
     setTimeout(() => {
@@ -4831,165 +4823,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     }
 });
-
-// ============================================
-// Recently Added Songs Ticker
-// ============================================
-let tickerInitialized = false;
-
-function renderTickerItems(songs) {
-    const track = document.getElementById('ytmTickerTrack');
-    if (!track) return;
-
-    const publishedSongs = (songs || []).filter(s => s.status === 'published').slice(0, 20);
-
-    const hash = publishedSongs.map(s => s.id).join(',');
-    if (!_hasSectionChanged('ticker', hash)) return;
-    if (publishedSongs.length === 0) {
-        track.innerHTML = `
-            <div class="ytm-ticker-item">
-                <div class="ytm-ticker-item-icon"><i class="fas fa-music"></i></div>
-                <div class="ytm-ticker-item-info">
-                    <span class="ytm-ticker-item-title">No songs added yet</span>
-                    <span class="ytm-ticker-item-artist">Add songs from the Website Builder</span>
-                </div>
-            </div>`;
-        return;
-    }
-
-    const items = publishedSongs.map(song => `
-        <div class="ytm-ticker-item" onclick="playTickerSong('${song.id}')" title="Play ${song.title}">
-            <div class="ytm-ticker-item-icon"><i class="fas fa-play"></i></div>
-            <div class="ytm-ticker-item-info">
-                <span class="ytm-ticker-item-title">${song.title || 'Untitled'}</span>
-                <span class="ytm-ticker-item-artist">${song.artist || 'Unknown Artist'}</span>
-            </div>
-            <span class="ytm-ticker-item-badge">NEW</span>
-        </div>
-    `).join('');
-
-    track.innerHTML = items + items;
-}
-
-function playTickerSong(songId) {
-    const songs = DataStore.getSongs ? DataStore.getSongs() : [];
-    const song = songs.find(s => s.id === songId);
-    if (song) {
-        playSong(song, songs);
-        showToast(`Now playing: ${song.title}`, 'success');
-    }
-}
-
-function initTicker() {
-    if (tickerInitialized) return;
-    tickerInitialized = true;
-
-    const viewport = document.getElementById('ytmTickerViewport');
-    if (!viewport) return;
-
-    loadSongs(true).then(songs => {
-        renderTickerItems(songs);
-    });
-
-    // Pause on hover for desktop
-    const ticker = document.getElementById('ytmTicker');
-    if (ticker) {
-        ticker.addEventListener('mouseenter', () => {
-            const track = ticker.querySelector('.ytm-ticker-track');
-            if (track) track.style.animationPlayState = 'paused';
-        });
-        ticker.addEventListener('mouseleave', () => {
-            const track = ticker.querySelector('.ytm-ticker-track');
-            if (track) track.style.animationPlayState = 'running';
-        });
-    }
-}
-
-// ============================================
-// Recently Added Songs Marquee (Dashboard)
-// ============================================
-let recentlyAddedInitialized = false;
-
-function renderRecentlyAdded(songs) {
-    const track = document.getElementById('recentlyAddedTrack');
-    const viewport = document.getElementById('recentlyAddedViewport');
-    if (!track || !viewport) return;
-
-    const publishedSongs = (songs || [])
-        .filter(s => s.status === 'published')
-        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-        .slice(0, 20);
-
-    const hash = publishedSongs.map(s => s.id + (s.createdAt || '')).join(',');
-    if (!_hasSectionChanged('recentlyAdded', hash)) return;
-
-    if (publishedSongs.length === 0) {
-        viewport.innerHTML = `
-            <div class="recently-added-empty">
-                <i class="fas fa-record-vinyl"></i>
-                <p>No songs added yet</p>
-            </div>`;
-        return;
-    }
-
-    const allSongs = publishedSongs;
-
-    const cards = publishedSongs.map(song => {
-        const artwork = song.albumCover || song.cover || '';
-        const artHtml = artwork
-            ? `<img src="${artwork}" alt="${song.title || 'Song'}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'recently-added-card-art-placeholder\\'><i class=\\'fas fa-music\\'></i></div>'">`
-            : `<div class="recently-added-card-art-placeholder"><i class="fas fa-music"></i></div>`;
-
-        return `
-            <div class="recently-added-card" data-song-id="${song.id}">
-                <div class="recently-added-card-art">
-                    ${artHtml}
-                    <div class="recently-added-card-play-overlay">
-                        <button class="recently-added-card-play-btn" data-song-id="${song.id}" title="Play ${song.title || 'Song'}">
-                            <i class="fas fa-play" style="margin-left:2px;"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="recently-added-card-info">
-                    <div class="recently-added-card-title" title="${song.title || 'Untitled'}">${song.title || 'Untitled'}</div>
-                    <div class="recently-added-card-artist" title="${song.artist || 'Unknown Artist'}">${song.artist || 'Unknown Artist'}</div>
-                    <div class="recently-added-card-meta">
-                        <span class="recently-added-card-badge">NEW</span>
-                    </div>
-                </div>
-            </div>`;
-    }).join('');
-
-    // Duplicate for seamless loop
-    track.innerHTML = cards + cards;
-
-    // Bind play buttons
-    track.querySelectorAll('.recently-added-card-play-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            e.preventDefault();
-            const songId = this.dataset.songId;
-            const song = allSongs.find(s => s.id === songId);
-            if (song) {
-                playSong(song, allSongs);
-                if (typeof showToast === 'function') showToast(`Now playing: ${song.title}`, 'success');
-            }
-        });
-    });
-
-    // Bind card click (play the song)
-    track.querySelectorAll('.recently-added-card').forEach(card => {
-        card.addEventListener('click', function(e) {
-            if (e.target.closest('.recently-added-card-play-btn')) return;
-            const songId = this.dataset.songId;
-            const song = allSongs.find(s => s.id === songId);
-            if (song) {
-                playSong(song, allSongs);
-                if (typeof showToast === 'function') showToast(`Now playing: ${song.title}`, 'success');
-            }
-        });
-    });
-}
 
 // ============================================
 // Upcoming Releases - Premium Flipkart-style Carousel
@@ -5172,39 +5005,6 @@ function renderRecentlyAdded(songs) {
     window.renderUpcomingReleases = renderUpcomingReleases;
 })();
 
-function initRecentlyAdded() {
-    const viewport = document.getElementById('recentlyAddedViewport');
-    if (!viewport) return;
-
-    // Only add event listeners once (prevents duplicates)
-    if (recentlyAddedInitialized) return;
-    recentlyAddedInitialized = true;
-
-    // Desktop: hover pauses marquee (handled via CSS :hover)
-    // But also support JS for reliability
-    viewport.addEventListener('mouseenter', function() {
-        this.classList.add('hovering');
-    }, { passive: true });
-    viewport.addEventListener('mouseleave', function() {
-        this.classList.remove('hovering');
-        this.classList.remove('touching');
-    }, { passive: true });
-
-    // Mobile: touch swipe pauses marquee, allows manual scroll
-    let isTouching = false;
-
-    viewport.addEventListener('touchstart', function() {
-        isTouching = true;
-        this.classList.add('touching');
-    }, { passive: true });
-
-    viewport.addEventListener('touchend', function() {
-        isTouching = false;
-        const vp = this;
-        setTimeout(function() { vp.classList.remove('touching'); }, 800);
-    }, { passive: true });
-}
-
 // ============================================
 // Horizontal Drag-to-Scroll for ra-track sections
 // ============================================
@@ -5299,7 +5099,6 @@ if (typeof window !== 'undefined') {
     window.logout = logout;
     window.playStation = playStation;
     window.toggleStationFromCard = toggleStationFromCard;
-    window.playTickerSong = playTickerSong;
     // Playback bridge globals. yt-music.js (YTMusic) and global-player.js (GlobalPlayer)
     // delegate play/pause/volume/seek through these so the single audio engine stays
     // the source of truth. They MUST be exported here so seek never falls back to the
@@ -5791,8 +5590,6 @@ function showWhyThisSong(track) {
             _resumeListenersAttached = true;
             // Re-initialize touch handlers for horizontal scroll sections
             try { initHorizontalDragScroll(); } catch(e) {}
-            // Re-initialize recently added touch handlers
-            try { initRecentlyAdded(); } catch(e) {}
             // Small delay to allow DOM to settle
             setTimeout(() => { _resumeListenersAttached = false; }, 1000);
         }
