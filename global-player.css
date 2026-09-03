@@ -1377,11 +1377,11 @@ body.gp-active {
 }
 
 /* ============================================
-   HOVER STATES - Desktop
+   HOVER STATES - Desktop (no movement, subtle glow only)
    ============================================ */
 @media (hover: hover) {
     .gp-mini:hover {
-        box-shadow: 0 -8px 48px rgba(0, 0, 0, 0.6), 0 -1px 0 rgba(255, 255, 255, 0.06) inset;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(52, 211, 153, 0.1);
         border-color: rgba(255, 255, 255, 0.12);
     }
     .gp-mini:hover .gp-mini-progress-thumb { transform: translate(-50%, -50%) scale(1); }
@@ -1648,38 +1648,21 @@ body.gp-active {
     perspective-origin: center center;
 }
 
-/* Mini Player 3D Tilt on Hover */
+/* Mini Player — No hover transform, stays centered and stable */
 .gp-mini {
-    will-change: transform, box-shadow;
-    transform-style: preserve-3d;
-    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
-}
-.gp-mini:hover {
-    transform: translateX(-50%) translateY(0) rotateX(2deg) rotateY(-1deg);
-    box-shadow:
-        0 24px 64px rgba(0, 0, 0, 0.7),
-        0 4px 16px rgba(52, 211, 153, 0.2),
-        0 0 0 1px rgba(52, 211, 153, 0.15);
+    will-change: box-shadow;
+    transition: box-shadow 0.3s ease, opacity 0.4s ease;
 }
 .gp-mini:active {
-    transform: translateX(-50%) translateY(0) rotateX(0deg) rotateY(0deg) scale(0.98);
+    transform: translateX(-50%) translateY(0) scale(0.98);
 }
 
-/* Mini Artwork 3D Pop */
+/* Mini Artwork — no 3D pop on hover */
 .gp-mini-artwork {
-    will-change: transform;
-    transform-style: preserve-3d;
     transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.gp-mini:hover .gp-mini-artwork {
-    transform: translateZ(16px) scale(1.08) rotateY(-3deg);
-}
 .gp-mini-art-img {
-    will-change: transform;
     transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.gp-mini:hover .gp-mini-art-img {
-    transform: scale(1.12) translateZ(8px);
 }
 
 /* Mini Progress Bar 3D */
@@ -1853,21 +1836,16 @@ body.gp-active {
     .gp-mini-artwork,
     .gp-exp-artwork,
     .gp-exp-artwork:hover,
-    .gp-mini:hover .gp-mini-artwork,
     .gp-expanded.playing .gp-exp-artwork,
     .gp-exp-particle,
     .gp-lyrics-line {
         animation: none !important;
         transition: none !important;
-        transform: none !important;
     }
 }
 
 /* Disable hover transforms on touch devices */
 @media (hover: none) and (pointer: coarse) {
-    .gp-mini:hover,
-    .gp-mini:hover .gp-mini-artwork,
-    .gp-mini:hover .gp-mini-art-img,
     .gp-exp-artwork:hover,
     .gp-exp-artwork:hover .gp-exp-art-img,
     .gp-exp-play:hover,
