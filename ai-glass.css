@@ -4009,6 +4009,25 @@ body.ai-playlist-detail-open { overflow: hidden; }
     letter-spacing: 0.04em;
     box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
 }
+.sc-card-pwa {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: linear-gradient(135deg, var(--ai-cyan), #06b6d4);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 7px;
+    border-radius: 6px;
+    letter-spacing: 0.04em;
+    box-shadow: 0 2px 8px rgba(34, 211, 238, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.sc-card-pwa i {
+    font-size: 10px;
+}
 .sc-card-name {
     font-size: 0.82rem;
     font-weight: 700;

@@ -1721,9 +1721,11 @@ window.AIHome = (() => {
         const artist = (s.artist || s.movie || '').slice(0, 28);
         const artStyle = art ? `background-image:url('${art}')` : '';
         const isNew = idx < total;
+        let isOffline = false;
+        try { isOffline = typeof PlaylistManager !== 'undefined' && PlaylistManager.isDownloaded && PlaylistManager.isDownloaded(s.id); } catch (e) {}
         const songJson = JSON.stringify({ id: s.id, title: s.title, artist: s.artist, thumbnail: art, genre: s.genre, mood: s.mood }).replace(/'/g, '&#39;');
         return `<div class="sc-card" data-song-id="${s.id}" onclick="if(typeof playSongById==='function')playSongById('${s.id}')">
-            <div class="sc-card-art" style="${artStyle}">${isNew ? '<span class="sc-card-new">NEW</span>' : ''}</div>
+            <div class="sc-card-art" style="${artStyle}">${isNew ? '<span class="sc-card-new">NEW</span>' : ''}${isOffline ? '<span class="sc-card-pwa"><i class="fas fa-cloud-arrow-down"></i></span>' : ''}</div>
             <button class="card-menu-trigger" onclick="event.stopPropagation();AIHome.openCardContextMenu(event, JSON.parse(this.dataset.song))" data-song='${songJson}' aria-label="More options"><i class="fas fa-ellipsis-vertical"></i></button>
             <button class="sc-card-play" onclick="event.stopPropagation();if(typeof playSongById==='function')playSongById('${s.id}')"><i class="fas fa-play"></i></button>
             <div class="sc-card-name">${name}</div>
