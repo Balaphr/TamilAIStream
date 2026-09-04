@@ -4,20 +4,23 @@ import { readdirSync, copyFileSync, existsSync, mkdirSync, statSync, writeFileSy
 
 const vanillaFiles = [
   'ultra-perf.js',
+  'ads-display.js',
   'auth.js', 'data-store.js', 'firebase-init.js', 'firebase-config.js',
   'r2-config.js', 'r2-upload.js', 'r2-content-sync.js', 'publish-manager.js', 'admin-editor.js',
-  'player-engine.js', 'equalizer.js', 'eq-ui.js',
+  'equalizer.js', 'eq-ui.js',
   'playlist-manager.js', 'search-engine.js', 'search-ui.js',
-  'premium-effects.js', 'player-ui.js',
+  'premium-effects.js',
   'ai-music-assistant.js', 'ai-autofill.js', 'ai-automation.js',
   'ai-command-bot.js', 'ai-publish-check.js',
-  'yt-music.js', 'script.js', 'mini-audio-player.js',
-  'global-player.js', 'listening-history.js', 'ai-home.js',
+  'yt-music.js', 'script.js',
+  'unified-player.js',
+  'listening-history.js', 'ai-home.js',
   'premium-landing.js',
-  'builder.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
+  'builder.js', 'builder-360.js', 'ai-webflow.js', 'builder-ads.js',
+  'admin.js', 'admin-upload.js', 'admin-login.js',
   'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
-  'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js',
-  'brand-config.js',
+  'app-init.js', 'site-integration.js', 'pwa.js', 'pwa-splash.js', 'analytics.js', 'analytics-tracker.js',
+  'brand-config.js', 've-edit-mode.js',
   'nexvora-model-manager.js', 'nexvora-api-config.js', 'nexvora-ai-service.js', 'nexvora.js'
 ]
 
@@ -53,18 +56,21 @@ function copyVanillaScripts() {
     closeBundle() {
       const vanillaJS = [
         'ultra-perf.js',
+        'ads-display.js',
         'auth.js',
         'data-store.js', 'firebase-init.js', 'firebase-config.js',
         'r2-config.js', 'r2-upload.js', 'r2-content-sync.js', 'publish-manager.js', 'admin-editor.js',
-        'player-engine.js', 'equalizer.js', 'eq-ui.js',
+        'equalizer.js', 'eq-ui.js',
         'playlist-manager.js', 'search-engine.js', 'search-ui.js',
-        'premium-effects.js', 'player-ui.js',
+        'premium-effects.js',
         'ai-music-assistant.js', 'ai-autofill.js', 'ai-automation.js',
         'ai-command-bot.js', 'ai-publish-check.js',
-        'yt-music.js', 'script.js', 'mini-audio-player.js',
-        'global-player.js', 'listening-history.js', 'ai-home.js',
+        'yt-music.js', 'script.js',
+        'unified-player.js',
+        'listening-history.js', 'ai-home.js',
         'premium-landing.js',
-        'builder.js', 'builder-360.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
+        'builder.js', 'builder-360.js', 'ai-webflow.js', 'builder-ads.js',
+        'admin.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
         'app-init.js', 'site-integration.js', 'pwa.js', 'pwa-splash.js', 'analytics.js', 'analytics-tracker.js',
         'brand-config.js', 've-edit-mode.js',
@@ -73,11 +79,12 @@ function copyVanillaScripts() {
 
       const vanillaCSS = [
         'style.css', 'yt-music.css', 'player.css',
-        'global-player.css', 'mini-audio-player.css',
+        'ads.css',
         'listening-history.css', 'search-ui.css',
         'responsive.css', 'ai-glass.css', 'splash.css',
         'premium-ui.css', 'ultra-perf.css',
-        'builder.css', 'builder-360.css', 'admin.css', 'admin-login.css', 'analytics.css',
+        'builder.css', 'builder-360.css', 'ai-webflow.css', 'admin.css', 'admin-upload.css', 'analytics.css',
+        'login.css', 'particles.css',
         'profile.css', 'playlist.css', 'dashboard.css',
         'nexvora.css'
       ]
