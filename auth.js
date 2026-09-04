@@ -153,6 +153,10 @@ window.Auth = (function () {
         return getStoredUser();
     }
 
+    function isGuest() {
+        return lsGet(K.GUEST) === 'true';
+    }
+
     function isAdmin() {
         // Valid adminSession (created by admin-login / demo login / builder).
         try {
@@ -255,6 +259,7 @@ window.Auth = (function () {
         isAuthenticated: isAuthenticated,
         currentUser: currentUser,
         isAdmin: isAdmin,
+        isGuest: isGuest,
         requireAuth: requireAuth,
         getRedirect: getRedirect,
         afterLogin: afterLogin,

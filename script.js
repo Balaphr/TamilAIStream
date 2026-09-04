@@ -2800,6 +2800,209 @@ function checkAdminAndShowBuilder() {
 }
 
 // ============================================
+// 30-Second Playback Login Prompt
+// For public/guest users: after ~30s of playback, show a premium login modal
+// and pause playback. On successful login, resume from saved position.
+// ============================================
+(function() {
+    const PLAYBACK_LOGIN_DELAY_MS = 30000; // 30 seconds
+    let _playbackTimer = null;
+    let _promptShown = false;
+    let _savedPosition = 0;
+
+    function _needsLoginPrompt() {
+        try {
+            if (typeof Auth !== 'undefined' && Auth.isAuthenticated() && !Auth.isGuest()) return false;
+        } catch (e) { return false; }
+        return true;
+    }
+
+    function _startTimer() {
+        _clearTimer();
+        if (!_needsLoginPrompt() || _promptShown) return;
+        _playbackTimer = setTimeout(function() {
+            if (!_needsLoginPrompt() || _promptShown) return;
+            // Save current position before pausing
+            if (window.audioPlayer) {
+                _savedPosition = window.audioPlayer.currentTime || 0;
+            }
+            // Pause playback
+            if (window.audioPlayer && !window.audioPlayer.paused) {
+                window.audioPlayer.pause();
+            }
+            _showLoginModal();
+        }, PLAYBACK_LOGIN_DELAY_MS);
+    }
+
+    function _clearTimer() {
+        if (_playbackTimer) {
+            clearTimeout(_playbackTimer);
+            _playbackTimer = null;
+        }
+    }
+
+    function _showLoginModal() {
+        if (_promptShown) return;
+        _promptShown = true;
+
+        // Remove any existing modal
+        var existing = document.getElementById('playbackLoginModal');
+        if (existing) existing.remove();
+
+        var modal = document.createElement('div');
+        modal.id = 'playbackLoginModal';
+        modal.innerHTML = '<div class="plm-overlay"></div>' +
+            '<div class="plm-card">' +
+                '<div class="plm-icon"><i class="fa-solid fa-headphones"></i></div>' +
+                '<h2 class="plm-title">Enjoy the Full Experience</h2>' +
+                '<p class="plm-subtitle">Sign in to keep listening without interruptions</p>' +
+                '<div class="plm-actions">' +
+                    '<button class="plm-btn plm-google-btn" id="plmGoogleBtn">' +
+                        '<svg viewBox="0 0 48 48" width="20" height="20"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001,0.001-0.001,0.001-0.002,0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>' +
+                        '<span>Sign in with Google</span>' +
+                    '</button>' +
+                    '<a href="login.html" class="plm-btn plm-email-btn" id="plmEmailBtn">' +
+                        '<i class="fa-solid fa-envelope"></i>' +
+                        '<span>Sign in with Email</span>' +
+                    '</a>' +
+                '</div>' +
+                '<button class="plm-close" id="plmCloseBtn" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>' +
+            '</div>';
+
+        // Styles
+        var style = document.createElement('style');
+        style.textContent =
+            '#playbackLoginModal { position:fixed; inset:0; z-index:99999; display:flex; align-items:center; justify-content:center; font-family:Inter,system-ui,sans-serif; }' +
+            '#playbackLoginModal .plm-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }' +
+            '#playbackLoginModal .plm-card { position:relative; background:rgba(17,24,39,0.97); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:48px 40px 40px; max-width:420px; width:90%; text-align:center; box-shadow:0 25px 60px rgba(0,0,0,0.5); animation:plmSlideUp .4s cubic-bezier(.4,0,.2,1); }' +
+            '@keyframes plmSlideUp { from { opacity:0; transform:translateY(30px) scale(0.96); } to { opacity:1; transform:translateY(0) scale(1); } }' +
+            '#playbackLoginModal .plm-icon { width:72px; height:72px; border-radius:50%; background:linear-gradient(135deg,#34d399,#06b6d4); display:flex; align-items:center; justify-content:center; margin:0 auto 24px; font-size:32px; color:#fff; box-shadow:0 8px 24px rgba(52,211,153,0.3); }' +
+            '#playbackLoginModal .plm-title { color:#f9fafb; font-size:22px; font-weight:700; margin:0 0 8px; }' +
+            '#playbackLoginModal .plm-subtitle { color:#9ca3af; font-size:14px; margin:0 0 32px; line-height:1.5; }' +
+            '#playbackLoginModal .plm-actions { display:flex; flex-direction:column; gap:12px; }' +
+            '#playbackLoginModal .plm-btn { display:flex; align-items:center; justify-content:center; gap:12px; padding:14px 24px; border-radius:14px; font-size:15px; font-weight:600; cursor:pointer; transition:all .2s; text-decoration:none; border:none; }' +
+            '#playbackLoginModal .plm-google-btn { background:#fff; color:#1f2937; }' +
+            '#playbackLoginModal .plm-google-btn:hover { background:#f3f4f6; transform:translateY(-1px); box-shadow:0 4px 12px rgba(255,255,255,0.15); }' +
+            '#playbackLoginModal .plm-email-btn { background:linear-gradient(135deg,#34d399,#06b6d4); color:#fff; }' +
+            '#playbackLoginModal .plm-email-btn:hover { filter:brightness(1.1); transform:translateY(-1px); box-shadow:0 4px 12px rgba(52,211,153,0.3); }' +
+            '#playbackLoginModal .plm-close { position:absolute; top:16px; right:16px; background:none; border:none; color:#6b7280; font-size:20px; cursor:pointer; padding:4px 8px; border-radius:8px; transition:color .2s; }' +
+            '#playbackLoginModal .plm-close:hover { color:#f9fafb; }' +
+            '@media (max-width:480px) { #playbackLoginModal .plm-card { padding:36px 24px 28px; border-radius:20px; } #playbackLoginModal .plm-title { font-size:19px; } }';
+        document.head.appendChild(style);
+        document.body.appendChild(modal);
+
+        // Google sign-in
+        document.getElementById('plmGoogleBtn').addEventListener('click', function() {
+            _handleGoogleLogin();
+        });
+
+        // Email link — redirect to login with redirect back
+        var emailBtn = document.getElementById('plmEmailBtn');
+        emailBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'login.html?redirect=' + encodeURIComponent('index.html');
+        });
+
+        // Close button
+        document.getElementById('plmCloseBtn').addEventListener('click', function() {
+            _dismissModal();
+        });
+
+        // Close on overlay click
+        modal.querySelector('.plm-overlay').addEventListener('click', function() {
+            _dismissModal();
+        });
+    }
+
+    function _dismissModal() {
+        _promptShown = false;
+        var modal = document.getElementById('playbackLoginModal');
+        if (modal) {
+            modal.style.transition = 'opacity .25s';
+            modal.style.opacity = '0';
+            setTimeout(function() { modal.remove(); }, 250);
+        }
+    }
+
+    function _handleGoogleLogin() {
+        if (typeof firebase === 'undefined' || !firebase.auth) {
+            window.location.href = 'login.html?redirect=' + encodeURIComponent('index.html');
+            return;
+        }
+        var provider = new firebase.auth.GoogleAuthProvider();
+        provider.addScope('email');
+        provider.addScope('profile');
+        firebase.auth().signInWithPopup(provider).then(function(result) {
+            if (result.user) {
+                var userData = {
+                    name: result.user.displayName || 'Google User',
+                    email: result.user.email,
+                    photoURL: result.user.photoURL || '',
+                    uid: result.user.uid,
+                    emailVerified: result.user.emailVerified
+                };
+                Auth.createSession(userData, true, false);
+                _dismissModal();
+                _resumePlayback();
+            }
+        }).catch(function(error) {
+            console.error('Playback prompt Google login error:', error);
+            // If popup blocked, redirect to login page
+            if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+                window.location.href = 'login.html?redirect=' + encodeURIComponent('index.html');
+            }
+        });
+    }
+
+    function _resumePlayback() {
+        if (window.audioPlayer && window.audioPlayer.src) {
+            window.audioPlayer.currentTime = _savedPosition;
+            window.audioPlayer.play().then(function() {
+                _savedPosition = 0;
+            }).catch(function() {
+                _savedPosition = 0;
+            });
+        } else if (_savedPosition > 0) {
+            // Audio element lost — trigger restore from persisted state
+            try {
+                var saved = JSON.parse(localStorage.getItem('player_engine_state') || '{}');
+                saved.playbackPosition = _savedPosition;
+                localStorage.setItem('player_engine_state', JSON.stringify(saved));
+                if (typeof PlayerEngine !== 'undefined') PlayerEngine.play();
+            } catch (e) { _savedPosition = 0; }
+        }
+    }
+
+    // Listen for play/pause events on the audio element
+    function _attachAudioListeners() {
+        var audio = window.audioPlayer;
+        if (!audio || audio._plmListenersAttached) return;
+        audio._plmListenersAttached = true;
+
+        audio.addEventListener('play', function() {
+            if (_needsLoginPrompt() && !_promptShown) {
+                _startTimer();
+            }
+        });
+
+        audio.addEventListener('pause', function() {
+            _clearTimer();
+        });
+
+        audio.addEventListener('ended', function() {
+            _clearTimer();
+        });
+    }
+
+    // Expose for external init
+    window._PlaybackLoginPrompt = {
+        init: function() {
+            _attachAudioListeners();
+        }
+    };
+})();
+
+// ============================================
 // Dynamic Content Rendering from DataStore
 // ============================================
 
@@ -4733,6 +4936,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize audio player and restore previous playback state
     initAudioPlayer();
     restorePlaybackState();
+    
+    // Initialize 30-second playback login prompt for public/guest users
+    if (typeof window._PlaybackLoginPrompt !== 'undefined') {
+        window._PlaybackLoginPrompt.init();
+    }
     
     // Render all dynamic content from DataStore
     renderAllDynamicContent();

@@ -295,15 +295,9 @@ async function loadUserData() {
             userData.memberSince = saved.memberSince || '';
             userData.password = saved.password || '';
 
-            // Determine account type
-            const isAdmin = userData.email === 'admin@tamilaistream.com';
-            if (isAdmin) {
-                userData.accountType = 'Admin';
-                DOM.accountTypeBadge.innerHTML = '<i class="fas fa-crown"></i> <span>Admin</span>';
-            } else {
-                userData.accountType = 'User';
-                DOM.accountTypeBadge.innerHTML = '<i class="fas fa-user"></i> <span>User</span>';
-            }
+            // Determine account type - always show as User for public profile
+            userData.accountType = 'User';
+            DOM.accountTypeBadge.innerHTML = '<i class="fas fa-user"></i> <span>User</span>';
 
             DOM.authStatusBadge.innerHTML = '<i class="fas fa-check-circle"></i> <span>Verified</span>';
         } else {
