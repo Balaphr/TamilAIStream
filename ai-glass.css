@@ -5062,14 +5062,15 @@ body.ai-playlist-detail-open { overflow: hidden; }
     border: 1px solid rgba(52, 211, 153, 0.18);
     border-radius: 18px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 24px rgba(52, 211, 153, 0.10);
-    transform: translateX(-50%) translateY(140%);
+    transform: translateX(-50%) translateY(-6px);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
-    /* Elevate above the bottom nav so it reads as part of the nav bar */
     transform-origin: bottom center;
 }
 .up-bottom-bar.visible {
     transform: translateX(-50%) translateY(-6px);
+    border-color: rgba(52, 211, 153, 0.35);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 32px rgba(52, 211, 153, 0.18);
 }
 body.up-fullscreen-open .up-bottom-bar {
     display: none;
@@ -5722,6 +5723,7 @@ body.up-fullscreen-open {
         bottom: calc(60px + env(safe-area-inset-bottom, 0px));
         width: min(80vw, 480px);
     }
+    .up-bottom-bar,
     .up-bottom-bar.visible {
         transform: translateX(-50%) translateY(0);
     }
@@ -5739,7 +5741,7 @@ body.up-fullscreen-open {
         width: min(70vw, 480px);
         left: 50%;
         bottom: 24px;
-        transform: translateX(-50%) translateY(140%);
+        transform: translateX(-50%) translateY(0);
         border-radius: 16px;
         box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 30px rgba(52, 211, 153, 0.12);
     }
@@ -5824,6 +5826,7 @@ body.up-fullscreen-open {
     .up-bottom-artist {
         font-size: 0.65rem;
     }
+    .up-bottom-bar,
     .up-bottom-bar.visible {
         transform: translateX(-50%) translateY(-4px);
     }
@@ -5835,6 +5838,16 @@ body.up-fullscreen-open {
         bottom: calc(54px + env(safe-area-inset-bottom, 0px));
         width: min(96vw, 380px);
         min-width: 210px;
+    }
+}
+
+/* Mid-size phones / small tablets (481–768px) — keep pill above the bottom nav */
+@media (min-width: 481px) and (max-width: 768px) {
+    .up-bottom-bar,
+    .up-bottom-bar.visible {
+        bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+        width: min(86vw, 460px);
+        transform: translateX(-50%) translateY(0);
     }
 }
 
