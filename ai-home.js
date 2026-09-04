@@ -1711,8 +1711,6 @@ window.AIHome = (() => {
     }
 
     /* ---------------- Songs Collections: Dual Vertical Scroll ---------------- */
-    let _scPaused = false;
-    let _scInView = true;
     let _scBound = false;
 
     function _scCardHTML(s, idx, total) {
@@ -1739,7 +1737,6 @@ window.AIHome = (() => {
         const rightTrack = document.getElementById('scTrackRight');
         if (!section || !leftTrack || !rightTrack) return;
 
-        // Read builder-configured songs collections data
         let scData = { left: [], right: [], settings: {} };
         try { scData = DataStore.getSongsCollections() || scData; } catch (e) {}
 
@@ -1755,7 +1752,6 @@ window.AIHome = (() => {
         let leftSongs = (scData.left || []).map(resolveSong).filter(Boolean);
         let rightSongs = (scData.right || []).map(resolveSong).filter(Boolean);
 
-        // Fallback: if no builder data, auto-fill 5 each from latest songs
         if (!leftSongs.length && !rightSongs.length) {
             const sorted = [...allSongs].sort((a, b) =>
                 new Date(b.createdAt || b.uploadedAt || 0) - new Date(a.createdAt || a.uploadedAt || 0));
@@ -1765,58 +1761,65 @@ window.AIHome = (() => {
 
         if (!leftSongs.length && !rightSongs.length) { section.style.display = 'none'; return; }
 
+        const settings = scData.settings || {};
+
+        // Visibility toggle
+        if (settings.visible === false) { section.style.display = 'none'; return; }
         section.style.display = 'block';
 
-        const settings = scData.settings || {};
         const scrollSpeed = settings.scrollSpeed || 18;
+        const cardGap = settings.cardGap || 10;
+        const leftCount = settings.leftCount || leftSongs.length;
+        const rightCount = settings.rightCount || rightSongs.length;
+        const swapSides = !!settings.swapSides;
+
+        // Apply card gap via CSS variable
+        section.style.setProperty('--sc-card-gap', cardGap + 'px');
+
+        // Apply section height
+        const sectionHeight = settings.sectionHeight || 420;
+        section.style.setProperty('--sc-section-height', sectionHeight + 'px');
+
+        // Trim songs to configured count
+        leftSongs = leftSongs.slice(0, leftCount);
+        rightSongs = rightSongs.slice(0, rightCount);
 
         function makeTrackHTML(songs) {
             return songs.map(s => _scCardHTML(s, 0, 0)).join('');
         }
 
-        // Render left column (scroll up) — duplicate for seamless loop
         const leftHTML = makeTrackHTML(leftSongs);
         leftTrack.innerHTML = leftHTML + leftHTML;
 
-        // Render right column (scroll down) — duplicate for seamless loop
         const rightHTML = makeTrackHTML(rightSongs);
         rightTrack.innerHTML = rightHTML + rightHTML;
 
         // Calculate scroll durations based on content height
         [leftTrack, rightTrack].forEach(track => {
-            track.classList.remove('sc-autoscroll-up', 'sc-autoscroll-down', 'sc-paused');
+            track.classList.remove('sc-autoscroll-up', 'sc-autoscroll-down');
             void track.offsetWidth;
             const halfHeight = track.scrollHeight / 2;
-            const duration = Math.max(12, halfHeight / scrollSpeed);
+            const duration = Math.max(8, halfHeight / scrollSpeed);
             track.style.setProperty('--sc-duration', duration + 's');
         });
-        leftTrack.classList.add('sc-autoscroll-up');
-        rightTrack.classList.add('sc-autoscroll-down');
-        _scPaused = false;
 
-        // Bind pause/resume events once
+        // Swap sides if configured
+        if (swapSides) {
+            leftTrack.classList.add('sc-autoscroll-down');
+            rightTrack.classList.add('sc-autoscroll-up');
+        } else {
+            leftTrack.classList.add('sc-autoscroll-up');
+            rightTrack.classList.add('sc-autoscroll-down');
+        }
+
+        // Continuous scroll — NEVER pauses on touch, hover, or mouse interaction.
+        // The CSS animation runs infinitely without interruption.
+        // No event listeners for touchstart, touchend, mouseenter, mouseleave.
+        // Only bind once.
         if (!_scBound) {
             _scBound = true;
-            const allTracks = [leftTrack, rightTrack];
-            const pauseAll = () => allTracks.forEach(t => t.classList.add('sc-paused'));
-            const resumeAll = () => { if (!_scPaused && _scInView) allTracks.forEach(t => t.classList.remove('sc-paused')); };
-
-            if (typeof IntersectionObserver !== 'undefined') {
-                new IntersectionObserver((entries) => {
-                    _scInView = entries[0] && entries[0].isIntersecting;
-                    _scInView ? resumeAll() : pauseAll();
-                }, { rootMargin: '80px' }).observe(section);
-            }
-
-            section.addEventListener('touchstart', () => { _scPaused = true; pauseAll(); }, { passive: true });
-            section.addEventListener('touchend', () => { setTimeout(() => { _scPaused = false; resumeAll(); }, 800); }, { passive: true });
-            section.addEventListener('touchcancel', () => { setTimeout(() => { _scPaused = false; resumeAll(); }, 800); }, { passive: true });
-            section.addEventListener('mouseenter', () => { _scPaused = true; pauseAll(); });
-            section.addEventListener('mouseleave', () => { _scPaused = false; resumeAll(); });
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) { _scPaused = true; pauseAll(); }
-                else { _scPaused = false; resumeAll(); }
-            });
+            // Visibility change: keep scrolling even when tab is hidden
+            // (CSS animation continues regardless)
         }
     }
 

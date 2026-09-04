@@ -954,6 +954,32 @@
                                         <label class="form-label">Scroll Speed (px/sec)</label>
                                         <input type="number" class="form-input" id="scScrollSpeed" value="18" min="5" max="60" placeholder="18">
                                     </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Card Spacing (px)</label>
+                                        <input type="number" class="form-input" id="scCardGap" value="10" min="4" max="30" placeholder="10">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Left Column Count</label>
+                                        <input type="number" class="form-input" id="scLeftCount" value="5" min="1" max="10" placeholder="5">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Right Column Count</label>
+                                        <input type="number" class="form-input" id="scRightCount" value="5" min="1" max="10" placeholder="5">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Section Height (px)</label>
+                                        <input type="number" class="form-input" id="scSectionHeight" value="420" min="200" max="800" placeholder="420">
+                                    </div>
+                                    <div class="form-group" style="display:flex;align-items:end;gap:16px;">
+                                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.8);">
+                                            <input type="checkbox" id="scVisible" checked style="accent-color:#10b981;width:16px;height:16px;">
+                                            Section Visible
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.8);">
+                                            <input type="checkbox" id="scSwapSides" style="accent-color:#10b981;width:16px;height:16px;">
+                                            Swap Scroll Direction
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -961,7 +987,8 @@
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                             <div class="builder-content-card">
                                 <div class="builder-card-header">
-                                    <h3>Left Column (Scrolls Up)</h3>
+                                    <h3><i class="fas fa-arrow-up" style="color:#10b981;margin-right:6px;"></i> Left Column (Scrolls Up)</h3>
+                                    <span id="scLeftCountLabel" style="font-size:12px;color:rgba(255,255,255,0.4);">0 / 10</span>
                                 </div>
                                 <div class="builder-card-body">
                                     <div id="scLeftList" class="sc-builder-list"></div>
@@ -976,7 +1003,8 @@
                             </div>
                             <div class="builder-content-card">
                                 <div class="builder-card-header">
-                                    <h3>Right Column (Scrolls Down)</h3>
+                                    <h3><i class="fas fa-arrow-down" style="color:#3b82f6;margin-right:6px;"></i> Right Column (Scrolls Down)</h3>
+                                    <span id="scRightCountLabel" style="font-size:12px;color:rgba(255,255,255,0.4);">0 / 10</span>
                                 </div>
                                 <div class="builder-card-body">
                                     <div id="scRightList" class="sc-builder-list"></div>

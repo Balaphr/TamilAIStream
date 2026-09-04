@@ -6438,15 +6438,28 @@ function loadSongsCollectionsPage() {
         sel.value = current;
     });
 
-    // Render left list
+    // Render lists
     _scRenderList('scLeftList', data.left || [], songs, 'left');
-    // Render right list
     _scRenderList('scRightList', data.right || [], songs, 'right');
+
+    // Update count labels
+    const leftLen = (data.left || []).length;
+    const rightLen = (data.right || []).length;
+    const leftLabel = document.getElementById('scLeftCountLabel');
+    const rightLabel = document.getElementById('scRightCountLabel');
+    if (leftLabel) leftLabel.textContent = leftLen + ' / 10';
+    if (rightLabel) rightLabel.textContent = rightLen + ' / 10';
 
     // Settings
     const settings = data.settings || {};
     document.getElementById('scSectionTitle').value = settings.title || 'Songs Collections';
     document.getElementById('scScrollSpeed').value = settings.scrollSpeed || 18;
+    document.getElementById('scCardGap').value = settings.cardGap || 10;
+    document.getElementById('scLeftCount').value = settings.leftCount || leftLen || 5;
+    document.getElementById('scRightCount').value = settings.rightCount || rightLen || 5;
+    document.getElementById('scSectionHeight').value = settings.sectionHeight || 420;
+    document.getElementById('scVisible').checked = settings.visible !== false;
+    document.getElementById('scSwapSides').checked = !!settings.swapSides;
 }
 
 function _scRenderList(containerId, items, allSongs, side) {
@@ -6485,7 +6498,7 @@ function scAddSong(side) {
     const songId = sel.value;
     const data = DataStore.getSongsCollections();
     const list = data[side] || [];
-    if (list.length >= 5) { showToast('Maximum 5 songs per column', 'warning'); return; }
+    if (list.length >= 10) { showToast('Maximum 10 songs per column', 'warning'); return; }
     if (list.includes(songId)) { showToast('Song already in this column', 'warning'); return; }
     list.push(songId);
     data[side] = list;
@@ -6523,9 +6536,20 @@ function saveSongsCollections() {
     const data = DataStore.getSongsCollections();
     data.settings = {
         title: (document.getElementById('scSectionTitle').value || 'Songs Collections').trim(),
-        scrollSpeed: parseInt(document.getElementById('scScrollSpeed').value) || 18
+        scrollSpeed: parseInt(document.getElementById('scScrollSpeed').value) || 18,
+        cardGap: parseInt(document.getElementById('scCardGap').value) || 10,
+        leftCount: parseInt(document.getElementById('scLeftCount').value) || 5,
+        rightCount: parseInt(document.getElementById('scRightCount').value) || 5,
+        sectionHeight: parseInt(document.getElementById('scSectionHeight').value) || 420,
+        visible: document.getElementById('scVisible').checked,
+        swapSides: document.getElementById('scSwapSides').checked,
     };
     DataStore.setSongsCollections(data);
+
+    // Apply section height to CSS
+    const section = document.getElementById('songsCollectionsSection');
+    if (section) section.style.setProperty('--sc-section-height', data.settings.sectionHeight + 'px');
+
     showToast('Songs Collections settings saved', 'success');
     syncToLiveWebsite();
 }

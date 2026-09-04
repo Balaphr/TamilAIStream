@@ -3906,7 +3906,7 @@ body.ai-playlist-detail-open { overflow: hidden; }
     display: flex;
     align-items: stretch;
     gap: 0;
-    height: 420px;
+    height: var(--sc-section-height, 420px);
     padding: 0 8px 12px;
 }
 
@@ -3932,7 +3932,7 @@ body.ai-playlist-detail-open { overflow: hidden; }
 .sc-col-track {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: var(--sc-card-gap, 10px);
     will-change: transform;
     transform: translateZ(0);
 }
