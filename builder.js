@@ -6577,7 +6577,11 @@ function saveSongsCollections() {
 let _stagingCheckResults = [];
 
 async function loadStagingPage() {
-    refreshStagingData();
+    try {
+        await refreshStagingData();
+    } catch (e) {
+        console.error('[Staging] Error loading staging page:', e);
+    }
 }
 
 async function refreshStagingData() {
