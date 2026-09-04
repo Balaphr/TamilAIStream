@@ -1466,6 +1466,22 @@
     <script defer src="brand-config.js"></script>
     <script defer src="premium-nowplaying.js"></script>
     <script defer src="ads-display.js"></script>
+    <script>
+        // Load published global settings (site-wide CSS variables)
+        fetch('/api/global-settings').then(r => r.json()).then(data => {
+            if (!data.settings) return;
+            const gs = data.settings;
+            let css = ':root {';
+            Object.entries(gs.colors || {}).forEach(([k, v]) => { if (v) css += k + ': ' + v + '; '; });
+            Object.entries(gs.fonts || {}).forEach(([k, v]) => { if (v) css += k + ': ' + v + '; '; });
+            Object.entries(gs.spacing || {}).forEach(([k, v]) => { if (v) css += k + ': ' + v + '; '; });
+            Object.entries(gs.borderRadius || {}).forEach(([k, v]) => { if (v) css += k + ': ' + v + '; '; });
+            css += '}';
+            const s = document.createElement('style');
+            s.textContent = css;
+            document.head.appendChild(s);
+        }).catch(() => {});
+    </script>
 </body>
 </html>
 

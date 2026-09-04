@@ -175,6 +175,17 @@ const AdminEditor = (() => {
     let _isDirty = false;
     let _listeners = {};
 
+    // ── Element-level editing ──
+    let _elements = [];           // All detected editable elements
+    let _selectedElementId = null;
+    let _elementOverrides = {};   // { elementId: { desktop: {...}, tablet: {...}, mobile: {...} } }
+    let _lockedElements = {};     // { elementId: true }
+    let _clipboard = null;        // Copied CSS properties
+    let _globalSettings = {       // Site-wide CSS variables
+        colors: {}, fonts: {}, spacing: {}, borderRadius: {},
+    };
+    let _elementMode = false;     // true = editing individual elements, false = editing sections
+
     // ── Init ──
     function init(iframe) {
         _frame = iframe;
@@ -587,6 +598,232 @@ const AdminEditor = (() => {
     function isDirty() { return _isDirty; }
     function markClean() { _isDirty = false; }
 
+    // ═══════════════════════════════════════════════════════
+    //  ELEMENT-LEVEL EDITING — click any element to edit it
+    // ═══════════════════════════════════════════════════════
+
+    function setElementMode(enabled) {
+        _elementMode = enabled;
+        _emit('element-mode-changed', enabled);
+    }
+    function isElementMode() { return _elementMode; }
+
+    function detectElements() {
+        if (!_frameDoc) return [];
+        _elements = [];
+        const skip = new Set(['SCRIPT', 'STYLE', 'LINK', 'META', 'HEAD', 'HTML', 'BODY', 'BR', 'HR']);
+        let idx = 0;
+
+        function walk(root, depth, parent) {
+            if (!root || !root.children) return;
+            Array.from(root.children).forEach(el => {
+                if (skip.has(el.tagName)) return;
+                if (el.id === 'admin-editor-inject') return;
+                if (el.closest && el.closest('#admin-editor-inject')) return;
+                if (el.getAttribute && el.getAttribute('data-ao-highlight')) return; // section-level
+
+                const tag = el.tagName.toLowerCase();
+                const id = el.id || '';
+                const cls = Array.from(el.classList || []).filter(c => c && !c.includes('active') && !c.includes('data-ao')).slice(0, 2).join('.');
+                const selector = id ? '#' + id : (cls ? tag + '.' + cls : _buildSelector(el));
+                const text = (el.textContent || '').trim().slice(0, 40);
+                const elId = id || (parent ? parent.id + '>' : '') + selector + '-' + idx;
+
+                const entry = {
+                    id: elId,
+                    tag,
+                    label: id || cls || tag,
+                    selector,
+                    element: el,
+                    depth,
+                    parent: parent ? parent.id : null,
+                    children: [],
+                    text: text || undefined,
+                    visible: el.style.display !== 'none',
+                    locked: !!_lockedElements[elId],
+                };
+                _elements.push(entry);
+                if (parent) parent.children.push(entry);
+                idx++;
+
+                // Make clickable in element mode
+                el.addEventListener('click', (e) => {
+                    if (!_elementMode) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectElement(elId);
+                }, { capture: true });
+
+                walk(el, depth + 1, entry);
+            });
+        }
+        walk(_frameDoc.body, 0, null);
+        _emit('elements-detected', _elements);
+        return _elements;
+    }
+
+    function getElements() { return _elements.slice(); }
+
+    function getRootElementChildren() {
+        return _elements.filter(e => !e.parent);
+    }
+
+    function selectElement(id) {
+        // Deselect previous
+        if (_selectedElementId) {
+            const prev = _frameDoc.querySelector('[data-ao-el-selected]');
+            if (prev) prev.removeAttribute('data-ao-el-selected');
+        }
+        _selectedElementId = id;
+        const el = _elements.find(e => e.id === id);
+        if (el && el.element) {
+            el.element.setAttribute('data-ao-el-selected', id);
+            el.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        _emit('element-selected', { id, element: el });
+    }
+
+    function getSelectedElement() { return _elements.find(e => e.id === _selectedElementId) || null; }
+    function getSelectedElementId() { return _selectedElementId; }
+
+    function getElementOverrides(id) {
+        const el = _elementOverrides[id] || {};
+        return el[_currentDevice] || {};
+    }
+
+    function setElementOverride(id, property, value) {
+        _pushUndo();
+        if (!_elementOverrides[id]) _elementOverrides[id] = {};
+        if (!_elementOverrides[id][_currentDevice]) _elementOverrides[id][_currentDevice] = {};
+        if (value === '' || value === null || value === undefined) {
+            delete _elementOverrides[id][_currentDevice][property];
+        } else {
+            _elementOverrides[id][_currentDevice][property] = value;
+        }
+        _applyElementOverride(id);
+        _isDirty = true;
+        _emit('element-override-changed', { elementId: id, property, value, device: _currentDevice });
+    }
+
+    function _applyElementOverride(id) {
+        if (!_frameDoc) return;
+        const el = _elements.find(e => e.id === id);
+        if (!el || !el.element) return;
+
+        const allDevices = _elementOverrides[id] || {};
+        const merged = {};
+        if (allDevices.desktop) Object.assign(merged, allDevices.desktop);
+        if (_currentDevice === 'tablet' && allDevices.tablet) Object.assign(merged, allDevices.tablet);
+        if (_currentDevice === 'mobile') {
+            if (allDevices.tablet) Object.assign(merged, allDevices.tablet);
+            if (allDevices.mobile) Object.assign(merged, allDevices.mobile);
+        }
+
+        Object.entries(merged).forEach(([prop, val]) => {
+            if (val === '' || val === null || val === undefined) {
+                el.element.style.removeProperty(_toKebab(prop));
+            } else {
+                el.element.style[prop] = val;
+            }
+        });
+    }
+
+    function applyAllElementOverrides() {
+        Object.keys(_elementOverrides).forEach(id => _applyElementOverride(id));
+    }
+
+    // ── Lock / Unlock ──
+    function lockElement(id) {
+        _lockedElements[id] = true;
+        const el = _elements.find(e => e.id === id);
+        if (el) el.locked = true;
+        _emit('element-locked', id);
+    }
+
+    function unlockElement(id) {
+        delete _lockedElements[id];
+        const el = _elements.find(e => e.id === id);
+        if (el) el.locked = false;
+        _emit('element-unlocked', id);
+    }
+
+    function isLocked(id) { return !!_lockedElements[id]; }
+
+    function toggleLock(id) {
+        if (_lockedElements[id]) unlockElement(id); else lockElement(id);
+    }
+
+    // ── Copy / Paste CSS ──
+    function copyProperties() {
+        const id = _selectedElementId || _selectedSectionId;
+        if (!id) return;
+        const src = _elementOverrides[id] || _overrides.sections[id] || {};
+        _clipboard = JSON.parse(JSON.stringify(src));
+        _emit('properties-copied', { id, clipboard: _clipboard });
+    }
+
+    function pasteProperties() {
+        const id = _selectedElementId || _selectedSectionId;
+        if (!id || !_clipboard) return;
+        _pushUndo();
+        if (_selectedElementId) {
+            _elementOverrides[id] = JSON.parse(JSON.stringify(_clipboard));
+            _applyElementOverride(id);
+        } else {
+            _overrides.sections[id] = JSON.parse(JSON.stringify(_clipboard));
+            _applyOverride(id);
+        }
+        _isDirty = true;
+        _emit('properties-pasted', { id });
+    }
+
+    function getClipboard() { return _clipboard ? JSON.parse(JSON.stringify(_clipboard)) : null; }
+
+    // ── Global Settings ──
+    function getGlobalSettings() { return JSON.parse(JSON.stringify(_globalSettings)); }
+
+    function setGlobalSettings(settings) {
+        _pushUndo();
+        _globalSettings = settings || _globalSettings;
+        _applyGlobalSettings();
+        _isDirty = true;
+        _emit('global-settings-changed', _globalSettings);
+    }
+
+    function _applyGlobalSettings() {
+        if (!_frameDoc) return;
+        let style = _frameDoc.getElementById('admin-global-settings');
+        if (!style) {
+            style = _frameDoc.createElement('style');
+            style.id = 'admin-global-settings';
+            _frameDoc.head.appendChild(style);
+        }
+        let css = ':root {\n';
+        Object.entries(_globalSettings.colors || {}).forEach(([k, v]) => { if (v) css += `  ${k}: ${v};\n`; });
+        Object.entries(_globalSettings.fonts || {}).forEach(([k, v]) => { if (v) css += `  ${k}: ${v};\n`; });
+        Object.entries(_globalSettings.spacing || {}).forEach(([k, v]) => { if (v) css += `  ${k}: ${v};\n`; });
+        Object.entries(_globalSettings.borderRadius || {}).forEach(([k, v]) => { if (v) css += `  ${k}: ${v};\n`; });
+        css += '}';
+        style.textContent = css;
+    }
+
+    // ── Get element tree for layers panel ──
+    function getElementTree() {
+        const root = getRootElementChildren();
+        function toNode(el) {
+            return {
+                id: el.id,
+                label: el.label,
+                tag: el.tag,
+                visible: el.visible !== false,
+                locked: !!_lockedElements[el.id],
+                selected: _selectedElementId === el.id,
+                children: (el.children || []).map(toNode),
+            };
+        }
+        return root.map(toNode);
+    }
+
     // ── Events ──
     function on(event, fn) {
         if (!_listeners[event]) _listeners[event] = [];
@@ -629,5 +866,31 @@ const AdminEditor = (() => {
         on,
         CSS_CATEGORIES,
         RESPONSIVE_KEYS,
+        // Element-level editing
+        setElementMode,
+        isElementMode,
+        detectElements,
+        getElements,
+        getRootElementChildren,
+        selectElement,
+        getSelectedElement,
+        getSelectedElementId,
+        getElementOverrides,
+        setElementOverride,
+        applyAllElementOverrides,
+        // Lock
+        lockElement,
+        unlockElement,
+        isLocked,
+        toggleLock,
+        // Copy/Paste
+        copyProperties,
+        pasteProperties,
+        getClipboard,
+        // Global settings
+        getGlobalSettings,
+        setGlobalSettings,
+        // Layers
+        getElementTree,
     };
 })();

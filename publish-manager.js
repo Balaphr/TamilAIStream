@@ -237,9 +237,18 @@ const PublishManager = (() => {
                 ? ContentSync.buildContentPayload()
                 : _buildPayloadFromStorage();
 
+            // Include global settings in snapshot
+            let globalSettings = {};
+            try {
+                const gsResp = await fetch('/api/global-settings');
+                const gsData = await gsResp.json();
+                if (gsData.settings) globalSettings = gsData.settings;
+            } catch (e) { /* optional */ }
+
             const result = await _api('POST', '/api/versions', {
                 label: label || 'Snapshot',
                 data: payload.data,
+                globalSettings,
                 savedBy: _getAdminName(),
             });
 
@@ -347,6 +356,19 @@ const PublishManager = (() => {
             try {
                 await _api('POST', '/api/admin-overrides', { action: 'publish' });
             } catch (e) { /* admin-overrides may not exist */ }
+
+            // Also publish global settings if they exist in staging
+            try {
+                const gsResp = await fetch('/api/global-settings');
+                const gsData = await gsResp.json();
+                if (gsData.settings) {
+                    await fetch('/api/global-settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ settings: gsData.settings, admin: 'Admin', publish: true }),
+                    });
+                }
+            } catch (e) { /* global settings may not exist */ }
 
             _state.hasStaging = false;
             _state.stagingSavedAt = null;

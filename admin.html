@@ -195,6 +195,20 @@
     <div class="tb-brand"><i class="fas fa-shield-halved"></i> TamilAI Editor</div>
     <div class="tb-sep"></div>
 
+    <!-- Mode toggle + Element tools -->
+    <button class="tb-pill off" id="pillElementMode" title="Toggle element-level editing mode">
+        <i class="fas fa-mouse-pointer"></i>
+        <span id="pillElementModeText">Element Mode</span>
+    </button>
+
+    <div class="tb-group">
+        <button class="tb-btn" id="btnCopy" title="Copy CSS (Ctrl+C)"><i class="fas fa-copy"></i></button>
+        <button class="tb-btn" id="btnPaste" title="Paste CSS (Ctrl+V)"><i class="fas fa-paste"></i></button>
+        <button class="tb-btn" id="btnLock" title="Lock/Unlock element"><i class="fas fa-lock"></i></button>
+    </div>
+
+    <div class="tb-sep"></div>
+
     <!-- Undo / Redo -->
     <div class="tb-group">
         <button class="tb-btn" id="btnUndo" title="Undo (Ctrl+Z)" disabled><i class="fas fa-rotate-left"></i></button>
@@ -228,15 +242,19 @@
     <button class="tb-btn tb-btn-green" id="btnPublish" title="Publish to live"><i class="fas fa-rocket"></i> Publish</button>
     <button class="tb-btn" id="btnVersions" title="Version history"><i class="fas fa-code-branch"></i></button>
     <button class="tb-btn" id="btnHistory" title="Changes history"><i class="fas fa-clock-rotate-left"></i></button>
+    <button class="tb-btn" id="btnGlobal" title="Toggle global settings"><i class="fas fa-globe"></i></button>
 </div>
 
 <!-- ════ LEFT PANEL ════ -->
 <div id="left-panel">
     <div class="lp-head">
-        <span><i class="fas fa-layer-group"></i> Sections</span>
-        <span id="sectionCount" style="font-weight:400;color:var(--text3);">0</span>
+        <div style="display:flex;gap:0;border-bottom:none;">
+            <button class="rp-tab active" id="tabSections" data-panel="sections"><i class="fas fa-layer-group"></i> Sections</button>
+            <button class="rp-tab" id="tabLayers" data-panel="layers"><i class="fas fa-sitemap"></i> Layers</button>
+        </div>
     </div>
     <div class="lp-list" id="sectionList"></div>
+    <div class="lp-list" id="layerList" style="display:none;"></div>
     <div class="lp-footer">
         <button class="tb-btn" id="btnRefreshSections" title="Re-detect sections"><i class="fas fa-sync-alt"></i></button>
         <button class="tb-btn" id="btnExpandAll" title="Expand all"><i class="fas fa-expand"></i></button>
@@ -256,6 +274,11 @@
             <h4>Select a Section</h4>
             <p>Click any section in the left panel or directly in the preview to edit its properties.</p>
         </div>
+    </div>
+    <!-- Global Settings panel (toggled) -->
+    <div id="globalPanel" style="display:none;padding:12px;">
+        <div style="font-weight:600;font-size:11px;color:var(--text2);margin-bottom:10px;"><i class="fas fa-globe"></i> Global Settings</div>
+        <div id="globalPanelBody"></div>
     </div>
 </div>
 
@@ -311,11 +334,11 @@
 
     // ── Section list ──
     let _selectedCat = 'layout';
+    let _activePanel = 'sections'; // 'sections' or 'layers'
 
     function renderSectionList() {
         const sections = AdminEditor.getSections();
         const list = $('sectionList');
-        $('sectionCount').textContent = sections.length;
 
         list.innerHTML = sections.map(sec => {
             const sel = AdminEditor.getSelectedSectionId() === sec.id;
@@ -326,19 +349,20 @@
                 '<span class="lp-item-actions">' +
                 '<button class="lp-act" data-act="up" title="Move up"><i class="fas fa-arrow-up"></i></button>' +
                 '<button class="lp-act" data-act="down" title="Move down"><i class="fas fa-arrow-down"></i></button>' +
-                '<button class="lp-act" data-act="toggle" title="Show/Hide"><i class="fas fa-' + (hid ? 'fa-eye' : 'fa-eye-slash') + '"></i></button>' +
+                '<button class="lp-act" data-act="toggle" title="Show/Hide"><i class="fas fa-eye"></i></button>' +
                 '<button class="lp-act" data-act="dup" title="Duplicate"><i class="fas fa-copy"></i></button>' +
                 '<button class="lp-act red" data-act="del" title="Delete"><i class="fas fa-trash"></i></button>' +
                 '</span></div>';
         }).join('');
 
-        // Bind clicks
         list.querySelectorAll('.lp-item').forEach(el => {
             el.addEventListener('click', (e) => {
                 if (e.target.closest('.lp-act')) return;
                 AdminEditor.selectSection(el.dataset.sid);
+                AdminEditor.setElementMode(false);
                 renderSectionList();
                 renderPropertyPanel();
+                updateElementModeUI();
             });
         });
         list.querySelectorAll('.lp-act').forEach(btn => {
@@ -357,14 +381,82 @@
         });
     }
 
+    // ── Layer tree rendering ──
+    function renderLayerList() {
+        const tree = AdminEditor.getElementTree();
+        const list = $('layerList');
+
+        function renderNode(node, depth) {
+            const indent = depth * 14;
+            const sel = AdminEditor.getSelectedElementId() === node.id;
+            let html = '<div class="lp-item' + (sel ? ' selected' : '') + (node.locked ? ' hidden-section' : '') + '" data-eid="' + node.id + '" style="padding-left:' + (12 + indent) + 'px;">';
+            html += '<span class="lp-item-icon" style="width:12px;font-size:8px;">' + (node.children && node.children.length ? '<i class="fas fa-caret-down"></i>' : '<i class="fas fa-minus"></i>') + '</span>';
+            html += '<span class="lp-item-icon"><i class="fas fa-' + (node.locked ? 'lock' : node.visible ? 'eye' : 'eye-slash') + '" style="font-size:9px;"></i></span>';
+            html += '<span class="lp-item-label" style="font-size:10px;">' + node.label + '</span>';
+            html += '<span class="lp-item-actions">';
+            html += '<button class="lp-act" data-act="lock" title="Lock"><i class="fas fa-' + (node.locked ? 'lock' : 'unlock') + '"></i></button>';
+            html += '<button class="lp-act" data-act="vis" title="Visibility"><i class="fas fa-' + (node.visible ? 'eye' : 'eye-slash') + '"></i></button>';
+            html += '</span></div>';
+
+            if (node.children) {
+                node.children.forEach(child => { html += renderNode(child, depth + 1); });
+            }
+            return html;
+        }
+
+        list.innerHTML = tree.map(n => renderNode(n, 0)).join('');
+
+        list.querySelectorAll('.lp-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (e.target.closest('.lp-act')) return;
+                AdminEditor.setElementMode(true);
+                AdminEditor.selectElement(el.dataset.eid);
+                renderLayerList();
+                renderPropertyPanel();
+                updateElementModeUI();
+            });
+        });
+        list.querySelectorAll('.lp-act').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const eid = btn.closest('.lp-item').dataset.eid;
+                const act = btn.dataset.act;
+                if (act === 'lock') AdminEditor.toggleLock(eid);
+                else if (act === 'vis') { /* toggle visibility */ }
+                renderLayerList();
+            });
+        });
+    }
+
     AdminEditor.on('sections-detected', renderSectionList);
     AdminEditor.on('section-selected', () => { renderSectionList(); renderPropertyPanel(); });
     AdminEditor.on('visibility-changed', renderSectionList);
     AdminEditor.on('section-moved', renderSectionList);
     AdminEditor.on('sections-reordered', renderSectionList);
-    AdminEditor.on('undo', () => { renderSectionList(); renderPropertyPanel(); updateUndoRedo(); });
-    AdminEditor.on('redo', () => { renderSectionList(); renderPropertyPanel(); updateUndoRedo(); });
+    AdminEditor.on('undo', () => { renderSectionList(); renderLayerList(); renderPropertyPanel(); updateUndoRedo(); });
+    AdminEditor.on('redo', () => { renderSectionList(); renderLayerList(); renderPropertyPanel(); updateUndoRedo(); });
     AdminEditor.on('override-changed', updateUndoRedo);
+    AdminEditor.on('element-selected', () => { renderLayerList(); renderPropertyPanel(); });
+    AdminEditor.on('elements-detected', renderLayerList);
+    AdminEditor.on('element-override-changed', updateUndoRedo);
+
+    // ── Panel tabs (Sections / Layers) ──
+    $('tabSections').addEventListener('click', () => {
+        _activePanel = 'sections';
+        $('tabSections').classList.add('active');
+        $('tabLayers').classList.remove('active');
+        $('sectionList').style.display = '';
+        $('layerList').style.display = 'none';
+    });
+    $('tabLayers').addEventListener('click', () => {
+        _activePanel = 'layers';
+        $('tabLayers').classList.add('active');
+        $('tabSections').classList.remove('active');
+        $('layerList').style.display = '';
+        $('sectionList').style.display = 'none';
+        AdminEditor.detectElements();
+        renderLayerList();
+    });
 
     // ── Property Panel ──
     function renderPropertyPanel() {
@@ -498,10 +590,16 @@
     async function saveToStaging() {
         try {
             const overrides = AdminEditor.exportOverrides();
+            const globalSettings = AdminEditor.getGlobalSettings();
             await fetch('/api/admin-overrides', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'save-staging', overrides, admin: 'Admin' }),
+            });
+            await fetch('/api/global-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ settings: globalSettings, admin: 'Admin' }),
             });
             AdminEditor.markClean();
             toast('Saved to staging', 'ok');
@@ -513,10 +611,14 @@
     async function doPublish() {
         if (!confirm('Publish all changes to the live website?')) return;
         try {
-            // Save to staging first
             await saveToStaging();
-            // Then publish via PublishManager
             await PublishManager.publish();
+            const globalSettings = AdminEditor.getGlobalSettings();
+            await fetch('/api/global-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ settings: globalSettings, admin: 'Admin', publish: true }),
+            });
             toast('Published to live website!', 'ok');
             refreshStatus();
         } catch (e) { toast('Publish failed: ' + e.message, 'err'); }
@@ -602,9 +704,95 @@
     // ── Refresh sections ──
     $('btnRefreshSections').addEventListener('click', () => {
         AdminEditor.detectSections();
+        AdminEditor.detectElements();
         renderSectionList();
+        renderLayerList();
         toast('Sections refreshed', 'info');
     });
+
+    // ── Element Mode toggle ──
+    function updateElementModeUI() {
+        const on = AdminEditor.isElementMode();
+        $('pillElementMode').classList.toggle('on', on);
+        $('pillElementMode').classList.toggle('off', !on);
+        $('pillElementModeText').textContent = on ? 'Element Mode ON' : 'Element Mode';
+    }
+    $('pillElementMode').addEventListener('click', () => {
+        AdminEditor.setElementMode(!AdminEditor.isElementMode());
+        updateElementModeUI();
+        toast(AdminEditor.isElementMode() ? 'Element mode: click any element to edit' : 'Section mode: click sections to edit', 'info');
+    });
+    AdminEditor.on('element-mode-changed', updateElementModeUI);
+
+    // ── Copy / Paste ──
+    $('btnCopy').addEventListener('click', () => { AdminEditor.copyProperties(); toast('Properties copied', 'info'); });
+    $('btnPaste').addEventListener('click', () => { AdminEditor.pasteProperties(); toast('Properties pasted', 'ok'); renderPropertyPanel(); });
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !window.getSelection().toString()) { AdminEditor.copyProperties(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'v') { AdminEditor.pasteProperties(); renderPropertyPanel(); }
+    });
+
+    // ── Lock ──
+    $('btnLock').addEventListener('click', () => {
+        const id = AdminEditor.getSelectedElementId() || AdminEditor.getSelectedSectionId();
+        if (!id) { toast('Select an element first', 'err'); return; }
+        AdminEditor.toggleLock(id);
+        toast(AdminEditor.isLocked(id) ? 'Element locked' : 'Element unlocked', 'info');
+        renderLayerList();
+    });
+
+    // ── Global Settings ──
+    function renderGlobalSettings() {
+        const gs = AdminEditor.getGlobalSettings();
+        const body = $('globalPanelBody');
+        const colorVars = [
+            { key: '--bg-primary', label: 'Background' },
+            { key: '--bg-secondary', label: 'Surface' },
+            { key: '--text-primary', label: 'Text' },
+            { key: '--text-secondary', label: 'Text Secondary' },
+            { key: '--emerald-500', label: 'Accent Primary' },
+            { key: '--emerald-400', label: 'Accent Light' },
+            { key: '--emerald-600', label: 'Accent Dark' },
+            { key: '--border-glass', label: 'Border' },
+        ];
+        const fontVars = [
+            { key: '--font-family', label: 'Font Family' },
+        ];
+        const spacingVars = [
+            { key: '--radius-sm', label: 'Radius SM' },
+            { key: '--radius-md', label: 'Radius MD' },
+            { key: '--radius-lg', label: 'Radius LG' },
+        ];
+
+        function renderVarGroup(title, vars, category) {
+            return '<div style="margin-bottom:10px;"><div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:6px;">' + title + '</div>' +
+                vars.map(v => {
+                    const val = gs[category]?.[v.key] || '';
+                    const isColor = v.key.includes('color') || v.key.includes('bg') || v.key.includes('text') || v.key.includes('emerald') || v.key.includes('border');
+                    return '<div class="rp-prop"><div class="rp-prop-label">' + v.label + '</div>' +
+                        (isColor ?
+                            '<div class="rp-prop-row"><input type="color" class="rp-input-color" data-gcat="' + category + '" data-gkey="' + v.key + '" value="' + (val || '#000000') + '"><input type="text" class="rp-input" data-gcat="' + category + '" data-gkey="' + v.key + '" value="' + val + '" placeholder="e.g. #000"></div>' :
+                            '<input type="text" class="rp-input" data-gcat="' + category + '" data-gkey="' + v.key + '" value="' + val + '" placeholder="' + v.label + '">') +
+                        '</div>';
+                }).join('') + '</div>';
+        }
+
+        body.innerHTML = renderVarGroup('Colors', colorVars, 'colors') + renderVarGroup('Typography', fontVars, 'fonts') + renderVarGroup('Spacing & Radius', spacingVars, 'spacing');
+
+        body.querySelectorAll('.rp-input, .rp-input-color').forEach(input => {
+            const handler = () => {
+                const cat = input.dataset.gcat;
+                const key = input.dataset.gkey;
+                if (!cat || !key) return;
+                const gs2 = AdminEditor.getGlobalSettings();
+                if (!gs2[cat]) gs2[cat] = {};
+                gs2[cat][key] = input.value;
+                AdminEditor.setGlobalSettings(gs2);
+            };
+            input.addEventListener('input', handler);
+            input.addEventListener('change', handler);
+        });
+    }
 
     // ── Load overrides on frame load ──
     AdminEditor.on('frame-loaded', async () => {
@@ -615,16 +803,47 @@
                 AdminEditor.importOverrides(data.overrides);
             }
         } catch (e) { /* ignore */ }
+        try {
+            const resp2 = await fetch('/api/global-settings');
+            const data2 = await resp2.json();
+            if (data2.settings) AdminEditor.setGlobalSettings(data2.settings);
+        } catch (e) { /* ignore */ }
         AdminEditor.detectSections();
+        AdminEditor.detectElements();
         renderSectionList();
+        renderLayerList();
+        renderGlobalSettings();
         refreshStatus();
     });
 
     // ── Auto-save on section edit ──
     AdminEditor.on('override-changed', () => {
-        // Debounced auto-save
         clearTimeout(window._autoSaveTimer);
         window._autoSaveTimer = setTimeout(() => saveToStaging(), 3000);
+    });
+    AdminEditor.on('global-settings-changed', () => {
+        clearTimeout(window._autoSaveTimer);
+        window._autoSaveTimer = setTimeout(() => saveToStaging(), 3000);
+    });
+
+    // ── Global settings toggle ──
+    $('btnGlobal').addEventListener('click', () => {
+        const panel = $('globalPanel');
+        const rightBody = $('rpBody');
+        const rpTabs = document.querySelector('.rp-tabs');
+        if (panel.style.display === 'none') {
+            panel.style.display = '';
+            rightBody.style.display = 'none';
+            if (rpTabs) rpTabs.style.display = 'none';
+            $('rpTitle').innerHTML = '<i class="fas fa-globe"></i> Global Settings';
+            renderGlobalSettings();
+        } else {
+            panel.style.display = 'none';
+            rightBody.style.display = '';
+            if (rpTabs) rpTabs.style.display = '';
+            $('rpTitle').innerHTML = '<i class="fas fa-sliders"></i> Properties';
+            renderPropertyPanel();
+        }
     });
 
     // ── Init ──

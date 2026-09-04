@@ -153,6 +153,14 @@ export default {
         return handleAdminOverridesPost(request, env);
       }
 
+      // --- Global settings (site-wide CSS variables) ---
+      if (url.pathname === '/api/global-settings' && request.method === 'GET') {
+        return handleGlobalSettingsGet(env);
+      }
+      if (url.pathname === '/api/global-settings' && request.method === 'POST') {
+        return handleGlobalSettingsPost(request, env);
+      }
+
       if (url.pathname === '/api/media/list' && request.method === 'GET') {
         return handleMediaList(url, env);
       }
@@ -544,6 +552,7 @@ async function handleVersionsPost(request, env) {
       savedBy: body.savedBy || 'Admin',
       savedAt: new Date().toISOString(),
       data: body.data || {},
+      globalSettings: body.globalSettings || {},
     };
     await env.MEDIA_BUCKET.put('versions/' + id + '.json', JSON.stringify(snapshot, null, 2), {
       httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
@@ -590,7 +599,14 @@ async function handleVersionSnapshotRevert(versionId, env) {
     await env.MEDIA_BUCKET.put('staging-manifest.json', JSON.stringify(stagingPayload, null, 2), {
       httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
     });
-    return json({ success: true, data: snapshot.data });
+    // Also restore global settings to staging if included in snapshot
+    if (snapshot.globalSettings) {
+      const gsPayload = { settings: snapshot.globalSettings, savedAt: new Date().toISOString(), savedBy: 'revert', source: 'revert-to-version:' + versionId };
+      await env.MEDIA_BUCKET.put('global-settings-staging.json', JSON.stringify(gsPayload, null, 2), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
+      });
+    }
+    return json({ success: true, data: snapshot.data, globalSettings: snapshot.globalSettings || {} });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
@@ -660,6 +676,48 @@ async function handleAdminOverridesPost(request, env) {
     }
 
     return json({ error: 'Unknown action' }, 400);
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+// --- Global Settings (Site-wide CSS Variables) ---
+
+async function handleGlobalSettingsGet(env) {
+  try {
+    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500 });
+    const empty = { settings: { colors: {}, fonts: {}, spacing: {}, borderRadius: {} } };
+    // Try staging first, then production
+    const staging = await env.MEDIA_BUCKET.get('global-settings-staging.json');
+    if (staging) {
+      const data = JSON.parse(await staging.text());
+      return json({ settings: data.settings || data, source: 'staging' });
+    }
+    const prod = await env.MEDIA_BUCKET.get('global-settings.json');
+    if (!prod) return json(empty);
+    const data = JSON.parse(await prod.text());
+    return json({ settings: data.settings || data, source: 'production' });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+async function handleGlobalSettingsPost(request, env) {
+  try {
+    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
+    const body = await request.json();
+    const payload = { settings: body.settings, savedAt: new Date().toISOString(), savedBy: body.admin || 'Admin' };
+    // Always save to staging
+    await env.MEDIA_BUCKET.put('global-settings-staging.json', JSON.stringify(payload, null, 2), {
+      httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
+    });
+    // If publish=true, also write to production (global-settings.json)
+    if (body.publish) {
+      await env.MEDIA_BUCKET.put('global-settings.json', JSON.stringify(payload, null, 2), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
+      });
+    }
+    return json({ success: true, savedAt: payload.savedAt, published: !!body.publish });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
