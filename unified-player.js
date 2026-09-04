@@ -167,7 +167,6 @@ const UnifiedPlayer = (() => {
       bottomCurrentTime: document.getElementById('upBottomCurrentTime'),
       bottomDuration: document.getElementById('upBottomDuration'),
       bottomPlayPause: document.getElementById('upBottomPlayPause'),
-      bottomProgress: document.getElementById('upBottomProgress'),
       bottomProgressFill: document.getElementById('upBottomProgressFill'),
 
       fullScreen: document.getElementById('upFullScreen'),
@@ -211,7 +210,6 @@ const UnifiedPlayer = (() => {
       fmShare: document.getElementById('upFmShare'),
       fmVolume: document.getElementById('upFmVolume'),
       fmVolumeSlider: document.getElementById('upFmVolumeSlider'),
-      fmMinimize: document.getElementById('upFmMinimize'),
       fmAskAI: document.getElementById('upFmAskAI'),
     };
 
@@ -263,7 +261,6 @@ const UnifiedPlayer = (() => {
     if (els.fmPlayPause) els.fmPlayPause.addEventListener('click', togglePlay);
     if (els.fmFav) els.fmFav.addEventListener('click', toggleFavorite);
     if (els.fmShare) els.fmShare.addEventListener('click', shareCurrent);
-    if (els.fmMinimize) els.fmMinimize.addEventListener('click', hideFullScreen);
     if (els.fmAskAI) els.fmAskAI.addEventListener('click', _openAIAssistant);
     if (els.fmVolume) els.fmVolume.addEventListener('click', toggleMute);
     if (els.fmVolumeSlider) {
@@ -411,6 +408,15 @@ const UnifiedPlayer = (() => {
   }
 
   function next() {
+    if (state.externalEngine) {
+      if (typeof window.playNextTrack === 'function') { window.playNextTrack(); return; }
+      const live = _liveAudio();
+      if (live && live.src) {
+        live.currentTime = live.duration || 0;
+        live.pause();
+      }
+      return;
+    }
     if (state.queue.length === 0) return;
     if (state.shuffle) {
       state.queueIndex = Math.floor(Math.random() * state.queue.length);
@@ -424,6 +430,12 @@ const UnifiedPlayer = (() => {
   }
 
   function previous() {
+    if (state.externalEngine) {
+      if (typeof window.playPreviousTrack === 'function') { window.playPreviousTrack(); return; }
+      const live = _liveAudio();
+      if (live) live.currentTime = 0;
+      return;
+    }
     if (state.queue.length === 0) return;
     if (audio.currentTime > 3) {
       audio.currentTime = 0;
@@ -441,6 +453,10 @@ const UnifiedPlayer = (() => {
   }
 
   function seek(time) {
+    if (state.externalEngine && state.duration > 0) {
+      _seekToPercent(time / state.duration);
+      return;
+    }
     if (audio.duration) {
       audio.currentTime = Math.max(0, Math.min(time, audio.duration));
     }

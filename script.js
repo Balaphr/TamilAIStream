@@ -547,6 +547,18 @@ function restorePlaybackState() {
             updatePlayPauseButton(false);
             if (currentPlaybackTrack) {
                 updateNowPlayingBar(currentPlaybackTrack.title || currentPlaybackTrack.name || '', currentStation || '', false);
+                // Preload the source (no autoplay) so the pause→return→play flow
+                // resumes from the exact saved position instead of 00:00.
+                if (audioPlayer && !window.__BUILDER_PREVIEW__) {
+                    const pUrl = currentPlaybackTrack.audioUrl || currentPlaybackTrack.streamUrl || '';
+                    if (pUrl && audioPlayer.src !== pUrl) {
+                        audioPlayer.src = pUrl;
+                        audioPlayer.volume = playbackVolume;
+                    }
+                    if (progress > 0) {
+                        audioPlayer.currentTime = progress;
+                    }
+                }
             }
             if (typeof GlobalPlayer !== 'undefined') {
                 if (currentPlaybackTrack) {
