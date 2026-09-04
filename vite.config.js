@@ -5,7 +5,7 @@ import { readdirSync, copyFileSync, existsSync, mkdirSync, statSync, writeFileSy
 const vanillaFiles = [
   'ultra-perf.js',
   'auth.js', 'data-store.js', 'firebase-init.js', 'firebase-config.js',
-  'r2-config.js', 'r2-upload.js', 'r2-content-sync.js', 'publish-manager.js',
+  'r2-config.js', 'r2-upload.js', 'r2-content-sync.js', 'publish-manager.js', 'admin-editor.js',
   'player-engine.js', 'equalizer.js', 'eq-ui.js',
   'playlist-manager.js', 'search-engine.js', 'search-ui.js',
   'premium-effects.js', 'player-ui.js',
@@ -55,7 +55,7 @@ function copyVanillaScripts() {
         'ultra-perf.js',
         'auth.js',
         'data-store.js', 'firebase-init.js', 'firebase-config.js',
-        'r2-config.js', 'r2-upload.js', 'r2-content-sync.js', 'publish-manager.js',
+        'r2-config.js', 'r2-upload.js', 'r2-content-sync.js', 'publish-manager.js', 'admin-editor.js',
         'player-engine.js', 'equalizer.js', 'eq-ui.js',
         'playlist-manager.js', 'search-engine.js', 'search-ui.js',
         'premium-effects.js', 'player-ui.js',

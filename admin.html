@@ -3,604 +3,632 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tamil AI Stream — Admin Preview</title>
+    <title>Tamil AI Stream — Admin Editor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
         :root {
-            --tb-h: 46px;
-            --accent: #10b981;
-            --accent2: #34d399;
-            --danger: #ef4444;
-            --warn: #f59e0b;
-            --bg: #0a0a0a;
-            --bg2: #111;
-            --bg3: #1a1a1a;
-            --glass: rgba(255,255,255,0.06);
-            --glass2: rgba(255,255,255,0.10);
-            --border: rgba(255,255,255,0.08);
-            --border2: rgba(255,255,255,0.15);
-            --text: #fff;
-            --text2: rgba(255,255,255,0.6);
-            --text3: rgba(255,255,255,0.35);
-            --r: 10px;
-            --r2: 14px;
+            --accent:#10b981; --accent2:#34d399; --danger:#ef4444; --warn:#f59e0b; --blue:#3b82f6;
+            --bg:#0a0a0a; --bg2:#111; --bg3:#1a1a1a; --bg4:#222;
+            --glass:rgba(255,255,255,0.06); --glass2:rgba(255,255,255,0.10);
+            --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.15);
+            --text:#fff; --text2:rgba(255,255,255,0.6); --text3:rgba(255,255,255,0.35);
+            --left-w:240px; --right-w:300px; --topbar-h:44px;
         }
-        html, body { height: 100%; overflow: hidden; background: #000; font-family: 'Inter', sans-serif; color: var(--text); }
+        html, body { height:100%; overflow:hidden; background:#000; font-family:'Inter',sans-serif; color:var(--text); font-size:12px; }
 
-        /* ════════════ TOOLBAR ════════════ */
-        #toolbar {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 999999;
-            height: var(--tb-h); display: flex; align-items: center; gap: 8px;
-            padding: 0 12px; background: rgba(10,10,10,0.96);
-            backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
-            border-bottom: 1px solid rgba(16,185,129,0.2);
-            box-shadow: 0 2px 20px rgba(0,0,0,0.5);
+        /* ════ TOP BAR ════ */
+        #topbar {
+            position:fixed; top:0; left:0; right:0; z-index:999999; height:var(--topbar-h);
+            display:flex; align-items:center; gap:6px; padding:0 10px;
+            background:rgba(10,10,10,0.97); backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--border);
         }
-        .tb-brand { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13px; color: var(--accent); white-space: nowrap; }
-        .tb-brand i { font-size: 15px; }
-        .tb-sep { width: 1px; height: 22px; background: rgba(255,255,255,0.08); margin: 0 2px; flex-shrink: 0; }
-        .tb-spacer { flex: 1; }
-
-        /* Staging pill */
-        .tb-pill {
-            display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px;
-            background: var(--glass); border: 1px solid var(--border); cursor: pointer; user-select: none;
-            transition: all 0.2s; font-size: 11px; font-weight: 600;
-        }
-        .tb-pill:hover { background: var(--glass2); }
-        .tb-pill.on { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); }
-        .tb-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); transition: all 0.3s; }
-        .tb-pill.on .tb-dot { background: var(--accent); box-shadow: 0 0 8px rgba(16,185,129,0.6); }
-        .tb-pill.on .tb-pill-t { color: var(--accent); }
-
-        /* Status */
-        .tb-status { font-size: 11px; color: var(--text3); white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
-
-        /* Buttons */
+        .tb-brand { display:flex; align-items:center; gap:6px; font-weight:700; font-size:13px; color:var(--accent); margin-right:4px; }
+        .tb-sep { width:1px; height:20px; background:var(--border); margin:0 2px; flex-shrink:0; }
+        .tb-spacer { flex:1; }
+        .tb-group { display:flex; align-items:center; gap:3px; }
         .tb-btn {
-            display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 8px;
-            border: 1px solid var(--border2); background: var(--glass); color: var(--text);
-            font-weight: 500; font-size: 11px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
-            text-decoration: none; line-height: 1;
+            display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:6px;
+            border:1px solid var(--border); background:var(--glass); color:var(--text2);
+            font-size:11px; font-weight:500; cursor:pointer; transition:all 0.15s; white-space:nowrap;
+            text-decoration:none; line-height:1;
         }
-        .tb-btn:hover { background: var(--glass2); border-color: rgba(255,255,255,0.2); }
-        .tb-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-        .tb-btn-green { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); color: var(--accent); }
-        .tb-btn-green:hover:not(:disabled) { background: rgba(16,185,129,0.25); box-shadow: 0 0 12px rgba(16,185,129,0.15); }
-        .tb-btn-red { color: var(--danger); border-color: rgba(239,68,68,0.3); }
-        .tb-btn-red:hover:not(:disabled) { background: rgba(239,68,68,0.12); }
-        .tb-icon-btn {
-            width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;
-            border-radius: 8px; border: 1px solid var(--border); background: var(--glass);
-            color: var(--text2); cursor: pointer; transition: all 0.2s; font-size: 14px;
-        }
-        .tb-icon-btn:hover { background: var(--glass2); color: var(--text); }
+        .tb-btn:hover { background:var(--glass2); color:var(--text); }
+        .tb-btn:disabled { opacity:0.3; cursor:not-allowed; }
+        .tb-btn-green { background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.4); color:var(--accent); }
+        .tb-btn-green:hover:not(:disabled) { background:rgba(16,185,129,0.25); }
+        .tb-btn-red { color:var(--danger); border-color:rgba(239,68,68,0.3); }
+        .tb-btn-red:hover:not(:disabled) { background:rgba(239,68,68,0.12); }
+        .tb-btn.active { background:rgba(16,185,129,0.2); border-color:var(--accent); color:var(--accent); }
+        .tb-device { padding:4px 8px; font-size:14px; }
+        .tb-pill { padding:4px 10px; border-radius:999px; font-size:10px; font-weight:600; }
+        .tb-pill.on { background:rgba(16,185,129,0.2); color:var(--accent); border-color:rgba(16,185,129,0.4); }
+        .tb-pill.off { background:var(--glass); color:var(--text3); border-color:var(--border); }
+        .tb-status { font-size:10px; color:var(--text3); }
 
-        /* ════════════ SIDE PANEL ════════════ */
-        #overlay {
-            display: none; position: fixed; inset: 0; z-index: 9999998;
-            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+        /* ════ LEFT PANEL ════ */
+        #left-panel {
+            position:fixed; top:var(--topbar-h); left:0; bottom:0; width:var(--left-w);
+            background:var(--bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; z-index:99999;
+            overflow:hidden;
         }
-        #overlay.open { display: block; }
-        #sidepanel {
-            position: fixed; top: 0; right: -340px; bottom: 0; width: 320px; z-index: 9999999;
-            background: var(--bg); border-left: 1px solid var(--border);
-            display: flex; flex-direction: column; transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
-            box-shadow: -8px 0 40px rgba(0,0,0,0.6);
+        .lp-head { padding:10px 12px; border-bottom:1px solid var(--border); font-weight:600; font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; justify-content:space-between; }
+        .lp-list { flex:1; overflow-y:auto; padding:4px 0; }
+        .lp-item {
+            display:flex; align-items:center; gap:8px; padding:7px 12px;
+            cursor:pointer; transition:all 0.12s; border-left:2px solid transparent;
         }
-        #sidepanel.open { right: 0; }
-        .sp-head {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 16px 18px; border-bottom: 1px solid var(--border);
+        .lp-item:hover { background:var(--glass); }
+        .lp-item.selected { background:rgba(16,185,129,0.1); border-left-color:var(--accent); }
+        .lp-item.hidden-section { opacity:0.4; }
+        .lp-item-icon { width:16px; text-align:center; font-size:10px; color:var(--text3); flex-shrink:0; }
+        .lp-item-label { flex:1; font-size:11px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .lp-item-actions { display:flex; gap:2px; opacity:0; transition:opacity 0.12s; }
+        .lp-item:hover .lp-item-actions { opacity:1; }
+        .lp-act {
+            width:20px; height:20px; display:flex; align-items:center; justify-content:center;
+            border-radius:4px; border:none; background:transparent; color:var(--text3);
+            cursor:pointer; font-size:9px; transition:all 0.12s;
         }
-        .sp-head h3 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .sp-close {
-            width: 30px; height: 30px; border-radius: 8px; border: none; background: var(--glass);
-            color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-size: 13px; transition: background 0.2s;
-        }
-        .sp-close:hover { background: var(--glass2); }
-        .sp-body { flex: 1; overflow-y: auto; padding: 8px 0; }
-        .sp-section { padding: 4px 0; }
-        .sp-label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; padding: 10px 18px 4px; }
-        .sp-item {
-            display: flex; align-items: center; gap: 10px; padding: 10px 18px;
-            color: var(--text2); font-size: 13px; font-weight: 500; cursor: pointer;
-            transition: all 0.15s; border: none; background: none; width: 100%; text-align: left;
-        }
-        .sp-item:hover { background: var(--glass); color: var(--text); }
-        .sp-item i { width: 18px; text-align: center; font-size: 13px; }
-        .sp-item .sp-badge {
-            margin-left: auto; font-size: 10px; font-weight: 700; padding: 2px 7px;
-            border-radius: 999px; background: rgba(16,185,129,0.2); color: var(--accent);
-        }
-        .sp-item .sp-badge-warn { background: rgba(245,158,11,0.2); color: var(--warn); }
-        .sp-divider { height: 1px; background: var(--border); margin: 6px 18px; }
-        .sp-footer { padding: 12px 18px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text3); text-align: center; }
+        .lp-act:hover { background:var(--glass2); color:var(--text); }
+        .lp-act.red:hover { color:var(--danger); }
+        .lp-footer { padding:8px 12px; border-top:1px solid var(--border); display:flex; gap:4px; }
+        .lp-footer .tb-btn { flex:1; justify-content:center; font-size:10px; padding:5px 6px; }
 
-        /* ════════════ MODALS ════════════ */
-        .modal-bg {
-            display: none; position: fixed; inset: 0; z-index: 99999990;
-            background: rgba(0,0,0,0.65); backdrop-filter: blur(8px);
-            align-items: center; justify-content: center;
+        /* ════ RIGHT PANEL ════ */
+        #right-panel {
+            position:fixed; top:var(--topbar-h); right:0; bottom:0; width:var(--right-w);
+            background:var(--bg); border-left:1px solid var(--border);
+            display:flex; flex-direction:column; z-index:99999;
+            overflow:hidden;
         }
-        .modal-bg.open { display: flex; }
-        .modal {
-            background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2);
-            width: 92%; max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;
-            overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.7);
-        }
-        .modal-h {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 14px 18px; border-bottom: 1px solid var(--border);
-        }
-        .modal-h h3 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .modal-x {
-            width: 28px; height: 28px; border-radius: 7px; border: none; background: var(--glass);
-            color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-size: 12px; transition: background 0.2s;
-        }
-        .modal-x:hover { background: var(--glass2); }
-        .modal-b { padding: 14px 18px; overflow-y: auto; flex: 1; font-size: 13px; }
-        .modal-f { padding: 10px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+        .rp-head { padding:10px 12px; border-bottom:1px solid var(--border); font-weight:600; font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; justify-content:space-between; }
+        .rp-body { flex:1; overflow-y:auto; }
+        .rp-empty { padding:30px 16px; text-align:center; color:var(--text3); }
+        .rp-empty i { font-size:24px; margin-bottom:8px; display:block; opacity:0.4; }
+        .rp-empty h4 { font-size:12px; color:var(--text2); margin-bottom:4px; }
+        .rp-empty p { font-size:10px; line-height:1.5; }
 
-        /* Diff items */
-        .d-sec { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .d-sec:last-child { border-bottom: none; }
-        .d-sec-h { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
-        .d-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .d-b-mod { background: rgba(245,158,11,0.2); color: #f59e0b; }
-        .d-b-add { background: rgba(16,185,129,0.2); color: #10b981; }
-        .d-b-rem { background: rgba(239,68,68,0.2); color: #ef4444; }
-        .d-ct { font-size: 11px; color: var(--text3); margin-left: auto; }
-        .d-items { padding-left: 18px; }
-        .d-item { font-size: 12px; padding: 2px 0; }
-        .d-item-add { color: #34d399; }
-        .d-item-rem { color: #f87171; }
-
-        /* History items */
-        .h-entry {
-            display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+        /* Category tabs */
+        .rp-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); overflow-x:auto; flex-shrink:0; }
+        .rp-tab {
+            padding:7px 10px; font-size:10px; font-weight:600; color:var(--text3);
+            cursor:pointer; border-bottom:2px solid transparent; transition:all 0.15s;
+            white-space:nowrap; background:none; border-top:none; border-left:none; border-right:none;
         }
-        .h-entry:last-child { border-bottom: none; }
-        .h-icon {
-            width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-            font-size: 12px; flex-shrink: 0;
-        }
-        .h-icon-sync { background: rgba(59,130,246,0.15); color: #3b82f6; }
-        .h-icon-pub { background: rgba(16,185,129,0.15); color: #10b981; }
-        .h-icon-rev { background: rgba(239,68,68,0.15); color: #ef4444; }
-        .h-info { flex: 1; min-width: 0; }
-        .h-title { font-weight: 600; font-size: 12px; margin-bottom: 2px; }
-        .h-detail { font-size: 11px; color: var(--text3); line-height: 1.4; }
-        .h-meta { font-size: 10px; color: var(--text3); margin-top: 3px; display: flex; gap: 10px; }
-        .h-status { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
-        .h-s-staging { background: rgba(59,130,246,0.2); color: #3b82f6; }
-        .h-s-published { background: rgba(16,185,129,0.2); color: #10b981; }
-        .h-s-reverted { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .rp-tab:hover { color:var(--text2); }
+        .rp-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
 
-        .empty-state {
-            text-align: center; padding: 40px 20px; color: var(--text3);
+        /* Property rows */
+        .rp-props { padding:8px 12px; }
+        .rp-prop { margin-bottom:8px; }
+        .rp-prop-label { font-size:10px; font-weight:500; color:var(--text3); margin-bottom:3px; display:flex; align-items:center; justify-content:space-between; }
+        .rp-prop-reset { width:14px; height:14px; border:none; background:transparent; color:var(--text3); cursor:pointer; font-size:8px; border-radius:3px; display:flex; align-items:center; justify-content:center; }
+        .rp-prop-reset:hover { background:var(--glass2); color:var(--danger); }
+        .rp-prop-row { display:flex; gap:4px; align-items:center; }
+        .rp-input {
+            flex:1; padding:5px 7px; border-radius:5px; border:1px solid var(--border);
+            background:var(--bg3); color:var(--text); font-size:11px; font-family:inherit;
+            outline:none; transition:border-color 0.15s;
         }
-        .empty-state i { font-size: 32px; margin-bottom: 10px; display: block; opacity: 0.5; }
-        .empty-state h4 { font-size: 14px; color: var(--text2); margin-bottom: 4px; }
-        .empty-state p { font-size: 11px; line-height: 1.5; }
+        .rp-input:focus { border-color:var(--accent); }
+        .rp-input-color { width:28px; height:28px; padding:2px; border-radius:5px; border:1px solid var(--border); background:var(--bg3); cursor:pointer; flex-shrink:0; }
+        .rp-input-color::-webkit-color-swatch-wrapper { padding:0; }
+        .rp-input-color::-webkit-color-swatch { border:none; border-radius:3px; }
+        .rp-select { padding:5px 7px; border-radius:5px; border:1px solid var(--border); background:var(--bg3); color:var(--text); font-size:11px; outline:none; cursor:pointer; }
+        .rp-select:focus { border-color:var(--accent); }
+        .rp-range { width:100%; accent-color:var(--accent); }
+        .rp-unit { padding:4px 6px; border-radius:5px; border:1px solid var(--border); background:var(--bg3); color:var(--text2); font-size:10px; cursor:pointer; flex-shrink:0; }
 
-        /* ── Site Iframe ── */
+        /* ════ CENTER IFRAME ════ */
+        #center-area {
+            position:fixed; top:var(--topbar-h); left:var(--left-w); right:var(--right-w); bottom:0;
+            background:#000; display:flex; align-items:center; justify-content:center;
+            overflow:auto;
+        }
         #site-frame {
-            position: fixed; top: var(--tb-h); left: 0; right: 0; bottom: 0;
-            border: none; width: 100%; height: calc(100vh - var(--tb-h));
+            border:none; background:#000;
+            transition: max-width 0.3s, margin 0.3s;
         }
+
+        /* ════ MODALS ════ */
+        .modal-bg {
+            display:none; position:fixed; inset:0; z-index:99999990;
+            background:rgba(0,0,0,0.65); backdrop-filter:blur(8px);
+            align-items:center; justify-content:center;
+        }
+        .modal-bg.open { display:flex; }
+        .modal {
+            background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+            width:92%; max-width:640px; max-height:85vh; display:flex; flex-direction:column;
+            overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,0.7);
+        }
+        .modal-h { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); }
+        .modal-h h3 { font-size:13px; font-weight:700; display:flex; align-items:center; gap:7px; }
+        .modal-x { width:26px; height:26px; border-radius:6px; border:none; background:var(--glass); color:var(--text2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; }
+        .modal-x:hover { background:var(--glass2); }
+        .modal-b { padding:12px 16px; overflow-y:auto; flex:1; font-size:12px; }
+        .modal-f { padding:10px 16px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:6px; }
+
+        .h-entry { display:flex; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+        .h-icon { width:26px; height:26px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:10px; flex-shrink:0; }
+        .h-icon-sync { background:rgba(59,130,246,0.15); color:#3b82f6; }
+        .h-icon-pub { background:rgba(16,185,129,0.15); color:#10b981; }
+        .h-icon-rev { background:rgba(239,68,68,0.15); color:#ef4444; }
+        .h-info { flex:1; min-width:0; }
+        .h-title { font-weight:600; font-size:11px; margin-bottom:1px; }
+        .h-detail { font-size:10px; color:var(--text3); line-height:1.4; }
+        .h-meta { font-size:9px; color:var(--text3); margin-top:2px; display:flex; gap:8px; }
+        .h-status { font-size:8px; font-weight:700; padding:1px 5px; border-radius:3px; text-transform:uppercase; }
+        .h-s-staging { background:rgba(59,130,246,0.2); color:#3b82f6; }
+        .h-s-published { background:rgba(16,185,129,0.2); color:#10b981; }
+        .h-s-reverted { background:rgba(239,68,68,0.2); color:#ef4444; }
+        .empty-state { text-align:center; padding:30px 16px; color:var(--text3); }
+        .empty-state i { font-size:28px; margin-bottom:8px; display:block; opacity:0.4; }
+        .empty-state h4 { font-size:12px; color:var(--text2); margin-bottom:3px; }
+        .empty-state p { font-size:10px; line-height:1.5; }
 
         /* Toast */
-        #toast-box { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 99999999; display: flex; flex-direction: column; gap: 8px; align-items: center; }
-        .toast {
-            padding: 8px 18px; border-radius: 10px; font-size: 12px; font-weight: 500;
-            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);
-            display: flex; align-items: center; gap: 7px; opacity: 0; transform: translateY(10px);
-            transition: all 0.3s; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-        }
-        .toast.show { opacity: 1; transform: translateY(0); }
-        .toast-ok { background: rgba(16,185,129,0.9); color: #fff; border-color: rgba(16,185,129,0.5); }
-        .toast-err { background: rgba(239,68,68,0.9); color: #fff; border-color: rgba(239,68,68,0.5); }
-        .toast-info { background: rgba(59,130,246,0.9); color: #fff; border-color: rgba(59,130,246,0.5); }
+        #toast-box { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999999; display:flex; flex-direction:column; gap:6px; align-items:center; }
+        .toast { padding:7px 14px; border-radius:8px; font-size:11px; font-weight:500; backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:6px; opacity:0; transform:translateY(8px); transition:all 0.25s; }
+        .toast.show { opacity:1; transform:translateY(0); }
+        .toast-ok { background:rgba(16,185,129,0.9); color:#fff; }
+        .toast-err { background:rgba(239,68,68,0.9); color:#fff; }
+        .toast-info { background:rgba(59,130,246,0.9); color:#fff; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:3px; }
+        ::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.2); }
     </style>
 </head>
 <body>
 
-<!-- ═══════════ TOOLBAR ═══════════ -->
-<div id="toolbar">
-    <div class="tb-brand"><i class="fas fa-shield-halved"></i> <span>TamilAI</span></div>
+<!-- ════ TOP BAR ════ -->
+<div id="topbar">
+    <div class="tb-brand"><i class="fas fa-shield-halved"></i> TamilAI Editor</div>
     <div class="tb-sep"></div>
-    <div class="tb-pill" id="pillStaging" title="Toggle Staging Mode">
-        <span class="tb-dot"></span>
-        <span class="tb-pill-t">Staging: OFF</span>
+
+    <!-- Undo / Redo -->
+    <div class="tb-group">
+        <button class="tb-btn" id="btnUndo" title="Undo (Ctrl+Z)" disabled><i class="fas fa-rotate-left"></i></button>
+        <button class="tb-btn" id="btnRedo" title="Redo (Ctrl+Y)" disabled><i class="fas fa-rotate-right"></i></button>
     </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Device toggle -->
+    <div class="tb-group">
+        <button class="tb-btn tb-device active" data-device="desktop" title="Desktop"><i class="fas fa-desktop"></i></button>
+        <button class="tb-btn tb-device" data-device="tablet" title="Tablet (768px)"><i class="fas fa-tablet-screen-button"></i></button>
+        <button class="tb-btn tb-device" data-device="mobile" title="Mobile (375px)"><i class="fas fa-mobile-screen-button"></i></button>
+    </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Staging indicator -->
+    <button class="tb-pill off" id="pillStaging" title="Staging mode — always active">
+        <span style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block;"></span>
+        <span id="pillStagingText">Staging: Active</span>
+    </button>
+
     <span class="tb-status" id="tbStatus">Loading…</span>
+
     <div class="tb-spacer"></div>
+
+    <!-- Actions -->
+    <button class="tb-btn" id="btnPreview" title="Preview (hide panels)"><i class="fas fa-eye"></i> Preview</button>
+    <button class="tb-btn" id="btnSave" title="Save to staging"><i class="fas fa-save"></i> Save</button>
     <button class="tb-btn tb-btn-green" id="btnPublish" title="Publish to live"><i class="fas fa-rocket"></i> Publish</button>
-    <button class="tb-btn tb-btn-red" id="btnDiscard" title="Discard changes"><i class="fas fa-trash-restore"></i> Discard</button>
-    <div class="tb-sep"></div>
-    <a class="tb-btn" href="builder.html" target="_blank" title="Builder"><i class="fas fa-tools"></i></a>
-    <a class="tb-btn" href="/" target="_blank" title="Public site"><i class="fas fa-external-link-alt"></i></a>
-    <button class="tb-icon-btn" id="btnMenu" title="Admin Controls"><i class="fas fa-ellipsis-vertical"></i></button>
+    <button class="tb-btn" id="btnVersions" title="Version history"><i class="fas fa-code-branch"></i></button>
+    <button class="tb-btn" id="btnHistory" title="Changes history"><i class="fas fa-clock-rotate-left"></i></button>
 </div>
 
-<!-- ═══════════ OVERLAY ═══════════ -->
-<div id="overlay" onclick="closePanel()"></div>
-
-<!-- ═══════════ SIDE PANEL ═══════════ -->
-<div id="sidepanel">
-    <div class="sp-head">
-        <h3><i class="fas fa-sliders"></i> Admin Controls</h3>
-        <button class="sp-close" onclick="closePanel()"><i class="fas fa-xmark"></i></button>
+<!-- ════ LEFT PANEL ════ -->
+<div id="left-panel">
+    <div class="lp-head">
+        <span><i class="fas fa-layer-group"></i> Sections</span>
+        <span id="sectionCount" style="font-weight:400;color:var(--text3);">0</span>
     </div>
-    <div class="sp-body">
-        <div class="sp-section">
-            <div class="sp-label">Preview</div>
-            <button class="sp-item" id="spPreview"><i class="fas fa-rotate"></i> Refresh Test Site</button>
-            <button class="sp-item" id="spStaging"><i class="fas fa-toggle-on"></i> Staging Mode <span class="sp-badge" id="spStagingBadge" style="display:none;">ON</span></button>
-        </div>
-        <div class="sp-divider"></div>
-        <div class="sp-section">
-            <div class="sp-label">Review & Publish</div>
-            <button class="sp-item" id="spChanges"><i class="fas fa-clock-rotate-left"></i> Changes History</button>
-            <button class="sp-item" id="spPending"><i class="fas fa-code-compare"></i> Pending Changes <span class="sp-badge sp-badge-warn" id="spPendingBadge" style="display:none;">0</span></button>
-            <button class="sp-item" id="spPublish2"><i class="fas fa-rocket"></i> Publish Changes</button>
-        </div>
-        <div class="sp-divider"></div>
-        <div class="sp-section">
-            <div class="sp-label">Versions</div>
-            <button class="sp-item" id="spVersions"><i class="fas fa-code-branch"></i> Version History</button>
-            <button class="sp-item" id="spRestore"><i class="fas fa-rotate-left"></i> Restore / Revert Version</button>
-            <button class="sp-item" id="spPubHistory"><i class="fas fa-book"></i> Publish History</button>
-        </div>
-        <div class="sp-divider"></div>
-        <div class="sp-section">
-            <div class="sp-label">System</div>
-            <button class="sp-item" id="spSettings"><i class="fas fa-gear"></i> Settings</button>
-        </div>
+    <div class="lp-list" id="sectionList"></div>
+    <div class="lp-footer">
+        <button class="tb-btn" id="btnRefreshSections" title="Re-detect sections"><i class="fas fa-sync-alt"></i></button>
+        <button class="tb-btn" id="btnExpandAll" title="Expand all"><i class="fas fa-expand"></i></button>
     </div>
-    <div class="sp-footer">TamilAI Stream Admin v2</div>
 </div>
 
-<!-- ═══════════ MODALS ═══════════ -->
-
-<!-- Pending Changes / Diff -->
-<div class="modal-bg" id="mDiff">
-    <div class="modal">
-        <div class="modal-h"><h3><i class="fas fa-code-compare"></i> Pending Changes</h3><button class="modal-x" onclick="closeModal('mDiff')"><i class="fas fa-xmark"></i></button></div>
-        <div class="modal-b" id="mDiffBody"></div>
-        <div class="modal-f">
-            <button class="tb-btn" onclick="closeModal('mDiff')">Close</button>
-            <button class="tb-btn tb-btn-red" id="mDiffDiscard"><i class="fas fa-trash-restore"></i> Discard</button>
-            <button class="tb-btn tb-btn-green" id="mDiffPublish"><i class="fas fa-rocket"></i> Publish</button>
+<!-- ════ RIGHT PANEL ════ -->
+<div id="right-panel">
+    <div class="rp-head">
+        <span id="rpTitle"><i class="fas fa-sliders"></i> Properties</span>
+        <span id="rpSectionName" style="font-weight:400;color:var(--text3);"></span>
+    </div>
+    <div class="rp-tabs" id="rpTabs"></div>
+    <div class="rp-body" id="rpBody">
+        <div class="rp-empty">
+            <i class="fas fa-arrow-pointer"></i>
+            <h4>Select a Section</h4>
+            <p>Click any section in the left panel or directly in the preview to edit its properties.</p>
         </div>
     </div>
 </div>
 
-<!-- Changes History -->
+<!-- ════ CENTER IFRAME ════ -->
+<div id="center-area">
+    <iframe id="site-frame" src="/"></iframe>
+</div>
+
+<!-- ════ MODALS ════ -->
 <div class="modal-bg" id="mHistory">
     <div class="modal">
         <div class="modal-h"><h3><i class="fas fa-clock-rotate-left"></i> Changes History</h3><button class="modal-x" onclick="closeModal('mHistory')"><i class="fas fa-xmark"></i></button></div>
         <div class="modal-b" id="mHistoryBody"></div>
-        <div class="modal-f">
-            <button class="tb-btn" onclick="closeModal('mHistory')">Close</button>
-        </div>
+        <div class="modal-f"><button class="tb-btn" onclick="closeModal('mHistory')">Close</button></div>
     </div>
 </div>
 
-<!-- Version History / Restore -->
 <div class="modal-bg" id="mVersions">
     <div class="modal">
         <div class="modal-h"><h3><i class="fas fa-code-branch"></i> Version History</h3><button class="modal-x" onclick="closeModal('mVersions')"><i class="fas fa-xmark"></i></button></div>
         <div class="modal-b" id="mVersionsBody"></div>
         <div class="modal-f">
             <button class="tb-btn" onclick="closeModal('mVersions')">Close</button>
+            <button class="tb-btn tb-btn-green" id="mSaveSnap"><i class="fas fa-camera"></i> Save Snapshot</button>
         </div>
     </div>
 </div>
 
-<!-- Publish History -->
-<div class="modal-bg" id="mPubHistory">
-    <div class="modal">
-        <div class="modal-h"><h3><i class="fas fa-book"></i> Publish History</h3><button class="modal-x" onclick="closeModal('mPubHistory')"><i class="fas fa-xmark"></i></button></div>
-        <div class="modal-b" id="mPubHistoryBody"></div>
-        <div class="modal-f">
-            <button class="tb-btn" onclick="closeModal('mPubHistory')">Close</button>
-        </div>
-    </div>
-</div>
-
-<!-- Settings -->
-<div class="modal-bg" id="mSettings">
-    <div class="modal">
-        <div class="modal-h"><h3><i class="fas fa-gear"></i> Settings</h3><button class="modal-x" onclick="closeModal('mSettings')"><i class="fas fa-xmark"></i></button></div>
-        <div class="modal-b" id="mSettingsBody">
-            <div style="display:flex;flex-direction:column;gap:14px;">
-                <div>
-                    <div style="font-weight:600;font-size:13px;margin-bottom:6px;">Staging Mode</div>
-                    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">When ON, all Builder changes go to staging (test site only). When OFF, changes still go to staging (never auto-publish).</div>
-                </div>
-                <div>
-                    <div style="font-weight:600;font-size:13px;margin-bottom:6px;">Data Flow</div>
-                    <div style="font-size:12px;color:var(--text2);line-height:1.6;">
-                        <code style="background:var(--glass);padding:2px 6px;border-radius:4px;font-size:11px;">Builder → Staging → Admin Tests → Publish → Public</code>
-                    </div>
-                </div>
-                <div>
-                    <div style="font-weight:600;font-size:13px;margin-bottom:6px;">Danger Zone</div>
-                    <button class="tb-btn tb-btn-red" id="mClearHistory" style="margin-top:4px;"><i class="fas fa-trash"></i> Clear Changes History</button>
-                </div>
-            </div>
-        </div>
-        <div class="modal-f">
-            <button class="tb-btn" onclick="closeModal('mSettings')">Close</button>
-        </div>
-    </div>
-</div>
-
-<!-- ═══════════ IFRAME ═══════════ -->
-<iframe id="site-frame" src="/"></iframe>
-
-<!-- ═══════════ TOAST ═══════════ -->
 <div id="toast-box"></div>
 
-<!-- ═══════════ SCRIPTS ═══════════ -->
+<!-- ════ SCRIPTS ════ -->
 <script src="publish-manager.js"></script>
+<script src="admin-editor.js"></script>
 <script>
 (function() {
     'use strict';
     const $ = id => document.getElementById(id);
 
-    // ── Panel / Modal helpers ──
-    window.closePanel = () => { $('sidepanel').classList.remove('open'); $('overlay').classList.remove('open'); };
     window.closeModal = id => $(id).classList.remove('open');
-
-    function openPanel() { $('sidepanel').classList.add('open'); $('overlay').classList.add('open'); }
     function openModal(id) { $(id).classList.add('open'); }
-
     function toast(msg, type) {
         const t = document.createElement('div');
         t.className = 'toast toast-' + (type || 'info');
         t.innerHTML = '<i class="fas fa-' + (type === 'ok' ? 'check-circle' : type === 'err' ? 'exclamation-circle' : 'info-circle') + '"></i> ' + msg;
         $('toast-box').appendChild(t);
         requestAnimationFrame(() => t.classList.add('show'));
-        setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3500);
+        setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 350); }, 3000);
     }
+
+    // ── Init editor ──
+    const frame = $('site-frame');
+    AdminEditor.init(frame);
+
+    // ── Section list ──
+    let _selectedCat = 'layout';
+
+    function renderSectionList() {
+        const sections = AdminEditor.getSections();
+        const list = $('sectionList');
+        $('sectionCount').textContent = sections.length;
+
+        list.innerHTML = sections.map(sec => {
+            const sel = AdminEditor.getSelectedSectionId() === sec.id;
+            const hid = AdminEditor.getAllOverrides().hidden?.[sec.id];
+            return '<div class="lp-item' + (sel ? ' selected' : '') + (hid ? ' hidden-section' : '') + '" data-sid="' + sec.id + '">' +
+                '<span class="lp-item-icon"><i class="fas ' + (hid ? 'fa-eye-slash' : 'fa-eye') + '"></i></span>' +
+                '<span class="lp-item-label">' + sec.label + '</span>' +
+                '<span class="lp-item-actions">' +
+                '<button class="lp-act" data-act="up" title="Move up"><i class="fas fa-arrow-up"></i></button>' +
+                '<button class="lp-act" data-act="down" title="Move down"><i class="fas fa-arrow-down"></i></button>' +
+                '<button class="lp-act" data-act="toggle" title="Show/Hide"><i class="fas fa-' + (hid ? 'fa-eye' : 'fa-eye-slash') + '"></i></button>' +
+                '<button class="lp-act" data-act="dup" title="Duplicate"><i class="fas fa-copy"></i></button>' +
+                '<button class="lp-act red" data-act="del" title="Delete"><i class="fas fa-trash"></i></button>' +
+                '</span></div>';
+        }).join('');
+
+        // Bind clicks
+        list.querySelectorAll('.lp-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (e.target.closest('.lp-act')) return;
+                AdminEditor.selectSection(el.dataset.sid);
+                renderSectionList();
+                renderPropertyPanel();
+            });
+        });
+        list.querySelectorAll('.lp-act').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const sid = btn.closest('.lp-item').dataset.sid;
+                const act = btn.dataset.act;
+                if (act === 'up') AdminEditor.moveSection(sid, 'up');
+                else if (act === 'down') AdminEditor.moveSection(sid, 'down');
+                else if (act === 'toggle') AdminEditor.toggleVisibility(sid);
+                else if (act === 'dup') { AdminEditor.duplicateSection(sid); toast('Section duplicated', 'ok'); }
+                else if (act === 'del') { if (confirm('Delete this section?')) AdminEditor.deleteSection(sid); }
+                renderSectionList();
+                renderPropertyPanel();
+            });
+        });
+    }
+
+    AdminEditor.on('sections-detected', renderSectionList);
+    AdminEditor.on('section-selected', () => { renderSectionList(); renderPropertyPanel(); });
+    AdminEditor.on('visibility-changed', renderSectionList);
+    AdminEditor.on('section-moved', renderSectionList);
+    AdminEditor.on('sections-reordered', renderSectionList);
+    AdminEditor.on('undo', () => { renderSectionList(); renderPropertyPanel(); updateUndoRedo(); });
+    AdminEditor.on('redo', () => { renderSectionList(); renderPropertyPanel(); updateUndoRedo(); });
+    AdminEditor.on('override-changed', updateUndoRedo);
+
+    // ── Property Panel ──
+    function renderPropertyPanel() {
+        const sid = AdminEditor.getSelectedSectionId();
+        const body = $('rpBody');
+        const tabs = $('rpTabs');
+        const nameEl = $('rpSectionName');
+
+        if (!sid) {
+            nameEl.textContent = '';
+            tabs.innerHTML = '';
+            body.innerHTML = '<div class="rp-empty"><i class="fas fa-arrow-pointer"></i><h4>Select a Section</h4><p>Click any section in the left panel or in the preview to edit its properties.</p></div>';
+            return;
+        }
+
+        const sec = AdminEditor.getSections().find(s => s.id === sid);
+        nameEl.textContent = sec ? sec.label : sid;
+
+        // Render category tabs
+        const cats = Object.entries(AdminEditor.CSS_CATEGORIES);
+        tabs.innerHTML = cats.map(([key, cat]) =>
+            '<button class="rp-tab' + (key === _selectedCat ? ' active' : '') + '" data-cat="' + key + '">' +
+            '<i class="fas ' + cat.icon + '"></i> ' + cat.label + '</button>'
+        ).join('');
+
+        tabs.querySelectorAll('.rp-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                _selectedCat = tab.dataset.cat;
+                renderPropertyPanel();
+            });
+        });
+
+        // Render properties for selected category
+        const cat = AdminEditor.CSS_CATEGORIES[_selectedCat];
+        if (!cat) { body.innerHTML = ''; return; }
+
+        const overrides = AdminEditor.getOverrides(sid);
+
+        body.innerHTML = '<div class="rp-props">' + cat.properties.map(prop => {
+            const val = overrides[prop.key] || '';
+            let input = '';
+
+            if (prop.type === 'color') {
+                input = '<div class="rp-prop-row">' +
+                    '<input type="color" class="rp-input-color" data-prop="' + prop.key + '" value="' + (val || '#000000') + '">' +
+                    '<input type="text" class="rp-input" data-prop="' + prop.key + '" value="' + val + '" placeholder="e.g. #10b981, rgba(0,0,0,0.5)">' +
+                    '</div>';
+            } else if (prop.type === 'select') {
+                input = '<select class="rp-select" data-prop="' + prop.key + '">' +
+                    '<option value="">—</option>' +
+                    prop.options.map(o => '<option value="' + o + '"' + (val === o ? ' selected' : '') + '>' + o + '</option>').join('') +
+                    '</select>';
+            } else if (prop.type === 'range') {
+                input = '<div class="rp-prop-row">' +
+                    '<input type="range" class="rp-range" data-prop="' + prop.key + '" min="' + (prop.min||0) + '" max="' + (prop.max||1) + '" step="' + (prop.step||0.05) + '" value="' + (val || prop.max || 1) + '">' +
+                    '<span style="font-size:10px;color:var(--text3);min-width:28px;text-align:right;">' + (val || '1') + '</span>' +
+                    '</div>';
+            } else if (prop.type === 'number') {
+                input = '<input type="number" class="rp-input" data-prop="' + prop.key + '" value="' + val + '" placeholder="0">';
+            } else if (prop.type === 'size') {
+                input = '<div class="rp-prop-row">' +
+                    '<input type="text" class="rp-input" data-prop="' + prop.key + '" value="' + val + '" placeholder="e.g. 20px, 2rem, 50%">' +
+                    '</div>';
+            } else {
+                input = '<input type="text" class="rp-input" data-prop="' + prop.key + '" value="' + val + '" placeholder="' + prop.label + '">';
+            }
+
+            return '<div class="rp-prop">' +
+                '<div class="rp-prop-label"><span>' + prop.label + '</span>' +
+                (val ? '<button class="rp-prop-reset" data-prop="' + prop.key + '" title="Reset"><i class="fas fa-xmark"></i></button>' : '') +
+                '</div>' + input + '</div>';
+        }).join('') + '</div>';
+
+        // Bind inputs
+        body.querySelectorAll('.rp-input, .rp-select, .rp-input-color, .rp-range').forEach(input => {
+            const handler = () => {
+                const prop = input.dataset.prop;
+                const val = input.type === 'range' ? input.value : input.value;
+                AdminEditor.setOverride(sid, prop, val);
+                // Update range display
+                if (input.type === 'range') {
+                    const span = input.parentElement.querySelector('span');
+                    if (span) span.textContent = val;
+                }
+            };
+            input.addEventListener('input', handler);
+            input.addEventListener('change', handler);
+        });
+
+        // Bind color picker sync
+        body.querySelectorAll('.rp-input-color').forEach(colorInput => {
+            colorInput.addEventListener('input', () => {
+                const textInput = colorInput.parentElement.querySelector('.rp-input');
+                if (textInput) textInput.value = colorInput.value;
+            });
+        });
+
+        // Bind reset buttons
+        body.querySelectorAll('.rp-prop-reset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const prop = btn.dataset.prop;
+                AdminEditor.setOverride(sid, prop, '');
+                renderPropertyPanel();
+            });
+        });
+    }
+
+    // ── Undo / Redo ──
+    function updateUndoRedo() {
+        $('btnUndo').disabled = !AdminEditor.canUndo();
+        $('btnRedo').disabled = !AdminEditor.canRedo();
+    }
+    $('btnUndo').addEventListener('click', () => { AdminEditor.undo(); toast('Undo', 'info'); });
+    $('btnRedo').addEventListener('click', () => { AdminEditor.redo(); toast('Redo', 'info'); });
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); AdminEditor.undo(); }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); AdminEditor.redo(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveToStaging(); }
+    });
+
+    // ── Device toggle ──
+    document.querySelectorAll('[data-device]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-device]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            AdminEditor.setDevice(btn.dataset.device);
+        });
+    });
+
+    // ── Save / Publish ──
+    async function saveToStaging() {
+        try {
+            const overrides = AdminEditor.exportOverrides();
+            await fetch('/api/admin-overrides', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'save-staging', overrides, admin: 'Admin' }),
+            });
+            AdminEditor.markClean();
+            toast('Saved to staging', 'ok');
+            refreshStatus();
+        } catch (e) { toast('Save failed: ' + e.message, 'err'); }
+    }
+    $('btnSave').addEventListener('click', saveToStaging);
+
+    async function doPublish() {
+        if (!confirm('Publish all changes to the live website?')) return;
+        try {
+            // Save to staging first
+            await saveToStaging();
+            // Then publish via PublishManager
+            await PublishManager.publish();
+            toast('Published to live website!', 'ok');
+            refreshStatus();
+        } catch (e) { toast('Publish failed: ' + e.message, 'err'); }
+    }
+    $('btnPublish').addEventListener('click', doPublish);
+
+    // ── Preview mode ──
+    let _previewMode = false;
+    $('btnPreview').addEventListener('click', () => {
+        _previewMode = !_previewMode;
+        $('left-panel').style.display = _previewMode ? 'none' : '';
+        $('right-panel').style.display = _previewMode ? 'none' : '';
+        $('center-area').style.left = _previewMode ? '0' : 'var(--left-w)';
+        $('center-area').style.right = _previewMode ? '0' : 'var(--right-w)';
+        $('btnPreview').classList.toggle('active', _previewMode);
+        $('btnPreview').innerHTML = _previewMode ? '<i class="fas fa-pen"></i> Edit' : '<i class="fas fa-eye"></i> Preview';
+    });
 
     // ── Status ──
     async function refreshStatus() {
         try {
             const st = await PublishManager.refreshStatus();
-            const on = PublishManager.isStagingMode();
-            $('pillStaging').classList.toggle('on', on);
-            $('pillStaging').querySelector('.tb-pill-t').textContent = on ? 'Staging: ON' : 'Staging: OFF';
-            $('spStagingBadge').style.display = on ? '' : 'none';
-
-            const pending = $('spPendingBadge');
             if (st.hasStaging) {
-                const dt = st.stagingSavedAt ? new Date(st.stagingSavedAt).toLocaleString() : '';
-                $('tbStatus').textContent = 'Pending changes' + (dt ? ' — ' + dt : '');
-                pending.style.display = '';
-                pending.textContent = (st.changeCount || '?');
-                $('btnPublish').style.display = '';
-                $('btnDiscard').style.display = '';
+                const dt = st.stagingSavedAt ? new Date(st.stagingSavedAt).toLocaleTimeString() : '';
+                $('tbStatus').textContent = 'Staging pending' + (dt ? ' — ' + dt : '');
             } else {
                 $('tbStatus').textContent = 'No pending changes';
-                pending.style.display = 'none';
-                $('btnPublish').style.display = 'none';
-                $('btnDiscard').style.display = 'none';
             }
-        } catch (e) {
-            $('tbStatus').textContent = 'Status unavailable';
-            console.error('[Admin]', e);
-        }
+        } catch (e) { $('tbStatus').textContent = ''; }
     }
 
-    // ── Staging Toggle ──
-    function toggleStaging() {
-        if (PublishManager.isStagingMode()) {
-            PublishManager.exitStagingMode();
-            toast('Staging OFF', 'info');
-        } else {
-            PublishManager.enterStagingMode();
-            toast('Staging ON — changes go to staging', 'ok');
-        }
-        refreshStatus();
-    }
-    $('pillStaging').addEventListener('click', toggleStaging);
-    $('spStaging').addEventListener('click', () => { toggleStaging(); closePanel(); });
-
-    // ── Publish ──
-    async function doPublish() {
-        if (!confirm('Publish all staging changes to the live website?')) return;
-        $('btnPublish').disabled = true;
-        $('btnPublish').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        try {
-            await PublishManager.publish();
-            toast('Published to live website!', 'ok');
-            refreshStatus();
-        } catch (e) { toast('Publish failed: ' + e.message, 'err'); }
-        $('btnPublish').disabled = false;
-        $('btnPublish').innerHTML = '<i class="fas fa-rocket"></i> Publish';
-    }
-    $('btnPublish').addEventListener('click', doPublish);
-    $('spPublish2').addEventListener('click', () => { closePanel(); doPublish(); });
-
-    // ── Discard ──
-    async function doDiscard() {
-        if (!confirm('Discard all staging changes? This cannot be undone.')) return;
-        try {
-            await PublishManager.discardStaging();
-            toast('Staging changes discarded', 'info');
-            refreshStatus();
-        } catch (e) { toast('Discard failed: ' + e.message, 'err'); }
-    }
-    $('btnDiscard').addEventListener('click', doDiscard);
-
-    // ── Refresh Preview ──
-    $('spPreview').addEventListener('click', () => {
-        const f = $('site-frame');
-        f.src = f.src;
-        closePanel();
-        toast('Refreshing site…', 'info');
-    });
-
-    // ── Side Panel: 3-dot menu ──
-    $('btnMenu').addEventListener('click', openPanel);
-
-    // ── Side Panel: Pending Changes ──
-    $('spPending').addEventListener('click', async () => {
-        closePanel();
-        openModal('mDiff');
-        $('mDiffBody').innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>';
-        const diff = await PublishManager.getDiff();
-        renderDiff(diff);
-    });
-    $('mDiffPublish').addEventListener('click', async () => {
-        if (!confirm('Publish all staging changes?')) return;
-        try { await PublishManager.publish(); toast('Published!', 'ok'); closeModal('mDiff'); refreshStatus(); } catch (e) { toast('Failed: ' + e.message, 'err'); }
-    });
-    $('mDiffDiscard').addEventListener('click', async () => {
-        if (!confirm('Discard all staging changes?')) return;
-        try { await PublishManager.discardStaging(); toast('Discarded', 'info'); closeModal('mDiff'); refreshStatus(); } catch (e) { toast('Failed: ' + e.message, 'err'); }
-    });
-
-    function renderDiff(diff) {
-        if (!diff || !diff.hasChanges || !diff.changes || !diff.changes.length) {
-            $('mDiffBody').innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><h4>No Pending Changes</h4><p>Make changes in the Builder, then come back to review and publish.</p></div>';
-            return;
-        }
-        const sm = { modified: { b: 'd-b-mod', l: 'Modified' }, added: { b: 'd-b-add', l: 'Added' }, removed: { b: 'd-b-rem', l: 'Removed' }, items_added: { b: 'd-b-add', l: 'Items Added' }, items_removed: { b: 'd-b-rem', l: 'Items Removed' } };
-        $('mDiffBody').innerHTML = diff.changes.map(ch => {
-            const m = sm[ch.status] || sm.modified;
-            let items = '';
-            if (ch.itemChanges && ch.itemChanges.length) {
-                items = '<div class="d-items">' + ch.itemChanges.map(ic =>
-                    '<div class="d-item ' + (ic.type === 'added' ? 'd-item-add' : 'd-item-rem') + '"><i class="fas fa-' + (ic.type === 'added' ? 'plus' : 'minus') + '-circle"></i> ' + (ic.name || ic.id || '') + '</div>'
-                ).join('') + '</div>';
-            }
-            return '<div class="d-sec"><div class="d-sec-h"><span class="d-badge ' + m.b + '">' + m.l + '</span> ' + ch.section +
-                (ch.publishedItems != null || ch.stagingItems != null ? '<span class="d-ct">' + (ch.publishedItems != null ? 'Published: ' + ch.publishedItems + '  ' : '') + (ch.stagingItems != null ? 'Staging: ' + ch.stagingItems : '') + '</span>' : '') +
-                '</div>' + items + '</div>';
-        }).join('');
-    }
-
-    // ── Side Panel: Changes History ──
-    $('spChanges').addEventListener('click', async () => {
-        closePanel();
+    // ── History modal ──
+    $('btnHistory').addEventListener('click', () => {
         openModal('mHistory');
-        renderChangesHistory();
-    });
-
-    function renderChangesHistory() {
         const entries = PublishManager.getChangesHistory();
         if (!entries.length) {
-            $('mHistoryBody').innerHTML = '<div class="empty-state"><i class="fas fa-clock-rotate-left"></i><h4>No Changes Recorded</h4><p>Changes will appear here as you make edits in the Builder.</p></div>';
+            $('mHistoryBody').innerHTML = '<div class="empty-state"><i class="fas fa-clock-rotate-left"></i><h4>No Changes Yet</h4><p>Edit sections and save to see change history.</p></div>';
             return;
         }
-        $('mHistoryBody').innerHTML = entries.slice(0, 100).map(e => {
+        $('mHistoryBody').innerHTML = entries.slice(0, 80).map(e => {
             const icon = e.type === 'publish' ? 'pub' : e.type === 'revert' ? 'rev' : 'sync';
             const iconClass = e.type === 'publish' ? 'fa-rocket' : e.type === 'revert' ? 'fa-rotate-left' : 'fa-pen';
             const statusClass = e.status === 'published' ? 'h-s-published' : e.status === 'reverted' ? 'h-s-reverted' : 'h-s-staging';
-            const dt = new Date(e.timestamp).toLocaleString();
-            return '<div class="h-entry">' +
-                '<div class="h-icon h-icon-' + icon + '"><i class="fas ' + iconClass + '"></i></div>' +
-                '<div class="h-info">' +
-                '<div class="h-title">' + (e.type === 'publish' ? 'Published' : e.type === 'revert' ? 'Reverted' : 'Synced to Staging') + '</div>' +
-                '<div class="h-detail">' + (e.details || e.sections?.join(', ') || '—') + '</div>' +
-                '<div class="h-meta"><span>' + dt + '</span><span>' + (e.admin || 'Admin') + '</span><span class="h-status ' + statusClass + '">' + e.status + '</span></div>' +
-                '</div></div>';
+            return '<div class="h-entry"><div class="h-icon h-icon-' + icon + '"><i class="fas ' + iconClass + '"></i></div><div class="h-info"><div class="h-title">' + (e.type === 'publish' ? 'Published' : e.type === 'revert' ? 'Reverted' : 'Edited') + '</div><div class="h-detail">' + (e.details || '—') + '</div><div class="h-meta"><span>' + new Date(e.timestamp).toLocaleString() + '</span><span class="h-status ' + statusClass + '">' + e.status + '</span></div></div></div>';
         }).join('');
-    }
+    });
 
-    // ── Side Panel: Version History ──
-    $('spVersions').addEventListener('click', async () => { closePanel(); openModal('mVersions'); await renderVersions(); });
-    $('spRestore').addEventListener('click', async () => { closePanel(); openModal('mVersions'); await renderVersions(true); });
-
-    async function renderVersions(selectMode) {
-        $('mVersionsBody').innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading versions…</p></div>';
+    // ── Versions modal ──
+    $('btnVersions').addEventListener('click', async () => {
+        openModal('mVersions');
+        $('mVersionsBody').innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>';
         try {
             const res = await PublishManager.getVersions();
             const versions = res.versions || [];
             if (!versions.length) {
-                $('mVersionsBody').innerHTML = '<div class="empty-state"><i class="fas fa-code-branch"></i><h4>No Saved Versions</h4><p>Versions are saved automatically when you publish. You can also save manual snapshots.</p>' +
-                    (selectMode ? '' : '<button class="tb-btn tb-btn-green" id="mSaveSnap" style="margin-top:12px;"><i class="fas fa-camera"></i> Save Snapshot Now</button>') +
-                    '</div>';
-                if (!selectMode) { const btn = $('mSaveSnap'); if (btn) btn.addEventListener('click', async () => { try { await PublishManager.saveVersionSnapshot('Manual snapshot'); toast('Snapshot saved', 'ok'); await renderVersions(); } catch (e) { toast('Failed: ' + e.message, 'err'); } }); }
+                $('mVersionsBody').innerHTML = '<div class="empty-state"><i class="fas fa-code-branch"></i><h4>No Versions</h4><p>Versions are saved automatically on publish.</p></div>';
                 return;
             }
-            let html = versions.map(v => {
-                const dt = new Date(v.savedAt).toLocaleString();
-                return '<div class="h-entry" style="' + (selectMode ? 'cursor:pointer;' : '') + '" data-vid="' + v.id + '">' +
-                    '<div class="h-icon h-icon-sync"><i class="fas fa-code-commit"></i></div>' +
-                    '<div class="h-info">' +
-                    '<div class="h-title">' + (v.label || v.id) + '</div>' +
-                    '<div class="h-meta"><span>' + dt + '</span><span>' + (v.savedBy || 'Admin') + '</span><span>' + (v.sectionCount || '?') + ' sections</span></div>' +
-                    '</div>' +
-                    (selectMode ? '<button class="tb-btn tb-btn-green" style="flex-shrink:0;" onclick="restoreVersion(\'' + v.id + '\', \'' + (v.label || v.id).replace(/'/g, "\\'") + '\')"><i class="fas fa-rotate-left"></i> Restore</button>' : '') +
-                    '</div>';
+            $('mVersionsBody').innerHTML = versions.map(v => {
+                return '<div class="h-entry"><div class="h-icon h-icon-sync"><i class="fas fa-code-commit"></i></div><div class="h-info"><div class="h-title">' + (v.label || v.id) + '</div><div class="h-meta"><span>' + new Date(v.savedAt).toLocaleString() + '</span><span>' + (v.savedBy || 'Admin') + '</span></div></div><button class="tb-btn" style="flex-shrink:0;" onclick="restoreVersion(\'' + v.id + '\',\'' + (v.label||'').replace(/'/g,"\\'") + '\')"><i class="fas fa-rotate-left"></i></button></div>';
             }).join('');
-            if (!selectMode) {
-                html = '<div style="margin-bottom:12px;"><button class="tb-btn tb-btn-green" id="mSaveSnap2"><i class="fas fa-camera"></i> Save Snapshot</button></div>' + html;
-            }
-            $('mVersionsBody').innerHTML = html;
-            if (!selectMode) { const btn = $('mSaveSnap2'); if (btn) btn.addEventListener('click', async () => { try { await PublishManager.saveVersionSnapshot('Manual snapshot'); toast('Snapshot saved', 'ok'); await renderVersions(); } catch (e) { toast('Failed: ' + e.message, 'err'); } }); }
         } catch (e) {
-            $('mVersionsBody').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h4>Failed to Load Versions</h4><p>' + e.message + '</p></div>';
+            $('mVersionsBody').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h4>Error</h4><p>' + e.message + '</p></div>';
         }
-    }
-
+    });
+    $('mSaveSnap').addEventListener('click', async () => {
+        try {
+            await PublishManager.saveVersionSnapshot('Manual snapshot');
+            toast('Snapshot saved', 'ok');
+            $('btnVersions').click();
+        } catch (e) { toast('Failed: ' + e.message, 'err'); }
+    });
     window.restoreVersion = async (id, label) => {
-        if (!confirm('Restore to version "' + label + '"?\nThis will load the version into staging for review before publishing.')) return;
+        if (!confirm('Restore to "' + label + '"?')) return;
         try {
             await PublishManager.revertToVersion(id);
-            toast('Restored to "' + label + '" — now in staging', 'ok');
+            toast('Restored to "' + label + '" — in staging', 'ok');
             closeModal('mVersions');
             refreshStatus();
-        } catch (e) { toast('Restore failed: ' + e.message, 'err'); }
+        } catch (e) { toast('Failed: ' + e.message, 'err'); }
     };
 
-    // ── Side Panel: Publish History ──
-    $('spPubHistory').addEventListener('click', () => {
-        closePanel();
-        openModal('mPubHistory');
-        renderPublishHistory();
+    // ── Refresh sections ──
+    $('btnRefreshSections').addEventListener('click', () => {
+        AdminEditor.detectSections();
+        renderSectionList();
+        toast('Sections refreshed', 'info');
     });
 
-    function renderPublishHistory() {
-        const entries = PublishManager.getPublishHistory();
-        if (!entries.length) {
-            $('mPubHistoryBody').innerHTML = '<div class="empty-state"><i class="fas fa-book"></i><h4>No Publish History</h4><p>Publish events will appear here after you publish changes.</p></div>';
-            return;
-        }
-        $('mPubHistoryBody').innerHTML = entries.slice(0, 50).map(e => {
-            const dt = new Date(e.timestamp).toLocaleString();
-            return '<div class="h-entry">' +
-                '<div class="h-icon h-icon-pub"><i class="fas fa-rocket"></i></div>' +
-                '<div class="h-info">' +
-                '<div class="h-title">Published to Live</div>' +
-                '<div class="h-detail">' + (e.details || (e.sections || []).join(', ') || '—') + '</div>' +
-                '<div class="h-meta"><span>' + dt + '</span><span>' + (e.admin || 'Admin') + '</span></div>' +
-                '</div></div>';
-        }).join('');
-    }
+    // ── Load overrides on frame load ──
+    AdminEditor.on('frame-loaded', async () => {
+        try {
+            const resp = await fetch('/api/admin-overrides');
+            const data = await resp.json();
+            if (data.overrides) {
+                AdminEditor.importOverrides(data.overrides);
+            }
+        } catch (e) { /* ignore */ }
+        AdminEditor.detectSections();
+        renderSectionList();
+        refreshStatus();
+    });
 
-    // ── Side Panel: Settings ──
-    $('spSettings').addEventListener('click', () => { closePanel(); openModal('mSettings'); });
-    $('mClearHistory').addEventListener('click', () => {
-        if (!confirm('Clear all changes history?')) return;
-        PublishManager.clearChangesHistory();
-        toast('History cleared', 'info');
+    // ── Auto-save on section edit ──
+    AdminEditor.on('override-changed', () => {
+        // Debounced auto-save
+        clearTimeout(window._autoSaveTimer);
+        window._autoSaveTimer = setTimeout(() => saveToStaging(), 3000);
     });
 
     // ── Init ──
-    refreshStatus();
+    updateUndoRedo();
 })();
 </script>
 </body>

@@ -340,7 +340,14 @@ const PublishManager = (() => {
                 await saveVersionSnapshot('Pre-publish snapshot');
             } catch (e) { /* non-critical */ }
 
+            // Publish content manifest (staging → production)
             const result = await _api('POST', '/api/publish');
+
+            // Also publish admin-overrides if they exist in staging
+            try {
+                await _api('POST', '/api/admin-overrides', { action: 'publish' });
+            } catch (e) { /* admin-overrides may not exist */ }
+
             _state.hasStaging = false;
             _state.stagingSavedAt = null;
             _state.publishedAt = result.publishedAt;

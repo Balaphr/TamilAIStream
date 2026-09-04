@@ -145,6 +145,14 @@ export default {
       if (versionMatch && request.method === 'DELETE') {
         return handleVersionSnapshotDelete(versionMatch[1], env);
       }
+      // --- Admin overrides (CSS editor) ---
+      if (url.pathname === '/api/admin-overrides' && request.method === 'GET') {
+        return handleAdminOverridesGet(env);
+      }
+      if (url.pathname === '/api/admin-overrides' && request.method === 'POST') {
+        return handleAdminOverridesPost(request, env);
+      }
+
       if (url.pathname === '/api/media/list' && request.method === 'GET') {
         return handleMediaList(url, env);
       }
@@ -593,6 +601,65 @@ async function handleVersionSnapshotDelete(versionId, env) {
     if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
     await env.MEDIA_BUCKET.delete('versions/' + versionId + '.json');
     return json({ success: true });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+// --- Admin Overrides (CSS Editor) ---
+
+async function handleAdminOverridesGet(env) {
+  try {
+    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
+    // Check staging first, then production
+    const stagingObj = await env.MEDIA_BUCKET.get('admin-overrides-staging.json');
+    if (stagingObj) {
+      const data = JSON.parse(await stagingObj.text());
+      return json({ source: 'staging', overrides: data.overrides || data, published: false });
+    }
+    const pubObj = await env.MEDIA_BUCKET.get('admin-overrides.json');
+    if (pubObj) {
+      const data = JSON.parse(await pubObj.text());
+      return json({ source: 'published', overrides: data.overrides || data, published: true });
+    }
+    return json({ source: 'none', overrides: { sections: {}, order: [], hidden: {} }, published: false });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+async function handleAdminOverridesPost(request, env) {
+  try {
+    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
+    const body = await request.json();
+    const action = body.action || 'save-staging';
+
+    if (action === 'save-staging') {
+      const payload = { overrides: body.overrides, savedAt: new Date().toISOString(), savedBy: body.admin || 'Admin' };
+      await env.MEDIA_BUCKET.put('admin-overrides-staging.json', JSON.stringify(payload, null, 2), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
+      });
+      return json({ success: true, savedAt: payload.savedAt });
+    }
+
+    if (action === 'publish') {
+      const stagingObj = await env.MEDIA_BUCKET.get('admin-overrides-staging.json');
+      if (!stagingObj) return json({ error: 'No staging overrides to publish' }, 400);
+      const staging = JSON.parse(await stagingObj.text());
+      staging.publishedAt = new Date().toISOString();
+      await env.MEDIA_BUCKET.put('admin-overrides.json', JSON.stringify(staging, null, 2), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
+      });
+      await env.MEDIA_BUCKET.delete('admin-overrides-staging.json');
+      return json({ success: true, publishedAt: staging.publishedAt });
+    }
+
+    if (action === 'discard') {
+      await env.MEDIA_BUCKET.delete('admin-overrides-staging.json');
+      return json({ success: true });
+    }
+
+    return json({ error: 'Unknown action' }, 400);
   } catch (e) {
     return json({ error: e.message }, 500);
   }
