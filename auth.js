@@ -247,10 +247,50 @@ window.Auth = (function () {
         clearAuthCookies();
     }
 
-    /** Full logout: clear everything and return to the login page. */
+    // --- Firebase sign-out (non-blocking, best-effort) ---
+    function firebaseSignOut() {
+        try {
+            if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                firebase.auth().signOut();
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    /**
+     * Admin route guard — checks both authentication AND admin status.
+     * If not authenticated → redirect to admin-login.html
+     * If authenticated but not admin → redirect to index.html
+     * Returns true if access is allowed.
+     */
+    function requireAdmin() {
+        var page = currentPageName();
+        if (page === 'admin-login.html' || page === 'login.html') return false;
+
+        if (!isAuthenticated()) {
+            clearAll();
+            window.location.replace('admin-login.html');
+            return false;
+        }
+        if (!isAdmin()) {
+            clearAll();
+            window.location.replace('index.html');
+            return false;
+        }
+        return true;
+    }
+
+    /** Full logout: clear everything (including Firebase) and return to the login page. */
     function logout() {
+        firebaseSignOut();
         clearAll();
         window.location.href = 'login.html';
+    }
+
+    /** Admin-specific logout: clear everything and return to admin login. */
+    function adminLogout() {
+        firebaseSignOut();
+        clearAll();
+        window.location.href = 'admin-login.html';
     }
 
     // Public API
@@ -261,9 +301,12 @@ window.Auth = (function () {
         isAdmin: isAdmin,
         isGuest: isGuest,
         requireAuth: requireAuth,
+        requireAdmin: requireAdmin,
         getRedirect: getRedirect,
         afterLogin: afterLogin,
         clearAll: clearAll,
-        logout: logout
+        logout: logout,
+        adminLogout: adminLogout,
+        firebaseSignOut: firebaseSignOut
     };
 })();

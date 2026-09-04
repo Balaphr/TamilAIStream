@@ -8,6 +8,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <style>
         *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
         :root {
@@ -310,8 +313,20 @@
 <div id="toast-box"></div>
 
 <!-- ════ SCRIPTS ════ -->
-<script src="publish-manager.js"></script>
-<script src="admin-editor.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        // Admin auth gate — blocks rendering until auth is verified
+        (function() {
+            if (typeof Auth !== 'undefined' && !Auth.requireAdmin()) {
+                // requireAdmin already redirected — stop further script execution
+                throw new Error('Access denied');
+            }
+        })();
+    </script>
+    <script src="publish-manager.js"></script>
+    <script src="admin-editor.js"></script>
 <script>
 (function() {
     'use strict';

@@ -281,7 +281,73 @@ async function signUpWithEmail(name, email, password) {
 
 // Sign In with Google - Disabled
 async function signInWithGoogle() {
-    showToast('Google sign-in is disabled', 'error');
+    const btn = document.getElementById('googleSignIn');
+    const originalHTML = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...'; }
+
+    try {
+        if (typeof firebase === 'undefined' || !firebase.auth) {
+            showToast('Firebase not loaded. Please refresh.', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
+            return;
+        }
+
+        window.ensureFirebaseInit();
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.addScope('email');
+        provider.addScope('profile');
+        const result = await firebase.auth().signInWithPopup(provider);
+        const user = result.user;
+
+        if (!user || !user.email) {
+            showToast('Google sign-in failed: no email returned', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
+            return;
+        }
+
+        const email = user.email.toLowerCase();
+        if (email !== ADMIN_CREDENTIALS.username && !email.startsWith('admin')) {
+            firebase.auth().signOut();
+            showToast('Access denied. Admins only.', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
+            return;
+        }
+
+        const sessionData = {
+            username: email,
+            email: email,
+            displayName: user.displayName || 'Admin',
+            uid: user.uid,
+            photoURL: user.photoURL || '',
+            role: 'admin',
+            loginTime: Date.now(),
+            expiry: Date.now() + (24 * 60 * 60 * 1000)
+        };
+        localStorage.setItem('adminSession', JSON.stringify(sessionData));
+
+        if (typeof Auth !== 'undefined' && Auth.createSession) {
+            Auth.createSession({
+                name: user.displayName || 'Admin',
+                email: email,
+                uid: user.uid,
+                photoURL: user.photoURL || ''
+            }, true, false);
+        }
+
+        showToast('Welcome ' + (user.displayName || 'Admin') + '!', 'success');
+        showBuilderDashboard(sessionData);
+
+    } catch (error) {
+        console.error('Google sign-in error:', error);
+        if (error.code === 'auth/popup-closed-by-user') {
+            showToast('Sign-in cancelled', 'info');
+        } else if (error.code === 'auth/network-request-failed') {
+            showToast('Network error. Please try again.', 'error');
+        } else {
+            showToast('Google sign-in failed: ' + (error.message || 'Unknown error'), 'error');
+        }
+        if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
+    }
 }
 
 // Sign In as Guest - Disabled
@@ -344,9 +410,13 @@ function quickAdminLogin() {
 // Sign Out
 async function signOut() {
     try {
+        if (typeof Auth !== 'undefined' && Auth.firebaseSignOut) {
+            Auth.firebaseSignOut();
+        } else if (typeof firebase !== 'undefined' && firebase.auth) {
+            firebase.auth().signOut();
+        }
         Auth.clearAll();
         currentUser = null;
-        // Analytics: track logout
         if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('user_logout');
         showLoginScreen();
         showToast('Signed out successfully', 'success');

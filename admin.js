@@ -40,6 +40,14 @@ const ADMIN_CREDENTIALS = {
 };
 
 function checkAdminAuth() {
+    // Primary check via centralized Auth module (validates session + admin status)
+    if (typeof Auth !== 'undefined' && Auth.isAuthenticated && Auth.isAdmin) {
+        if (Auth.isAuthenticated() && Auth.isAdmin()) {
+            currentUser = Auth.currentUser();
+            return true;
+        }
+    }
+    // Fallback: local adminSession check
     const session = localStorage.getItem('adminSession');
     if (session) {
         const sessionData = JSON.parse(session);
@@ -63,9 +71,13 @@ function setAdminSession() {
 }
 
 function logout() {
-    Auth.clearAll();
-    currentUser = null;
-    window.location.href = 'admin-login.html';
+    if (typeof Auth !== 'undefined' && Auth.adminLogout) {
+        Auth.adminLogout();
+    } else {
+        Auth.clearAll();
+        currentUser = null;
+        window.location.href = 'admin-login.html';
+    }
 }
 
 // ============================================
