@@ -1,747 +1,463 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NTDWNFKXRE"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-NTDWNFKXRE');
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tamil AI Stream</title>
+    <title>Tamil AI Stream — Admin Preview</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="admin.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --tb-bg: rgba(10, 10, 10, 0.95);
+            --tb-border: rgba(16, 185, 129, 0.25);
+            --tb-height: 52px;
+            --tb-accent: #10b981;
+            --tb-accent-hover: #34d399;
+            --tb-text: #ffffff;
+            --tb-text-dim: rgba(255, 255, 255, 0.5);
+            --tb-danger: #ef4444;
+            --tb-radius: 8px;
+        }
+
+        html, body { height: 100%; overflow: hidden; background: #000; font-family: 'Inter', sans-serif; }
+
+        /* ── Admin Toolbar ── */
+        #admin-toolbar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 999999;
+            height: var(--tb-height);
+            background: var(--tb-bg);
+            backdrop-filter: blur(20px) saturate(1.4);
+            -webkit-backdrop-filter: blur(20px) saturate(1.4);
+            border-bottom: 1px solid var(--tb-border);
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 14px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.5), 0 0 40px rgba(16,185,129,0.08);
+            font-size: 13px;
+        }
+
+        #admin-toolbar .tb-brand {
+            display: flex; align-items: center; gap: 8px;
+            font-weight: 700; font-size: 14px; color: var(--tb-accent);
+            white-space: nowrap; margin-right: 6px;
+        }
+        #admin-toolbar .tb-brand i { font-size: 16px; }
+
+        #admin-toolbar .tb-divider {
+            width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 4px;
+        }
+
+        /* Staging indicator */
+        .tb-staging {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 12px; border-radius: 999px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer; user-select: none;
+            transition: all 0.2s;
+        }
+        .tb-staging:hover { background: rgba(255,255,255,0.10); }
+        .tb-staging.active { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); }
+
+        .tb-staging .tb-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--tb-text-dim);
+            transition: background 0.3s;
+        }
+        .tb-staging.active .tb-dot { background: var(--tb-accent); box-shadow: 0 0 8px rgba(16,185,129,0.6); }
+        .tb-staging .tb-label { color: var(--tb-text-dim); font-weight: 500; transition: color 0.2s; }
+        .tb-staging.active .tb-label { color: var(--tb-accent); }
+
+        /* Status text */
+        .tb-status { color: var(--tb-text-dim); font-size: 12px; white-space: nowrap; }
+
+        /* Action buttons */
+        .tb-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: var(--tb-radius);
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.06);
+            color: var(--tb-text); font-weight: 500; font-size: 12px;
+            cursor: pointer; transition: all 0.2s; white-space: nowrap;
+            text-decoration: none;
+        }
+        .tb-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+        .tb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .tb-btn-accent {
+            background: rgba(16,185,129,0.15);
+            border-color: rgba(16,185,129,0.4);
+            color: var(--tb-accent);
+        }
+        .tb-btn-accent:hover:not(:disabled) {
+            background: rgba(16,185,129,0.25);
+            border-color: var(--tb-accent);
+            box-shadow: 0 0 16px rgba(16,185,129,0.2);
+        }
+
+        .tb-btn-danger {
+            color: var(--tb-danger);
+            border-color: rgba(239,68,68,0.3);
+        }
+        .tb-btn-danger:hover:not(:disabled) {
+            background: rgba(239,68,68,0.15);
+            border-color: rgba(239,68,68,0.5);
+        }
+
+        /* Spacer */
+        .tb-spacer { flex: 1; }
+
+        /* Toast */
+        .tb-toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+            padding: 10px 20px; border-radius: 10px; z-index: 9999999;
+            font-size: 13px; font-weight: 500; opacity: 0;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .tb-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .tb-toast-success { background: rgba(16,185,129,0.9); color: #fff; border-color: rgba(16,185,129,0.6); }
+        .tb-toast-error   { background: rgba(239,68,68,0.9); color: #fff; border-color: rgba(239,68,68,0.6); }
+        .tb-toast-info    { background: rgba(59,130,246,0.9); color: #fff; border-color: rgba(59,130,246,0.6); }
+
+        /* Diff Modal */
+        .tb-modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 9999998;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            align-items: center; justify-content: center;
+        }
+        .tb-modal-overlay.open { display: flex; }
+        .tb-modal {
+            background: #111; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px; width: 90%; max-width: 640px; max-height: 80vh;
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+        .tb-modal-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .tb-modal-head h3 { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .tb-modal-close {
+            width: 32px; height: 32px; border-radius: 8px; border: none;
+            background: rgba(255,255,255,0.06); color: #fff; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+            transition: background 0.2s;
+        }
+        .tb-modal-close:hover { background: rgba(255,255,255,0.12); }
+        .tb-modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+
+        .diff-section {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .diff-section:last-child { border-bottom: none; }
+        .diff-section-head {
+            display: flex; align-items: center; gap: 8px;
+            font-weight: 600; font-size: 13px; margin-bottom: 6px;
+        }
+        .diff-badge {
+            font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .diff-badge-modified { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        .diff-badge-added    { background: rgba(16,185,129,0.2); color: #10b981; }
+        .diff-badge-removed  { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .diff-badge-unchanged { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
+        .diff-counts { font-size: 12px; color: rgba(255,255,255,0.5); margin-left: auto; }
+
+        .diff-items { margin-top: 4px; padding-left: 20px; }
+        .diff-item { font-size: 12px; color: rgba(255,255,255,0.6); padding: 2px 0; }
+        .diff-item-added   { color: #34d399; }
+        .diff-item-removed { color: #f87171; }
+
+        .tb-modal-foot {
+            padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08);
+            display: flex; justify-content: flex-end; gap: 8px;
+        }
+
+        .diff-empty {
+            text-align: center; padding: 40px 20px; color: rgba(255,255,255,0.4);
+        }
+        .diff-empty i { font-size: 36px; margin-bottom: 12px; display: block; }
+        .diff-empty h4 { font-size: 15px; margin-bottom: 6px; color: rgba(255,255,255,0.6); }
+        .diff-empty p { font-size: 12px; }
+
+        /* ── Site Iframe ── */
+        #site-frame {
+            position: fixed;
+            top: var(--tb-height); left: 0; right: 0; bottom: 0;
+            border: none; width: 100%; height: calc(100vh - var(--tb-height));
+        }
+    </style>
 </head>
 <body>
-    <div class="noise-overlay"></div>
-    
-    <!-- Animated Background -->
-    <div class="bg-container">
-        <div class="gradient-orbs">
-            <div class="orb orb-1"></div>
-            <div class="orb orb-2"></div>
-            <div class="orb orb-3"></div>
+
+    <!-- ── Admin Toolbar ── -->
+    <div id="admin-toolbar">
+        <div class="tb-brand">
+            <i class="fas fa-shield-halved"></i>
+            <span>TamilAI Stream</span>
         </div>
+
+        <div class="tb-divider"></div>
+
+        <!-- Staging Toggle -->
+        <div class="tb-staging" id="tbStaging" title="Toggle Staging Mode">
+            <span class="tb-dot"></span>
+            <span class="tb-label">Staging: OFF</span>
+        </div>
+
+        <div class="tb-divider"></div>
+
+        <!-- Status -->
+        <span class="tb-status" id="tbStatus">Loading...</span>
+
+        <div class="tb-spacer"></div>
+
+        <!-- Action Buttons -->
+        <button class="tb-btn" id="tbReviewBtn" title="Review pending changes">
+            <i class="fas fa-code-compare"></i> Review
+        </button>
+        <button class="tb-btn tb-btn-accent" id="tbPublishBtn" title="Publish staging to public">
+            <i class="fas fa-rocket"></i> Publish
+        </button>
+        <button class="tb-btn tb-btn-danger" id="tbDiscardBtn" title="Discard staging changes">
+            <i class="fas fa-trash-restore"></i> Discard
+        </button>
+
+        <div class="tb-divider"></div>
+
+        <!-- Site Links -->
+        <a class="tb-btn" href="builder.html" target="_blank" title="Open Builder">
+            <i class="fas fa-tools"></i>
+        </a>
+        <a class="tb-btn" href="/" target="_blank" title="Open Public Site">
+            <i class="fas fa-external-link-alt"></i>
+        </a>
     </div>
 
-    <!-- Admin Dashboard -->
-    <div class="admin-dashboard">
-        <!-- Admin Navigation -->
-        <header class="admin-nav">
-            <div class="admin-nav-container">
-                <div class="admin-nav-left">
-                    <button class="mobile-menu-toggle" id="adminMobileToggle" aria-label="Toggle menu">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div class="admin-nav-logo">
-                        <div class="logo-icon" data-brand-logo><i class="fas fa-microphone-alt"></i></div>
-                        <div>
-                            <h1 data-brand-text>Tamil AI Stream</h1>
-                            <span>Admin Panel</span>
-                        </div>
-                    </div>
-                    <nav class="admin-nav-menu">
-                        <button class="admin-nav-item active" data-page="dashboard">
-                            <i class="fas fa-home"></i> Dashboard
-                        </button>
-                        <button class="admin-nav-item" data-page="songs">
-                            <i class="fas fa-music"></i> Songs
-                        </button>
-                        <button class="admin-nav-item" data-page="categories">
-                            <i class="fas fa-folder"></i> Categories
-                        </button>
-                        <button class="admin-nav-item" data-page="artists">
-                            <i class="fas fa-user"></i> Artists
-                        </button>
-                        <button class="admin-nav-item" data-page="movies">
-                            <i class="fas fa-film"></i> Movies
-                        </button>
-                        <button class="admin-nav-item" data-page="playlists">
-                            <i class="fas fa-list"></i> Playlists
-                        </button>
-                        <a href="admin-upload.html" class="admin-nav-item" style="text-decoration:none;display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text-secondary);transition:all 0.2s">
-                            <i class="fas fa-cloud-arrow-up"></i> Upload
-                        </a>
-                    </nav>
-                </div>
-                <div class="admin-nav-right">
-                    <a href="builder.html" target="_blank" class="admin-btn builder-link-btn">
-                        <i class="fas fa-tools"></i> Website Builder
-                    </a>
-                    <div class="admin-user-info">
-                        <div class="admin-user-avatar">A</div>
-                        <span class="admin-user-name">Admin</span>
-                    </div>
-                    <button class="admin-logout-btn" id="adminLogout">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
-                </div>
+    <!-- ── Diff Modal ── -->
+    <div class="tb-modal-overlay" id="diffModal">
+        <div class="tb-modal">
+            <div class="tb-modal-head">
+                <h3><i class="fas fa-code-compare"></i> Pending Changes</h3>
+                <button class="tb-modal-close" id="diffModalClose"><i class="fas fa-xmark"></i></button>
             </div>
-        </header>
-
-        <!-- Admin Main Content -->
-        <main class="admin-main">
-            <div class="admin-container">
-                <!-- Sidebar -->
-                <aside class="admin-sidebar">
-                    <div class="admin-sidebar-section">
-                        <div class="admin-sidebar-title">Main Menu</div>
-                        <div class="admin-sidebar-menu">
-                            <button class="admin-sidebar-item active" data-page="dashboard">
-                                <i class="fas fa-home"></i> Dashboard
-                            </button>
-                            <button class="admin-sidebar-item" data-page="songs">
-                                <i class="fas fa-music"></i> Manage Songs
-                            </button>
-                            <button class="admin-sidebar-item" data-page="add-song">
-                                <i class="fas fa-plus-circle"></i> Add New Song
-                            </button>
-                            <a href="admin-upload.html" class="admin-sidebar-item" style="text-decoration:none">
-                                <i class="fas fa-cloud-arrow-up"></i> Upload Center
-                            </a>
-                        </div>
-                    </div>
-                    <div class="admin-sidebar-section">
-                        <div class="admin-sidebar-title">Content Management</div>
-                        <div class="admin-sidebar-menu">
-                            <button class="admin-sidebar-item" data-page="categories">
-                                <i class="fas fa-folder"></i> Categories
-                            </button>
-                            <button class="admin-sidebar-item" data-page="artists">
-                                <i class="fas fa-user"></i> Artists
-                            </button>
-                            <button class="admin-sidebar-item" data-page="movies">
-                                <i class="fas fa-film"></i> Movies
-                            </button>
-                            <button class="admin-sidebar-item" data-page="playlists">
-                                <i class="fas fa-list"></i> Playlists
-                            </button>
-                        </div>
-                    </div>
-                    <div class="admin-sidebar-section">
-                        <div class="admin-sidebar-title">Featured Content</div>
-                        <div class="admin-sidebar-menu">
-                            <button class="admin-sidebar-item" data-page="featured">
-                                <i class="fas fa-star"></i> Featured Songs
-                            </button>
-                            <button class="admin-sidebar-item" data-page="trending">
-                                <i class="fas fa-fire"></i> Trending Songs
-                            </button>
-                        </div>
-                    </div>
-                    <div class="admin-sidebar-section" style="margin-top:auto; padding-top:20px; border-top:1px solid var(--border-glass);">
-                        <!-- Publish Controls -->
-                        <div class="admin-sidebar-section" id="publishSection">
-                            <div class="admin-sidebar-title">
-                                <i class="fas fa-rocket"></i> Publish
-                                <span class="publish-status-dot" id="publishStatusDot" style="display:none;"></span>
-                            </div>
-                            <div class="admin-sidebar-menu">
-                                <div class="publish-mode-toggle" id="publishModeToggle">
-                                    <span class="publish-mode-label">Staging Mode</span>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="stagingModeCheckbox">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="publish-info" id="publishInfo">
-                                    <div class="publish-info-row" id="publishInfoRow" style="display:none;">
-                                        <i class="fas fa-clock"></i>
-                                        <span id="publishInfoText">No staging changes</span>
-                                    </div>
-                                </div>
-                                <button class="admin-sidebar-item publish-action-btn" id="reviewChangesBtn" style="display:none;">
-                                    <i class="fas fa-code-compare"></i> Review Changes
-                                </button>
-                                <button class="admin-sidebar-item publish-action-btn publish-btn-primary" id="publishNowBtn" style="display:none;">
-                                    <i class="fas fa-rocket"></i> Publish Now
-                                </button>
-                                <button class="admin-sidebar-item publish-action-btn publish-btn-danger" id="discardChangesBtn" style="display:none;">
-                                    <i class="fas fa-trash-restore"></i> Discard Changes
-                                </button>
-                            </div>
-                        </div>
-                        <a href="builder.html" target="_blank" class="admin-sidebar-item builder-link" style="justify-content:center; padding:14px 16px;">
-                            <i class="fas fa-tools"></i> Website Builder
-                        </a>
-                    </div>
-                </aside>
-
-                <!-- Content Area -->
-                <div class="admin-content">
-                    <!-- Dashboard Page -->
-                    <div class="admin-page" id="dashboardPage">
-                        <div class="admin-page-header">
-                            <h1 class="admin-page-title">Dashboard Overview</h1>
-                        </div>
-                        
-                        <!-- Stats Grid -->
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-icon"><i class="fas fa-music"></i></div>
-                                <div class="stat-info">
-                                    <span class="stat-value" id="totalSongs">0</span>
-                                    <span class="stat-label">Total Songs</span>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon"><i class="fas fa-user"></i></div>
-                                <div class="stat-info">
-                                    <span class="stat-value" id="totalArtists">0</span>
-                                    <span class="stat-label">Artists</span>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon"><i class="fas fa-film"></i></div>
-                                <div class="stat-info">
-                                    <span class="stat-value" id="totalMovies">0</span>
-                                    <span class="stat-label">Movies</span>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon"><i class="fas fa-play"></i></div>
-                                <div class="stat-info">
-                                    <span class="stat-value" id="totalPlays">0</span>
-                                    <span class="stat-label">Total Plays</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Recent Songs -->
-                        <div class="content-card">
-                            <div class="content-card-header">
-                                <h2 class="content-card-title">Recently Added Songs</h2>
-                                <button class="admin-btn primary" onclick="navigateTo('add-song')">
-                                    <i class="fas fa-plus"></i> Add Song
-                                </button>
-                            </div>
-                            <div class="data-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Cover</th>
-                                            <th>Title</th>
-                                            <th>Artist</th>
-                                            <th>Movie</th>
-                                            <th>Duration</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="recentSongsTable">
-                                        <!-- Dynamic content -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Songs Management Page -->
-                    <div class="admin-page" id="songsPage" style="display:none;">
-                        <div class="admin-page-header">
-                            <h1 class="admin-page-title">Manage Songs</h1>
-                            <div class="admin-page-actions">
-                                <button class="admin-btn primary" onclick="navigateTo('add-song')">
-                                    <i class="fas fa-plus"></i> Add New Song
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="content-card">
-                            <div class="content-card-header">
-                                <h2 class="content-card-title">All Songs</h2>
-                                <input type="text" class="form-input" id="songSearch" placeholder="Search songs..." style="width:300px;">
-                            </div>
-                            <div class="data-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Cover</th>
-                                            <th>Title</th>
-                                            <th>Artist</th>
-                                            <th>Movie</th>
-                                            <th>Duration</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="allSongsTable">
-                                        <!-- Dynamic content -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Add/Edit Song Page -->
-                    <div class="admin-page" id="addSongPage" style="display:none;">
-                        <div class="admin-page-header">
-                            <h1 class="admin-page-title" id="songFormTitle">Add New Song</h1>
-                        </div>
-
-                        <div class="content-card">
-                            <form id="songForm">
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label class="form-label">Song Title *</label>
-                                        <input type="text" class="form-input" id="songTitle" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Artist *</label>
-                                        <select class="form-select" id="songArtist" required>
-                                            <option value="">Select Artist</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Movie *</label>
-                                        <select class="form-select" id="songMovie" required>
-                                            <option value="">Select Movie</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Music Director</label>
-                                        <input type="text" class="form-input" id="songDirector">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Singer</label>
-                                        <input type="text" class="form-input" id="songSinger">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Language</label>
-                                        <select class="form-select" id="songLanguage">
-                                            <option value="Tamil">Tamil</option>
-                                            <option value="Hindi">Hindi</option>
-                                            <option value="Telugu">Telugu</option>
-                                            <option value="Malayalam">Malayalam</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Genre</label>
-                                        <select class="form-select" id="songGenre">
-                                            <option value="Love">Love</option>
-                                            <option value="Action">Action</option>
-                                            <option value="Comedy">Comedy</option>
-                                            <option value="Emotional">Emotional</option>
-                                            <option value="Devotional">Devotional</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group full-width">
-                                        <label class="form-label">Album Cover Image</label>
-                                        <div class="file-upload" id="albumUpload">
-                                            <input type="file" id="albumImage" accept="image/*">
-                                            <div class="file-upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
-                                            <div class="file-upload-text">Drop album cover here or click to browse</div>
-                                            <div class="file-upload-hint">PNG, JPG up to 5MB</div>
-                                        </div>
-                                        <div class="file-preview" id="albumPreview" style="display:none;">
-                                            <img id="albumPreviewImg" src="" alt="Preview">
-                                            <div class="file-preview-info">
-                                                <div class="file-preview-name" id="albumFileName">filename.jpg</div>
-                                                <div class="file-preview-size" id="albumFileSize">0 MB</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group full-width">
-                                        <label class="form-label">Audio File (MP3) *</label>
-                                        <div class="file-upload" id="audioUpload">
-                                            <input type="file" id="audioFile" accept="audio/mp3,audio/mpeg">
-                                            <div class="file-upload-icon"><i class="fas fa-music"></i></div>
-                                            <div class="file-upload-text">Drop MP3 file here or click to browse</div>
-                                            <div class="file-upload-hint">MP3 format, max 10MB</div>
-                                        </div>
-                                        <div class="file-preview" id="audioPreview" style="display:none;">
-                                            <div class="file-preview-info">
-                                                <div class="file-preview-name" id="audioFileName">song.mp3</div>
-                                                <div class="file-preview-size" id="audioFileSize">0 MB</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Duration (mm:ss)</label>
-                                        <input type="text" class="form-input" id="songDuration" placeholder="3:45">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Status</label>
-                                        <select class="form-select" id="songStatus">
-                                            <option value="published">Published</option>
-                                            <option value="draft">Draft</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group full-width">
-                                        <label class="form-label">Description</label>
-                                        <textarea class="form-textarea" id="songDescription" placeholder="Enter song description..."></textarea>
-                                    </div>
-                                </div>
-                                <div class="admin-page-actions">
-                                    <button type="submit" class="admin-btn primary">
-                                        <i class="fas fa-save"></i> Save Song
-                                    </button>
-                                    <button type="button" class="admin-btn" onclick="navigateTo('songs')">
-                                        <i class="fas fa-times"></i> Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- Categories Page -->
-                    <div class="admin-page" id="categoriesPage" style="display:none;">
-                        <div class="admin-page-header">
-                            <h1 class="admin-page-title">Manage Categories</h1>
-                            <button class="admin-btn primary" id="addCategoryBtn">
-                                <i class="fas fa-plus"></i> Add Category
-                            </button>
-                        </div>
-                        <div class="content-card">
-                            <div class="data-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Description</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="categoriesTable">
-                                        <!-- Dynamic content -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Artists Page -->
-                    <div class="admin-page" id="artistsPage" style="display:none;">
-                        <div class="admin-page-header">
-                            <h1 class="admin-page-title">Manage Artists</h1>
-                            <button class="admin-btn primary" id="addArtistBtn">
-                                <i class="fas fa-plus"></i> Add Artist
-                            </button>
-                        </div>
-                        <div class="content-card">
-                            <div class="data-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Type</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="artistsTable">
-                                        <!-- Dynamic content -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Movies Page -->
-                    <div class="admin-page" id="moviesPage" style="display:none;">
-                        <div class="admin-page-header">
-                            <h1 class="admin-page-title">Manage Movies</h1>
-                            <button class="admin-btn primary" id="addMovieBtn">
-                                <i class="fas fa-plus"></i> Add Movie
-                            </button>
-                        </div>
-                        <div class="content-card">
-                            <div class="data-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Title</th>
-                                            <th>Year</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="moviesTable">
-                                        <!-- Dynamic content -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Playlists Page -->
-                    <div class="admin-page" id="playlistsPage" style="display:none;">
-                        <div class="admin-page-header">
-                            <h1 class="admin-page-title">Manage Playlists</h1>
-                            <button class="admin-btn primary" id="addPlaylistBtn">
-                                <i class="fas fa-plus"></i> Create Playlist
-                            </button>
-                        </div>
-                        <div class="content-card">
-                            <div class="data-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Songs</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="playlistsTable">
-                                        <!-- Dynamic content -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Review Changes Page -->
-                    <div class="admin-page" id="reviewPage" style="display:none;">
-                        <div class="admin-page-header">
-                            <h1 class="admin-page-title"><i class="fas fa-code-compare"></i> Changes Review</h1>
-                            <div class="admin-page-actions">
-                                <button class="admin-btn" id="refreshDiffBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
-                                <button class="admin-btn admin-btn-primary" id="publishFromReviewBtn"><i class="fas fa-rocket"></i> Publish All Changes</button>
-                                <button class="admin-btn admin-btn-danger" id="discardFromReviewBtn"><i class="fas fa-trash-restore"></i> Discard All</button>
-                            </div>
-                        </div>
-                        <div class="review-status-bar" id="reviewStatusBar">
-                            <div class="review-status-item">
-                                <span class="review-status-label">Last Published:</span>
-                                <span class="review-status-value" id="reviewPublishedAt">—</span>
-                            </div>
-                            <div class="review-status-item">
-                                <span class="review-status-label">Staging Saved:</span>
-                                <span class="review-status-value" id="reviewStagingAt">—</span>
-                            </div>
-                            <div class="review-status-item">
-                                <span class="review-status-label">Pending Changes:</span>
-                                <span class="review-status-value" id="reviewChangeCount">0</span>
-                            </div>
-                        </div>
-                        <div class="review-changes-list" id="reviewChangesList">
-                            <div class="review-empty" id="reviewEmpty">
-                                <i class="fas fa-check-circle"></i>
-                                <h3>No Pending Changes</h3>
-                                <p>Enable Staging Mode in the sidebar, make changes in the Builder, then come back to review and publish.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Changes Review Modal -->
-    <div class="review-modal-overlay" id="reviewModalOverlay" style="display:none;">
-        <div class="review-modal">
-            <div class="review-modal-header">
-                <h2><i class="fas fa-code-compare"></i> Changes Detail</h2>
-                <button class="review-modal-close" id="reviewModalClose"><i class="fas fa-xmark"></i></button>
-            </div>
-            <div class="review-modal-body" id="reviewModalBody">
-                <div class="review-section-detail" id="reviewSectionDetail"></div>
-            </div>
-            <div class="review-modal-footer">
-                <button class="admin-btn" id="reviewModalCloseBtn">Close</button>
-                <button class="admin-btn admin-btn-primary" id="reviewModalPublishBtn"><i class="fas fa-rocket"></i> Publish</button>
+            <div class="tb-modal-body" id="diffModalBody"></div>
+            <div class="tb-modal-foot">
+                <button class="tb-btn" id="diffModalCloseBtn">Close</button>
+                <button class="tb-btn tb-btn-danger" id="diffModalDiscard"><i class="fas fa-trash-restore"></i> Discard</button>
+                <button class="tb-btn tb-btn-accent" id="diffModalPublish"><i class="fas fa-rocket"></i> Publish</button>
             </div>
         </div>
     </div>
 
-    <!-- R2 Upload -->
-<script src="auth.js"></script>
-    <script src="r2-config.js"></script>
-    <script src="r2-upload.js"></script>
-    <script src="r2-content-sync.js"></script>
+    <!-- ── Full Website Iframe ── -->
+    <iframe id="site-frame" src="/"></iframe>
+
+    <!-- ── Scripts ── -->
     <script src="publish-manager.js"></script>
-    <script src="admin.js"></script>
-    <script src="brand-config.js"></script>
     <script>
-    // ============================================
-    // Publish Controls Logic
-    // ============================================
     (function() {
-        const $ = (id) => document.getElementById(id);
-        const stagingCheckbox = $('stagingModeCheckbox');
-        const publishInfoRow = $('publishInfoRow');
-        const publishInfoText = $('publishInfoText');
-        const reviewChangesBtn = $('reviewChangesBtn');
-        const publishNowBtn = $('publishNowBtn');
-        const discardChangesBtn = $('discardChangesBtn');
-        const publishStatusDot = $('publishStatusDot');
-        const refreshDiffBtn = $('refreshDiffBtn');
-        const publishFromReviewBtn = $('publishFromReviewBtn');
-        const discardFromReviewBtn = $('discardFromReviewBtn');
-        const reviewModalOverlay = $('reviewModalOverlay');
-        const reviewModalClose = $('reviewModalClose');
-        const reviewModalCloseBtn = $('reviewModalCloseBtn');
-        const reviewModalPublishBtn = $('reviewModalPublishBtn');
+        const $ = id => document.getElementById(id);
+        const stagingEl     = $('tbStaging');
+        const stagingLabel  = stagingEl.querySelector('.tb-label');
+        const statusEl      = $('tbStatus');
+        const reviewBtn     = $('tbReviewBtn');
+        const publishBtn    = $('tbPublishBtn');
+        const discardBtn    = $('tbDiscardBtn');
+        const diffModal     = $('diffModal');
+        const diffBody      = $('diffModalBody');
+        const diffClose     = $('diffModalClose');
+        const diffCloseBtn  = $('diffModalCloseBtn');
+        const diffPublish   = $('diffModalPublish');
+        const diffDiscard   = $('diffModalDiscard');
 
-        function showPublishToast(msg, type) {
-            let t = document.createElement('div');
-            t.className = 'publish-toast publish-toast-' + (type || 'info');
-            t.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle') + '"></i><span>' + msg + '</span>';
+        /* ── Toast ── */
+        function toast(msg, type) {
+            const t = document.createElement('div');
+            t.className = 'tb-toast tb-toast-' + (type || 'info');
+            t.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle') + '"></i> ' + msg;
             document.body.appendChild(t);
-            setTimeout(() => t.classList.add('visible'), 10);
-            setTimeout(() => { t.classList.remove('visible'); setTimeout(() => t.remove(), 300); }, 4000);
+            requestAnimationFrame(() => t.classList.add('show'));
+            setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 4000);
         }
 
-        async function updatePublishUI() {
-            const state = await PublishManager.refreshStatus();
-            stagingCheckbox.checked = PublishManager.isStagingMode();
+        /* ── Refresh Status ── */
+        async function refreshStatus() {
+            try {
+                const st = await PublishManager.refreshStatus();
+                const isStaging = PublishManager.isStagingMode();
 
-            if (state.hasStaging) {
-                publishInfoRow.style.display = 'flex';
-                const date = state.stagingSavedAt ? new Date(state.stagingSavedAt).toLocaleString() : 'Unknown';
-                publishInfoText.textContent = 'Staging saved: ' + date;
-                reviewChangesBtn.style.display = 'flex';
-                publishNowBtn.style.display = 'flex';
-                discardChangesBtn.style.display = 'flex';
-                publishStatusDot.style.display = 'inline-block';
-                publishStatusDot.className = 'publish-status-dot has-changes';
-            } else {
-                publishInfoRow.style.display = 'none';
-                reviewChangesBtn.style.display = 'none';
-                publishNowBtn.style.display = 'none';
-                discardChangesBtn.style.display = 'none';
-                publishStatusDot.style.display = 'none';
+                stagingEl.classList.toggle('active', isStaging);
+                stagingLabel.textContent = isStaging ? 'Staging: ON' : 'Staging: OFF';
+
+                if (st.hasStaging) {
+                    const dt = st.stagingSavedAt ? new Date(st.stagingSavedAt).toLocaleString() : '';
+                    statusEl.textContent = 'Pending changes' + (dt ? ' — saved ' + dt : '');
+                    reviewBtn.style.display = '';
+                    publishBtn.style.display = '';
+                    discardBtn.style.display = '';
+                } else {
+                    statusEl.textContent = 'No pending changes';
+                    reviewBtn.style.display = 'none';
+                    publishBtn.style.display = 'none';
+                    discardBtn.style.display = 'none';
+                }
+            } catch (e) {
+                statusEl.textContent = 'Could not load status';
+                console.error('[Admin] refreshStatus error:', e);
             }
         }
 
-        // Staging mode toggle
-        stagingCheckbox?.addEventListener('change', function() {
-            if (this.checked) {
-                PublishManager.enterStagingMode();
-                showPublishToast('Staging mode enabled. Changes will be saved to staging.', 'info');
-            } else {
+        /* ── Staging Toggle ── */
+        stagingEl.addEventListener('click', () => {
+            if (PublishManager.isStagingMode()) {
                 PublishManager.exitStagingMode();
-                showPublishToast('Staging mode disabled. Changes will be published directly.', 'info');
+                toast('Staging OFF — changes publish directly', 'info');
+            } else {
+                PublishManager.enterStagingMode();
+                toast('Staging ON — changes saved to staging', 'info');
             }
+            refreshStatus();
         });
 
-        // Review Changes
-        reviewChangesBtn?.addEventListener('click', async function() {
-            // Show the review page
-            document.querySelectorAll('.admin-page').forEach(p => p.style.display = 'none');
-            $('reviewPage').style.display = 'block';
-            document.querySelectorAll('.admin-sidebar-item').forEach(i => i.classList.remove('active'));
-            await loadReviewChanges();
-        });
-
-        // Publish Now
-        publishNowBtn?.addEventListener('click', async function() {
-            if (!confirm('Publish all staging changes to the public website?')) return;
-            this.disabled = true;
-            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+        /* ── Publish ── */
+        publishBtn.addEventListener('click', async () => {
+            if (!confirm('Publish staging changes to the public website?')) return;
+            publishBtn.disabled = true;
+            publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing…';
             try {
                 await PublishManager.publish();
-                showPublishToast('Changes published successfully! Public website updated.', 'success');
-                await updatePublishUI();
+                toast('Changes published to public website!', 'success');
+                refreshStatus();
             } catch (e) {
-                showPublishToast('Publish failed: ' + e.message, 'error');
+                toast('Publish failed: ' + e.message, 'error');
             }
-            this.disabled = false;
-            this.innerHTML = '<i class="fas fa-rocket"></i> Publish Now';
+            publishBtn.disabled = false;
+            publishBtn.innerHTML = '<i class="fas fa-rocket"></i> Publish';
         });
 
-        // Discard Changes
-        discardChangesBtn?.addEventListener('click', async function() {
-            if (!confirm('Discard all staging changes? This cannot be undone.')) return;
+        /* ── Discard ── */
+        discardBtn.addEventListener('click', async () => {
+            if (!confirm('Discard all staging changes?')) return;
             try {
                 await PublishManager.discardStaging();
-                showPublishToast('Staging changes discarded.', 'info');
-                await updatePublishUI();
+                toast('Staging changes discarded', 'info');
+                refreshStatus();
             } catch (e) {
-                showPublishToast('Discard failed: ' + e.message, 'error');
+                toast('Discard failed: ' + e.message, 'error');
             }
         });
 
-        // Review page actions
-        refreshDiffBtn?.addEventListener('click', loadReviewChanges);
-        publishFromReviewBtn?.addEventListener('click', async function() {
-            if (!confirm('Publish all staging changes to the public website?')) return;
-            try {
-                await PublishManager.publish();
-                showPublishToast('Changes published successfully!', 'success');
-                await updatePublishUI();
-                // Go back to dashboard
-                document.querySelectorAll('.admin-page').forEach(p => p.style.display = 'none');
-                $('dashboardPage').style.display = 'block';
-            } catch (e) {
-                showPublishToast('Publish failed: ' + e.message, 'error');
-            }
+        /* ── Review / Diff Modal ── */
+        reviewBtn.addEventListener('click', async () => {
+            diffModal.classList.add('open');
+            diffBody.innerHTML = '<div class="diff-empty"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>';
+            const diff = await PublishManager.getDiff();
+            renderDiff(diff);
         });
-        discardFromReviewBtn?.addEventListener('click', async function() {
-            if (!confirm('Discard all staging changes? This cannot be undone.')) return;
-            try {
-                await PublishManager.discardStaging();
-                showPublishToast('Staging changes discarded.', 'info');
-                await updatePublishUI();
-                document.querySelectorAll('.admin-page').forEach(p => p.style.display = 'none');
-                $('dashboardPage').style.display = 'block';
-            } catch (e) {
-                showPublishToast('Discard failed: ' + e.message, 'error');
-            }
-        });
+        diffClose.addEventListener('click', () => diffModal.classList.remove('open'));
+        diffCloseBtn.addEventListener('click', () => diffModal.classList.remove('open'));
 
-        // Modal
-        reviewModalClose?.addEventListener('click', () => { reviewModalOverlay.style.display = 'none'; });
-        reviewModalCloseBtn?.addEventListener('click', () => { reviewModalOverlay.style.display = 'none'; });
-        reviewModalPublishBtn?.addEventListener('click', async function() {
+        diffPublish.addEventListener('click', async () => {
             if (!confirm('Publish all staging changes?')) return;
             try {
                 await PublishManager.publish();
-                showPublishToast('Published!', 'success');
-                reviewModalOverlay.style.display = 'none';
-                await updatePublishUI();
-            } catch (e) {
-                showPublishToast('Publish failed: ' + e.message, 'error');
-            }
+                toast('Published!', 'success');
+                diffModal.classList.remove('open');
+                refreshStatus();
+            } catch (e) { toast('Publish failed: ' + e.message, 'error'); }
+        });
+        diffDiscard.addEventListener('click', async () => {
+            if (!confirm('Discard all staging changes?')) return;
+            try {
+                await PublishManager.discardStaging();
+                toast('Discarded', 'info');
+                diffModal.classList.remove('open');
+                refreshStatus();
+            } catch (e) { toast('Discard failed: ' + e.message, 'error'); }
         });
 
-        async function loadReviewChanges() {
-            const diff = await PublishManager.getDiff();
-            const list = $('reviewChangesList');
-            const empty = $('reviewEmpty');
-            $('reviewPublishedAt').textContent = diff.publishedAt ? new Date(diff.publishedAt).toLocaleString() : '—';
-            $('reviewStagingAt').textContent = diff.stagingSavedAt ? new Date(diff.stagingSavedAt).toLocaleString() : '—';
-            $('reviewChangeCount').textContent = diff.changeCount || 0;
-
-            if (!diff.hasChanges || !diff.changes.length) {
-                list.innerHTML = '';
-                list.appendChild(empty);
-                empty.style.display = 'flex';
+        function renderDiff(diff) {
+            if (!diff || !diff.hasChanges || !diff.changes || !diff.changes.length) {
+                diffBody.innerHTML =
+                    '<div class="diff-empty">' +
+                    '<i class="fas fa-check-circle"></i>' +
+                    '<h4>No Pending Changes</h4>' +
+                    '<p>Toggle Staging ON, make changes in the Builder, then come back to review and publish.</p>' +
+                    '</div>';
                 return;
             }
-            empty.style.display = 'none';
-            const statusIcons = {
-                modified: '<i class="fas fa-pen-to-square" style="color:#f59e0b;"></i>',
-                added: '<i class="fas fa-plus-circle" style="color:#10b981;"></i>',
-                removed: '<i class="fas fa-minus-circle" style="color:#ef4444;"></i>',
-                items_added: '<i class="fas fa-arrow-up" style="color:#10b981;"></i>',
-                items_removed: '<i class="fas fa-arrow-down" style="color:#ef4444;"></i>',
+
+            const statusMap = {
+                modified:      { icon: 'fa-pen-to-square', color: '#f59e0b', badge: 'diff-badge-modified', label: 'Modified' },
+                added:         { icon: 'fa-plus-circle',   color: '#10b981', badge: 'diff-badge-added',    label: 'Added' },
+                removed:       { icon: 'fa-minus-circle',  color: '#ef4444', badge: 'diff-badge-removed',  label: 'Removed' },
+                items_added:   { icon: 'fa-arrow-up',      color: '#10b981', badge: 'diff-badge-added',    label: 'Items Added' },
+                items_removed: { icon: 'fa-arrow-down',    color: '#ef4444', badge: 'diff-badge-removed',  label: 'Items Removed' },
             };
-            const statusLabels = {
-                modified: 'Modified', added: 'Added', removed: 'Removed',
-                items_added: 'Items Added', items_removed: 'Items Removed',
-            };
-            list.innerHTML = diff.changes.map(ch => `
-                <div class="review-change-card" data-section="${ch.section}">
-                    <div class="review-change-icon">${statusIcons[ch.status] || statusIcons.modified}</div>
-                    <div class="review-change-info">
-                        <div class="review-change-section">${ch.section}</div>
-                        <div class="review-change-status">${statusLabels[ch.status] || ch.status}</div>
-                    </div>
-                    <div class="review-change-counts">
-                        ${ch.publishedItems !== null ? '<span class="review-count-pub">Published: ' + ch.publishedItems + '</span>' : ''}
-                        ${ch.stagingItems !== null ? '<span class="review-count-stg">Staging: ' + ch.stagingItems + '</span>' : ''}
-                    </div>
-                </div>
-            `).join('');
+
+            diffBody.innerHTML = diff.changes.map(ch => {
+                const m = statusMap[ch.status] || statusMap.modified;
+                let itemsHtml = '';
+                if (ch.itemChanges && ch.itemChanges.length) {
+                    itemsHtml = '<div class="diff-items">' + ch.itemChanges.map(ic =>
+                        '<div class="diff-item ' + (ic.type === 'added' ? 'diff-item-added' : 'diff-item-removed') + '">' +
+                        '<i class="fas fa-' + (ic.type === 'added' ? 'plus' : 'minus') + '-circle"></i> ' +
+                        (ic.name || ic.id || JSON.stringify(ic))
+                        + '</div>'
+                    ).join('') + '</div>';
+                }
+                return '<div class="diff-section">' +
+                    '<div class="diff-section-head">' +
+                    '<span class="diff-badge ' + m.badge + '">' + m.label + '</span> ' +
+                    '<span style="font-weight:600">' + ch.section + '</span>' +
+                    (ch.publishedItems != null || ch.stagingItems != null ?
+                        '<span class="diff-counts">' +
+                        (ch.publishedItems != null ? 'Published: ' + ch.publishedItems + '  ' : '') +
+                        (ch.stagingItems != null ? 'Staging: ' + ch.stagingItems : '') +
+                        '</span>' : '') +
+                    '</div>' + itemsHtml + '</div>';
+            }).join('');
         }
 
-        // Init
-        if (typeof PublishManager !== 'undefined') {
-            updatePublishUI();
-        }
+        /* ── Iframe intercept: force staging on write ── */
+        const frame = $('site-frame');
+        frame.addEventListener('load', () => {
+            try {
+                const win = frame.contentWindow;
+                if (win && win.ContentSync) {
+                    const orig = win.ContentSync.syncCurrentState.bind(win.ContentSync);
+                    win.ContentSync.syncCurrentState = async function() {
+                        if (PublishManager.isStagingMode()) {
+                            const keys = [
+                                'songs','stations','categories','featured','trending',
+                                'artistHits','quotes','layout','tamilpodcasts',
+                                'englishpodcasts','hindipodcasts','premiumPodcasts',
+                                'radiostations','tamilradios','hindiradios','englishradios',
+                                'advertisements','minisettings','hero','siteconfig'
+                            ];
+                            const payload = { keys, data: {}, savedAt: new Date().toISOString(), source: 'admin-iframe' };
+                            keys.forEach(k => { try { payload.data[k] = win.DataStore.getXxx ? win.DataStore['get' + k.charAt(0).toUpperCase() + k.slice(1)]() : null; } catch(e) { payload.data[k] = null; } });
+                            await fetch('/api/staging', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                            refreshStatus();
+                        } else {
+                            return orig();
+                        }
+                    };
+                }
+            } catch (e) { /* cross-origin */ }
+        });
+
+        /* ── Init ── */
+        refreshStatus();
     })();
     </script>
 </body>
