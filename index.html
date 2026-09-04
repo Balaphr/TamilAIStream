@@ -1345,10 +1345,16 @@
     <!-- ============ UNIFIED PLAYER — Floating Mini Player (between Home & Profile) ============ -->
     <div class="up-bottom-bar" id="upBottomBar" role="complementary" aria-label="Now Playing">
         <div class="up-bottom-progress-bar"><div class="up-bottom-progress-fill" id="upBottomProgressFill"></div></div>
-        <div class="up-bottom-art" id="upBottomArt"><i class="fas fa-music"></i></div>
+        <div class="up-bottom-art" id="upBottomArt" aria-hidden="true"><i class="fas fa-music"></i></div>
         <div class="up-bottom-info">
             <div class="up-bottom-title" id="upBottomTitle">Nothing playing</div>
             <div class="up-bottom-artist" id="upBottomArtist">Tap to browse music</div>
+            <div class="up-bottom-meta" id="upBottomMeta"></div>
+            <div class="up-bottom-seek">
+                <span class="up-bottom-time" id="upBottomCurrentTime">0:00</span>
+                <input type="range" class="up-bottom-range" id="upBottomSeek" min="0" max="1000" value="0" step="1" aria-label="Seek" tabindex="0">
+                <span class="up-bottom-time" id="upBottomDuration">0:00</span>
+            </div>
         </div>
         <button class="up-bottom-btn up-bottom-play" id="upBottomPlayPause" aria-label="Play / Pause"><i class="fas fa-play"></i></button>
     </div>

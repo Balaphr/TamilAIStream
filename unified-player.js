@@ -28,7 +28,13 @@ const UnifiedPlayer = (() => {
     isLive: false,
     favorites: new Set(),
     _shuffleOrder: [],
+    // When true, script.js owns real playback via window.audioPlayer.
+    // UnifiedPlayer then behaves as a UI layer delegating to script.js.
+    externalEngine: false,
   };
+
+  /* ─── Init guard (unified-player.js auto-inits AND index.html/DOMContentLoaded calls init) ─── */
+  let _initialized = false;
 
   /* ─── DOM refs (populated in init) ─── */
   let els = {};
@@ -45,6 +51,10 @@ const UnifiedPlayer = (() => {
   let aiCanvasCtx = null;
   let aiAnimFrame = null;
 
+  /* ─── Seek drag state ─── */
+  let draggingSeek = false;
+  let _progressLoopRunning = false;
+
   /* ─── Persistence key ─── */
   const STORAGE_KEY = 'tamilai_unifiedPlayer';
 
@@ -52,13 +62,55 @@ const UnifiedPlayer = (() => {
      INIT
      ═══════════════════════════════════════════ */
   function init() {
+    if (_initialized) return;
+    _initialized = true;
     _createAudio();
     _bindDOM();
     _bindGestures();
     _bindKeyboard();
     _restoreState();
+    _adoptExternalEngine();
     _startProgressLoop();
     _setupServiceWorker();
+  }
+
+  /* ═══════════════════════════════════════════
+     EXTERNAL ENGINE (script.js)
+     UnifiedPlayer is a UI layer when script.js owns playback.
+     ═══════════════════════════════════════════ */
+  function _liveAudio() {
+    if (state.externalEngine && window.audioPlayer && (window.audioPlayer.src || window.audioPlayer.getAttribute && window.audioPlayer.getAttribute('src'))) {
+      return window.audioPlayer;
+    }
+    return audio;
+  }
+
+  /** Lazily detect that script.js is driving real playback and adopt its state. */
+  function _adoptExternalEngine() {
+    if (state.externalEngine) return;
+    if (!window.audioPlayer) return;
+    let track = null;
+    try {
+      track = window.currentPlaybackTrack || window.currentStation || null;
+    } catch (e) { /* ignore */ }
+    if (!track) {
+      // Even without globals, a real loaded source means script.js owns playback.
+      const src = (window.audioPlayer.src || (window.audioPlayer.getAttribute && window.audioPlayer.getAttribute('src'))) || '';
+      if (!src || !state.track) return;
+      state.externalEngine = true;
+      return;
+    }
+    state.externalEngine = true;
+    if (els.bottomTitle && els.bottomTitle.textContent !== 'Nothing playing') return;
+    state.track = track;
+    state.mode = (window.currentStation && !window.currentPlaybackTrack) ? 'fm' : 'songs';
+    state.isLive = !!(track.streamUrl && !track.audioUrl);
+    state.currentTime = window.audioPlayer.currentTime || 0;
+    state.duration = window.audioPlayer.duration || 0;
+    _showBottomBar();
+    _updateTrackUI();
+    _updateFavUI();
+    _updatePlayUI();
   }
 
   /* ─── Create audio element ─── */
@@ -110,6 +162,10 @@ const UnifiedPlayer = (() => {
       bottomArt: document.getElementById('upBottomArt'),
       bottomTitle: document.getElementById('upBottomTitle'),
       bottomArtist: document.getElementById('upBottomArtist'),
+      bottomMeta: document.getElementById('upBottomMeta'),
+      bottomSeek: document.getElementById('upBottomSeek'),
+      bottomCurrentTime: document.getElementById('upBottomCurrentTime'),
+      bottomDuration: document.getElementById('upBottomDuration'),
       bottomPlayPause: document.getElementById('upBottomPlayPause'),
       bottomProgress: document.getElementById('upBottomProgress'),
       bottomProgressFill: document.getElementById('upBottomProgressFill'),
@@ -162,6 +218,29 @@ const UnifiedPlayer = (() => {
     if (els.bottomPlayPause) els.bottomPlayPause.addEventListener('click', (e) => { e.stopPropagation(); togglePlay(); });
     if (els.bottomBar) els.bottomBar.addEventListener('click', () => showFullScreen());
 
+    if (els.bottomSeek) {
+      els.bottomSeek.addEventListener('input', (e) => {
+        e.stopPropagation();
+        draggingSeek = true;
+        const pct = parseInt(e.target.value, 10) / 1000;
+        const live = _liveAudio();
+        const dur = (live && isFinite(live.duration) && live.duration > 0) ? live.duration : (state.duration || 0);
+        _updateProgressUI(pct * 100, dur ? pct * dur : state.currentTime);
+      });
+      els.bottomSeek.addEventListener('change', (e) => {
+        draggingSeek = false;
+        e.stopPropagation();
+        const pct = parseInt(e.target.value, 10) / 1000;
+        _seekToPercent(pct);
+      });
+      els.bottomSeek.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      els.bottomSeek.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+      });
+    }
+
     if (els.fsPlayPause) els.fsPlayPause.addEventListener('click', togglePlay);
     if (els.fsPrev) els.fsPrev.addEventListener('click', previous);
     if (els.fsNext) els.fsNext.addEventListener('click', next);
@@ -197,13 +276,11 @@ const UnifiedPlayer = (() => {
     if (els.queueClear) els.queueClear.addEventListener('click', clearQueue);
 
     if (els.fsProgress) {
-      _bindSeek(els.fsProgress, (pct) => {
-        if (audio.duration) audio.currentTime = pct * audio.duration;
-      });
+      _bindSeek(els.fsProgress, (pct) => _seekToPercent(pct), els.fsProgressFill, els.fsCurrentTime);
     }
   }
 
-  function _bindSeek(bar, onSeek) {
+  function _bindSeek(bar, onSeek, fillEl, timeEl) {
     let seeking = false;
     const getPercent = (e) => {
       const rect = bar.getBoundingClientRect();
@@ -214,10 +291,10 @@ const UnifiedPlayer = (() => {
       if (!seeking) return;
       e.preventDefault();
       const pct = getPercent(e);
-      if (els.fsProgressFill) els.fsProgressFill.style.width = (pct * 100) + '%';
-      if (els.fsCurrentTime && audio.duration) {
-        els.fsCurrentTime.textContent = _fmtTime(pct * audio.duration);
-      }
+      const live = _liveAudio();
+      const dur = (live && isFinite(live.duration) && live.duration > 0) ? live.duration : (state.duration || 0);
+      if (fillEl) fillEl.style.width = (pct * 100) + '%';
+      if (timeEl && dur) timeEl.textContent = _fmtTime(pct * dur);
     };
     const onEnd = (e) => {
       if (!seeking) return;
@@ -268,6 +345,12 @@ const UnifiedPlayer = (() => {
   }
 
   function play() {
+    if (state.externalEngine) {
+      if (typeof window.resumePlayback === 'function') { window.resumePlayback(); return; }
+      const live = _liveAudio();
+      if (live && live.src) live.play().catch(() => {});
+      return;
+    }
     if (!audio.src && state.track) {
       const src = state.track.audioUrl || state.track.streamUrl;
       if (src) {
@@ -279,12 +362,43 @@ const UnifiedPlayer = (() => {
   }
 
   function pause() {
+    if (state.externalEngine) {
+      if (typeof window.pausePlayback === 'function') { window.pausePlayback(); return; }
+      const live = _liveAudio();
+      if (live) live.pause();
+      return;
+    }
     audio.pause();
   }
 
   function togglePlay() {
+    if (state.externalEngine) {
+      if (typeof window.togglePlayPause === 'function') { window.togglePlayPause(); return; }
+      const live = _liveAudio();
+      if (live && !live.paused && (live.currentTime > 0 || audioPlayerCurrentSrc(live))) pause();
+      else play();
+      return;
+    }
     if (state.isPlaying) pause();
     else play();
+  }
+
+  function audioPlayerCurrentSrc(el) {
+    return el && el.src && el.src !== 'about:blank' && el.src !== '';
+  }
+
+  function _seekToPercent(pct) {
+    pct = Math.max(0, Math.min(1, pct));
+    if (state.externalEngine && typeof window.seekPlaybackToPercent === 'function') {
+      window.seekPlaybackToPercent(pct);
+      return;
+    }
+    const live = _liveAudio();
+    if (live && isFinite(live.duration) && live.duration > 0) {
+      live.currentTime = pct * live.duration;
+    }
+    state.currentTime = pct * (state.duration || 0);
+    _updateProgressUI();
   }
 
   function stop() {
@@ -337,6 +451,10 @@ const UnifiedPlayer = (() => {
     audio.volume = state.volume;
     state.muted = state.volume === 0;
     audio.muted = state.muted;
+    if (window.audioPlayer) {
+      window.audioPlayer.volume = state.volume;
+      window.audioPlayer.muted = state.muted;
+    }
     _updateVolumeUI();
     _saveState();
   }
@@ -345,12 +463,15 @@ const UnifiedPlayer = (() => {
     if (state.muted) {
       state.muted = false;
       audio.muted = false;
+      if (window.audioPlayer) window.audioPlayer.muted = false;
       if (state.volume === 0) state.volume = state.previousVolume || 0.5;
       audio.volume = state.volume;
+      if (window.audioPlayer) window.audioPlayer.volume = state.volume;
     } else {
       state.previousVolume = state.volume;
       state.muted = true;
       audio.muted = true;
+      if (window.audioPlayer) window.audioPlayer.muted = true;
     }
     _updateVolumeUI();
     _saveState();
@@ -502,10 +623,21 @@ const UnifiedPlayer = (() => {
     const title = t.title || t.name || 'Unknown';
     const artist = t.artist || t.album || (state.mode === 'fm' ? 'Live FM' : 'Unknown Artist');
     const art = t.art || t.thumbnail || t.thumbnailUrl || '';
+    const movie = t.movie || t.movieName || '';
+
+    let meta = '';
+    if (state.mode === 'fm') {
+      meta = [t.freq, t.genre, t.program].filter(Boolean).join(' • ') || 'Live';
+    } else {
+      meta = [movie, t.album && t.album !== movie ? t.album : '', t.label && t.label !== movie ? t.label : '']
+        .filter(Boolean)
+        .join(' • ');
+    }
 
     /* Bottom bar */
     _setText(els.bottomTitle, title);
     _setText(els.bottomArtist, artist);
+    _setText(els.bottomMeta, meta);
     if (els.bottomArt) {
       if (art) els.bottomArt.innerHTML = `<img src="${_escHTML(art)}" alt="">`;
       else els.bottomArt.innerHTML = `<i class="fas ${state.mode === 'fm' ? 'fa-radio' : 'fa-music'}"></i>`;
@@ -546,14 +678,40 @@ const UnifiedPlayer = (() => {
     if (els.bottomPlayPause) els.bottomPlayPause.classList.toggle('playing', state.isPlaying);
     if (els.fsPlayPause) els.fsPlayPause.classList.toggle('playing', state.isPlaying);
     if (els.fmPlayPause) els.fmPlayPause.classList.toggle('playing', state.isPlaying);
+
+    if (els.bottomArt) els.bottomArt.classList.toggle('spinning', state.isPlaying);
+    if (els.fsArtwork) els.fsArtwork.classList.toggle('spinning', state.isPlaying);
   }
 
-  function _updateProgressUI() {
-    const pct = state.duration > 0 ? (state.currentTime / state.duration) * 100 : 0;
+  function _updateProgressUI(forcePct, forceTime) {
+    const dur = (state.isLive || _liveAudio() === audio) && state.duration <= 0 ? 0 : state.duration;
+
+    let pct = 0;
+    if (forcePct !== undefined && forcePct !== null) {
+      pct = forcePct;
+    } else if (dur > 0) {
+      pct = (state.currentTime / dur) * 100;
+    }
+    pct = Math.max(0, Math.min(100, pct));
+
+    let shownTime = state.currentTime;
+    if (forceTime !== undefined && forceTime !== null && isFinite(forceTime)) shownTime = forceTime;
+
     if (els.bottomProgressFill) els.bottomProgressFill.style.width = pct + '%';
     if (els.fsProgressFill) els.fsProgressFill.style.width = pct + '%';
-    if (els.fsCurrentTime) els.fsCurrentTime.textContent = _fmtTime(state.currentTime);
-    if (els.fsDuration) els.fsDuration.textContent = _fmtTime(state.duration);
+    if (els.bottomCurrentTime) els.bottomCurrentTime.textContent = _fmtTime(shownTime);
+    if (els.fsCurrentTime) els.fsCurrentTime.textContent = _fmtTime(shownTime);
+    if (els.bottomDuration) els.bottomDuration.textContent = dur > 0 ? _fmtTime(dur) : (state.isLive ? 'LIVE' : '0:00');
+    if (els.fsDuration) els.fsDuration.textContent = dur > 0 ? _fmtTime(dur) : (state.isLive ? 'LIVE' : '0:00');
+    if (els.bottomSeek) {
+      const max = 1000;
+      const val = Math.round((pct / 100) * max);
+      if (!draggingSeek || forcePct !== undefined && forcePct !== null) {
+        els.bottomSeek.value = val;
+      }
+      els.bottomSeek.style.background = `linear-gradient(to right, #34d399 ${pct}%, rgba(255,255,255,0.18) ${pct}%)`;
+      els.bottomSeek.disabled = state.isLive;
+    }
   }
 
   function _updateVolumeUI() {
@@ -798,12 +956,32 @@ const UnifiedPlayer = (() => {
      PROGRESS LOOP
      ═══════════════════════════════════════════ */
   function _startProgressLoop() {
+    if (_progressLoopRunning) return;
+    _progressLoopRunning = true;
     function tick() {
+      if (!_progressLoopRunning) return;
       rafId = requestAnimationFrame(tick);
-      if (audio && !audio.paused) {
-        state.currentTime = audio.currentTime;
-        _updateProgressUI();
+
+      _adoptExternalEngine();
+
+      const live = _liveAudio();
+      if (!live) { _updatePlayUI(); return; }
+
+      const playing = !live.paused;
+      const prevPlaying = state.isPlaying;
+      state.isPlaying = playing;
+      if (playing !== prevPlaying) {
+        _updatePlayUI();
+        if (playing) _startAIAnimation(); else _stopAIAnimation();
       }
+
+      if (!draggingSeek) {
+        state.currentTime = live.currentTime || 0;
+        if (isFinite(live.duration) && live.duration > 0) state.duration = live.duration;
+        else if (state.isLive) state.duration = 0;
+      }
+
+      _updateProgressUI();
     }
     tick();
   }
@@ -849,7 +1027,10 @@ const UnifiedPlayer = (() => {
   function _restoreState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
+      if (!raw) {
+        _restoreFromScriptState();
+        return;
+      }
       const data = JSON.parse(raw);
       if (data.favorites) state.favorites = new Set(data.favorites);
       if (data.volume !== undefined) {
@@ -883,6 +1064,27 @@ const UnifiedPlayer = (() => {
         }
       }
     } catch (e) {}
+  }
+
+  /** Fallback: adopt script.js's persisted playback state (UI only, no autoplay).
+   *  script.js owns playback + position persistence via tamilAIStream_player_state,
+   *  so page navigation / PWA minimize / return restores the same position & state. */
+  function _restoreFromScriptState() {
+    try {
+      const data = JSON.parse(localStorage.getItem('tamilAIStream_player_state') || '{}');
+      const track = data.currentPlaybackTrack || data.currentStation || null;
+      if (!track) return;
+      state.track = track;
+      state.mode = data.currentPlaybackMode || (data.currentStation && !data.currentPlaybackTrack ? 'fm' : 'songs');
+      state.isLive = !!(track.streamUrl && !track.audioUrl);
+      state.currentTime = typeof data.progress === 'number' ? data.progress : 0;
+      state.duration = typeof data.duration === 'number' ? data.duration : 0;
+      state.externalEngine = true;
+      _showBottomBar();
+      _updateTrackUI();
+      _updatePlayUI();
+      _updateProgressUI();
+    } catch (e) { /* ignore */ }
   }
 
   function _persistFavorites() {
@@ -1116,13 +1318,16 @@ const UnifiedPlayer = (() => {
       if (queueIndex !== undefined) state.queueIndex = queueIndex;
       state.isLive = !!isLive;
       state.mode = isLive ? 'fm' : 'songs';
+      state.externalEngine = !!window.audioPlayer;
       _showBottomBar();
       _updateTrackUI();
       _updateFavUI();
+      _updatePlayUI();
       _saveState();
     },
     /** Update play/pause UI without changing audio state. */
     syncPlayState: (playing) => {
+      if (playing) state.externalEngine = !!window.audioPlayer;
       state.isPlaying = playing;
       _updatePlayUI();
       if (playing) _startAIAnimation();
