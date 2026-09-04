@@ -80,11 +80,6 @@
                 navigation: safeGet(global.DataStore.getNavigation?.bind(global.DataStore), {}),
                 sectionsOrder: safeGet(global.DataStore.getSectionsOrder?.bind(global.DataStore), []),
                 miniPlayerSettings: safeGet(global.DataStore.getMiniPlayerSettings?.bind(global.DataStore), {}),
-                playlists: safeGet(global.DataStore.getPlaylists?.bind(global.DataStore), []),
-                likedSongs: safeGet(global.DataStore.getLikedSongs?.bind(global.DataStore), []),
-                history: safeGet(global.DataStore.getHistory?.bind(global.DataStore), []),
-                queue: safeGet(global.DataStore.getQueue?.bind(global.DataStore), []),
-                settings: safeGet(global.DataStore.getYTSettings?.bind(global.DataStore), {}),
                 news: safeGet(global.DataStore.getNews?.bind(global.DataStore), []),
                 deletedIds: safeGet(global.DataStore.getDeletedIds?.bind(global.DataStore), {}),
                 trash: safeGet(global.DataStore.getTrash?.bind(global.DataStore), []),
@@ -124,12 +119,7 @@
             trash: readLocalStorage('tamilAIStream_trash', []),
             songsCollections: readLocalStorage('tamilAIStream_songsCollections', { left: [], right: [], settings: {} }),
             upcomingReleases: readLocalStorage('tamilAIStream_upcomingReleases', []),
-            newAlbums: readLocalStorage('tamilAIStream_newAlbums', []),
-            playlists: readLocalStorage('ytm_playlists', []),
-            likedSongs: readLocalStorage('ytm_likedSongs', []),
-            history: readLocalStorage('ytm_history', []),
-            queue: readLocalStorage('ytm_queue', []),
-            settings: readLocalStorage('ytm_settings', {})
+            newAlbums: readLocalStorage('tamilAIStream_newAlbums', [])
         };
 
         return payload;

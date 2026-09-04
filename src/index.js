@@ -467,8 +467,21 @@ async function handleStagingDiff(env) {
     const pubObj = await env.MEDIA_BUCKET.get('content-manifest.json');
     const stagingObj = await env.MEDIA_BUCKET.get('staging-manifest.json');
 
+    // No staging manifest means no pending, unverified changes to review —
+    // there is nothing to diff and nothing that should appear as pending.
+    if (!stagingObj) {
+      const publishedForAt = pubObj ? JSON.parse(await pubObj.text()) : null;
+      return json({
+        hasChanges: false,
+        changeCount: 0,
+        changes: [],
+        publishedAt: (publishedForAt && publishedForAt.updatedAt) || null,
+        stagingSavedAt: null,
+      });
+    }
+
     const published = pubObj ? JSON.parse(await pubObj.text()) : { data: {} };
-    const staging = stagingObj ? JSON.parse(await stagingObj.text()) : { data: {} };
+    const staging = JSON.parse(await stagingObj.text());
 
     const pubData = published.data || {};
     const stgData = staging.data || {};
