@@ -11,11 +11,10 @@ function _ensureFirebaseInit() {
     if (typeof firebase !== 'undefined' && !firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
-    // Initialize services on demand
-    window.FBAuth = typeof firebase !== 'undefined' ? firebase.auth() : null;
-    window.FBDb = typeof firebase !== 'undefined' ? firebase.firestore() : null;
-    window.FBStorage = typeof firebase !== 'undefined' ? firebase.storage() : null;
 }
+
+// Expose globally so login.js / script.js can call it before using firebase.auth()
+window.ensureFirebaseInit = _ensureFirebaseInit;
 
 // Lazy getter properties — Firebase only initializes when first accessed
 Object.defineProperty(window, 'FBAuth', {

@@ -2925,14 +2925,28 @@ function checkAdminAndShowBuilder() {
     }
 
     function _handleGoogleLogin() {
-        if (typeof firebase === 'undefined' || !firebase.auth) {
+        // Ensure Firebase is initialized
+        if (typeof window.ensureFirebaseInit === 'function') {
+            window.ensureFirebaseInit();
+        }
+
+        if (typeof firebase === 'undefined' || !firebase.apps.length) {
+            // Firebase not available — fallback to login page
             window.location.href = 'login.html?redirect=' + encodeURIComponent('index.html');
             return;
         }
+
+        var auth = firebase.auth();
+        if (!auth) {
+            window.location.href = 'login.html?redirect=' + encodeURIComponent('index.html');
+            return;
+        }
+
         var provider = new firebase.auth.GoogleAuthProvider();
         provider.addScope('email');
         provider.addScope('profile');
-        firebase.auth().signInWithPopup(provider).then(function(result) {
+
+        auth.signInWithPopup(provider).then(function(result) {
             if (result.user) {
                 var userData = {
                     name: result.user.displayName || 'Google User',
@@ -2947,8 +2961,10 @@ function checkAdminAndShowBuilder() {
             }
         }).catch(function(error) {
             console.error('Playback prompt Google login error:', error);
-            // If popup blocked, redirect to login page
-            if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+            // If popup blocked or not available, redirect to login page
+            if (error.code === 'auth/popup-blocked' ||
+                error.code === 'auth/cancelled-popup-request' ||
+                error.code === 'auth/popup-closed-by-user') {
                 window.location.href = 'login.html?redirect=' + encodeURIComponent('index.html');
             }
         });

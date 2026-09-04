@@ -608,19 +608,29 @@ DOM.registerForm?.addEventListener('submit', async function(e) {
 // ============================================
 async function signInWithGoogle() {
     try {
+        // Ensure Firebase is initialized before using it
+        if (typeof window.ensureFirebaseInit === 'function') {
+            window.ensureFirebaseInit();
+        }
+
         // Check if Firebase is available
-        if (typeof firebase === 'undefined' || !firebase.auth()) {
+        if (typeof firebase === 'undefined' || !firebase.apps.length) {
             throw new Error('Firebase not initialized. Please refresh the page.');
+        }
+
+        const auth = firebase.auth();
+        if (!auth) {
+            throw new Error('Firebase Auth not available. Please refresh the page.');
         }
 
         const provider = new firebase.auth.GoogleAuthProvider();
         
-        // Add scopes if needed
+        // Add scopes
         provider.addScope('email');
         provider.addScope('profile');
         
-        // Sign in with Google
-        const result = await firebase.auth().signInWithPopup(provider);
+        // Sign in with Google popup
+        const result = await auth.signInWithPopup(provider);
         
         if (result.user) {
             const user = result.user;
@@ -655,6 +665,10 @@ async function signInWithGoogle() {
             errorMessage = 'Sign-in was cancelled. Please try again.';
         } else if (error.code === 'auth/network-request-failed') {
             errorMessage = 'Network error. Please check your internet connection.';
+        } else if (error.code === 'auth/popup-blocked') {
+            errorMessage = 'Popup was blocked by your browser. Please allow popups for this site.';
+        } else if (error.code === 'auth/operation-not-allowed') {
+            errorMessage = 'Google sign-in is not enabled. Please contact support.';
         } else if (error.message) {
             errorMessage = error.message;
         }
