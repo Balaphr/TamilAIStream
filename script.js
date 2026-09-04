@@ -1315,6 +1315,11 @@ function playStation(stationName, stationId) {
             }
             hideLoadingSpinner();
             showPlaybackNotification(currentPlaybackTrack, true);
+            // Sync UnifiedPlayer UI (bottom bar + full screen) for FM
+            if (typeof UnifiedPlayer !== 'undefined') {
+                UnifiedPlayer.syncFromScript(currentPlaybackTrack, [], -1, true);
+                UnifiedPlayer.syncPlayState(true);
+            }
             if (typeof GlobalPlayer !== 'undefined') {
                 GlobalPlayer.showMiniPlayer();
                 if (GlobalPlayer.state) {
@@ -1411,6 +1416,11 @@ async function playSong(song, playlist = []) {
             // Smart Queue: auto-select next song based on mood/artist/movie
                         _updateSmartQueue(song, currentPlaylist);
             showPlaybackNotification(currentPlaybackTrack, false);
+            // Sync UnifiedPlayer UI (bottom bar + full screen)
+            if (typeof UnifiedPlayer !== 'undefined') {
+                UnifiedPlayer.syncFromScript(currentPlaybackTrack, currentPlaybackQueue, currentPlaybackQueueIndex, false);
+                UnifiedPlayer.syncPlayState(true);
+            }
             // Sync GlobalPlayer state for mini/expanded player
             if (typeof GlobalPlayer !== 'undefined') {
                 GlobalPlayer.showMiniPlayer();

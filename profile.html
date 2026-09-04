@@ -20,7 +20,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="profile.css">
-    <link rel="stylesheet" href="global-player.css">
 </head>
 <body>
     <div class="noise-overlay"></div>
@@ -415,13 +414,11 @@
 <script defer src="auth.js"></script>
     <script defer src="analytics-tracker.js"></script>
     <script defer src="profile.js"></script>
-    <script defer src="player-engine.js"></script>
-    <script defer src="global-player.js"></script>
+    <script defer src="unified-player.js"></script>
     <script defer src="brand-config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            if (typeof PlayerEngine !== 'undefined') PlayerEngine.init();
-            GlobalPlayer.init();
+            if (typeof UnifiedPlayer !== 'undefined') UnifiedPlayer.init();
         });
     </script>
 </body>
