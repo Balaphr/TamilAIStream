@@ -124,6 +124,27 @@ export default {
       if (url.pathname === '/api/staging/diff' && request.method === 'GET') {
         return handleStagingDiff(env);
       }
+
+      // --- Version snapshots ---
+      if (url.pathname === '/api/versions' && request.method === 'GET') {
+        return handleVersionsGet(env);
+      }
+      if (url.pathname === '/api/versions' && request.method === 'POST') {
+        return handleVersionsPost(request, env);
+      }
+      // /api/versions/:id/revert
+      const revertMatch = url.pathname.match(/^\/api\/versions\/([^/]+)\/revert$/);
+      if (revertMatch && request.method === 'POST') {
+        return handleVersionSnapshotRevert(revertMatch[1], env);
+      }
+      // /api/versions/:id
+      const versionMatch = url.pathname.match(/^\/api\/versions\/([^/]+)$/);
+      if (versionMatch && request.method === 'GET') {
+        return handleVersionSnapshotGet(versionMatch[1], env);
+      }
+      if (versionMatch && request.method === 'DELETE') {
+        return handleVersionSnapshotDelete(versionMatch[1], env);
+      }
       if (url.pathname === '/api/media/list' && request.method === 'GET') {
         return handleMediaList(url, env);
       }
@@ -472,6 +493,106 @@ async function handleStagingDiff(env) {
       publishedAt: published.updatedAt || null,
       stagingSavedAt: staging._stagingMeta?.savedAt || null,
     });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+// --- Version Snapshots ---
+
+async function handleVersionsGet(env) {
+  try {
+    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
+    // List all version snapshots under the versions/ prefix
+    const listed = await env.MEDIA_BUCKET.list({ prefix: 'versions/', limit: 100 });
+    const versions = [];
+    for (const obj of (listed.objects || [])) {
+      try {
+        const data = JSON.parse(await (await env.MEDIA_BUCKET.get(obj.key)).text());
+        versions.push({
+          id: obj.key.replace('versions/', '').replace('.json', ''),
+          label: data.label || obj.key,
+          savedBy: data.savedBy || 'Admin',
+          savedAt: data.savedAt || obj.uploaded,
+          sectionCount: data.data ? Object.keys(data.data).length : 0,
+        });
+      } catch (_) { /* skip corrupt entries */ }
+    }
+    // Sort newest first
+    versions.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+    return json({ versions });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+async function handleVersionsPost(request, env) {
+  try {
+    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
+    const body = await request.json();
+    const id = 'snap-' + Date.now();
+    const snapshot = {
+      label: body.label || 'Snapshot',
+      savedBy: body.savedBy || 'Admin',
+      savedAt: new Date().toISOString(),
+      data: body.data || {},
+    };
+    await env.MEDIA_BUCKET.put('versions/' + id + '.json', JSON.stringify(snapshot, null, 2), {
+      httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
+    });
+    // Keep only last 30 versions
+    const listed = await env.MEDIA_BUCKET.list({ prefix: 'versions/', limit: 100 });
+    if (listed.objects && listed.objects.length > 30) {
+      const sorted = listed.objects.sort((a, b) => new Date(a.uploaded) - new Date(b.uploaded));
+      for (let i = 0; i < sorted.length - 30; i++) {
+        await env.MEDIA_BUCKET.delete(sorted[i].key);
+      }
+    }
+    return json({ success: true, id, savedAt: snapshot.savedAt });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+async function handleVersionSnapshotGet(versionId, env) {
+  try {
+    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
+    const obj = await env.MEDIA_BUCKET.get('versions/' + versionId + '.json');
+    if (!obj) return json({ error: 'Version not found' }, 404);
+    const data = JSON.parse(await obj.text());
+    return json({ version: { id: versionId, ...data } });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+async function handleVersionSnapshotRevert(versionId, env) {
+  try {
+    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
+    const obj = await env.MEDIA_BUCKET.get('versions/' + versionId + '.json');
+    if (!obj) return json({ error: 'Version not found' }, 404);
+    const snapshot = JSON.parse(await obj.text());
+    // Apply reverted data to staging so Admin can review before publishing
+    const stagingPayload = {
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      data: snapshot.data || {},
+      _stagingMeta: { savedAt: new Date().toISOString(), savedBy: 'revert', source: 'revert-to-version:' + versionId },
+    };
+    await env.MEDIA_BUCKET.put('staging-manifest.json', JSON.stringify(stagingPayload, null, 2), {
+      httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
+    });
+    return json({ success: true, data: snapshot.data });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+async function handleVersionSnapshotDelete(versionId, env) {
+  try {
+    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
+    await env.MEDIA_BUCKET.delete('versions/' + versionId + '.json');
+    return json({ success: true });
   } catch (e) {
     return json({ error: e.message }, 500);
   }

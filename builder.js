@@ -1926,14 +1926,14 @@ async function publishChanges() {
 
     showToast('Publishing changes...', 'info');
     try {
-        // If in staging mode, promote staging → production via PublishManager
-        if (typeof PublishManager !== 'undefined' && PublishManager.isStagingMode()) {
-            // First save current state to staging
+        // ALL Builder writes go to staging. PublishManager.publish() promotes staging → production.
+        if (typeof PublishManager !== 'undefined') {
+            // First ensure current state is saved to staging
             await PublishManager.saveToStaging();
             // Then publish staging to production
             await PublishManager.publish();
-            PublishManager.exitStagingMode();
         } else {
+            // Fallback if PublishManager not loaded — still goes through staging
             await syncToLiveWebsiteImmediate();
         }
 

@@ -536,8 +536,10 @@
 
         if (!hasRemoteData) {
             // Remote has never been seeded. Only writers seed it.
+            // First seed goes to staging so Admin can review before publishing.
             if (isWriterPage() || forcePushBack) {
-                await uploadManifest(localPayload);
+                localPayload._stagingMeta = { savedAt: new Date().toISOString(), savedBy: 'admin', source: 'initial-seed' };
+                await uploadToStaging(localPayload);
                 persistLocalContent(localPayload);
                 return { payload: localPayload, source: 'seeded', changed: true };
             }
@@ -559,10 +561,11 @@
         applyDeletedIdsFilter(mergedPayload);
         persistLocalContent(mergedPayload);
 
-        // Writers always push their merged state back so any local-only item
-        // becomes visible to every device.
+        // Writers push their merged state to staging (never directly to production).
+        // This ensures local-only items are saved but do not affect the live site.
         if (isWriter) {
-            await uploadManifest(mergedPayload);
+            mergedPayload._stagingMeta = { savedAt: new Date().toISOString(), savedBy: 'admin', source: 'pullAndApply' };
+            await uploadToStaging(mergedPayload);
         }
 
         return { payload: mergedPayload, source: 'remote', changed: true, remoteChanged: remotePayload.updatedAt !== localPayload.updatedAt };
@@ -585,19 +588,20 @@
             const payload = buildContentPayload();
             applyDeletedIdsFilter(payload);
 
-            // Route to staging if PublishManager is in staging mode
-            if (typeof PublishManager !== 'undefined' && PublishManager.isStagingMode()) {
-                payload._stagingMeta = { savedAt: new Date().toISOString(), savedBy: 'admin' };
-                const savedAt = await uploadToStaging(payload);
-                persistLocalContent(payload);
-                notifyContentChanged();
-                return { payload, remoteUrl: null, staging: true, savedAt };
-            }
-
-            const remoteUrl = await uploadManifest(payload);
+            // CRITICAL: ALL Builder writes go to staging. NEVER to production.
+            // The public site only reads from content-manifest.json.
+            // Builder changes stay in staging-manifest.json until Admin publishes.
+            payload._stagingMeta = { savedAt: new Date().toISOString(), savedBy: 'admin' };
+            const savedAt = await uploadToStaging(payload);
             persistLocalContent(payload);
             notifyContentChanged();
-            return { payload, remoteUrl };
+
+            // Track change for history
+            if (typeof PublishManager !== 'undefined' && typeof PublishManager.trackSync === 'function') {
+                PublishManager.trackSync(payload);
+            }
+
+            return { payload, remoteUrl: null, staging: true, savedAt };
         } finally {
             releaseSyncLock();
         }

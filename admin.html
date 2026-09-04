@@ -10,455 +10,598 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
         :root {
-            --tb-bg: rgba(10, 10, 10, 0.95);
-            --tb-border: rgba(16, 185, 129, 0.25);
-            --tb-height: 52px;
-            --tb-accent: #10b981;
-            --tb-accent-hover: #34d399;
-            --tb-text: #ffffff;
-            --tb-text-dim: rgba(255, 255, 255, 0.5);
-            --tb-danger: #ef4444;
-            --tb-radius: 8px;
+            --tb-h: 46px;
+            --accent: #10b981;
+            --accent2: #34d399;
+            --danger: #ef4444;
+            --warn: #f59e0b;
+            --bg: #0a0a0a;
+            --bg2: #111;
+            --bg3: #1a1a1a;
+            --glass: rgba(255,255,255,0.06);
+            --glass2: rgba(255,255,255,0.10);
+            --border: rgba(255,255,255,0.08);
+            --border2: rgba(255,255,255,0.15);
+            --text: #fff;
+            --text2: rgba(255,255,255,0.6);
+            --text3: rgba(255,255,255,0.35);
+            --r: 10px;
+            --r2: 14px;
         }
+        html, body { height: 100%; overflow: hidden; background: #000; font-family: 'Inter', sans-serif; color: var(--text); }
 
-        html, body { height: 100%; overflow: hidden; background: #000; font-family: 'Inter', sans-serif; }
-
-        /* ── Admin Toolbar ── */
-        #admin-toolbar {
+        /* ════════════ TOOLBAR ════════════ */
+        #toolbar {
             position: fixed; top: 0; left: 0; right: 0; z-index: 999999;
-            height: var(--tb-height);
-            background: var(--tb-bg);
-            backdrop-filter: blur(20px) saturate(1.4);
-            -webkit-backdrop-filter: blur(20px) saturate(1.4);
-            border-bottom: 1px solid var(--tb-border);
-            display: flex; align-items: center; gap: 10px;
-            padding: 0 14px;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.5), 0 0 40px rgba(16,185,129,0.08);
-            font-size: 13px;
+            height: var(--tb-h); display: flex; align-items: center; gap: 8px;
+            padding: 0 12px; background: rgba(10,10,10,0.96);
+            backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5);
+            border-bottom: 1px solid rgba(16,185,129,0.2);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.5);
         }
-
-        #admin-toolbar .tb-brand {
-            display: flex; align-items: center; gap: 8px;
-            font-weight: 700; font-size: 14px; color: var(--tb-accent);
-            white-space: nowrap; margin-right: 6px;
-        }
-        #admin-toolbar .tb-brand i { font-size: 16px; }
-
-        #admin-toolbar .tb-divider {
-            width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 4px;
-        }
-
-        /* Staging indicator */
-        .tb-staging {
-            display: flex; align-items: center; gap: 6px;
-            padding: 5px 12px; border-radius: 999px;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
-            cursor: pointer; user-select: none;
-            transition: all 0.2s;
-        }
-        .tb-staging:hover { background: rgba(255,255,255,0.10); }
-        .tb-staging.active { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); }
-
-        .tb-staging .tb-dot {
-            width: 7px; height: 7px; border-radius: 50%;
-            background: var(--tb-text-dim);
-            transition: background 0.3s;
-        }
-        .tb-staging.active .tb-dot { background: var(--tb-accent); box-shadow: 0 0 8px rgba(16,185,129,0.6); }
-        .tb-staging .tb-label { color: var(--tb-text-dim); font-weight: 500; transition: color 0.2s; }
-        .tb-staging.active .tb-label { color: var(--tb-accent); }
-
-        /* Status text */
-        .tb-status { color: var(--tb-text-dim); font-size: 12px; white-space: nowrap; }
-
-        /* Action buttons */
-        .tb-btn {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 6px 14px; border-radius: var(--tb-radius);
-            border: 1px solid rgba(255,255,255,0.12);
-            background: rgba(255,255,255,0.06);
-            color: var(--tb-text); font-weight: 500; font-size: 12px;
-            cursor: pointer; transition: all 0.2s; white-space: nowrap;
-            text-decoration: none;
-        }
-        .tb-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
-        .tb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-        .tb-btn-accent {
-            background: rgba(16,185,129,0.15);
-            border-color: rgba(16,185,129,0.4);
-            color: var(--tb-accent);
-        }
-        .tb-btn-accent:hover:not(:disabled) {
-            background: rgba(16,185,129,0.25);
-            border-color: var(--tb-accent);
-            box-shadow: 0 0 16px rgba(16,185,129,0.2);
-        }
-
-        .tb-btn-danger {
-            color: var(--tb-danger);
-            border-color: rgba(239,68,68,0.3);
-        }
-        .tb-btn-danger:hover:not(:disabled) {
-            background: rgba(239,68,68,0.15);
-            border-color: rgba(239,68,68,0.5);
-        }
-
-        /* Spacer */
+        .tb-brand { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13px; color: var(--accent); white-space: nowrap; }
+        .tb-brand i { font-size: 15px; }
+        .tb-sep { width: 1px; height: 22px; background: rgba(255,255,255,0.08); margin: 0 2px; flex-shrink: 0; }
         .tb-spacer { flex: 1; }
 
-        /* Toast */
-        .tb-toast {
-            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
-            padding: 10px 20px; border-radius: 10px; z-index: 9999999;
-            font-size: 13px; font-weight: 500; opacity: 0;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: all 0.3s ease;
-            display: flex; align-items: center; gap: 8px;
+        /* Staging pill */
+        .tb-pill {
+            display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px;
+            background: var(--glass); border: 1px solid var(--border); cursor: pointer; user-select: none;
+            transition: all 0.2s; font-size: 11px; font-weight: 600;
         }
-        .tb-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-        .tb-toast-success { background: rgba(16,185,129,0.9); color: #fff; border-color: rgba(16,185,129,0.6); }
-        .tb-toast-error   { background: rgba(239,68,68,0.9); color: #fff; border-color: rgba(239,68,68,0.6); }
-        .tb-toast-info    { background: rgba(59,130,246,0.9); color: #fff; border-color: rgba(59,130,246,0.6); }
+        .tb-pill:hover { background: var(--glass2); }
+        .tb-pill.on { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); }
+        .tb-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); transition: all 0.3s; }
+        .tb-pill.on .tb-dot { background: var(--accent); box-shadow: 0 0 8px rgba(16,185,129,0.6); }
+        .tb-pill.on .tb-pill-t { color: var(--accent); }
 
-        /* Diff Modal */
-        .tb-modal-overlay {
+        /* Status */
+        .tb-status { font-size: 11px; color: var(--text3); white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Buttons */
+        .tb-btn {
+            display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 8px;
+            border: 1px solid var(--border2); background: var(--glass); color: var(--text);
+            font-weight: 500; font-size: 11px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+            text-decoration: none; line-height: 1;
+        }
+        .tb-btn:hover { background: var(--glass2); border-color: rgba(255,255,255,0.2); }
+        .tb-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .tb-btn-green { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); color: var(--accent); }
+        .tb-btn-green:hover:not(:disabled) { background: rgba(16,185,129,0.25); box-shadow: 0 0 12px rgba(16,185,129,0.15); }
+        .tb-btn-red { color: var(--danger); border-color: rgba(239,68,68,0.3); }
+        .tb-btn-red:hover:not(:disabled) { background: rgba(239,68,68,0.12); }
+        .tb-icon-btn {
+            width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; border: 1px solid var(--border); background: var(--glass);
+            color: var(--text2); cursor: pointer; transition: all 0.2s; font-size: 14px;
+        }
+        .tb-icon-btn:hover { background: var(--glass2); color: var(--text); }
+
+        /* ════════════ SIDE PANEL ════════════ */
+        #overlay {
             display: none; position: fixed; inset: 0; z-index: 9999998;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+        }
+        #overlay.open { display: block; }
+        #sidepanel {
+            position: fixed; top: 0; right: -340px; bottom: 0; width: 320px; z-index: 9999999;
+            background: var(--bg); border-left: 1px solid var(--border);
+            display: flex; flex-direction: column; transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: -8px 0 40px rgba(0,0,0,0.6);
+        }
+        #sidepanel.open { right: 0; }
+        .sp-head {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 18px; border-bottom: 1px solid var(--border);
+        }
+        .sp-head h3 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .sp-close {
+            width: 30px; height: 30px; border-radius: 8px; border: none; background: var(--glass);
+            color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 13px; transition: background 0.2s;
+        }
+        .sp-close:hover { background: var(--glass2); }
+        .sp-body { flex: 1; overflow-y: auto; padding: 8px 0; }
+        .sp-section { padding: 4px 0; }
+        .sp-label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; padding: 10px 18px 4px; }
+        .sp-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+            color: var(--text2); font-size: 13px; font-weight: 500; cursor: pointer;
+            transition: all 0.15s; border: none; background: none; width: 100%; text-align: left;
+        }
+        .sp-item:hover { background: var(--glass); color: var(--text); }
+        .sp-item i { width: 18px; text-align: center; font-size: 13px; }
+        .sp-item .sp-badge {
+            margin-left: auto; font-size: 10px; font-weight: 700; padding: 2px 7px;
+            border-radius: 999px; background: rgba(16,185,129,0.2); color: var(--accent);
+        }
+        .sp-item .sp-badge-warn { background: rgba(245,158,11,0.2); color: var(--warn); }
+        .sp-divider { height: 1px; background: var(--border); margin: 6px 18px; }
+        .sp-footer { padding: 12px 18px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text3); text-align: center; }
+
+        /* ════════════ MODALS ════════════ */
+        .modal-bg {
+            display: none; position: fixed; inset: 0; z-index: 99999990;
+            background: rgba(0,0,0,0.65); backdrop-filter: blur(8px);
             align-items: center; justify-content: center;
         }
-        .tb-modal-overlay.open { display: flex; }
-        .tb-modal {
-            background: #111; border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px; width: 90%; max-width: 640px; max-height: 80vh;
-            display: flex; flex-direction: column; overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        .modal-bg.open { display: flex; }
+        .modal {
+            background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2);
+            width: 92%; max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;
+            overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.7);
         }
-        .tb-modal-head {
+        .modal-h {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 14px 18px; border-bottom: 1px solid var(--border);
         }
-        .tb-modal-head h3 { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-        .tb-modal-close {
-            width: 32px; height: 32px; border-radius: 8px; border: none;
-            background: rgba(255,255,255,0.06); color: #fff; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 14px;
-            transition: background 0.2s;
+        .modal-h h3 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .modal-x {
+            width: 28px; height: 28px; border-radius: 7px; border: none; background: var(--glass);
+            color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; transition: background 0.2s;
         }
-        .tb-modal-close:hover { background: rgba(255,255,255,0.12); }
-        .tb-modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+        .modal-x:hover { background: var(--glass2); }
+        .modal-b { padding: 14px 18px; overflow-y: auto; flex: 1; font-size: 13px; }
+        .modal-f { padding: 10px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
 
-        .diff-section {
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        .diff-section:last-child { border-bottom: none; }
-        .diff-section-head {
-            display: flex; align-items: center; gap: 8px;
-            font-weight: 600; font-size: 13px; margin-bottom: 6px;
-        }
-        .diff-badge {
-            font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px;
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .diff-badge-modified { background: rgba(245,158,11,0.2); color: #f59e0b; }
-        .diff-badge-added    { background: rgba(16,185,129,0.2); color: #10b981; }
-        .diff-badge-removed  { background: rgba(239,68,68,0.2); color: #ef4444; }
-        .diff-badge-unchanged { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
-        .diff-counts { font-size: 12px; color: rgba(255,255,255,0.5); margin-left: auto; }
+        /* Diff items */
+        .d-sec { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .d-sec:last-child { border-bottom: none; }
+        .d-sec-h { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+        .d-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .d-b-mod { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        .d-b-add { background: rgba(16,185,129,0.2); color: #10b981; }
+        .d-b-rem { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .d-ct { font-size: 11px; color: var(--text3); margin-left: auto; }
+        .d-items { padding-left: 18px; }
+        .d-item { font-size: 12px; padding: 2px 0; }
+        .d-item-add { color: #34d399; }
+        .d-item-rem { color: #f87171; }
 
-        .diff-items { margin-top: 4px; padding-left: 20px; }
-        .diff-item { font-size: 12px; color: rgba(255,255,255,0.6); padding: 2px 0; }
-        .diff-item-added   { color: #34d399; }
-        .diff-item-removed { color: #f87171; }
-
-        .tb-modal-foot {
-            padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08);
-            display: flex; justify-content: flex-end; gap: 8px;
+        /* History items */
+        .h-entry {
+            display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-
-        .diff-empty {
-            text-align: center; padding: 40px 20px; color: rgba(255,255,255,0.4);
+        .h-entry:last-child { border-bottom: none; }
+        .h-icon {
+            width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; flex-shrink: 0;
         }
-        .diff-empty i { font-size: 36px; margin-bottom: 12px; display: block; }
-        .diff-empty h4 { font-size: 15px; margin-bottom: 6px; color: rgba(255,255,255,0.6); }
-        .diff-empty p { font-size: 12px; }
+        .h-icon-sync { background: rgba(59,130,246,0.15); color: #3b82f6; }
+        .h-icon-pub { background: rgba(16,185,129,0.15); color: #10b981; }
+        .h-icon-rev { background: rgba(239,68,68,0.15); color: #ef4444; }
+        .h-info { flex: 1; min-width: 0; }
+        .h-title { font-weight: 600; font-size: 12px; margin-bottom: 2px; }
+        .h-detail { font-size: 11px; color: var(--text3); line-height: 1.4; }
+        .h-meta { font-size: 10px; color: var(--text3); margin-top: 3px; display: flex; gap: 10px; }
+        .h-status { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+        .h-s-staging { background: rgba(59,130,246,0.2); color: #3b82f6; }
+        .h-s-published { background: rgba(16,185,129,0.2); color: #10b981; }
+        .h-s-reverted { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+        .empty-state {
+            text-align: center; padding: 40px 20px; color: var(--text3);
+        }
+        .empty-state i { font-size: 32px; margin-bottom: 10px; display: block; opacity: 0.5; }
+        .empty-state h4 { font-size: 14px; color: var(--text2); margin-bottom: 4px; }
+        .empty-state p { font-size: 11px; line-height: 1.5; }
 
         /* ── Site Iframe ── */
         #site-frame {
-            position: fixed;
-            top: var(--tb-height); left: 0; right: 0; bottom: 0;
-            border: none; width: 100%; height: calc(100vh - var(--tb-height));
+            position: fixed; top: var(--tb-h); left: 0; right: 0; bottom: 0;
+            border: none; width: 100%; height: calc(100vh - var(--tb-h));
         }
+
+        /* Toast */
+        #toast-box { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 99999999; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .toast {
+            padding: 8px 18px; border-radius: 10px; font-size: 12px; font-weight: 500;
+            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; gap: 7px; opacity: 0; transform: translateY(10px);
+            transition: all 0.3s; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast-ok { background: rgba(16,185,129,0.9); color: #fff; border-color: rgba(16,185,129,0.5); }
+        .toast-err { background: rgba(239,68,68,0.9); color: #fff; border-color: rgba(239,68,68,0.5); }
+        .toast-info { background: rgba(59,130,246,0.9); color: #fff; border-color: rgba(59,130,246,0.5); }
     </style>
 </head>
 <body>
 
-    <!-- ── Admin Toolbar ── -->
-    <div id="admin-toolbar">
-        <div class="tb-brand">
-            <i class="fas fa-shield-halved"></i>
-            <span>TamilAI Stream</span>
-        </div>
-
-        <div class="tb-divider"></div>
-
-        <!-- Staging Toggle -->
-        <div class="tb-staging" id="tbStaging" title="Toggle Staging Mode">
-            <span class="tb-dot"></span>
-            <span class="tb-label">Staging: OFF</span>
-        </div>
-
-        <div class="tb-divider"></div>
-
-        <!-- Status -->
-        <span class="tb-status" id="tbStatus">Loading...</span>
-
-        <div class="tb-spacer"></div>
-
-        <!-- Action Buttons -->
-        <button class="tb-btn" id="tbReviewBtn" title="Review pending changes">
-            <i class="fas fa-code-compare"></i> Review
-        </button>
-        <button class="tb-btn tb-btn-accent" id="tbPublishBtn" title="Publish staging to public">
-            <i class="fas fa-rocket"></i> Publish
-        </button>
-        <button class="tb-btn tb-btn-danger" id="tbDiscardBtn" title="Discard staging changes">
-            <i class="fas fa-trash-restore"></i> Discard
-        </button>
-
-        <div class="tb-divider"></div>
-
-        <!-- Site Links -->
-        <a class="tb-btn" href="builder.html" target="_blank" title="Open Builder">
-            <i class="fas fa-tools"></i>
-        </a>
-        <a class="tb-btn" href="/" target="_blank" title="Open Public Site">
-            <i class="fas fa-external-link-alt"></i>
-        </a>
+<!-- ═══════════ TOOLBAR ═══════════ -->
+<div id="toolbar">
+    <div class="tb-brand"><i class="fas fa-shield-halved"></i> <span>TamilAI</span></div>
+    <div class="tb-sep"></div>
+    <div class="tb-pill" id="pillStaging" title="Toggle Staging Mode">
+        <span class="tb-dot"></span>
+        <span class="tb-pill-t">Staging: OFF</span>
     </div>
+    <span class="tb-status" id="tbStatus">Loading…</span>
+    <div class="tb-spacer"></div>
+    <button class="tb-btn tb-btn-green" id="btnPublish" title="Publish to live"><i class="fas fa-rocket"></i> Publish</button>
+    <button class="tb-btn tb-btn-red" id="btnDiscard" title="Discard changes"><i class="fas fa-trash-restore"></i> Discard</button>
+    <div class="tb-sep"></div>
+    <a class="tb-btn" href="builder.html" target="_blank" title="Builder"><i class="fas fa-tools"></i></a>
+    <a class="tb-btn" href="/" target="_blank" title="Public site"><i class="fas fa-external-link-alt"></i></a>
+    <button class="tb-icon-btn" id="btnMenu" title="Admin Controls"><i class="fas fa-ellipsis-vertical"></i></button>
+</div>
 
-    <!-- ── Diff Modal ── -->
-    <div class="tb-modal-overlay" id="diffModal">
-        <div class="tb-modal">
-            <div class="tb-modal-head">
-                <h3><i class="fas fa-code-compare"></i> Pending Changes</h3>
-                <button class="tb-modal-close" id="diffModalClose"><i class="fas fa-xmark"></i></button>
-            </div>
-            <div class="tb-modal-body" id="diffModalBody"></div>
-            <div class="tb-modal-foot">
-                <button class="tb-btn" id="diffModalCloseBtn">Close</button>
-                <button class="tb-btn tb-btn-danger" id="diffModalDiscard"><i class="fas fa-trash-restore"></i> Discard</button>
-                <button class="tb-btn tb-btn-accent" id="diffModalPublish"><i class="fas fa-rocket"></i> Publish</button>
-            </div>
+<!-- ═══════════ OVERLAY ═══════════ -->
+<div id="overlay" onclick="closePanel()"></div>
+
+<!-- ═══════════ SIDE PANEL ═══════════ -->
+<div id="sidepanel">
+    <div class="sp-head">
+        <h3><i class="fas fa-sliders"></i> Admin Controls</h3>
+        <button class="sp-close" onclick="closePanel()"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="sp-body">
+        <div class="sp-section">
+            <div class="sp-label">Preview</div>
+            <button class="sp-item" id="spPreview"><i class="fas fa-rotate"></i> Refresh Test Site</button>
+            <button class="sp-item" id="spStaging"><i class="fas fa-toggle-on"></i> Staging Mode <span class="sp-badge" id="spStagingBadge" style="display:none;">ON</span></button>
+        </div>
+        <div class="sp-divider"></div>
+        <div class="sp-section">
+            <div class="sp-label">Review & Publish</div>
+            <button class="sp-item" id="spChanges"><i class="fas fa-clock-rotate-left"></i> Changes History</button>
+            <button class="sp-item" id="spPending"><i class="fas fa-code-compare"></i> Pending Changes <span class="sp-badge sp-badge-warn" id="spPendingBadge" style="display:none;">0</span></button>
+            <button class="sp-item" id="spPublish2"><i class="fas fa-rocket"></i> Publish Changes</button>
+        </div>
+        <div class="sp-divider"></div>
+        <div class="sp-section">
+            <div class="sp-label">Versions</div>
+            <button class="sp-item" id="spVersions"><i class="fas fa-code-branch"></i> Version History</button>
+            <button class="sp-item" id="spRestore"><i class="fas fa-rotate-left"></i> Restore / Revert Version</button>
+            <button class="sp-item" id="spPubHistory"><i class="fas fa-book"></i> Publish History</button>
+        </div>
+        <div class="sp-divider"></div>
+        <div class="sp-section">
+            <div class="sp-label">System</div>
+            <button class="sp-item" id="spSettings"><i class="fas fa-gear"></i> Settings</button>
         </div>
     </div>
+    <div class="sp-footer">TamilAI Stream Admin v2</div>
+</div>
 
-    <!-- ── Full Website Iframe ── -->
-    <iframe id="site-frame" src="/"></iframe>
+<!-- ═══════════ MODALS ═══════════ -->
 
-    <!-- ── Scripts ── -->
-    <script src="publish-manager.js"></script>
-    <script>
-    (function() {
-        const $ = id => document.getElementById(id);
-        const stagingEl     = $('tbStaging');
-        const stagingLabel  = stagingEl.querySelector('.tb-label');
-        const statusEl      = $('tbStatus');
-        const reviewBtn     = $('tbReviewBtn');
-        const publishBtn    = $('tbPublishBtn');
-        const discardBtn    = $('tbDiscardBtn');
-        const diffModal     = $('diffModal');
-        const diffBody      = $('diffModalBody');
-        const diffClose     = $('diffModalClose');
-        const diffCloseBtn  = $('diffModalCloseBtn');
-        const diffPublish   = $('diffModalPublish');
-        const diffDiscard   = $('diffModalDiscard');
+<!-- Pending Changes / Diff -->
+<div class="modal-bg" id="mDiff">
+    <div class="modal">
+        <div class="modal-h"><h3><i class="fas fa-code-compare"></i> Pending Changes</h3><button class="modal-x" onclick="closeModal('mDiff')"><i class="fas fa-xmark"></i></button></div>
+        <div class="modal-b" id="mDiffBody"></div>
+        <div class="modal-f">
+            <button class="tb-btn" onclick="closeModal('mDiff')">Close</button>
+            <button class="tb-btn tb-btn-red" id="mDiffDiscard"><i class="fas fa-trash-restore"></i> Discard</button>
+            <button class="tb-btn tb-btn-green" id="mDiffPublish"><i class="fas fa-rocket"></i> Publish</button>
+        </div>
+    </div>
+</div>
 
-        /* ── Toast ── */
-        function toast(msg, type) {
-            const t = document.createElement('div');
-            t.className = 'tb-toast tb-toast-' + (type || 'info');
-            t.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle') + '"></i> ' + msg;
-            document.body.appendChild(t);
-            requestAnimationFrame(() => t.classList.add('show'));
-            setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 4000);
-        }
+<!-- Changes History -->
+<div class="modal-bg" id="mHistory">
+    <div class="modal">
+        <div class="modal-h"><h3><i class="fas fa-clock-rotate-left"></i> Changes History</h3><button class="modal-x" onclick="closeModal('mHistory')"><i class="fas fa-xmark"></i></button></div>
+        <div class="modal-b" id="mHistoryBody"></div>
+        <div class="modal-f">
+            <button class="tb-btn" onclick="closeModal('mHistory')">Close</button>
+        </div>
+    </div>
+</div>
 
-        /* ── Refresh Status ── */
-        async function refreshStatus() {
-            try {
-                const st = await PublishManager.refreshStatus();
-                const isStaging = PublishManager.isStagingMode();
+<!-- Version History / Restore -->
+<div class="modal-bg" id="mVersions">
+    <div class="modal">
+        <div class="modal-h"><h3><i class="fas fa-code-branch"></i> Version History</h3><button class="modal-x" onclick="closeModal('mVersions')"><i class="fas fa-xmark"></i></button></div>
+        <div class="modal-b" id="mVersionsBody"></div>
+        <div class="modal-f">
+            <button class="tb-btn" onclick="closeModal('mVersions')">Close</button>
+        </div>
+    </div>
+</div>
 
-                stagingEl.classList.toggle('active', isStaging);
-                stagingLabel.textContent = isStaging ? 'Staging: ON' : 'Staging: OFF';
+<!-- Publish History -->
+<div class="modal-bg" id="mPubHistory">
+    <div class="modal">
+        <div class="modal-h"><h3><i class="fas fa-book"></i> Publish History</h3><button class="modal-x" onclick="closeModal('mPubHistory')"><i class="fas fa-xmark"></i></button></div>
+        <div class="modal-b" id="mPubHistoryBody"></div>
+        <div class="modal-f">
+            <button class="tb-btn" onclick="closeModal('mPubHistory')">Close</button>
+        </div>
+    </div>
+</div>
 
-                if (st.hasStaging) {
-                    const dt = st.stagingSavedAt ? new Date(st.stagingSavedAt).toLocaleString() : '';
-                    statusEl.textContent = 'Pending changes' + (dt ? ' — saved ' + dt : '');
-                    reviewBtn.style.display = '';
-                    publishBtn.style.display = '';
-                    discardBtn.style.display = '';
-                } else {
-                    statusEl.textContent = 'No pending changes';
-                    reviewBtn.style.display = 'none';
-                    publishBtn.style.display = 'none';
-                    discardBtn.style.display = 'none';
-                }
-            } catch (e) {
-                statusEl.textContent = 'Could not load status';
-                console.error('[Admin] refreshStatus error:', e);
-            }
-        }
+<!-- Settings -->
+<div class="modal-bg" id="mSettings">
+    <div class="modal">
+        <div class="modal-h"><h3><i class="fas fa-gear"></i> Settings</h3><button class="modal-x" onclick="closeModal('mSettings')"><i class="fas fa-xmark"></i></button></div>
+        <div class="modal-b" id="mSettingsBody">
+            <div style="display:flex;flex-direction:column;gap:14px;">
+                <div>
+                    <div style="font-weight:600;font-size:13px;margin-bottom:6px;">Staging Mode</div>
+                    <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">When ON, all Builder changes go to staging (test site only). When OFF, changes still go to staging (never auto-publish).</div>
+                </div>
+                <div>
+                    <div style="font-weight:600;font-size:13px;margin-bottom:6px;">Data Flow</div>
+                    <div style="font-size:12px;color:var(--text2);line-height:1.6;">
+                        <code style="background:var(--glass);padding:2px 6px;border-radius:4px;font-size:11px;">Builder → Staging → Admin Tests → Publish → Public</code>
+                    </div>
+                </div>
+                <div>
+                    <div style="font-weight:600;font-size:13px;margin-bottom:6px;">Danger Zone</div>
+                    <button class="tb-btn tb-btn-red" id="mClearHistory" style="margin-top:4px;"><i class="fas fa-trash"></i> Clear Changes History</button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-f">
+            <button class="tb-btn" onclick="closeModal('mSettings')">Close</button>
+        </div>
+    </div>
+</div>
 
-        /* ── Staging Toggle ── */
-        stagingEl.addEventListener('click', () => {
-            if (PublishManager.isStagingMode()) {
-                PublishManager.exitStagingMode();
-                toast('Staging OFF — changes publish directly', 'info');
+<!-- ═══════════ IFRAME ═══════════ -->
+<iframe id="site-frame" src="/"></iframe>
+
+<!-- ═══════════ TOAST ═══════════ -->
+<div id="toast-box"></div>
+
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script src="publish-manager.js"></script>
+<script>
+(function() {
+    'use strict';
+    const $ = id => document.getElementById(id);
+
+    // ── Panel / Modal helpers ──
+    window.closePanel = () => { $('sidepanel').classList.remove('open'); $('overlay').classList.remove('open'); };
+    window.closeModal = id => $(id).classList.remove('open');
+
+    function openPanel() { $('sidepanel').classList.add('open'); $('overlay').classList.add('open'); }
+    function openModal(id) { $(id).classList.add('open'); }
+
+    function toast(msg, type) {
+        const t = document.createElement('div');
+        t.className = 'toast toast-' + (type || 'info');
+        t.innerHTML = '<i class="fas fa-' + (type === 'ok' ? 'check-circle' : type === 'err' ? 'exclamation-circle' : 'info-circle') + '"></i> ' + msg;
+        $('toast-box').appendChild(t);
+        requestAnimationFrame(() => t.classList.add('show'));
+        setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3500);
+    }
+
+    // ── Status ──
+    async function refreshStatus() {
+        try {
+            const st = await PublishManager.refreshStatus();
+            const on = PublishManager.isStagingMode();
+            $('pillStaging').classList.toggle('on', on);
+            $('pillStaging').querySelector('.tb-pill-t').textContent = on ? 'Staging: ON' : 'Staging: OFF';
+            $('spStagingBadge').style.display = on ? '' : 'none';
+
+            const pending = $('spPendingBadge');
+            if (st.hasStaging) {
+                const dt = st.stagingSavedAt ? new Date(st.stagingSavedAt).toLocaleString() : '';
+                $('tbStatus').textContent = 'Pending changes' + (dt ? ' — ' + dt : '');
+                pending.style.display = '';
+                pending.textContent = (st.changeCount || '?');
+                $('btnPublish').style.display = '';
+                $('btnDiscard').style.display = '';
             } else {
-                PublishManager.enterStagingMode();
-                toast('Staging ON — changes saved to staging', 'info');
+                $('tbStatus').textContent = 'No pending changes';
+                pending.style.display = 'none';
+                $('btnPublish').style.display = 'none';
+                $('btnDiscard').style.display = 'none';
             }
+        } catch (e) {
+            $('tbStatus').textContent = 'Status unavailable';
+            console.error('[Admin]', e);
+        }
+    }
+
+    // ── Staging Toggle ──
+    function toggleStaging() {
+        if (PublishManager.isStagingMode()) {
+            PublishManager.exitStagingMode();
+            toast('Staging OFF', 'info');
+        } else {
+            PublishManager.enterStagingMode();
+            toast('Staging ON — changes go to staging', 'ok');
+        }
+        refreshStatus();
+    }
+    $('pillStaging').addEventListener('click', toggleStaging);
+    $('spStaging').addEventListener('click', () => { toggleStaging(); closePanel(); });
+
+    // ── Publish ──
+    async function doPublish() {
+        if (!confirm('Publish all staging changes to the live website?')) return;
+        $('btnPublish').disabled = true;
+        $('btnPublish').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        try {
+            await PublishManager.publish();
+            toast('Published to live website!', 'ok');
             refreshStatus();
-        });
+        } catch (e) { toast('Publish failed: ' + e.message, 'err'); }
+        $('btnPublish').disabled = false;
+        $('btnPublish').innerHTML = '<i class="fas fa-rocket"></i> Publish';
+    }
+    $('btnPublish').addEventListener('click', doPublish);
+    $('spPublish2').addEventListener('click', () => { closePanel(); doPublish(); });
 
-        /* ── Publish ── */
-        publishBtn.addEventListener('click', async () => {
-            if (!confirm('Publish staging changes to the public website?')) return;
-            publishBtn.disabled = true;
-            publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing…';
-            try {
-                await PublishManager.publish();
-                toast('Changes published to public website!', 'success');
-                refreshStatus();
-            } catch (e) {
-                toast('Publish failed: ' + e.message, 'error');
+    // ── Discard ──
+    async function doDiscard() {
+        if (!confirm('Discard all staging changes? This cannot be undone.')) return;
+        try {
+            await PublishManager.discardStaging();
+            toast('Staging changes discarded', 'info');
+            refreshStatus();
+        } catch (e) { toast('Discard failed: ' + e.message, 'err'); }
+    }
+    $('btnDiscard').addEventListener('click', doDiscard);
+
+    // ── Refresh Preview ──
+    $('spPreview').addEventListener('click', () => {
+        const f = $('site-frame');
+        f.src = f.src;
+        closePanel();
+        toast('Refreshing site…', 'info');
+    });
+
+    // ── Side Panel: 3-dot menu ──
+    $('btnMenu').addEventListener('click', openPanel);
+
+    // ── Side Panel: Pending Changes ──
+    $('spPending').addEventListener('click', async () => {
+        closePanel();
+        openModal('mDiff');
+        $('mDiffBody').innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>';
+        const diff = await PublishManager.getDiff();
+        renderDiff(diff);
+    });
+    $('mDiffPublish').addEventListener('click', async () => {
+        if (!confirm('Publish all staging changes?')) return;
+        try { await PublishManager.publish(); toast('Published!', 'ok'); closeModal('mDiff'); refreshStatus(); } catch (e) { toast('Failed: ' + e.message, 'err'); }
+    });
+    $('mDiffDiscard').addEventListener('click', async () => {
+        if (!confirm('Discard all staging changes?')) return;
+        try { await PublishManager.discardStaging(); toast('Discarded', 'info'); closeModal('mDiff'); refreshStatus(); } catch (e) { toast('Failed: ' + e.message, 'err'); }
+    });
+
+    function renderDiff(diff) {
+        if (!diff || !diff.hasChanges || !diff.changes || !diff.changes.length) {
+            $('mDiffBody').innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><h4>No Pending Changes</h4><p>Make changes in the Builder, then come back to review and publish.</p></div>';
+            return;
+        }
+        const sm = { modified: { b: 'd-b-mod', l: 'Modified' }, added: { b: 'd-b-add', l: 'Added' }, removed: { b: 'd-b-rem', l: 'Removed' }, items_added: { b: 'd-b-add', l: 'Items Added' }, items_removed: { b: 'd-b-rem', l: 'Items Removed' } };
+        $('mDiffBody').innerHTML = diff.changes.map(ch => {
+            const m = sm[ch.status] || sm.modified;
+            let items = '';
+            if (ch.itemChanges && ch.itemChanges.length) {
+                items = '<div class="d-items">' + ch.itemChanges.map(ic =>
+                    '<div class="d-item ' + (ic.type === 'added' ? 'd-item-add' : 'd-item-rem') + '"><i class="fas fa-' + (ic.type === 'added' ? 'plus' : 'minus') + '-circle"></i> ' + (ic.name || ic.id || '') + '</div>'
+                ).join('') + '</div>';
             }
-            publishBtn.disabled = false;
-            publishBtn.innerHTML = '<i class="fas fa-rocket"></i> Publish';
-        });
+            return '<div class="d-sec"><div class="d-sec-h"><span class="d-badge ' + m.b + '">' + m.l + '</span> ' + ch.section +
+                (ch.publishedItems != null || ch.stagingItems != null ? '<span class="d-ct">' + (ch.publishedItems != null ? 'Published: ' + ch.publishedItems + '  ' : '') + (ch.stagingItems != null ? 'Staging: ' + ch.stagingItems : '') + '</span>' : '') +
+                '</div>' + items + '</div>';
+        }).join('');
+    }
 
-        /* ── Discard ── */
-        discardBtn.addEventListener('click', async () => {
-            if (!confirm('Discard all staging changes?')) return;
-            try {
-                await PublishManager.discardStaging();
-                toast('Staging changes discarded', 'info');
-                refreshStatus();
-            } catch (e) {
-                toast('Discard failed: ' + e.message, 'error');
-            }
-        });
+    // ── Side Panel: Changes History ──
+    $('spChanges').addEventListener('click', async () => {
+        closePanel();
+        openModal('mHistory');
+        renderChangesHistory();
+    });
 
-        /* ── Review / Diff Modal ── */
-        reviewBtn.addEventListener('click', async () => {
-            diffModal.classList.add('open');
-            diffBody.innerHTML = '<div class="diff-empty"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>';
-            const diff = await PublishManager.getDiff();
-            renderDiff(diff);
-        });
-        diffClose.addEventListener('click', () => diffModal.classList.remove('open'));
-        diffCloseBtn.addEventListener('click', () => diffModal.classList.remove('open'));
+    function renderChangesHistory() {
+        const entries = PublishManager.getChangesHistory();
+        if (!entries.length) {
+            $('mHistoryBody').innerHTML = '<div class="empty-state"><i class="fas fa-clock-rotate-left"></i><h4>No Changes Recorded</h4><p>Changes will appear here as you make edits in the Builder.</p></div>';
+            return;
+        }
+        $('mHistoryBody').innerHTML = entries.slice(0, 100).map(e => {
+            const icon = e.type === 'publish' ? 'pub' : e.type === 'revert' ? 'rev' : 'sync';
+            const iconClass = e.type === 'publish' ? 'fa-rocket' : e.type === 'revert' ? 'fa-rotate-left' : 'fa-pen';
+            const statusClass = e.status === 'published' ? 'h-s-published' : e.status === 'reverted' ? 'h-s-reverted' : 'h-s-staging';
+            const dt = new Date(e.timestamp).toLocaleString();
+            return '<div class="h-entry">' +
+                '<div class="h-icon h-icon-' + icon + '"><i class="fas ' + iconClass + '"></i></div>' +
+                '<div class="h-info">' +
+                '<div class="h-title">' + (e.type === 'publish' ? 'Published' : e.type === 'revert' ? 'Reverted' : 'Synced to Staging') + '</div>' +
+                '<div class="h-detail">' + (e.details || e.sections?.join(', ') || '—') + '</div>' +
+                '<div class="h-meta"><span>' + dt + '</span><span>' + (e.admin || 'Admin') + '</span><span class="h-status ' + statusClass + '">' + e.status + '</span></div>' +
+                '</div></div>';
+        }).join('');
+    }
 
-        diffPublish.addEventListener('click', async () => {
-            if (!confirm('Publish all staging changes?')) return;
-            try {
-                await PublishManager.publish();
-                toast('Published!', 'success');
-                diffModal.classList.remove('open');
-                refreshStatus();
-            } catch (e) { toast('Publish failed: ' + e.message, 'error'); }
-        });
-        diffDiscard.addEventListener('click', async () => {
-            if (!confirm('Discard all staging changes?')) return;
-            try {
-                await PublishManager.discardStaging();
-                toast('Discarded', 'info');
-                diffModal.classList.remove('open');
-                refreshStatus();
-            } catch (e) { toast('Discard failed: ' + e.message, 'error'); }
-        });
+    // ── Side Panel: Version History ──
+    $('spVersions').addEventListener('click', async () => { closePanel(); openModal('mVersions'); await renderVersions(); });
+    $('spRestore').addEventListener('click', async () => { closePanel(); openModal('mVersions'); await renderVersions(true); });
 
-        function renderDiff(diff) {
-            if (!diff || !diff.hasChanges || !diff.changes || !diff.changes.length) {
-                diffBody.innerHTML =
-                    '<div class="diff-empty">' +
-                    '<i class="fas fa-check-circle"></i>' +
-                    '<h4>No Pending Changes</h4>' +
-                    '<p>Toggle Staging ON, make changes in the Builder, then come back to review and publish.</p>' +
+    async function renderVersions(selectMode) {
+        $('mVersionsBody').innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading versions…</p></div>';
+        try {
+            const res = await PublishManager.getVersions();
+            const versions = res.versions || [];
+            if (!versions.length) {
+                $('mVersionsBody').innerHTML = '<div class="empty-state"><i class="fas fa-code-branch"></i><h4>No Saved Versions</h4><p>Versions are saved automatically when you publish. You can also save manual snapshots.</p>' +
+                    (selectMode ? '' : '<button class="tb-btn tb-btn-green" id="mSaveSnap" style="margin-top:12px;"><i class="fas fa-camera"></i> Save Snapshot Now</button>') +
                     '</div>';
+                if (!selectMode) { const btn = $('mSaveSnap'); if (btn) btn.addEventListener('click', async () => { try { await PublishManager.saveVersionSnapshot('Manual snapshot'); toast('Snapshot saved', 'ok'); await renderVersions(); } catch (e) { toast('Failed: ' + e.message, 'err'); } }); }
                 return;
             }
-
-            const statusMap = {
-                modified:      { icon: 'fa-pen-to-square', color: '#f59e0b', badge: 'diff-badge-modified', label: 'Modified' },
-                added:         { icon: 'fa-plus-circle',   color: '#10b981', badge: 'diff-badge-added',    label: 'Added' },
-                removed:       { icon: 'fa-minus-circle',  color: '#ef4444', badge: 'diff-badge-removed',  label: 'Removed' },
-                items_added:   { icon: 'fa-arrow-up',      color: '#10b981', badge: 'diff-badge-added',    label: 'Items Added' },
-                items_removed: { icon: 'fa-arrow-down',    color: '#ef4444', badge: 'diff-badge-removed',  label: 'Items Removed' },
-            };
-
-            diffBody.innerHTML = diff.changes.map(ch => {
-                const m = statusMap[ch.status] || statusMap.modified;
-                let itemsHtml = '';
-                if (ch.itemChanges && ch.itemChanges.length) {
-                    itemsHtml = '<div class="diff-items">' + ch.itemChanges.map(ic =>
-                        '<div class="diff-item ' + (ic.type === 'added' ? 'diff-item-added' : 'diff-item-removed') + '">' +
-                        '<i class="fas fa-' + (ic.type === 'added' ? 'plus' : 'minus') + '-circle"></i> ' +
-                        (ic.name || ic.id || JSON.stringify(ic))
-                        + '</div>'
-                    ).join('') + '</div>';
-                }
-                return '<div class="diff-section">' +
-                    '<div class="diff-section-head">' +
-                    '<span class="diff-badge ' + m.badge + '">' + m.label + '</span> ' +
-                    '<span style="font-weight:600">' + ch.section + '</span>' +
-                    (ch.publishedItems != null || ch.stagingItems != null ?
-                        '<span class="diff-counts">' +
-                        (ch.publishedItems != null ? 'Published: ' + ch.publishedItems + '  ' : '') +
-                        (ch.stagingItems != null ? 'Staging: ' + ch.stagingItems : '') +
-                        '</span>' : '') +
-                    '</div>' + itemsHtml + '</div>';
+            let html = versions.map(v => {
+                const dt = new Date(v.savedAt).toLocaleString();
+                return '<div class="h-entry" style="' + (selectMode ? 'cursor:pointer;' : '') + '" data-vid="' + v.id + '">' +
+                    '<div class="h-icon h-icon-sync"><i class="fas fa-code-commit"></i></div>' +
+                    '<div class="h-info">' +
+                    '<div class="h-title">' + (v.label || v.id) + '</div>' +
+                    '<div class="h-meta"><span>' + dt + '</span><span>' + (v.savedBy || 'Admin') + '</span><span>' + (v.sectionCount || '?') + ' sections</span></div>' +
+                    '</div>' +
+                    (selectMode ? '<button class="tb-btn tb-btn-green" style="flex-shrink:0;" onclick="restoreVersion(\'' + v.id + '\', \'' + (v.label || v.id).replace(/'/g, "\\'") + '\')"><i class="fas fa-rotate-left"></i> Restore</button>' : '') +
+                    '</div>';
             }).join('');
+            if (!selectMode) {
+                html = '<div style="margin-bottom:12px;"><button class="tb-btn tb-btn-green" id="mSaveSnap2"><i class="fas fa-camera"></i> Save Snapshot</button></div>' + html;
+            }
+            $('mVersionsBody').innerHTML = html;
+            if (!selectMode) { const btn = $('mSaveSnap2'); if (btn) btn.addEventListener('click', async () => { try { await PublishManager.saveVersionSnapshot('Manual snapshot'); toast('Snapshot saved', 'ok'); await renderVersions(); } catch (e) { toast('Failed: ' + e.message, 'err'); } }); }
+        } catch (e) {
+            $('mVersionsBody').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h4>Failed to Load Versions</h4><p>' + e.message + '</p></div>';
         }
+    }
 
-        /* ── Iframe intercept: force staging on write ── */
-        const frame = $('site-frame');
-        frame.addEventListener('load', () => {
-            try {
-                const win = frame.contentWindow;
-                if (win && win.ContentSync) {
-                    const orig = win.ContentSync.syncCurrentState.bind(win.ContentSync);
-                    win.ContentSync.syncCurrentState = async function() {
-                        if (PublishManager.isStagingMode()) {
-                            const keys = [
-                                'songs','stations','categories','featured','trending',
-                                'artistHits','quotes','layout','tamilpodcasts',
-                                'englishpodcasts','hindipodcasts','premiumPodcasts',
-                                'radiostations','tamilradios','hindiradios','englishradios',
-                                'advertisements','minisettings','hero','siteconfig'
-                            ];
-                            const payload = { keys, data: {}, savedAt: new Date().toISOString(), source: 'admin-iframe' };
-                            keys.forEach(k => { try { payload.data[k] = win.DataStore.getXxx ? win.DataStore['get' + k.charAt(0).toUpperCase() + k.slice(1)]() : null; } catch(e) { payload.data[k] = null; } });
-                            await fetch('/api/staging', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                            refreshStatus();
-                        } else {
-                            return orig();
-                        }
-                    };
-                }
-            } catch (e) { /* cross-origin */ }
-        });
+    window.restoreVersion = async (id, label) => {
+        if (!confirm('Restore to version "' + label + '"?\nThis will load the version into staging for review before publishing.')) return;
+        try {
+            await PublishManager.revertToVersion(id);
+            toast('Restored to "' + label + '" — now in staging', 'ok');
+            closeModal('mVersions');
+            refreshStatus();
+        } catch (e) { toast('Restore failed: ' + e.message, 'err'); }
+    };
 
-        /* ── Init ── */
-        refreshStatus();
-    })();
-    </script>
+    // ── Side Panel: Publish History ──
+    $('spPubHistory').addEventListener('click', () => {
+        closePanel();
+        openModal('mPubHistory');
+        renderPublishHistory();
+    });
+
+    function renderPublishHistory() {
+        const entries = PublishManager.getPublishHistory();
+        if (!entries.length) {
+            $('mPubHistoryBody').innerHTML = '<div class="empty-state"><i class="fas fa-book"></i><h4>No Publish History</h4><p>Publish events will appear here after you publish changes.</p></div>';
+            return;
+        }
+        $('mPubHistoryBody').innerHTML = entries.slice(0, 50).map(e => {
+            const dt = new Date(e.timestamp).toLocaleString();
+            return '<div class="h-entry">' +
+                '<div class="h-icon h-icon-pub"><i class="fas fa-rocket"></i></div>' +
+                '<div class="h-info">' +
+                '<div class="h-title">Published to Live</div>' +
+                '<div class="h-detail">' + (e.details || (e.sections || []).join(', ') || '—') + '</div>' +
+                '<div class="h-meta"><span>' + dt + '</span><span>' + (e.admin || 'Admin') + '</span></div>' +
+                '</div></div>';
+        }).join('');
+    }
+
+    // ── Side Panel: Settings ──
+    $('spSettings').addEventListener('click', () => { closePanel(); openModal('mSettings'); });
+    $('mClearHistory').addEventListener('click', () => {
+        if (!confirm('Clear all changes history?')) return;
+        PublishManager.clearChangesHistory();
+        toast('History cleared', 'info');
+    });
+
+    // ── Init ──
+    refreshStatus();
+})();
+</script>
 </body>
 </html>
