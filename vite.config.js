@@ -66,7 +66,7 @@ function copyVanillaScripts() {
         'premium-landing.js',
         'builder.js', 'builder-360.js', 'admin.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
-        'app-init.js', 'site-integration.js', 'pwa.js', 'analytics.js', 'analytics-tracker.js',
+        'app-init.js', 'site-integration.js', 'pwa.js', 'pwa-splash.js', 'analytics.js', 'analytics-tracker.js',
         'brand-config.js', 've-edit-mode.js',
         'nexvora-model-manager.js', 'nexvora-api-config.js', 'nexvora-ai-service.js', 'nexvora.js'
       ]
