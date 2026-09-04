@@ -633,11 +633,13 @@ const PlayerEngine = (() => {
             const track = saved.currentTrack;
             const url = track.streamUrl || track.audioUrl || track.url;
             if (!url) return false;
-            // Set audio source without playing
+            
+            // Set audio source without playing initially
             audio.src = url;
             audio.volume = saved.volume !== undefined ? saved.volume : 0.8;
             audio.muted = saved.muted || false;
             if (saved.speed) audio.playbackRate = saved.speed;
+            
             // Restore position after metadata loads
             const position = saved.playbackPosition || 0;
             const onMeta = () => {
@@ -645,6 +647,7 @@ const PlayerEngine = (() => {
                 try { if (position > 0 && isFinite(position)) audio.currentTime = position; } catch(e) {}
             };
             audio.addEventListener('loadedmetadata', onMeta);
+            
             // Update state
             state.currentTrack = track;
             state.queue = saved.queue || [];
@@ -655,6 +658,28 @@ const PlayerEngine = (() => {
             state.playbackPosition = position;
             state.duration = saved.duration || 0;
             state.isPlaying = false;
+            
+            // AUTO-RESUME: If there was a meaningful playback position (>2s) and state was playing,
+            // automatically resume playback after metadata loads
+            const wasPlaying = saved.isPlaying !== undefined ? saved.isPlaying : false;
+            const hasPosition = position > 2;
+            const recent = saved.timestamp && (Date.now() - saved.timestamp < 86400000); // 24h
+            
+            if (wasPlaying && hasPosition && recent) {
+                const resumeOnMeta = () => {
+                    audio.removeEventListener('loadedmetadata', resumeOnMeta);
+                    try { if (position > 0 && isFinite(position)) audio.currentTime = position; } catch(e) {}
+                    audio.play().then(() => {
+                        state.isPlaying = true;
+                        emit('play', state);
+                        saveState();
+                    }).catch(() => {
+                        // If autoplay blocked, user will need to tap play
+                    });
+                };
+                audio.addEventListener('loadedmetadata', resumeOnMeta, { once: true });
+            }
+            
             return true;
         } catch(e) { return false; }
     }
@@ -712,6 +737,83 @@ const PlayerEngine = (() => {
         } catch(e) { return false; }
     }
 
+    function initMediaSession() {
+        if (!('mediaSession' in navigator)) return;
+
+        // Update Media Session metadata when track changes
+        const updateMetadata = () => {
+            if (!state.currentTrack) return;
+            const track = state.currentTrack;
+            try {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: track.title || track.name || 'Tamil AI Stream',
+                    artist: track.artist || 'Tamil AI Stream',
+                    album: track.movie || track.album || 'Tamil AI Stream',
+                    artwork: [
+                        { src: track.thumbnail || track.cover || track.albumCover || track.image || '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+                        { src: track.thumbnail || track.cover || track.albumCover || track.image || '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }
+                    ]
+                });
+            } catch (e) {}
+        };
+
+        // Set action handlers for background playback control
+        navigator.mediaSession.setActionHandler('play', () => {
+            if (audio && audio.paused) audio.play().catch(() => {});
+            state.isPlaying = true;
+            emit('play', state);
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+            if (audio) audio.pause();
+            state.isPlaying = false;
+            emit('pause', state);
+        });
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+            playPrevious();
+        });
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+            playNext();
+        });
+        navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+            const offset = details.seekOffset || 10;
+            if (audio && audio.currentTime) {
+                audio.currentTime = Math.max(0, audio.currentTime - offset);
+            }
+        });
+        navigator.mediaSession.setActionHandler('seekforward', (details) => {
+            const offset = details.seekOffset || 10;
+            if (audio && audio.currentTime) {
+                audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + offset);
+            }
+        });
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+            if (details.seekTime != null && audio) {
+                audio.currentTime = details.seekTime;
+            }
+        });
+
+        // Update playback state for Media Session
+        const updatePlaybackState = () => {
+            navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';
+        };
+
+        // Update metadata and state when track/state changes
+        on('trackChange', () => {
+            updateMetadata();
+            updatePlaybackState();
+        });
+        on('play', () => {
+            updatePlaybackState();
+        });
+        on('pause', () => {
+            updatePlaybackState();
+        });
+
+        // Set initial metadata if track exists
+        updateMetadata();
+        updatePlaybackState();
+    }
+
     function init() {
         loadState();
         window.addEventListener('beforeunload', saveStateImmediate);
@@ -723,11 +825,16 @@ const PlayerEngine = (() => {
             }
         });
 
-        // Restore audio from saved state (without playing)
+        // Restore audio from saved state (with auto-resume if applicable)
         const hasSavedTrack = restoreAudioFromState();
         if (hasSavedTrack) {
             // Emit initial state so UI can show the saved track info
             emit('trackChange', state);
+        }
+
+        // Initialize Media Session API for background playback control
+        if ('mediaSession' in navigator) {
+            initMediaSession();
         }
     }
 

@@ -35,7 +35,8 @@ const CRITICAL_ASSETS = [
   '/premium-landing.js',
   '/yt-music.js',
   '/data-store.js',
-  '/player-engine.js'
+  '/player-engine.js',
+  '/pwa-splash.js'
 ];
 
 /* ---- Install ---- */

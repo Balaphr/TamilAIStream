@@ -175,10 +175,14 @@ const GlobalPlayer = (() => {
                 updateShuffleUI();
                 updateRepeatUI();
                 updateProgressUI();
-                // Never auto-resume from storage. Restore track info only.
-                // User must press Play to start playback.
-                state.isPlaying = false;
-                updatePlayUI(false);
+                // Sync with PlayerEngine auto-resume: check if PlayerEngine has a track loaded and playing
+                if (typeof PlayerEngine !== 'undefined' && PlayerEngine.isPlaying) {
+                    state.isPlaying = true;
+                    updatePlayUI(true);
+                } else {
+                    state.isPlaying = false;
+                    updatePlayUI(false);
+                }
             }
             const gpState = JSON.parse(localStorage.getItem('global_player_state') || '{}');
             if (gpState.themeIdx !== undefined) { themeIdx = gpState.themeIdx; applyTheme(); }
