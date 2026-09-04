@@ -605,7 +605,8 @@ function navigateTo(page) {
         'aiwebflow': 'aiwebflowPage',
         'application': 'applicationPage',
         'songsCollections': 'songsCollectionsPage',
-        'newalbums': 'newAlbumsPage'
+        'newalbums': 'newAlbumsPage',
+        'staging': 'stagingPage'
     };
 
     const pageId = pageMap[page];
@@ -632,6 +633,7 @@ function _loadPageData(page) {
     if (page === 'musiccollections') loadMusicCollections();
     if (page === 'newalbums') loadNewAlbums();
     if (page === 'songsCollections') loadSongsCollectionsPage();
+    if (page === 'staging') loadStagingPage();
     if (page === 'images') loadAllImages();
     if (page === 'settings') loadSettings();
     if (page === 'moods') loadMoods();
@@ -6567,6 +6569,514 @@ function saveSongsCollections() {
         };
     }
 })();
+
+// ═══════════════════════════════════════════════════════════════
+//  STAGING & PRE-PUBLISH TESTS PAGE
+// ═══════════════════════════════════════════════════════════════
+
+let _stagingCheckResults = [];
+
+async function loadStagingPage() {
+    refreshStagingData();
+}
+
+async function refreshStagingData() {
+    const banner = document.getElementById('stagingBanner');
+    const bannerIcon = document.getElementById('stagingBannerIcon');
+    const bannerText = document.getElementById('stagingBannerText');
+
+    // Fetch staging diff
+    let diff = { hasChanges: false, changes: [], changeCount: 0 };
+    try { diff = await PublishManager.getDiff(); } catch (e) {}
+
+    // Fetch publish status
+    let status = {};
+    try { status = await PublishManager.refreshStatus(); } catch (e) {}
+
+    // Update banner
+    if (diff.hasChanges || status.hasStaging) {
+        banner.style.background = 'rgba(59,130,246,0.12)';
+        banner.style.border = '1px solid rgba(59,130,246,0.3)';
+        banner.style.color = '#60a5fa';
+        bannerIcon.className = 'fas fa-clock';
+        bannerText.textContent = diff.changeCount + ' pending change(s) ready for review — ' + (status.stagingSavedAt ? new Date(status.stagingSavedAt).toLocaleString() : 'Unknown time');
+    } else {
+        banner.style.background = 'rgba(16,185,129,0.12)';
+        banner.style.border = '1px solid rgba(16,185,129,0.3)';
+        banner.style.color = '#34d399';
+        bannerIcon.className = 'fas fa-check-circle';
+        bannerText.textContent = 'No pending changes — website is up to date';
+    }
+
+    // Render changes list
+    const changesList = document.getElementById('stagingChangesList');
+    const changeCount = document.getElementById('stagingChangeCount');
+    const changes = diff.changes || [];
+    changeCount.textContent = changes.length + ' change(s)';
+
+    if (changes.length === 0) {
+        changesList.innerHTML = '<div style="text-align:center;padding:20px;color:#666;font-size:13px;"><i class="fas fa-check-circle" style="font-size:24px;color:#10b981;display:block;margin-bottom:8px;"></i>No pending changes</div>';
+    } else {
+        changesList.innerHTML = changes.map(c => {
+            const colors = { added: '#10b981', modified: '#3b82f6', removed: '#ef4444', items_added: '#10b981', items_removed: '#ef4444', cleared: '#f59e0b' };
+            const icons = { added: 'fa-plus-circle', modified: 'fa-pen', removed: 'fa-trash', items_added: 'fa-plus', items_removed: 'fa-minus', cleared: 'fa-eraser' };
+            const action = c.action || 'modified';
+            return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:4px;">' +
+                '<i class="fas ' + (icons[action] || 'fa-circle') + '" style="color:' + (colors[action] || '#888') + ';width:16px;text-align:center;font-size:11px;"></i>' +
+                '<div style="flex:1;min-width:0;">' +
+                '<div style="font-size:12px;font-weight:600;">' + (c.section || c.key || 'Unknown') + '</div>' +
+                '<div style="font-size:10px;color:rgba(255,255,255,0.4);">' + action.replace(/_/g, ' ') + (c.changeCount ? ' (' + c.changeCount + ' items)' : '') + '</div>' +
+                '</div>' +
+                '<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);">' + (c.section ? 'section' : 'data') + '</span>' +
+                '</div>';
+        }).join('');
+    }
+
+    // Render affected pages
+    renderAffectedPages(changes);
+
+    // Run checks automatically
+    await runStagingChecks();
+}
+
+function renderAffectedPages(changes) {
+    const container = document.getElementById('stagingAffectedPages');
+    const sectionPages = {
+        'songs': ['index.html (Home)', 'builder.html'],
+        'stations': ['index.html (Home)'],
+        'categories': ['index.html (Home)'],
+        'featured': ['index.html (Home)'],
+        'trending': ['index.html (Home)'],
+        'artistHits': ['index.html (Home)'],
+        'songsCollections': ['index.html (Home)'],
+        'musicCollections': ['index.html (Home)'],
+        'newAlbums': ['index.html (Home)'],
+        'upcomingReleases': ['index.html (Home)'],
+        'siteSettings': ['index.html (Global)'],
+        'navigation': ['index.html (Top Nav)', 'index.html (Bottom Nav)'],
+        'layout': ['index.html (All Sections)'],
+        'moods': ['index.html (Home)'],
+        'decades': ['index.html (Home)'],
+        'aiRadio': ['index.html (Home)'],
+        'advertisements': ['index.html (Ads)'],
+        'notifications': ['index.html (Notifications)'],
+        'splash': ['splash.html'],
+        'playerPrefs': ['index.html (Player)'],
+        'miniPlayerSettings': ['index.html (Mini Player)'],
+        'images': ['All pages (Media)'],
+    };
+
+    const affected = new Set();
+    changes.forEach(c => {
+        const pages = sectionPages[c.section || c.key] || ['index.html'];
+        pages.forEach(p => affected.add(p));
+    });
+
+    if (affected.size === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:16px;color:#666;font-size:13px;">No pages affected</div>';
+        return;
+    }
+
+    container.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:6px;">' +
+        [...affected].map(p =>
+            '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:6px;font-size:11px;color:#60a5fa;">' +
+            '<i class="fas fa-file" style="font-size:9px;"></i>' + p + '</span>'
+        ).join('') + '</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  VALIDATION CHECKS ENGINE
+// ═══════════════════════════════════════════════════════════════
+
+async function runStagingChecks() {
+    const btn = document.getElementById('btnRunChecks');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...';
+
+    _stagingCheckResults = [];
+    const startTime = Date.now();
+
+    // ── 1. Data Integrity Checks ──
+    await _stagingCheck('Data integrity — Songs', 'Data integrity', () => {
+        const songs = DataStore.getSongs();
+        if (!Array.isArray(songs) || songs.length === 0) return { pass: false, msg: 'No songs found in DataStore', severity: 'error' };
+        const missing = songs.filter(s => !s.id || !s.title);
+        if (missing.length > 0) return { pass: false, msg: missing.length + ' song(s) missing id or title', severity: 'error' };
+        return { pass: true, msg: songs.length + ' songs valid' };
+    });
+
+    await _stagingCheck('Data integrity — Stations', 'Data integrity', () => {
+        const stations = DataStore.getStations();
+        if (!Array.isArray(stations)) return { pass: false, msg: 'Stations data is not an array', severity: 'error' };
+        const missing = stations.filter(s => !s.id || !s.name);
+        if (missing.length > 0) return { pass: false, msg: missing.length + ' station(s) missing id or name', severity: 'error' };
+        return { pass: true, msg: stations.length + ' stations valid' };
+    });
+
+    await _stagingCheck('Data integrity — Categories', 'Data integrity', () => {
+        const cats = DataStore.getCategories();
+        if (!Array.isArray(cats)) return { pass: false, msg: 'Categories data is not an array', severity: 'error' };
+        return { pass: true, msg: cats.length + ' categories' };
+    });
+
+    await _stagingCheck('Data integrity — Featured/Trending', 'Data integrity', () => {
+        const feat = DataStore.getFeatured();
+        const trend = DataStore.getTrending();
+        if (!Array.isArray(feat) || !Array.isArray(trend)) return { pass: false, msg: 'Featured or Trending data is invalid', severity: 'error' };
+        return { pass: true, msg: 'Featured: ' + feat.length + ', Trending: ' + trend.length };
+    });
+
+    await _stagingCheck('Data integrity — Songs Collections', 'Data integrity', () => {
+        const sc = DataStore.getSongsCollections();
+        if (!sc || !Array.isArray(sc.left) || !Array.isArray(sc.right)) return { pass: false, msg: 'Songs Collections data structure invalid', severity: 'error' };
+        return { pass: true, msg: 'Left: ' + sc.left.length + ', Right: ' + sc.right.length + ' songs' };
+    });
+
+    await _stagingCheck('Data integrity — Site Settings', 'Data integrity', () => {
+        const ss = DataStore.getSiteSettings();
+        if (!ss || typeof ss !== 'object') return { pass: false, msg: 'Site settings missing or invalid', severity: 'warning' };
+        return { pass: true, msg: 'Site settings present' };
+    });
+
+    await _stagingCheck('Data integrity — Navigation', 'Data integrity', () => {
+        const nav = DataStore.getNavigation();
+        if (!nav || typeof nav !== 'object') return { pass: false, msg: 'Navigation data missing', severity: 'warning' };
+        return { pass: true, msg: 'Navigation configured' };
+    });
+
+    // ── 2. Content Validation ──
+    await _stagingCheck('Content — Duplicate song IDs', 'Content validation', () => {
+        const songs = DataStore.getSongs() || [];
+        const ids = songs.map(s => s.id).filter(Boolean);
+        const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+        if (dupes.length > 0) return { pass: false, msg: dupes.length + ' duplicate song ID(s) found', severity: 'error' };
+        return { pass: true, msg: 'No duplicate song IDs' };
+    });
+
+    await _stagingCheck('Content — Broken image URLs', 'Content validation', () => {
+        const songs = DataStore.getSongs() || [];
+        const broken = songs.filter(s => s.albumCover && !s.albumCover.startsWith('http') && !s.albumCover.startsWith('data:'));
+        if (broken.length > 0) return { pass: false, msg: broken.length + ' song(s) with invalid image URLs', severity: 'warning' };
+        return { pass: true, msg: 'All image URLs valid' };
+    });
+
+    await _stagingCheck('Content — Empty sections check', 'Content validation', () => {
+        const featured = DataStore.getFeatured() || [];
+        const trending = DataStore.getTrending() || [];
+        const empty = [];
+        if (featured.length === 0) empty.push('Featured');
+        if (trending.length === 0) empty.push('Trending');
+        if (empty.length > 0) return { pass: false, msg: 'Empty sections: ' + empty.join(', '), severity: 'warning' };
+        return { pass: true, msg: 'All sections have content' };
+    });
+
+    // ── 3. Security Checks ──
+    await _stagingCheck('Security — XSS scan', 'Security', () => {
+        const songs = DataStore.getSongs() || [];
+        const suspect = songs.filter(s => {
+            const str = JSON.stringify(s);
+            return /<script|javascript:|onerror=|onload=/i.test(str);
+        });
+        if (suspect.length > 0) return { pass: false, msg: suspect.length + ' song(s) contain suspicious HTML/script content', severity: 'error' };
+        return { pass: true, msg: 'No XSS patterns detected' };
+    });
+
+    await _stagingCheck('Security — Malicious URLs', 'Security', () => {
+        const songs = DataStore.getSongs() || [];
+        const suspect = songs.filter(s => {
+            const urls = [s.albumCover, s.thumbnail, s.audioUrl, s.streamingUrl].filter(Boolean);
+            return urls.some(u => /javascript:|data:text\/html|\.exe|\.bat|\.php/i.test(u));
+        });
+        if (suspect.length > 0) return { pass: false, msg: suspect.length + ' song(s) with suspicious URLs', severity: 'error' };
+        return { pass: true, msg: 'No malicious URLs detected' };
+    });
+
+    await _stagingCheck('Security — API key exposure', 'Security', () => {
+        const settings = DataStore.getSiteSettings() || {};
+        const str = JSON.stringify(settings);
+        const keys = ['AIza', 'sk-', 'pk_', 'Bearer ', 'Authorization'];
+        const exposed = keys.filter(k => str.includes(k));
+        if (exposed.length > 0) return { pass: false, msg: 'Possible API key exposure in settings', severity: 'error' };
+        return { pass: true, msg: 'No API keys exposed' };
+    });
+
+    await _stagingCheck('Security — Bot / spam detection', 'Security', () => {
+        const songs = DataStore.getSongs() || [];
+        const spamTitles = songs.filter(s => {
+            const t = (s.title || '').toLowerCase();
+            return t.includes('buy now') || t.includes('click here') || t.includes('free money') || t.includes('www.') && t.length < 5;
+        });
+        if (spamTitles.length > 0) return { pass: false, msg: spamTitles.length + ' song(s) flagged as potential spam', severity: 'warning' };
+        return { pass: true, msg: 'No spam/bot content detected' };
+    });
+
+    // ── 4. Performance Checks ──
+    await _stagingCheck('Performance — Total data size', 'Performance', () => {
+        let totalSize = 0;
+        const keys = ['songs', 'stations', 'categories', 'featured', 'trending', 'artistHits', 'quotes', 'siteSettings', 'layout', 'moods', 'aiRadio', 'navigation', 'sectionsOrder', 'miniPlayerSettings', 'songsCollections', 'newAlbums', 'upcomingReleases', 'advertisements'];
+        keys.forEach(k => {
+            try { totalSize += (localStorage.getItem('tamilAIStream_' + k) || '').length; } catch (e) {}
+        });
+        const kb = Math.round(totalSize / 1024);
+        if (kb > 5120) return { pass: false, msg: 'Total data size: ' + kb + ' KB (exceeds 5 MB limit)', severity: 'error' };
+        if (kb > 2048) return { pass: true, msg: 'Total data size: ' + kb + ' KB (large but OK)', severity: 'warning' };
+        return { pass: true, msg: 'Total data size: ' + kb + ' KB' };
+    });
+
+    await _stagingCheck('Performance — Song count', 'Performance', () => {
+        const songs = DataStore.getSongs() || [];
+        if (songs.length > 500) return { pass: false, msg: songs.length + ' songs (may slow down mobile)', severity: 'warning' };
+        return { pass: true, msg: songs.length + ' songs (good)' };
+    });
+
+    await _stagingCheck('Performance — Image optimization', 'Performance', () => {
+        const songs = DataStore.getSongs() || [];
+        const largeImages = songs.filter(s => {
+            const url = s.albumCover || s.thumbnail || '';
+            return url.includes('unsplash') || url.includes('original');
+        });
+        if (largeImages.length > 10) return { pass: false, msg: largeImages.length + ' songs using large unoptimized images', severity: 'warning' };
+        return { pass: true, msg: 'Image optimization OK' };
+    });
+
+    // ── 5. Publish readiness ──
+    await _stagingCheck('Publish — Staging manifest exists', 'Publish readiness', async () => {
+        try {
+            const st = await PublishManager.getState();
+            if (!st.hasStaging) return { pass: false, msg: 'No staging manifest found — save changes first', severity: 'error' };
+            return { pass: true, msg: 'Staging manifest ready' };
+        } catch (e) {
+            return { pass: false, msg: 'Cannot check staging status: ' + e.message, severity: 'error' };
+        }
+    });
+
+    await _stagingCheck('Publish — API connectivity', 'Publish readiness', async () => {
+        try {
+            const resp = await fetch('/api/publish', { method: 'GET' });
+            if (!resp.ok) return { pass: false, msg: 'API returned status ' + resp.status, severity: 'error' };
+            return { pass: true, msg: 'API reachable' };
+        } catch (e) {
+            return { pass: false, msg: 'API unreachable: ' + e.message, severity: 'error' };
+        }
+    });
+
+    // Calculate results
+    const elapsed = Date.now() - startTime;
+    const errors = _stagingCheckResults.filter(r => r.severity === 'error' && !r.pass);
+    const warnings = _stagingCheckResults.filter(r => r.severity === 'warning' && !r.pass);
+    const passed = _stagingCheckResults.filter(r => r.pass);
+    const total = _stagingCheckResults.length;
+    const score = total > 0 ? Math.round((passed.length / total) * 100) : 0;
+
+    // Update score ring
+    const arc = document.getElementById('stagingScoreArc');
+    const num = document.getElementById('stagingScoreNum');
+    const label = document.getElementById('stagingScoreLabel');
+    const circumference = 326.7;
+    arc.style.strokeDashoffset = circumference - (circumference * score / 100);
+    arc.style.stroke = score === 100 ? '#10b981' : score >= 70 ? '#f59e0b' : '#ef4444';
+    num.textContent = score + '%';
+    num.style.color = score === 100 ? '#10b981' : score >= 70 ? '#f59e0b' : '#ef4444';
+
+    if (score === 100) {
+        label.textContent = 'All checks passed — Ready to publish!';
+        label.style.color = '#10b981';
+    } else if (errors.length > 0) {
+        label.textContent = errors.length + ' error(s) must be fixed before publishing';
+        label.style.color = '#ef4444';
+    } else {
+        label.textContent = warnings.length + ' warning(s) — publish allowed';
+        label.style.color = '#f59e0b';
+    }
+
+    // Update counts
+    document.getElementById('stagingCheckCount').textContent = passed.length + ' / ' + total + ' passed';
+    document.getElementById('stagingErrorCount').textContent = errors.length + ' error' + (errors.length !== 1 ? 's' : '');
+    document.getElementById('stagingWarningCount').textContent = warnings.length + ' warning' + (warnings.length !== 1 ? 's' : '');
+
+    // Enable/disable publish button
+    const publishBtn = document.getElementById('btnStagingPublish');
+    const forceBtn = document.getElementById('btnForcePublish');
+    const publishLabel = document.getElementById('stagingPublishLabel');
+    const publishDesc = document.getElementById('stagingPublishDesc');
+
+    if (errors.length === 0) {
+        publishBtn.disabled = false;
+        forceBtn.disabled = true;
+        publishLabel.textContent = 'Ready to Publish';
+        publishLabel.style.color = '#10b981';
+        publishDesc.textContent = 'All critical checks passed (' + elapsed + 'ms)';
+    } else {
+        publishBtn.disabled = true;
+        forceBtn.disabled = false;
+        publishLabel.textContent = 'BLOCKED — ' + errors.length + ' error(s) found';
+        publishLabel.style.color = '#ef4444';
+        publishDesc.textContent = 'Fix all errors before publishing, or use Force Publish';
+    }
+
+    // Update security status
+    const secChecks = _stagingCheckResults.filter(r => r.category === 'Security');
+    const secPass = secChecks.filter(r => r.pass).length;
+    document.getElementById('stagingSecurityStatus').textContent = secPass + ' / ' + secChecks.length + ' passed';
+    document.getElementById('stagingSecurityStatus').style.color = secPass === secChecks.length ? '#10b981' : '#ef4444';
+
+    // Update perf status
+    const perfChecks = _stagingCheckResults.filter(r => r.category === 'Performance');
+    const perfPass = perfChecks.filter(r => r.pass).length;
+    document.getElementById('stagingPerfStatus').textContent = perfPass + ' / ' + perfChecks.length + ' passed';
+    document.getElementById('stagingPerfStatus').style.color = perfPass === perfChecks.length ? '#10b981' : '#f59e0b';
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-play-circle"></i> Run All Checks';
+}
+
+async function _stagingCheck(name, category, fn) {
+    let result = { pass: true, msg: 'OK', severity: 'info' };
+    try {
+        const r = await fn();
+        if (r) result = { ...result, ...r };
+    } catch (e) {
+        result = { pass: false, msg: 'Check failed: ' + e.message, severity: 'error' };
+    }
+    const entry = { name, category, ...result, time: new Date().toISOString() };
+    _stagingCheckResults.push(entry);
+    _renderStagingCheck(entry);
+    return entry;
+}
+
+function _renderStagingCheck(entry) {
+    // Update checks list
+    const list = document.getElementById('stagingChecksList');
+    if (list.querySelector('[style*="text-align:center"]')) list.innerHTML = '';
+
+    const colors = { error: '#ef4444', warning: '#f59e0b', info: '#10b981' };
+    const icons = { error: 'fa-times-circle', warning: 'fa-exclamation-triangle', info: 'fa-check-circle' };
+    const sev = entry.pass ? 'info' : (entry.severity || 'info');
+
+    const el = document.createElement('div');
+    el.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px;';
+    el.innerHTML = '<i class="fas ' + (icons[sev] || 'fa-circle') + '" style="color:' + (colors[sev] || '#888') + ';width:14px;text-align:center;font-size:10px;"></i>' +
+        '<div style="flex:1;min-width:0;">' +
+        '<span style="font-weight:600;">' + entry.name + '</span>' +
+        '<span style="color:rgba(255,255,255,0.4);margin-left:6px;">' + entry.msg + '</span>' +
+        '</div>';
+    list.appendChild(el);
+
+    // Update security list
+    if (entry.category === 'Security') {
+        const secList = document.getElementById('stagingSecurityList');
+        if (secList.querySelector('[style*="text-align:center"]')) secList.innerHTML = '';
+        const secEl = el.cloneNode(true);
+        secList.appendChild(secEl);
+    }
+
+    // Update perf list
+    if (entry.category === 'Performance') {
+        const perfList = document.getElementById('stagingPerfList');
+        if (perfList.querySelector('[style*="text-align:center"]')) perfList.innerHTML = '';
+        const perfEl = el.cloneNode(true);
+        perfList.appendChild(perfEl);
+    }
+
+    // Update issues log
+    if (!entry.pass) {
+        const log = document.getElementById('stagingIssuesLog');
+        if (log.querySelector('[style*="text-align:center"]')) log.innerHTML = '';
+        const logEl = document.createElement('div');
+        const logColor = entry.severity === 'error' ? '#ef4444' : '#f59e0b';
+        logEl.style.cssText = 'padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.03);color:' + logColor + ';';
+        logEl.textContent = '[' + entry.severity.toUpperCase() + '] ' + entry.name + ': ' + entry.msg;
+        log.appendChild(logEl);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PUBLISH FROM STAGING (verified only)
+// ═══════════════════════════════════════════════════════════════
+
+async function stagingPublish() {
+    const errors = _stagingCheckResults.filter(r => r.severity === 'error' && !r.pass);
+    if (errors.length > 0) {
+        showToast('Cannot publish: ' + errors.length + ' error(s) must be fixed first', 'error');
+        return;
+    }
+
+    if (!confirm('Publish verified staging content to the live website?')) return;
+
+    const btn = document.getElementById('btnStagingPublish');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+
+    try {
+        await PublishManager.saveToStaging();
+        await PublishManager.publish();
+
+        if ('caches' in window) {
+            try {
+                const names = await caches.keys();
+                for (const name of names) await caches.delete(name);
+            } catch (e) {}
+        }
+
+        localStorage.removeItem('tamilAIStream_lastSyncedAt');
+
+        publishState = 'published';
+        savePublishState();
+        updatePublishUI();
+
+        showToast('Published successfully! Live website updated.', 'success');
+        addActivity('Staging Published', 'Verified staging content published to live');
+        await refreshStagingData();
+    } catch (e) {
+        console.error('Staging publish error:', e);
+        showToast('Publish failed: ' + e.message, 'error');
+    }
+
+    btn.innerHTML = '<i class="fas fa-rocket"></i> Publish to Live';
+}
+
+async function forcePublish() {
+    const errors = _stagingCheckResults.filter(r => r.severity === 'error' && !r.pass);
+    if (!confirm('WARNING: You are about to publish with ' + errors.length + ' unresolved error(s):\n\n' +
+        errors.map(e => '- ' + e.name + ': ' + e.msg).join('\n') +
+        '\n\nThis may cause issues on the live website. Continue?')) return;
+
+    const btn = document.getElementById('btnForcePublish');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Force publishing...';
+
+    try {
+        await PublishManager.saveToStaging();
+        await PublishManager.publish();
+
+        if ('caches' in window) {
+            try {
+                const names = await caches.keys();
+                for (const name of names) await caches.delete(name);
+            } catch (e) {}
+        }
+
+        publishState = 'published';
+        savePublishState();
+        updatePublishUI();
+
+        showToast('Force published! Check live website for issues.', 'success');
+        addActivity('Force Published', 'Content published with ' + errors.length + ' unresolved error(s)');
+        await refreshStagingData();
+    } catch (e) {
+        console.error('Force publish error:', e);
+        showToast('Force publish failed: ' + e.message, 'error');
+    }
+
+    btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Force Publish';
+}
+
+// Global exports
+window.loadStagingPage = loadStagingPage;
+window.refreshStagingData = refreshStagingData;
+window.runStagingChecks = runStagingChecks;
+window.stagingPublish = stagingPublish;
+window.forcePublish = forcePublish;
 
 // Brand logo upload + preview
 document.addEventListener('DOMContentLoaded', function() {
