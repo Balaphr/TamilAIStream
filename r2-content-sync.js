@@ -441,6 +441,32 @@
         }
     }
 
+    async function uploadToStaging(payload) {
+        try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 20000);
+            let response;
+            try {
+                response = await fetch('/api/staging', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+            } finally {
+                clearTimeout(timer);
+            }
+            if (!response.ok) {
+                throw new Error(`Staging upload failed with status ${response.status}`);
+            }
+            const result = await response.json();
+            return result.success ? result.savedAt : null;
+        } catch (error) {
+            console.warn('Staging manifest upload failed:', error);
+            return null;
+        }
+    }
+
     // Simple lock to prevent concurrent syncs
     function acquireSyncLock() {
         const now = Date.now();
@@ -558,6 +584,16 @@
         try {
             const payload = buildContentPayload();
             applyDeletedIdsFilter(payload);
+
+            // Route to staging if PublishManager is in staging mode
+            if (typeof PublishManager !== 'undefined' && PublishManager.isStagingMode()) {
+                payload._stagingMeta = { savedAt: new Date().toISOString(), savedBy: 'admin' };
+                const savedAt = await uploadToStaging(payload);
+                persistLocalContent(payload);
+                notifyContentChanged();
+                return { payload, remoteUrl: null, staging: true, savedAt };
+            }
+
             const remoteUrl = await uploadManifest(payload);
             persistLocalContent(payload);
             notifyContentChanged();

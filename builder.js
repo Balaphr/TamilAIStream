@@ -1926,7 +1926,16 @@ async function publishChanges() {
 
     showToast('Publishing changes...', 'info');
     try {
-        await syncToLiveWebsiteImmediate();
+        // If in staging mode, promote staging → production via PublishManager
+        if (typeof PublishManager !== 'undefined' && PublishManager.isStagingMode()) {
+            // First save current state to staging
+            await PublishManager.saveToStaging();
+            // Then publish staging to production
+            await PublishManager.publish();
+            PublishManager.exitStagingMode();
+        } else {
+            await syncToLiveWebsiteImmediate();
+        }
 
         if ('caches' in window) {
             try {

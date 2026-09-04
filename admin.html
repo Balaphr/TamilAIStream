@@ -136,6 +136,37 @@
                         </div>
                     </div>
                     <div class="admin-sidebar-section" style="margin-top:auto; padding-top:20px; border-top:1px solid var(--border-glass);">
+                        <!-- Publish Controls -->
+                        <div class="admin-sidebar-section" id="publishSection">
+                            <div class="admin-sidebar-title">
+                                <i class="fas fa-rocket"></i> Publish
+                                <span class="publish-status-dot" id="publishStatusDot" style="display:none;"></span>
+                            </div>
+                            <div class="admin-sidebar-menu">
+                                <div class="publish-mode-toggle" id="publishModeToggle">
+                                    <span class="publish-mode-label">Staging Mode</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="stagingModeCheckbox">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="publish-info" id="publishInfo">
+                                    <div class="publish-info-row" id="publishInfoRow" style="display:none;">
+                                        <i class="fas fa-clock"></i>
+                                        <span id="publishInfoText">No staging changes</span>
+                                    </div>
+                                </div>
+                                <button class="admin-sidebar-item publish-action-btn" id="reviewChangesBtn" style="display:none;">
+                                    <i class="fas fa-code-compare"></i> Review Changes
+                                </button>
+                                <button class="admin-sidebar-item publish-action-btn publish-btn-primary" id="publishNowBtn" style="display:none;">
+                                    <i class="fas fa-rocket"></i> Publish Now
+                                </button>
+                                <button class="admin-sidebar-item publish-action-btn publish-btn-danger" id="discardChangesBtn" style="display:none;">
+                                    <i class="fas fa-trash-restore"></i> Discard Changes
+                                </button>
+                            </div>
+                        </div>
                         <a href="builder.html" target="_blank" class="admin-sidebar-item builder-link" style="justify-content:center; padding:14px 16px;">
                             <i class="fas fa-tools"></i> Website Builder
                         </a>
@@ -460,9 +491,59 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Review Changes Page -->
+                    <div class="admin-page" id="reviewPage" style="display:none;">
+                        <div class="admin-page-header">
+                            <h1 class="admin-page-title"><i class="fas fa-code-compare"></i> Changes Review</h1>
+                            <div class="admin-page-actions">
+                                <button class="admin-btn" id="refreshDiffBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                                <button class="admin-btn admin-btn-primary" id="publishFromReviewBtn"><i class="fas fa-rocket"></i> Publish All Changes</button>
+                                <button class="admin-btn admin-btn-danger" id="discardFromReviewBtn"><i class="fas fa-trash-restore"></i> Discard All</button>
+                            </div>
+                        </div>
+                        <div class="review-status-bar" id="reviewStatusBar">
+                            <div class="review-status-item">
+                                <span class="review-status-label">Last Published:</span>
+                                <span class="review-status-value" id="reviewPublishedAt">—</span>
+                            </div>
+                            <div class="review-status-item">
+                                <span class="review-status-label">Staging Saved:</span>
+                                <span class="review-status-value" id="reviewStagingAt">—</span>
+                            </div>
+                            <div class="review-status-item">
+                                <span class="review-status-label">Pending Changes:</span>
+                                <span class="review-status-value" id="reviewChangeCount">0</span>
+                            </div>
+                        </div>
+                        <div class="review-changes-list" id="reviewChangesList">
+                            <div class="review-empty" id="reviewEmpty">
+                                <i class="fas fa-check-circle"></i>
+                                <h3>No Pending Changes</h3>
+                                <p>Enable Staging Mode in the sidebar, make changes in the Builder, then come back to review and publish.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Changes Review Modal -->
+    <div class="review-modal-overlay" id="reviewModalOverlay" style="display:none;">
+        <div class="review-modal">
+            <div class="review-modal-header">
+                <h2><i class="fas fa-code-compare"></i> Changes Detail</h2>
+                <button class="review-modal-close" id="reviewModalClose"><i class="fas fa-xmark"></i></button>
+            </div>
+            <div class="review-modal-body" id="reviewModalBody">
+                <div class="review-section-detail" id="reviewSectionDetail"></div>
+            </div>
+            <div class="review-modal-footer">
+                <button class="admin-btn" id="reviewModalCloseBtn">Close</button>
+                <button class="admin-btn admin-btn-primary" id="reviewModalPublishBtn"><i class="fas fa-rocket"></i> Publish</button>
+            </div>
+        </div>
     </div>
 
     <!-- R2 Upload -->
@@ -470,7 +551,198 @@
     <script src="r2-config.js"></script>
     <script src="r2-upload.js"></script>
     <script src="r2-content-sync.js"></script>
+    <script src="publish-manager.js"></script>
     <script src="admin.js"></script>
     <script src="brand-config.js"></script>
+    <script>
+    // ============================================
+    // Publish Controls Logic
+    // ============================================
+    (function() {
+        const $ = (id) => document.getElementById(id);
+        const stagingCheckbox = $('stagingModeCheckbox');
+        const publishInfoRow = $('publishInfoRow');
+        const publishInfoText = $('publishInfoText');
+        const reviewChangesBtn = $('reviewChangesBtn');
+        const publishNowBtn = $('publishNowBtn');
+        const discardChangesBtn = $('discardChangesBtn');
+        const publishStatusDot = $('publishStatusDot');
+        const refreshDiffBtn = $('refreshDiffBtn');
+        const publishFromReviewBtn = $('publishFromReviewBtn');
+        const discardFromReviewBtn = $('discardFromReviewBtn');
+        const reviewModalOverlay = $('reviewModalOverlay');
+        const reviewModalClose = $('reviewModalClose');
+        const reviewModalCloseBtn = $('reviewModalCloseBtn');
+        const reviewModalPublishBtn = $('reviewModalPublishBtn');
+
+        function showPublishToast(msg, type) {
+            let t = document.createElement('div');
+            t.className = 'publish-toast publish-toast-' + (type || 'info');
+            t.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle') + '"></i><span>' + msg + '</span>';
+            document.body.appendChild(t);
+            setTimeout(() => t.classList.add('visible'), 10);
+            setTimeout(() => { t.classList.remove('visible'); setTimeout(() => t.remove(), 300); }, 4000);
+        }
+
+        async function updatePublishUI() {
+            const state = await PublishManager.refreshStatus();
+            stagingCheckbox.checked = PublishManager.isStagingMode();
+
+            if (state.hasStaging) {
+                publishInfoRow.style.display = 'flex';
+                const date = state.stagingSavedAt ? new Date(state.stagingSavedAt).toLocaleString() : 'Unknown';
+                publishInfoText.textContent = 'Staging saved: ' + date;
+                reviewChangesBtn.style.display = 'flex';
+                publishNowBtn.style.display = 'flex';
+                discardChangesBtn.style.display = 'flex';
+                publishStatusDot.style.display = 'inline-block';
+                publishStatusDot.className = 'publish-status-dot has-changes';
+            } else {
+                publishInfoRow.style.display = 'none';
+                reviewChangesBtn.style.display = 'none';
+                publishNowBtn.style.display = 'none';
+                discardChangesBtn.style.display = 'none';
+                publishStatusDot.style.display = 'none';
+            }
+        }
+
+        // Staging mode toggle
+        stagingCheckbox?.addEventListener('change', function() {
+            if (this.checked) {
+                PublishManager.enterStagingMode();
+                showPublishToast('Staging mode enabled. Changes will be saved to staging.', 'info');
+            } else {
+                PublishManager.exitStagingMode();
+                showPublishToast('Staging mode disabled. Changes will be published directly.', 'info');
+            }
+        });
+
+        // Review Changes
+        reviewChangesBtn?.addEventListener('click', async function() {
+            // Show the review page
+            document.querySelectorAll('.admin-page').forEach(p => p.style.display = 'none');
+            $('reviewPage').style.display = 'block';
+            document.querySelectorAll('.admin-sidebar-item').forEach(i => i.classList.remove('active'));
+            await loadReviewChanges();
+        });
+
+        // Publish Now
+        publishNowBtn?.addEventListener('click', async function() {
+            if (!confirm('Publish all staging changes to the public website?')) return;
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+            try {
+                await PublishManager.publish();
+                showPublishToast('Changes published successfully! Public website updated.', 'success');
+                await updatePublishUI();
+            } catch (e) {
+                showPublishToast('Publish failed: ' + e.message, 'error');
+            }
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-rocket"></i> Publish Now';
+        });
+
+        // Discard Changes
+        discardChangesBtn?.addEventListener('click', async function() {
+            if (!confirm('Discard all staging changes? This cannot be undone.')) return;
+            try {
+                await PublishManager.discardStaging();
+                showPublishToast('Staging changes discarded.', 'info');
+                await updatePublishUI();
+            } catch (e) {
+                showPublishToast('Discard failed: ' + e.message, 'error');
+            }
+        });
+
+        // Review page actions
+        refreshDiffBtn?.addEventListener('click', loadReviewChanges);
+        publishFromReviewBtn?.addEventListener('click', async function() {
+            if (!confirm('Publish all staging changes to the public website?')) return;
+            try {
+                await PublishManager.publish();
+                showPublishToast('Changes published successfully!', 'success');
+                await updatePublishUI();
+                // Go back to dashboard
+                document.querySelectorAll('.admin-page').forEach(p => p.style.display = 'none');
+                $('dashboardPage').style.display = 'block';
+            } catch (e) {
+                showPublishToast('Publish failed: ' + e.message, 'error');
+            }
+        });
+        discardFromReviewBtn?.addEventListener('click', async function() {
+            if (!confirm('Discard all staging changes? This cannot be undone.')) return;
+            try {
+                await PublishManager.discardStaging();
+                showPublishToast('Staging changes discarded.', 'info');
+                await updatePublishUI();
+                document.querySelectorAll('.admin-page').forEach(p => p.style.display = 'none');
+                $('dashboardPage').style.display = 'block';
+            } catch (e) {
+                showPublishToast('Discard failed: ' + e.message, 'error');
+            }
+        });
+
+        // Modal
+        reviewModalClose?.addEventListener('click', () => { reviewModalOverlay.style.display = 'none'; });
+        reviewModalCloseBtn?.addEventListener('click', () => { reviewModalOverlay.style.display = 'none'; });
+        reviewModalPublishBtn?.addEventListener('click', async function() {
+            if (!confirm('Publish all staging changes?')) return;
+            try {
+                await PublishManager.publish();
+                showPublishToast('Published!', 'success');
+                reviewModalOverlay.style.display = 'none';
+                await updatePublishUI();
+            } catch (e) {
+                showPublishToast('Publish failed: ' + e.message, 'error');
+            }
+        });
+
+        async function loadReviewChanges() {
+            const diff = await PublishManager.getDiff();
+            const list = $('reviewChangesList');
+            const empty = $('reviewEmpty');
+            $('reviewPublishedAt').textContent = diff.publishedAt ? new Date(diff.publishedAt).toLocaleString() : '—';
+            $('reviewStagingAt').textContent = diff.stagingSavedAt ? new Date(diff.stagingSavedAt).toLocaleString() : '—';
+            $('reviewChangeCount').textContent = diff.changeCount || 0;
+
+            if (!diff.hasChanges || !diff.changes.length) {
+                list.innerHTML = '';
+                list.appendChild(empty);
+                empty.style.display = 'flex';
+                return;
+            }
+            empty.style.display = 'none';
+            const statusIcons = {
+                modified: '<i class="fas fa-pen-to-square" style="color:#f59e0b;"></i>',
+                added: '<i class="fas fa-plus-circle" style="color:#10b981;"></i>',
+                removed: '<i class="fas fa-minus-circle" style="color:#ef4444;"></i>',
+                items_added: '<i class="fas fa-arrow-up" style="color:#10b981;"></i>',
+                items_removed: '<i class="fas fa-arrow-down" style="color:#ef4444;"></i>',
+            };
+            const statusLabels = {
+                modified: 'Modified', added: 'Added', removed: 'Removed',
+                items_added: 'Items Added', items_removed: 'Items Removed',
+            };
+            list.innerHTML = diff.changes.map(ch => `
+                <div class="review-change-card" data-section="${ch.section}">
+                    <div class="review-change-icon">${statusIcons[ch.status] || statusIcons.modified}</div>
+                    <div class="review-change-info">
+                        <div class="review-change-section">${ch.section}</div>
+                        <div class="review-change-status">${statusLabels[ch.status] || ch.status}</div>
+                    </div>
+                    <div class="review-change-counts">
+                        ${ch.publishedItems !== null ? '<span class="review-count-pub">Published: ' + ch.publishedItems + '</span>' : ''}
+                        ${ch.stagingItems !== null ? '<span class="review-count-stg">Staging: ' + ch.stagingItems + '</span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Init
+        if (typeof PublishManager !== 'undefined') {
+            updatePublishUI();
+        }
+    })();
+    </script>
 </body>
 </html>
