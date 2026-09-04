@@ -389,6 +389,9 @@
                         <button class="premium-nav-item premium-topnav-item" data-page="playlists" title="Playlists">
                             <i class="fas fa-list"></i><span>Playlists</span>
                         </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="ai-assistant" title="AI Assistant">
+                            <i class="fas fa-robot"></i><span>AI Assistant</span>
+                        </button>
                         <button class="premium-nav-item premium-topnav-item" data-page="stations" title="Stations">
                             <i class="fas fa-tower-broadcast"></i><span>Stations</span>
                         </button>
@@ -557,6 +560,10 @@
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-list"></i></div>
                                 <span>Playlists</span>
                             </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="ai-assistant">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-robot"></i></div>
+                                <span>AI Assistant</span>
+                            </button>
                         </div>
 
                         <div class="premium-sidebar-divider"></div>
@@ -618,55 +625,7 @@
                     <!-- Good Morning Section (top of Home) -->
                     <div class="greeting-section" data-section="greeting"></div>
 
-                    <!-- AI Orb — Attraction Element -->
-                    <div class="ai-orb-wrap" id="aiOrbWrap">
-                        <div class="ai-orb" id="aiOrb" role="button" tabindex="0" aria-label="Ask AI for music suggestions">
-                            <div class="ai-orb-rings" aria-hidden="true">
-                                <div class="ai-orb-ring ai-orb-ring-1"></div>
-                                <div class="ai-orb-ring ai-orb-ring-2"></div>
-                                <div class="ai-orb-ring ai-orb-ring-3"></div>
-                            </div>
-                            <div class="ai-orb-glow" aria-hidden="true"></div>
-                            <div class="ai-orb-core">
-                                <div class="ai-orb-wave" aria-hidden="true">
-                                    <span></span><span></span><span></span><span></span><span></span>
-                                </div>
-                                <div class="ai-orb-icon">
-                                    <i class="fas fa-wand-magic-sparkles"></i>
-                                </div>
-                            </div>
-                            <div class="ai-orb-label">
-                                <span class="ai-orb-label-text">What do you want to hear?</span>
-                                <span class="ai-orb-label-sub">Tap to ask AI</span>
-                            </div>
-                        </div>
-                        <div class="ai-orb-panel" id="aiOrbPanel">
-                            <div class="ai-orb-panel-header">
-                                <div class="ai-orb-panel-title"><i class="fas fa-sparkles"></i> AI Music Assistant</div>
-                                <button class="ai-orb-panel-close" id="aiOrbPanelClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
-                            </div>
-                            <div class="ai-orb-panel-body" id="aiOrbPanelBody">
-                                <div class="ai-orb-panel-messages" id="aiOrbMessages">
-                                    <div class="ai-orb-msg ai-orb-msg-ai">
-                                        <div class="ai-orb-msg-avatar"><i class="fas fa-robot"></i></div>
-                                        <div class="ai-orb-msg-text">Hi! I can help you find the perfect music. Try asking me things like:<br><em>"Play relaxing Tamil songs"</em> or <em>"90s melodies"</em></div>
-                                    </div>
-                                </div>
-                                <div class="ai-orb-panel-suggestions" id="aiOrbSuggestions">
-                                    <button class="ai-orb-suggestion" data-q="play relaxing Tamil songs">Relaxing Tamil</button>
-                                    <button class="ai-orb-suggestion" data-q="play 90s melodies">90s Melodies</button>
-                                    <button class="ai-orb-suggestion" data-q="play romantic songs">Romantic</button>
-                                    <button class="ai-orb-suggestion" data-q="play energy boost">Energy Boost</button>
-                                    <button class="ai-orb-suggestion" data-q="play Ilaiyaraaja hits">Ilaiyaraaja</button>
-                                    <button class="ai-orb-suggestion" data-q="play latest Tamil songs">Latest Hits</button>
-                                </div>
-                            </div>
-                            <div class="ai-orb-panel-input">
-                                <input type="text" id="aiOrbInput" placeholder="e.g. play A.R. Rahman songs..." autocomplete="off">
-                                <button class="ai-orb-send" id="aiOrbSend" aria-label="Send"><i class="fas fa-paper-plane"></i></button>
-                            </div>
-                        </div>
-                    </div>
+                    
 
                     <!-- New Album Section -->
                     <section class="ai-panel new-album-section" data-section="ai-new-album" id="newAlbumSection" style="display:none;">
@@ -1248,13 +1207,159 @@
                             </ul>
                             <button class="premium-plan-btn" id="premiumFamilyBtn">Coming Soon</button>
                         </div>
+</div>
+            </div>
+        </div>
+
+        <!-- ============ PAGE: AI ASSISTANT ============ -->
+        <div class="ytm-page ytm-page-ai-assistant" id="page-ai-assistant">
+            <div class="ai-assistant-page" id="aiAssistantPage">
+                <div class="ai-assistant-header">
+                    <h1><i class="fas fa-robot"></i> AI Assistant</h1>
+                    <p>Your personal music concierge — ask me anything!</p>
+                </div>
+
+                <!-- AI Orb — Attraction Element -->
+                <div class="ai-orb-wrap" id="aiOrbWrap">
+                    <div class="ai-orb" id="aiOrb" role="button" tabindex="0" aria-label="Ask AI for music suggestions">
+                        <div class="ai-orb-rings" aria-hidden="true">
+                            <div class="ai-orb-ring ai-orb-ring-1"></div>
+                            <div class="ai-orb-ring ai-orb-ring-2"></div>
+                            <div class="ai-orb-ring ai-orb-ring-3"></div>
+                        </div>
+                        <div class="ai-orb-glow" aria-hidden="true"></div>
+                        <div class="ai-orb-core">
+                            <div class="ai-orb-wave" aria-hidden="true">
+                                <span></span><span></span><span></span><span></span><span></span>
+                            </div>
+                            <div class="ai-orb-icon">
+                                <i class="fas fa-wand-magic-sparkles"></i>
+                            </div>
+                        </div>
+                        <div class="ai-orb-label">
+                            <span class="ai-orb-label-text">What do you want to hear?</span>
+                            <span class="ai-orb-label-sub">Tap to ask AI</span>
+                        </div>
+                    </div>
+                    <div class="ai-orb-panel" id="aiOrbPanel">
+                        <div class="ai-orb-panel-header">
+                            <div class="ai-orb-panel-title"><i class="fas fa-sparkles"></i> AI Music Assistant</div>
+                            <button class="ai-orb-panel-close" id="aiOrbPanelClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+                        </div>
+                        <div class="ai-orb-panel-body" id="aiOrbPanelBody">
+                            <div class="ai-orb-panel-messages" id="aiOrbMessages">
+                                <div class="ai-orb-msg ai-orb-msg-ai">
+                                    <div class="ai-orb-msg-avatar"><i class="fas fa-robot"></i></div>
+                                    <div class="ai-orb-msg-text">Hi! I can help you find the perfect music. Try asking me things like:<br><em>"Play relaxing Tamil songs"</em> or <em>"90s melodies"</em></div>
+                                </div>
+                            </div>
+                            <div class="ai-orb-panel-suggestions" id="aiOrbSuggestions">
+                                <button class="ai-orb-suggestion" data-q="play relaxing Tamil songs">Relaxing Tamil</button>
+                                <button class="ai-orb-suggestion" data-q="play 90s melodies">90s Melodies</button>
+                                <button class="ai-orb-suggestion" data-q="play romantic songs">Romantic</button>
+                                <button class="ai-orb-suggestion" data-q="play energy boost">Energy Boost</button>
+                                <button class="ai-orb-suggestion" data-q="play Ilaiyaraaja hits">Ilaiyaraaja</button>
+                                <button class="ai-orb-suggestion" data-q="play latest Tamil songs">Latest Hits</button>
+                            </div>
+                        </div>
+                        <div class="ai-orb-panel-input">
+                            <input type="text" id="aiOrbInput" placeholder="e.g. play A.R. Rahman songs..." autocomplete="off">
+                            <button class="ai-orb-send" id="aiOrbSend" aria-label="Send"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Assistant Quick Actions -->
+                <div class="ai-assistant-quick-actions">
+                    <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                    <div class="ai-quick-action-grid">
+                        <button class="ai-quick-action" data-action="play-radio">
+                            <i class="fas fa-radio"></i>
+                            <span>Play Radio</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="recommend">
+                            <i class="fas fa-wand-magic-sparkles"></i>
+                            <span>Recommend Songs</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="trending">
+                            <i class="fas fa-fire"></i>
+                            <span>Trending Now</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="mood">
+                            <i class="fas fa-heart"></i>
+                            <span>By Mood</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="queue">
+                            <i class="fas fa-list"></i>
+                            <span>Show Queue</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="favorites">
+                            <i class="fas fa-heart"></i>
+                            <span>Favorites</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="history">
+                            <i class="fas fa-clock-rotate-left"></i>
+                            <span>History</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="equalizer">
+                            <i class="fas fa-sliders"></i>
+                            <span>Equalizer</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AI Assistant Capabilities -->
+                <div class="ai-assistant-capabilities">
+                    <h3><i class="fas fa-lightbulb"></i> What can I do?</h3>
+                    <div class="ai-capability-grid">
+                        <div class="ai-capability-card">
+                            <i class="fas fa-play-circle"></i>
+                            <h4>Play Music</h4>
+                            <p>Play any song, artist, station, or playlist by name</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-magic"></i>
+                            <h4>Smart Recommendations</h4>
+                            <p>Get personalized suggestions by mood, genre, or era</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-volume-high"></i>
+                            <h4>Control Playback</h4>
+                            <p>Pause, skip, shuffle, repeat, volume control</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-search"></i>
+                            <h4>Search & Discover</h4>
+                            <p>Find songs, artists, stations, or lyrics</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-list"></i>
+                            <h4>Manage Playlists</h4>
+                            <p>Create, view, and manage your playlists</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-sliders"></i>
+                            <h4>Equalizer Presets</h4>
+                            <p>Apply bass, treble, vocal, or genre presets</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-moon"></i>
+                            <h4>Sleep Timer</h4>
+                            <p>Set auto-stop for bedtime listening</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-microphone"></i>
+                            <h4>Voice Input</h4>
+                            <p>Speak naturally — I'll understand you</p>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-        </div><!-- /ytm-main-content -->
+    </div><!-- /ytm-main-content -->
 
-<!-- Premium Bottom Navigation (Mobile/PWA) — Modern AI-Inspired Design 5-Tab -->
+<!-- Premium Bottom Navigation (Mobile/PWA) — Modern AI-Inspired Design 6-Tab -->
 <nav class="tamilai-bottom-nav" id="tamilaiBottomNav" role="navigation" aria-label="Main navigation">
     <div class="tamilai-nav-indicator" id="tamilaiNavIndicator"></div>
     <button class="tamilai-nav-item active" data-page="home" aria-label="Home">
@@ -1268,6 +1373,10 @@
     <button class="tamilai-nav-item" data-page="search" aria-label="Search">
         <div class="tamilai-nav-icon"><i class="fas fa-magnifying-glass"></i></div>
         <span class="tamilai-nav-label">Search</span>
+    </button>
+    <button class="tamilai-nav-item" data-page="ai-assistant" aria-label="AI Assistant">
+        <div class="tamilai-nav-icon"><i class="fas fa-robot"></i></div>
+        <span class="tamilai-nav-label">AI Assistant</span>
     </button>
     <button class="tamilai-nav-item" data-page="music" aria-label="Library">
         <div class="tamilai-nav-icon"><i class="fas fa-layer-group"></i></div>

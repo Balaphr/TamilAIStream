@@ -2161,6 +2161,9 @@ window.AIHome = (() => {
        AI Orb — Animated Attraction Element
        ============================================================ */
     function initAIOrb() {
+        // Only initialize on Home page
+        if (!document.getElementById('page-home')?.classList.contains('active')) return;
+        
         const orb = document.getElementById('aiOrb');
         const wrap = document.getElementById('aiOrbWrap');
         const panel = document.getElementById('aiOrbPanel');

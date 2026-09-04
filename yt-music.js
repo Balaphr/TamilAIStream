@@ -615,6 +615,7 @@ const YTMusic = {
         this.currentPage = page;
         document.body.classList.toggle('home-active', page === 'home');
         document.body.classList.toggle('radio-active', page === 'radio');
+        document.body.classList.toggle('ai-assistant-active', page === 'ai-assistant');
         // Premium nav active state (top nav clusters + mobile menu)
         document.querySelectorAll('.premium-nav-item[data-page]').forEach(item => {
             item.classList.toggle('active', item.dataset.page === page);
@@ -657,6 +658,7 @@ const YTMusic = {
             case 'settings': this.renderSettingsPage(); break;
             case 'account': this.renderAccountPage(); break;
             case 'premium': this.renderPremiumPage(); break;
+            case 'ai-assistant': this.renderAIAssistantPage(); break;
             case 'search':
                 const pageSI = document.getElementById('ytmSearchPageInput');
                 const mobileSI = document.getElementById('ytmMobileSearchInput');
@@ -1746,6 +1748,211 @@ const YTMusic = {
         if (freeBtn) { freeBtn.textContent = isPremium ? 'Downgrade' : 'Current Plan'; freeBtn.disabled = !isPremium; }
         if (upgradeBtn) { upgradeBtn.textContent = isPremium ? 'Active' : 'Upgrade Now'; }
         if (familyBtn) { familyBtn.onclick = () => { if (typeof showToast === 'function') showToast('Family plan coming soon!', 'info'); }; }
+    },
+
+    renderAIAssistantPage() {
+        // Initialize AI Assistant if not already done
+        if (typeof AIMusicAssistant !== 'undefined' && typeof AIMusicAssistant.init === 'function') {
+            // The AI Orb is already in the HTML, just ensure event listeners are attached
+            this.initAIAssistantOrb();
+        }
+    },
+
+    initAIAssistantOrb() {
+        const orb = document.getElementById('aiOrb');
+        const panel = document.getElementById('aiOrbPanel');
+        const closeBtn = document.getElementById('aiOrbPanelClose');
+        const input = document.getElementById('aiOrbInput');
+        const sendBtn = document.getElementById('aiOrbSend');
+        const suggestions = document.getElementById('aiOrbSuggestions');
+        const messages = document.getElementById('aiOrbMessages');
+
+        if (!orb || !panel) return;
+
+        // Toggle panel on orb click
+        orb.onclick = () => {
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open') && input) {
+                setTimeout(() => input.focus(), 100);
+            }
+        };
+
+        // Close panel
+        if (closeBtn) {
+            closeBtn.onclick = (e) => {
+                e.stopPropagation();
+                panel.classList.remove('open');
+            };
+        }
+
+        // Close panel when clicking outside
+        document.addEventListener('click', (e) => {
+            if (panel.classList.contains('open') && !panel.contains(e.target) && e.target !== orb && !orb.contains(e.target)) {
+                panel.classList.remove('open');
+            }
+        });
+
+        // Handle suggestion clicks
+        if (suggestions) {
+            suggestions.addEventListener('click', (e) => {
+                const btn = e.target.closest('.ai-orb-suggestion');
+                if (btn && btn.dataset.q) {
+                    if (input) input.value = btn.dataset.q;
+                    this.sendAIAssistantQuery(btn.dataset.q);
+                }
+            });
+        }
+
+        // Handle send button
+        if (sendBtn) {
+            sendBtn.onclick = () => {
+                if (input && input.value.trim()) {
+                    this.sendAIAssistantQuery(input.value.trim());
+                    input.value = '';
+                }
+            };
+        }
+
+        // Handle Enter key
+        if (input) {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && input.value.trim()) {
+                    this.sendAIAssistantQuery(input.value.trim());
+                    input.value = '';
+                }
+            });
+        }
+
+        // Initialize quick actions
+        this.initAIAssistantQuickActions();
+    },
+
+    initAIAssistantQuickActions() {
+        const actions = document.querySelectorAll('.ai-quick-action[data-action]');
+        actions.forEach(btn => {
+            btn.onclick = () => {
+                const action = btn.dataset.action;
+                this.handleAIAssistantQuickAction(action);
+            };
+        });
+    },
+
+    handleAIAssistantQuickAction(action) {
+        const messages = document.getElementById('aiOrbMessages');
+        if (!messages) return;
+
+        let query = '';
+        switch (action) {
+            case 'play-radio': query = 'play radio'; break;
+            case 'recommend': query = 'recommend songs'; break;
+            case 'trending': query = 'show trending'; break;
+            case 'mood': query = 'recommend by mood'; break;
+            case 'queue': query = 'show queue'; break;
+            case 'favorites': query = 'show favorites'; break;
+            case 'history': query = 'show history'; break;
+            case 'equalizer': query = 'equalizer presets'; break;
+        }
+        if (query) {
+            this.sendAIAssistantQuery(query);
+        }
+    },
+
+    sendAIAssistantQuery(query) {
+        const messages = document.getElementById('aiOrbMessages');
+        const suggestions = document.getElementById('aiOrbSuggestions');
+        if (!messages) return;
+
+        // Add user message
+        const userMsg = document.createElement('div');
+        userMsg.className = 'ai-orb-msg ai-orb-msg-user';
+        userMsg.innerHTML = `
+            <div class="ai-orb-msg-avatar"><i class="fas fa-user"></i></div>
+            <div class="ai-orb-msg-text">${this.escapeHtml(query)}</div>
+        `;
+        messages.appendChild(userMsg);
+
+        // Show typing indicator
+        const typingMsg = document.createElement('div');
+        typingMsg.className = 'ai-orb-msg ai-orb-msg-ai ai-orb-typing';
+        typingMsg.innerHTML = `
+            <div class="ai-orb-msg-avatar"><i class="fas fa-robot"></i></div>
+            <div class="ai-orb-msg-text"><span class="ai-typing-dots"><span></span><span></span><span></span></span></div>
+        `;
+        messages.appendChild(typingMsg);
+        messages.scrollTop = messages.scrollHeight;
+
+        // Get AI response
+        setTimeout(() => {
+            if (typeof AIMusicAssistant !== 'undefined' && typeof AIMusicAssistant.generateResponse === 'function') {
+                const response = AIMusicAssistant.generateResponse(query);
+                typingMsg.remove();
+
+                // Add AI response
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'ai-orb-msg ai-orb-msg-ai';
+                aiMsg.innerHTML = `
+                    <div class="ai-orb-msg-avatar"><i class="fas fa-robot"></i></div>
+                    <div class="ai-orb-msg-text">${this.formatAIResponse(response.text)}</div>
+                `;
+                messages.appendChild(aiMsg);
+
+                // Add suggestion chips if available
+                if (response.suggestions && response.suggestions.length > 0 && suggestions) {
+                    suggestions.innerHTML = response.suggestions.map(s =>
+                        `<button class="ai-orb-suggestion" data-q="${this.escapeHtml(s)}">${this.escapeHtml(s)}</button>`
+                    ).join('');
+                }
+
+                // Handle cards if available
+                if (response.cards && response.cards.length > 0) {
+                    const cardsContainer = document.createElement('div');
+                    cardsContainer.className = 'ai-orb-cards';
+                    cardsContainer.innerHTML = response.cards.map(card => `
+                        <button class="ai-orb-card" data-action="${card.action}" data-data='${JSON.stringify(card.data).replace(/'/g, "&apos;")}'>
+                            <div class="ai-orb-card-title">${this.escapeHtml(card.title)}</div>
+                            ${card.sub ? `<div class="ai-orb-card-sub">${this.escapeHtml(card.sub)}</div>` : ''}
+                            ${card.artist ? `<div class="ai-orb-card-artist">${this.escapeHtml(card.artist)}</div>` : ''}
+                        </button>
+                    `).join('');
+                    messages.appendChild(cardsContainer);
+
+                    // Handle card clicks
+                    cardsContainer.querySelectorAll('.ai-orb-card').forEach(card => {
+                        card.onclick = () => {
+                            const action = card.dataset.action;
+                            const data = JSON.parse(card.dataset.data);
+                            if (typeof AIMusicAssistant !== 'undefined' && typeof AIMusicAssistant.executeAction === 'function') {
+                                AIMusicAssistant.executeAction(action, data);
+                            }
+                        };
+                    });
+                }
+            } else {
+                typingMsg.remove();
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'ai-orb-msg ai-orb-msg-ai';
+                errorMsg.innerHTML = `
+                    <div class="ai-orb-msg-avatar"><i class="fas fa-robot"></i></div>
+                    <div class="ai-orb-msg-text">AI Assistant is not available right now. Please try again later.</div>
+                `;
+                messages.appendChild(errorMsg);
+            }
+            messages.scrollTop = messages.scrollHeight;
+        }, 300);
+    },
+
+    formatAIResponse(text) {
+        if (!text) return '';
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>');
+    },
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     },
 
     renderNotificationsContent() {
