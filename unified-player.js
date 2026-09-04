@@ -72,6 +72,7 @@ const UnifiedPlayer = (() => {
     _adoptExternalEngine();
     _startProgressLoop();
     _setupServiceWorker();
+    _installShims();
   }
 
   /* ═══════════════════════════════════════════
@@ -1226,19 +1227,34 @@ const UnifiedPlayer = (() => {
     };
 
     /* GlobalPlayer shim */
+    const _gpStateProxy = {
+      get track() { return state.track; },
+      set track(v) { if (v !== undefined && v !== null) state.track = v; },
+      get currentTime() { return state.currentTime; },
+      set currentTime(v) { if (v !== undefined && isFinite(v)) state.currentTime = v; },
+      get duration() { return state.duration; },
+      set duration(v) { if (v !== undefined && isFinite(v)) state.duration = v; },
+      get isLive() { return state.isLive; },
+      set isLive(v) { state.isLive = !!v; },
+      get isPlaying() { return state.isPlaying; },
+      set isPlaying(v) { state.isPlaying = !!v; },
+      get queue() { return state.queue; },
+      set queue(v) { if (Array.isArray(v)) state.queue = v; },
+      get queueIndex() { return state.queueIndex; },
+      set queueIndex(v) { if (typeof v === 'number') state.queueIndex = v; },
+    };
     window.GlobalPlayer = {
       init: () => {},
-      get state() { return {
-        track: state.track,
-        currentTime: state.currentTime,
-        duration: state.duration,
-        isLive: state.isLive,
-        isPlaying: state.isPlaying,
-      }; },
+      get state() { return _gpStateProxy; },
       set state(v) {
-        if (v && v.track !== undefined) state.track = v.track;
-        if (v && v.currentTime !== undefined) state.currentTime = v.currentTime;
-        if (v && v.isLive !== undefined) state.isLive = v.isLive;
+        if (!v) return;
+        if (v.track !== undefined) _gpStateProxy.track = v.track;
+        if (v.currentTime !== undefined) _gpStateProxy.currentTime = v.currentTime;
+        if (v.duration !== undefined) _gpStateProxy.duration = v.duration;
+        if (v.isLive !== undefined) _gpStateProxy.isLive = v.isLive;
+        if (v.isPlaying !== undefined) _gpStateProxy.isPlaying = v.isPlaying;
+        if (v.queue) _gpStateProxy.queue = v.queue;
+        if (v.queueIndex !== undefined) _gpStateProxy.queueIndex = v.queueIndex;
       },
       togglePlay: togglePlay,
       play: play,
@@ -1299,7 +1315,7 @@ const UnifiedPlayer = (() => {
     shareCurrent,
     showFullScreen,
     hideFullScreen,
-    showBottomBar,
+    showBottomBar: _showBottomBar,
     hideBottomBar,
     showQueuePanel,
     hideQueuePanel,
@@ -1339,6 +1355,7 @@ const UnifiedPlayer = (() => {
       _updateTrackUI();
       _updateFavUI();
       _updatePlayUI();
+      _updateProgressUI();
       _saveState();
     },
     /** Update play/pause UI without changing audio state. */
