@@ -340,12 +340,33 @@ const AdminEditor = (() => {
     // ── Device / Responsive Mode ──
     function setDevice(device) {
         _currentDevice = device;
-        if (!_frameWin) return;
-        const widths = { desktop: '100%', tablet: '768px', mobile: '375px' };
-        _frame.style.maxWidth = widths[device] || '100%';
-        _frame.style.margin = device === 'desktop' ? '0' : '0 auto';
-        _frame.style.borderLeft = device !== 'desktop' ? '1px solid rgba(255,255,255,0.1)' : 'none';
-        _frame.style.borderRight = device !== 'desktop' ? '1px solid rgba(255,255,255,0.1)' : 'none';
+        if (!_frame) return;
+        const centerArea = _frame.parentElement;
+        if (device === 'desktop') {
+            _frame.style.width = '100%';
+            _frame.style.maxWidth = '100%';
+            _frame.style.height = '100%';
+            _frame.style.margin = '0';
+            _frame.style.borderLeft = 'none';
+            _frame.style.borderRight = 'none';
+            if (centerArea) centerArea.style.overflow = 'hidden';
+        } else if (device === 'tablet') {
+            _frame.style.width = '768px';
+            _frame.style.maxWidth = '768px';
+            _frame.style.height = '100%';
+            _frame.style.margin = '0 auto';
+            _frame.style.borderLeft = '1px solid rgba(255,255,255,0.1)';
+            _frame.style.borderRight = '1px solid rgba(255,255,255,0.1)';
+            if (centerArea) centerArea.style.overflow = 'auto';
+        } else {
+            _frame.style.width = '375px';
+            _frame.style.maxWidth = '375px';
+            _frame.style.height = '100%';
+            _frame.style.margin = '0 auto';
+            _frame.style.borderLeft = '1px solid rgba(255,255,255,0.1)';
+            _frame.style.borderRight = '1px solid rgba(255,255,255,0.1)';
+            if (centerArea) centerArea.style.overflow = 'auto';
+        }
         _emit('device-changed', device);
     }
 

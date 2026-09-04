@@ -131,12 +131,11 @@
         /* ════ CENTER IFRAME ════ */
         #center-area {
             position:fixed; top:var(--topbar-h); left:var(--left-w); right:var(--right-w); bottom:0;
-            background:#000; display:flex; align-items:center; justify-content:center;
-            overflow:auto;
+            background:#111; overflow:hidden;
         }
         #site-frame {
-            border:none; background:#000;
-            transition: max-width 0.3s, margin 0.3s;
+            border:none; background:#000; width:100%; height:100%;
+            transition: width 0.3s, max-width 0.3s, margin 0.3s;
         }
 
         /* ════ MODALS ════ */
