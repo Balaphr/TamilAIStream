@@ -5039,56 +5039,72 @@ body.ai-playlist-detail-open { overflow: hidden; }
 }
 
 /* ═══════════════════════════════════════════════════
-   UNIFIED PLAYER — Bottom Now Playing Bar
+   UNIFIED PLAYER — Floating Mini Player
+   Sits centered in the bottom navigation area,
+   exactly between the Home (left) and Profile (right)
+   nav items. Only visible while audio is playing.
    ═══════════════════════════════════════════════════ */
 .up-bottom-bar {
     position: fixed;
-    bottom: 70px;
-    left: 0;
-    right: 0;
-    z-index: 1000;
+    left: 50%;
+    bottom: 0;
+    z-index: 9998;
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 12px;
-    background: rgba(10, 15, 25, 0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(52, 211, 153, 0.15);
-    transform: translateY(120%);
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 500px;
+    width: min(92vw, 500px);
+    min-width: 260px;
+    padding: 10px 14px;
+    background: rgba(10, 15, 25, 0.94);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid rgba(52, 211, 153, 0.18);
+    border-radius: 18px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 24px rgba(52, 211, 153, 0.10);
+    transform: translateX(-50%) translateY(140%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
+    /* Elevate above the bottom nav so it reads as part of the nav bar */
+    transform-origin: bottom center;
 }
 .up-bottom-bar.visible {
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(-6px);
 }
+body.up-fullscreen-open .up-bottom-bar {
+    display: none;
+}
+/* Progress hairline along the top edge */
 .up-bottom-progress-bar {
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
+    left: 12px;
+    right: 12px;
     height: 3px;
     background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    overflow: hidden;
 }
 .up-bottom-progress-fill {
     height: 100%;
     width: 0%;
     background: linear-gradient(90deg, #34d399, #22d3ee);
-    border-radius: 0 2px 2px 0;
+    border-radius: 3px;
     transition: width 0.25s linear;
 }
 .up-bottom-art {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
     overflow: hidden;
-    background: rgba(52, 211, 153, 0.1);
+    background: rgba(52, 211, 153, 0.12);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: rgba(52, 211, 153, 0.5);
-    font-size: 1rem;
+    color: rgba(52, 211, 153, 0.55);
+    font-size: 1.1rem;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
 }
 .up-bottom-art img {
     width: 100%;
@@ -5100,15 +5116,16 @@ body.ai-playlist-detail-open { overflow: hidden; }
     min-width: 0;
 }
 .up-bottom-title {
-    font-size: 0.82rem;
-    font-weight: 600;
+    font-size: 0.85rem;
+    font-weight: 700;
     color: #fff;
+    line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .up-bottom-artist {
-    font-size: 0.68rem;
+    font-size: 0.7rem;
     color: rgba(255,255,255,0.5);
     white-space: nowrap;
     overflow: hidden;
@@ -5117,9 +5134,9 @@ body.ai-playlist-detail-open { overflow: hidden; }
 .up-bottom-btn {
     background: none;
     border: none;
-    color: rgba(255,255,255,0.7);
-    width: 36px;
-    height: 36px;
+    color: rgba(255,255,255,0.8);
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5127,21 +5144,27 @@ body.ai-playlist-detail-open { overflow: hidden; }
     cursor: pointer;
     flex-shrink: 0;
     transition: all 0.2s;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
 }
 .up-bottom-btn:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.08);
     color: #fff;
 }
+.up-bottom-play {
+    background: linear-gradient(135deg, #34d399, #22d3ee);
+    color: #0a0f19 !important;
+    box-shadow: 0 2px 12px rgba(52, 211, 153, 0.4);
+    font-size: 0.9rem;
+}
+.up-bottom-play:hover {
+    transform: scale(1.06);
+    background: linear-gradient(135deg, #34d399, #22d3ee);
+}
+.up-bottom-play.playing i {
+    /* subtle glow when active */
+}
 .up-bottom-play i {
-    font-size: 1.1rem;
-}
-.up-bottom-fav.active i {
-    color: #f43f5e;
-}
-.up-bottom-close {
-    font-size: 0.8rem;
-    opacity: 0.5;
+    font-size: 1rem;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -5694,20 +5717,31 @@ body.up-fullscreen-open {
         height: 60%;
         border-radius: 20px 20px 0 0;
     }
+    /* Mini player floats just above the bottom nav on tablet */
+    .up-bottom-bar {
+        bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+        width: min(80vw, 480px);
+    }
+    .up-bottom-bar.visible {
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 /* ═══════════════════════════════════════════════════
    RESPONSIVE — Desktop
+   ── Bottom nav is hidden on desktop; the mini player
+   becomes a bottom-centered pill (Home left / Profile
+   right is conceptual, so it sits centered at the bottom).
    ═══════════════════════════════════════════════════ */
 @media (min-width: 1025px) {
     .up-bottom-bar {
-        max-width: 500px;
+        max-width: 480px;
+        width: min(70vw, 480px);
         left: 50%;
-        right: auto;
-        transform: translateX(-50%) translateY(120%);
-        border-radius: 14px;
-        bottom: 80px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        bottom: 24px;
+        transform: translateX(-50%) translateY(140%);
+        border-radius: 16px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 30px rgba(52, 211, 153, 0.12);
     }
     .up-bottom-bar.visible {
         transform: translateX(-50%) translateY(0);
@@ -5766,7 +5800,52 @@ body.up-fullscreen-open {
     .up-queue-panel {
         height: 60%;
     }
+    /* Compact mini player pill for small phones */
     .up-bottom-bar {
-        bottom: 64px;
+        bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+        width: min(94vw, 420px);
+        min-width: 230px;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 16px;
+    }
+    .up-bottom-art {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+    }
+    .up-bottom-btn {
+        width: 36px;
+        height: 36px;
+    }
+    .up-bottom-title {
+        font-size: 0.8rem;
+    }
+    .up-bottom-artist {
+        font-size: 0.65rem;
+    }
+    .up-bottom-bar.visible {
+        transform: translateX(-50%) translateY(-4px);
+    }
+}
+
+/* Very small screens */
+@media (max-width: 380px) {
+    .up-bottom-bar {
+        bottom: calc(54px + env(safe-area-inset-bottom, 0px));
+        width: min(96vw, 380px);
+        min-width: 210px;
+    }
+}
+
+/* PWA standalone — account for larger safe-area inset on the nav */
+@media (display-mode: standalone) {
+    .up-bottom-bar {
+        bottom: calc(60px + env(safe-area-inset-bottom, 20px));
+    }
+    @media (min-width: 1025px) {
+        .up-bottom-bar {
+            bottom: 24px;
+        }
     }
 }

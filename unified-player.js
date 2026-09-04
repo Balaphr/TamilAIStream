@@ -111,10 +111,8 @@ const UnifiedPlayer = (() => {
       bottomTitle: document.getElementById('upBottomTitle'),
       bottomArtist: document.getElementById('upBottomArtist'),
       bottomPlayPause: document.getElementById('upBottomPlayPause'),
-      bottomFav: document.getElementById('upBottomFav'),
       bottomProgress: document.getElementById('upBottomProgress'),
       bottomProgressFill: document.getElementById('upBottomProgressFill'),
-      bottomClose: document.getElementById('upBottomClose'),
 
       fullScreen: document.getElementById('upFullScreen'),
       fsArtworkWrap: document.getElementById('upFsArtworkWrap'),
@@ -162,9 +160,7 @@ const UnifiedPlayer = (() => {
     };
 
     if (els.bottomPlayPause) els.bottomPlayPause.addEventListener('click', (e) => { e.stopPropagation(); togglePlay(); });
-    if (els.bottomFav) els.bottomFav.addEventListener('click', (e) => { e.stopPropagation(); toggleFavorite(); });
     if (els.bottomBar) els.bottomBar.addEventListener('click', () => showFullScreen());
-    if (els.bottomClose) els.bottomClose.addEventListener('click', (e) => { e.stopPropagation(); hideBottomBar(); stop(); });
 
     if (els.fsPlayPause) els.fsPlayPause.addEventListener('click', togglePlay);
     if (els.fsPrev) els.fsPrev.addEventListener('click', previous);
@@ -573,7 +569,6 @@ const UnifiedPlayer = (() => {
     if (!state.track) return;
     const id = state.track.id || state.track.videoId || state.track.title;
     const isFav = state.favorites.has(id);
-    if (els.bottomFav) els.bottomFav.classList.toggle('active', isFav);
     if (els.fsFav) {
       els.fsFav.classList.toggle('active', isFav);
       _setBtnIcon(els.fsFav, isFav ? 'fa-heart' : 'fa-heart');
