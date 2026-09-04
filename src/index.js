@@ -682,7 +682,7 @@ async function handleAdminOverridesPost(request, env) {
 
 async function handleGlobalSettingsGet(env) {
   try {
-    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500 });
+    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
     const empty = { settings: { colors: {}, fonts: {}, spacing: {}, borderRadius: {} } };
     // Try staging first, then production
     const staging = await env.MEDIA_BUCKET.get('global-settings-staging.json');
