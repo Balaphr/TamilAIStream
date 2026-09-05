@@ -1517,3 +1517,26 @@ section:not(:first-of-type) {
     }
 }
 
+/* ============================================
+   CONTENT VISIBILITY — Off-screen sections skip
+   paint/layout until near viewport (huge win).
+   ============================================ */
+#foryouSection,
+#upcomingSection,
+.ai-evergreen-grid,
+.ai-new-album,
+.ai-station-section,
+.ai-category-section,
+.ai-section-playlists,
+.ai-section-artists {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 400px;
+}
+
+/* ============================================
+   REQUEST IDLE CALLBACK — Non-critical work
+   ============================================ */
+.defer-idle {
+    contain: layout style;
+}
+

@@ -17,7 +17,13 @@
 
     function writeLocalStorage(key, value) {
         try {
-            global.localStorage?.setItem(key, JSON.stringify(value));
+            /* Skip write if value is identical — saves CPU and avoids
+               triggering the 'storage' event + DataStore invalidation
+               for data that hasn't changed. */
+            const existing = global.localStorage?.getItem(key);
+            const incoming = JSON.stringify(value);
+            if (existing === incoming) return;
+            global.localStorage?.setItem(key, incoming);
         } catch (error) {
             // Ignore storage errors in non-browser contexts.
         }
@@ -365,6 +371,14 @@
         writeLocalStorage('tamilAIStream_upcomingReleases', data.upcomingReleases || []);
         writeLocalStorage('tamilAIStream_newAlbums', data.newAlbums || []);
         writeLocalStorage('tamilAIStream_lastSyncedAt', payload?.updatedAt || new Date().toISOString());
+
+        /* Invalidate DataStore in-memory caches so re-renders pick up
+           the freshly-persisted data on next read. */
+        try {
+            if (typeof global.DataStore?.invalidateAll === 'function') {
+                global.DataStore.invalidateAll();
+            }
+        } catch (_) { /* ignore */ }
     }
 
     let _lastEtag = '';

@@ -46,15 +46,19 @@ const DataStore = {
         SONGS_COLLECTIONS: 'tamilAIStream_songsCollections'
     },
 
+    /* ---- In-memory cache to avoid repeated JSON.parse on localStorage ---- */
+    _cache: {},
+    _deletedCache: null,
+
     get(key) {
+        if (key in this._cache) return this._cache[key];
         const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : null;
+        const parsed = data ? JSON.parse(data) : null;
+        this._cache[key] = parsed;
+        return parsed;
     },
 
     set(key, value) {
-        // Skip unchanged writes entirely: re-saving identical content used to
-        // fire synthetic storage events that triggered full section re-renders
-        // (the "blinking" storm) for zero benefit.
         let serialized;
         try { serialized = JSON.stringify(value); } catch (e) { return; }
         try {
@@ -62,8 +66,10 @@ const DataStore = {
         } catch (e) { /* storage unavailable — still attempt set below */ }
 
         localStorage.setItem(key, serialized);
+        this._cache[key] = value;
+        /* Invalidate deleted-ids cache when that key changes */
+        if (key === this.KEYS.DELETED_IDS) this._deletedCache = null;
 
-        // Trigger storage event for cross-tab sync (only on real changes)
         window.dispatchEvent(new StorageEvent('storage', {
             key: key,
             newValue: serialized
@@ -75,12 +81,25 @@ const DataStore = {
         return data ? JSON.parse(data) : null;
     },
 
-    // Internal: filter out items whose IDs appear in deletedIds[type]
+    /* Invalidate a cached key (call after external localStorage writes) */
+    invalidate(key) {
+        delete this._cache[key];
+        if (key === this.KEYS.DELETED_IDS) this._deletedCache = null;
+    },
+
+    /* Invalidate all caches */
+    invalidateAll() {
+        this._cache = {};
+        this._deletedCache = null;
+    },
+
     _filterDeleted(items, type) {
         if (!Array.isArray(items) || items.length === 0) return items;
         try {
-            const deletedIds = this.get(this.KEYS.DELETED_IDS) || {};
-            const ids = deletedIds[type];
+            if (!this._deletedCache) {
+                this._deletedCache = this.get(this.KEYS.DELETED_IDS) || {};
+            }
+            const ids = this._deletedCache[type];
             if (!Array.isArray(ids) || ids.length === 0) return items;
             const set = new Set(ids);
             return items.filter(item => item && item.id != null && !set.has(item.id));

@@ -1,26 +1,23 @@
 /* ================================================================
-   Tamil AI Stream – Service Worker
+   Tamil AI Stream – Service Worker (Optimized)
    
    Caching strategy:
-     • Network-first for ALL requests (navigation + static assets).
-       Cache is only an offline fallback; fresh data is always preferred.
-     • /api/* and cross-origin requests are NEVER intercepted or cached
-       by the SW (let the browser handle them directly).
-     • Old caches are pruned on activate using the version embedded in
-       the cache name.
+     • Network-first for navigation + code assets (JS/CSS).
+     • Stale-while-revalidate for images/fonts (instant loads).
+     • Separate image cache with LRU eviction (max 150 entries).
+     • /api/* and cross-origin requests are NEVER intercepted.
    
    Update flow:
-     1. The Cloudflare Worker rewrites __BUILD_VERSION__ in this file
-        at serve-time with the current deploy timestamp.
-     2. A new deploy → different bytes → browser detects update →
-        updatefound event fires on the page.
-     3. The page shows a "New Update Available" banner.
-     4. User clicks "Update Now" → page posts SKIP_WAITING message.
-     5. This SW activates, claims all clients, and the page reloads.
+     1. Cloudflare Worker rewrites __BUILD_VERSION__ at serve-time.
+     2. New deploy → browser detects update → shows banner.
+     3. User clicks "Update Now" → SKIP_WAITING → reload.
    ================================================================ */
 
 const APP_VERSION = '__BUILD_VERSION__';
 const CACHE_NAME = 'tamilai-v' + APP_VERSION;
+const IMAGE_CACHE = 'tamilai-img-v' + APP_VERSION;
+const MAX_IMAGE_CACHE = 150;
+
 const CRITICAL_ASSETS = [
   '/',
   '/index.html',
@@ -28,25 +25,24 @@ const CRITICAL_ASSETS = [
   '/yt-music.css',
   '/style.css',
   '/premium-ui.css',
-  '/global-player.css',
+  '/ai-glass.css',
   '/ultra-perf.js',
   '/script.js',
-  '/global-player.js',
-  '/premium-landing.js',
   '/yt-music.js',
   '/data-store.js',
-  '/player-engine.js',
-  '/pwa-splash.js'
+  '/ai-home.js',
+  '/pwa.js',
+  '/pwa-splash.js',
+  '/pwa-install.css',
+  '/icons/favicon-32.png',
+  '/icons/apple-touch-icon.png',
+  '/icons/icon-192.png'
 ];
 
 /* ---- Install ---- */
 self.addEventListener('install', (event) => {
-  // Skip aggressive caching in development (Vite dev server on localhost)
   const isDev = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
-  if (isDev) {
-    self.skipWaiting();
-    return;
-  }
+  if (isDev) { self.skipWaiting(); return; }
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(CRITICAL_ASSETS))
@@ -54,31 +50,17 @@ self.addEventListener('install', (event) => {
   );
 });
 
-/* ---- Activate ---- */
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) =>
-        Promise.all(
-          keys.filter((k) => k.startsWith('tamilai-v') && k !== CACHE_NAME)
-              .map((k) => caches.delete(k))
-        )
-      )
-      .then(() => self.clients.claim())
-  );
-});
-
-/* ---- Prune old caches on activation ---- */
+/* ---- Activate (consolidated) ---- */
 self.addEventListener('activate', (event) => {
   const MAX_CACHES = 3;
   event.waitUntil(
     caches.keys().then((keys) => {
-      const oldCaches = keys
-        .filter((k) => k.startsWith('tamilai-v') && k !== CACHE_NAME)
+      const oldVersioned = keys
+        .filter((k) => (k.startsWith('tamilai-v') || k.startsWith('tamilai-img-v')) && k !== CACHE_NAME && k !== IMAGE_CACHE)
         .sort()
         .slice(0, Math.max(0, keys.length - MAX_CACHES));
-      return Promise.all(oldCaches.map((k) => caches.delete(k)));
-    })
+      return Promise.all(oldVersioned.map((k) => caches.delete(k)));
+    }).then(() => self.clients.claim())
   );
 });
 
@@ -89,6 +71,18 @@ self.addEventListener('message', (event) => {
   }
 });
 
+/* ---- LRU eviction for image cache ---- */
+async function pruneImageCache() {
+  try {
+    const cache = await caches.open(IMAGE_CACHE);
+    const keys = await cache.keys();
+    if (keys.length > MAX_IMAGE_CACHE) {
+      const toDelete = keys.slice(0, keys.length - MAX_IMAGE_CACHE);
+      await Promise.all(toDelete.map((req) => cache.delete(req)));
+    }
+  } catch (_) { /* ok */ }
+}
+
 /* ---- Fetch ---- */
 self.addEventListener('fetch', (event) => {
   const request = event.request;
@@ -96,22 +90,14 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // Skip caching entirely in development — always fetch fresh
   const isDev = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
   if (isDev) return;
 
-  // 1. Never intercept /api/* – this covers /api/manifest, /api/media,
-  //    /api/version and any future endpoints.
+  /* Never intercept /api/* or cross-origin */
   if (url.pathname.startsWith('/api/')) return;
-
-  // 2. Never intercept cross-origin (fonts, Firebase, CDN, YouTube
-  //    thumbnails, etc.).  Let the browser's own cache handle them.
   if (url.origin !== self.location.origin) return;
 
-  // 3. Same-origin requests (HTML, JS, CSS, images, etc.)
-  //    Strategy: network-first with cache fallback (offline support).
-
-  // 3a. Navigation (HTML page loads)
+  /* Navigation — network-first with cache fallback */
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -125,11 +111,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3b. Static assets.
-  //   - JS / CSS: NETWORK-FIRST with cache fallback. Guarantees HTML and
-  //     scripts always come from the SAME deploy — stale-while-revalidate
-  //     could pair fresh HTML with an old cached script and break playback.
-  //   - Images / fonts: stale-while-revalidate for instant loads.
+  /* Code assets (JS/CSS) — network-first */
   const isCodeAsset = /\.(js|mjs|css)(\?|$)/i.test(url.pathname) ||
     (request.destination === 'script' || request.destination === 'style');
 
@@ -148,6 +130,31 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  /* Images — stale-while-revalidate with separate LRU cache */
+  const isImage = request.destination === 'image' ||
+    /\.(jpg|jpeg|png|gif|webp|svg|avif|ico)(\?|$)/i.test(url.pathname);
+
+  if (isImage) {
+    event.respondWith(
+      caches.open(IMAGE_CACHE).then((cache) => {
+        return cache.match(request).then((cached) => {
+          const fetchPromise = fetch(request).then((response) => {
+            if (response && response.ok) {
+              cache.put(request, response.clone());
+              /* Prune in background — don't block the response */
+              pruneImageCache();
+            }
+            return response;
+          }).catch(() => cached);
+
+          return cached || fetchPromise;
+        });
+      })
+    );
+    return;
+  }
+
+  /* Everything else — stale-while-revalidate */
   event.respondWith(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.match(request).then((cached) => {

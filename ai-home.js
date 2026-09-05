@@ -17,15 +17,22 @@ window.AIHome = (() => {
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
         }[c]));
     }
+    /* Cached published songs — cleared once per refreshHome() cycle */
+    var _publishedCache = null;
+    var _stationsCache = null;
     function publishedSongs() {
+        if (_publishedCache) return _publishedCache;
         try {
-            return (window.DataStore ? (DataStore.getSongs() || []) : []).filter(s => s && s.status === 'published');
-        } catch (e) { return []; }
+            _publishedCache = (window.DataStore ? (DataStore.getSongs() || []) : []).filter(s => s && s.status === 'published');
+        } catch (e) { _publishedCache = []; }
+        return _publishedCache;
     }
     function activeStations() {
+        if (_stationsCache) return _stationsCache;
         try {
-            return (window.DataStore ? (DataStore.getStations() || []) : []).filter(s => s && s.status === 'active');
-        } catch (e) { return []; }
+            _stationsCache = (window.DataStore ? (DataStore.getStations() || []) : []).filter(s => s && s.status === 'active');
+        } catch (e) { _stationsCache = []; }
+        return _stationsCache;
     }
     function artOf(item) {
         return item.thumbnail || item.albumCover || item.cover || item.image || '';
@@ -187,8 +194,9 @@ window.AIHome = (() => {
         const body = $('aiHeroBackdrop');
         if (body) {
             if (art) {
-                body.style.background = 'url("' + art + '") center/cover no-repeat';
-                body.innerHTML = '<img src="' + art + '" alt="" loading="lazy">';
+                /* Use only <img> — avoid duplicate download from CSS background */
+                body.style.background = 'none';
+                body.innerHTML = '<img src="' + art + '" alt="" loading="eager" fetchpriority="high">';
             } else {
                 body.style.background = stationColorFallback();
                 body.innerHTML = '<i class="fa-solid fa-music"></i>';
@@ -2026,7 +2034,9 @@ window.AIHome = (() => {
 
     function refreshHome() {
         stopHeroTimer();
-        // Clear decade song cache so newly assigned songs appear
+        /* Clear render caches so fresh data is used this cycle */
+        _publishedCache = null;
+        _stationsCache = null;
         _decadeSongCache = {};
         // Greeting hero bar sits at the top of Home. Idempotent — builds once,
         // then only updates greeting/date/quote text in place.
