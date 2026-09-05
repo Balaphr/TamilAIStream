@@ -1,13 +1,12 @@
 /* ------------------------------------------------------------------
- * brand-config.js — Centralized premium AI brand identity.
+ * brand-config.js — Centralized premium AI brand identity + 3D Logo.
  *
  * SINGLE SOURCE OF TRUTH for the site brand:
  *   name  : "Tamil AI Stream"
  *   tagline: "AI-Powered Tamil Radio"
- *   logo  : configured in the Builder (Site Settings -> Brand Logo),
- *           stored in siteSettings.logo and synced to the live site
- *           (R2 content-manifest.json). Every page, the PWA, favicon
- *           and splash read from here — no hardcoded duplicate logos.
+ *   logo  : configured in Builder → Home Control → Global 3D Logo,
+ *           stored in tamilAIStream_logoSettings and synced via R2.
+ *           Every page, PWA, favicon and splash read from here.
  * ------------------------------------------------------------------ */
 (function (global) {
   'use strict';
@@ -17,6 +16,22 @@
     shortName: 'Tamil AI Stream',
     tagline: 'AI-Powered Tamil Radio',
     defaultLogo: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none'%3E%3Ccircle cx='20' cy='20' r='18' fill='url(%23g)'/%3E%3Cpath d='M14 28V14l14 7-14 7z' fill='%23fff' opacity='.9'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='40' y2='40'%3E%3Cstop stop-color='%2322d3ee'/%3E%3Cstop offset='.5' stop-color='%233b82f6'/%3E%3Cstop offset='1' stop-color='%23a855f7'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E"
+  };
+
+  const DEFAULT_LOGO_SETTINGS = {
+    logo: '',
+    logoWidth: 40,
+    animation3d: false,
+    animationStyle: 'float',
+    animationSpeed: 3,
+    sizeDesktop: 40,
+    sizeTablet: 36,
+    sizeMobile: 32,
+    position: 'left',
+    headerPlacement: 'topnav',
+    showSplash: true,
+    showPwa: true,
+    showFavicon: true
   };
 
   function readSettings() {
@@ -30,11 +45,31 @@
     } catch (e) { return {}; }
   }
 
+  function readLogoSettings() {
+    try {
+      if (typeof global.DataStore !== 'undefined' && global.DataStore && typeof global.DataStore.getLogoSettings === 'function') {
+        const s = global.DataStore.getLogoSettings();
+        if (s && Object.keys(s).length > 0) return Object.assign({}, DEFAULT_LOGO_SETTINGS, s);
+      }
+    } catch (e) { /* ignore */ }
+    try {
+      const raw = JSON.parse(localStorage.getItem('tamilAIStream_logoSettings') || '{}');
+      if (raw && Object.keys(raw).length > 0) return Object.assign({}, DEFAULT_LOGO_SETTINGS, raw);
+    } catch (e) { /* ignore */ }
+    return Object.assign({}, DEFAULT_LOGO_SETTINGS);
+  }
+
   // The centralized logo is a single asset (image URL) configured in the
   // Builder. When unset we fall back to the default brand SVG data URI.
   function getLogo() {
+    const ls = readLogoSettings();
+    if (ls.logo) return ls.logo;
     const s = readSettings();
     return (s && s.logo) || BRAND.defaultLogo;
+  }
+
+  function getLogoSettings() {
+    return readLogoSettings();
   }
 
   function getFavicon() {
@@ -53,12 +88,20 @@
   function apply() {
     try {
       const logo = getLogo();
+      const ls = readLogoSettings();
       const name = BRAND.name;
       const tagline = BRAND.tagline;
 
-      if (document.title === '' || document.title.indexOf('Tamil') === -1 || document.title === 'TamilAI.Stream') {
-        // Leave pages with custom titles alone unless they match the old brand.
-      }
+      // Set CSS variables for responsive logo sizing
+      const root = document.documentElement;
+      root.style.setProperty('--brand-logo-size-desktop', ls.sizeDesktop + 'px');
+      root.style.setProperty('--brand-logo-size-tablet', ls.sizeTablet + 'px');
+      root.style.setProperty('--brand-logo-size-mobile', ls.sizeMobile + 'px');
+
+      // Apply 3D animation class to all logo containers
+      const animClass = ls.animation3d ? ('logo-3d-' + (ls.animationStyle || 'float')) : '';
+      const speedVar = ls.animationSpeed || 3;
+      root.style.setProperty('--logo-anim-speed', speedVar + 's');
 
       document.querySelectorAll('[data-brand-text]').forEach((el) => {
         el.textContent = name;
@@ -75,11 +118,17 @@
           img.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:50%;';
           img.loading = 'lazy';
           el.appendChild(img);
+
+          // Apply 3D animation to logo container
+          el.classList.remove('logo-3d-float', 'logo-3d-rotate', 'logo-3d-pulse', 'logo-3d-glow', 'logo-3d-tilt', 'logo-3d-breathe');
+          if (animClass) {
+            el.classList.add(animClass);
+          }
         }
       });
 
       // Favicon / apple-touch-icon follow the centralized logo.
-      if (logo) {
+      if (ls.showFavicon !== false && logo) {
         const favicon = document.querySelector('link[rel="icon"]');
         if (favicon && favicon.getAttribute('href')) favicon.setAttribute('href', logo);
         const apple = document.querySelector('link[rel="apple-touch-icon"]');
@@ -91,7 +140,9 @@
       if (themeMeta) themeMeta.setAttribute('content', getThemeColor());
 
       // Generate dynamic PWA icons from canvas if SVG logo is available
-      generateDynamicIcons(logo);
+      if (ls.showPwa !== false) {
+        generateDynamicIcons(logo);
+      }
     } catch (e) { /* ignore */ }
   }
 
@@ -169,21 +220,17 @@
         } catch (e) {}
 
         function applyIconURLs(urls) {
-          // Update favicon
           var favicon = document.querySelector('link[rel="icon"]');
           if (favicon && urls.favicon) favicon.href = urls.favicon;
           else if (favicon && urls[48]) favicon.href = urls[48];
 
-          // Update apple-touch-icon
           var appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
           if (appleIcon && urls[192]) appleIcon.href = urls[192];
 
-          // Update any dynamic icon references
           document.querySelectorAll('link[rel="icon"][data-dynamic]').forEach(function(link) {
             if (urls[192]) link.href = urls[192];
           });
 
-          // Generate a dynamic manifest with the blob URLs
           try {
             var brandName = (typeof BRAND !== 'undefined' && BRAND.name) ? BRAND.name : 'Tamil AI Stream';
             var brandShort = (typeof BRAND !== 'undefined' && BRAND.shortName) ? BRAND.shortName : brandName;
@@ -212,7 +259,7 @@
     } catch (e) { /* ignore */ }
   }
 
-  global.BrandConfig = { BRAND, readSettings, getLogo, getFavicon, getThemeColor, apply };
+  global.BrandConfig = { BRAND, readSettings, getLogo, getLogoSettings, getFavicon, getThemeColor, apply };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', apply);

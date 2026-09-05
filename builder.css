@@ -3333,3 +3333,40 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     .hcc-topbar-actions { justify-content: flex-end; }
     .hcc-label { min-width: 80px; }
 }
+
+/* Global 3D Logo Panel */
+.hcc-logo-panel {
+    margin: 16px;
+    border: 1px solid rgba(34,211,238,0.15);
+    border-radius: var(--radius-lg, 16px);
+    background: var(--bg-secondary);
+}
+.hcc-logo-panel .hcc-settings {
+    border-top: 1px solid var(--border-glass);
+}
+.hcc-logo-panel .hcc-settings-group {
+    margin: 8px 0;
+}
+.hcc-logo-panel .hcc-settings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+}
+.hcc-logo-panel .hcc-label {
+    min-width: 100px;
+    font-size: 0.78rem;
+}
+.hcc-logo-panel .hcc-input {
+    flex: 1;
+    max-width: 300px;
+}
+@media (max-width: 768px) {
+    .hcc-logo-panel .hcc-settings-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .hcc-logo-panel .hcc-input {
+        max-width: 100%;
+    }
+}

@@ -6312,3 +6312,109 @@ body.up-fullscreen-open {
         }
     }
 }
+
+/* ============================================
+   GLOBAL 3D LOGO SYSTEM
+   ============================================ */
+
+:root {
+    --brand-logo-size-desktop: 40px;
+    --brand-logo-size-tablet: 36px;
+    --brand-logo-size-mobile: 32px;
+    --logo-anim-speed: 3s;
+}
+
+/* Responsive logo sizing via CSS variables */
+[data-brand-logo] {
+    width: var(--brand-logo-size-desktop);
+    height: var(--brand-logo-size-desktop);
+    position: relative;
+    will-change: transform;
+}
+@media (max-width: 1024px) {
+    [data-brand-logo] {
+        width: var(--brand-logo-size-tablet);
+        height: var(--brand-logo-size-tablet);
+    }
+}
+@media (max-width: 768px) {
+    [data-brand-logo] {
+        width: var(--brand-logo-size-mobile);
+        height: var(--brand-logo-size-mobile);
+    }
+}
+
+/* 3D Animation: Float (gentle vertical bob) */
+.logo-3d-float {
+    animation: logo3dFloat var(--logo-anim-speed) ease-in-out infinite;
+    transform-style: preserve-3d;
+}
+@keyframes logo3dFloat {
+    0%, 100% { transform: translateY(0) perspective(600px) rotateX(0deg); }
+    25% { transform: translateY(-3px) perspective(600px) rotateX(2deg); }
+    50% { transform: translateY(-5px) perspective(600px) rotateX(0deg); }
+    75% { transform: translateY(-3px) perspective(600px) rotateX(-2deg); }
+}
+
+/* 3D Animation: Rotate (slow continuous Y-axis spin) */
+.logo-3d-rotate {
+    animation: logo3dRotate var(--logo-anim-speed) linear infinite;
+    transform-style: preserve-3d;
+}
+@keyframes logo3dRotate {
+    0% { transform: perspective(600px) rotateY(0deg); }
+    100% { transform: perspective(600px) rotateY(360deg); }
+}
+
+/* 3D Animation: Pulse (scale + glow) */
+.logo-3d-pulse {
+    animation: logo3dPulse var(--logo-anim-speed) ease-in-out infinite;
+}
+@keyframes logo3dPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(34,211,238,0)); }
+    50% { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(34,211,238,0.5)); }
+}
+
+/* 3D Animation: Glow (pulsing glow halo) */
+.logo-3d-glow {
+    animation: logo3dGlow var(--logo-anim-speed) ease-in-out infinite;
+}
+@keyframes logo3dGlow {
+    0%, 100% { filter: drop-shadow(0 0 2px rgba(34,211,238,0.2)); }
+    50% { filter: drop-shadow(0 0 12px rgba(34,211,238,0.6)) drop-shadow(0 0 24px rgba(99,102,241,0.3)); }
+}
+
+/* 3D Animation: Tilt (subtle X/Y rotation) */
+.logo-3d-tilt {
+    animation: logo3dTilt var(--logo-anim-speed) ease-in-out infinite;
+    transform-style: preserve-3d;
+}
+@keyframes logo3dTilt {
+    0%, 100% { transform: perspective(600px) rotateX(0deg) rotateY(0deg); }
+    25% { transform: perspective(600px) rotateX(5deg) rotateY(3deg); }
+    50% { transform: perspective(600px) rotateX(0deg) rotateY(0deg); }
+    75% { transform: perspective(600px) rotateX(-5deg) rotateY(-3deg); }
+}
+
+/* 3D Animation: Breathe (gentle scale in/out) */
+.logo-3d-breathe {
+    animation: logo3dBreathe var(--logo-anim-speed) ease-in-out infinite;
+}
+@keyframes logo3dBreathe {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    [data-brand-logo].logo-3d-float,
+    [data-brand-logo].logo-3d-rotate,
+    [data-brand-logo].logo-3d-pulse,
+    [data-brand-logo].logo-3d-glow,
+    [data-brand-logo].logo-3d-tilt,
+    [data-brand-logo].logo-3d-breathe {
+        animation: none !important;
+        transform: none !important;
+        filter: none !important;
+    }
+}

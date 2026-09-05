@@ -1997,7 +1997,7 @@ async function _syncToLiveWebsiteActual() {
             'tamilAIStream_songs', 'tamilAIStream_stations', 'tamilAIStream_categories',
             'tamilAIStream_featured', 'tamilAIStream_trending', 'tamilAIStream_artistHits',
             'tamilAIStream_quotes', 'tamilAIStream_siteSettings', 'tamilAIStream_navigation',
-            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_miniPlayerSettings',
+            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_logoSettings', 'tamilAIStream_miniPlayerSettings',
             'tamilAIStream_playerPrefs', 'tamilAIStream_advertisements', 'tamilAIStream_splash',
             'tamilAIStream_moods', 'tamilAIStream_aiRadio', 'tamilAIStream_notifications',
             'tamilAIStream_images', 'tamilAIStream_moviesCollections',
@@ -2126,7 +2126,7 @@ async function publishChanges() {
             'tamilAIStream_songs', 'tamilAIStream_stations', 'tamilAIStream_categories',
             'tamilAIStream_featured', 'tamilAIStream_trending', 'tamilAIStream_artistHits',
             'tamilAIStream_quotes', 'tamilAIStream_siteSettings', 'tamilAIStream_navigation',
-            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_miniPlayerSettings',
+            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_logoSettings', 'tamilAIStream_miniPlayerSettings',
             'tamilAIStream_playerPrefs', 'tamilAIStream_advertisements', 'tamilAIStream_splash',
             'tamilAIStream_moods', 'tamilAIStream_aiRadio', 'tamilAIStream_notifications',
             'tamilAIStream_images', 'tamilAIStream_moviesCollections',
@@ -6243,10 +6243,15 @@ const _hccSections = [
 let _hccUndoStack = [];
 let _hccRedoStack = [];
 let _hccSettings = {};
+let _hccLogoSettings = {};
 let _hccDragItem = null;
 
 function loadHomeControl() {
     _hccSettings = JSON.parse(JSON.stringify(DataStore.getSectionSettings()));
+    _hccLogoSettings = JSON.parse(JSON.stringify(DataStore.getLogoSettings()));
+    if (!_hccLogoSettings.logo || Object.keys(_hccLogoSettings).length < 3) {
+        _hccLogoSettings = { logo: '', logoWidth: 40, animation3d: false, animationStyle: 'float', animationSpeed: 3, sizeDesktop: 40, sizeTablet: 36, sizeMobile: 32, position: 'left', headerPlacement: 'topnav', showSplash: true, showPwa: true, showFavicon: true };
+    }
     // Ensure all sections have settings
     _hccSections.forEach(sec => {
         if (!_hccSettings[sec.id]) {
@@ -6255,8 +6260,156 @@ function loadHomeControl() {
     });
     _hccUndoStack = [];
     _hccRedoStack = [];
+    _hccRenderLogoPanel();
     _hccRenderList();
     _hccUpdateUndoRedo();
+}
+
+function _hccRenderLogoPanel() {
+    const panel = document.getElementById('hccLogoPanel');
+    if (!panel) return;
+    const ls = _hccLogoSettings;
+    const previewSrc = ls.logo || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none'%3E%3Ccircle cx='20' cy='20' r='18' fill='url(%23g)'/%3E%3Cpath d='M14 28V14l14 7-14 7z' fill='%23fff' opacity='.9'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='40' y2='40'%3E%3Cstop stop-color='%2322d3ee'/%3E%3Cstop offset='.5' stop-color='%233b82f6'/%3E%3Cstop offset='1' stop-color='%23a855f7'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E";
+    const animClass = ls.animation3d ? ('logo-3d-' + (ls.animationStyle || 'float')) : '';
+
+    panel.innerHTML = `
+    <div class="hcc-section" style="border-color: rgba(34,211,238,0.2);">
+        <div class="hcc-section-header" style="cursor:default;">
+            <div class="hcc-section-icon"><i class="fas fa-cube"></i></div>
+            <div class="hcc-section-info">
+                <div class="hcc-section-name">Global 3D Logo</div>
+                <div class="hcc-section-id">brand-identity</div>
+            </div>
+        </div>
+        <div class="hcc-settings" style="display:block;">
+            <div style="display:flex;gap:24px;flex-wrap:wrap;padding:16px;">
+                <!-- Preview -->
+                <div style="text-align:center;min-width:120px;">
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:8px;">PREVIEW</div>
+                    <div style="width:80px;height:80px;margin:0 auto;background:rgba(255,255,255,0.05);border-radius:16px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.1);">
+                        <div data-brand-logo class="${animClass}" style="width:${ls.sizeDesktop || 40}px;height:${ls.sizeDesktop || 40}px;">
+                            <img src="${previewSrc}" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">
+                        </div>
+                    </div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:6px;">Tamil AI Stream</div>
+                </div>
+                <!-- Controls -->
+                <div style="flex:1;min-width:280px;">
+                    <div class="hcc-settings-group">
+                        <div class="hcc-settings-group-title"><i class="fas fa-image"></i> Logo Image</div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Upload Logo</span>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <input type="file" accept="image/*" id="hccLogoFile" style="display:none;" onchange="hccLogoUpload(event)">
+                                <button class="hcc-topbar-btn hcc-save" onclick="document.getElementById('hccLogoFile').click()" style="font-size:12px;padding:6px 12px;"><i class="fas fa-upload"></i> Choose File</button>
+                                <button class="hcc-topbar-btn" onclick="hccLogoReset()" style="font-size:12px;padding:6px 12px;"><i class="fas fa-undo"></i> Reset</button>
+                            </div>
+                        </div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Logo URL</span>
+                            <input class="hcc-input" value="${_hccEsc(ls.logo || '')}" placeholder="https://... or data:image/..." onchange="hccLogoUpdate('logo',this.value)">
+                        </div>
+                    </div>
+                    <div class="hcc-settings-group">
+                        <div class="hcc-settings-group-title"><i class="fas fa-cube"></i> 3D Animation</div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Enable 3D</span>
+                            <label class="hcc-toggle" onclick="event.stopPropagation()">
+                                <input type="checkbox" ${ls.animation3d ? 'checked' : ''} onchange="hccLogoUpdate('animation3d',this.checked)">
+                                <span class="hcc-toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Style</span>
+                            <select class="hcc-input" onchange="hccLogoUpdate('animationStyle',this.value)">
+                                <option value="float" ${ls.animationStyle==='float'?'selected':''}>Float</option>
+                                <option value="rotate" ${ls.animationStyle==='rotate'?'selected':''}>Rotate</option>
+                                <option value="pulse" ${ls.animationStyle==='pulse'?'selected':''}>Pulse</option>
+                                <option value="glow" ${ls.animationStyle==='glow'?'selected':''}>Glow</option>
+                                <option value="tilt" ${ls.animationStyle==='tilt'?'selected':''}>Tilt</option>
+                                <option value="breathe" ${ls.animationStyle==='breathe'?'selected':''}>Breathe</option>
+                            </select>
+                        </div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Speed (s)</span>
+                            <input class="hcc-input" type="number" min="0.5" max="10" step="0.5" value="${ls.animationSpeed || 3}" onchange="hccLogoUpdate('animationSpeed',parseFloat(this.value))">
+                        </div>
+                    </div>
+                    <div class="hcc-settings-group">
+                        <div class="hcc-settings-group-title"><i class="fas fa-arrows-alt"></i> Sizes (px)</div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Desktop</span>
+                            <input class="hcc-input" type="number" min="16" max="120" value="${ls.sizeDesktop || 40}" onchange="hccLogoUpdate('sizeDesktop',parseInt(this.value))">
+                        </div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Tablet</span>
+                            <input class="hcc-input" type="number" min="16" max="120" value="${ls.sizeTablet || 36}" onchange="hccLogoUpdate('sizeTablet',parseInt(this.value))">
+                        </div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Mobile</span>
+                            <input class="hcc-input" type="number" min="16" max="120" value="${ls.sizeMobile || 32}" onchange="hccLogoUpdate('sizeMobile',parseInt(this.value))">
+                        </div>
+                    </div>
+                    <div class="hcc-settings-group">
+                        <div class="hcc-settings-group-title"><i class="fas fa-map-marker-alt"></i> Placement</div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Position</span>
+                            <select class="hcc-input" onchange="hccLogoUpdate('position',this.value)">
+                                <option value="left" ${ls.position==='left'?'selected':''}>Left</option>
+                                <option value="center" ${ls.position==='center'?'selected':''}>Center</option>
+                                <option value="right" ${ls.position==='right'?'selected':''}>Right</option>
+                            </select>
+                        </div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Splash Screen</span>
+                            <label class="hcc-toggle" onclick="event.stopPropagation()">
+                                <input type="checkbox" ${ls.showSplash !== false ? 'checked' : ''} onchange="hccLogoUpdate('showSplash',this.checked)">
+                                <span class="hcc-toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">PWA Header</span>
+                            <label class="hcc-toggle" onclick="event.stopPropagation()">
+                                <input type="checkbox" ${ls.showPwa !== false ? 'checked' : ''} onchange="hccLogoUpdate('showPwa',this.checked)">
+                                <span class="hcc-toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Favicon</span>
+                            <label class="hcc-toggle" onclick="event.stopPropagation()">
+                                <input type="checkbox" ${ls.showFavicon !== false ? 'checked' : ''} onchange="hccLogoUpdate('showFavicon',this.checked)">
+                                <span class="hcc-toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function hccLogoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { showToast('Logo must be under 2MB', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        _hccLogoSettings.logo = e.target.result;
+        _hccRenderLogoPanel();
+        showToast('Logo uploaded! Click Save to apply.', 'success');
+    };
+    reader.readAsDataURL(file);
+}
+
+function hccLogoUpdate(key, value) {
+    _hccLogoSettings[key] = value;
+    _hccRenderLogoPanel();
+}
+
+function hccLogoReset() {
+    _hccLogoSettings = { logo: '', logoWidth: 40, animation3d: false, animationStyle: 'float', animationSpeed: 3, sizeDesktop: 40, sizeTablet: 36, sizeMobile: 32, position: 'left', headerPlacement: 'topnav', showSplash: true, showPwa: true, showFavicon: true };
+    _hccRenderLogoPanel();
+    showToast('Logo reset to default', 'success');
 }
 
 function _hccRenderList() {
@@ -6546,6 +6699,7 @@ function hccRedo() {
 
 function hccSave() {
     DataStore.setSectionSettings(_hccSettings);
+    DataStore.setLogoSettings(_hccLogoSettings);
     // Also sync sectionsOrder for backward compatibility
     const orderArr = _hccSections.map((sec, i) => {
         const s = _hccSettings[sec.id] || {};
@@ -6555,6 +6709,8 @@ function hccSave() {
     // Also write to websiteLayout for legacy sync
     const layout = orderArr.filter(s => s.enabled).map(s => ({ type: s.id }));
     DataStore.setLayout(layout);
+    // Apply logo to live site immediately
+    if (typeof BrandConfig !== 'undefined' && BrandConfig.apply) BrandConfig.apply();
     showToast('Settings saved!', 'success');
 }
 

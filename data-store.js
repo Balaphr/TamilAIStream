@@ -26,6 +26,7 @@ const DataStore = {
         NAVIGATION: 'tamilAIStream_navigation',
         SECTIONS_ORDER: 'tamilAIStream_sectionsOrder',
         SECTION_SETTINGS: 'tamilAIStream_sectionSettings',
+        LOGO_SETTINGS: 'tamilAIStream_logoSettings',
         LIKED_SONGS: 'ytm_likedSongs',
         PLAYLISTS: 'ytm_playlists',
         HISTORY: 'ytm_history',
@@ -196,6 +197,9 @@ const DataStore = {
 
     getSectionSettings() { return this.get(this.KEYS.SECTION_SETTINGS) || {}; },
     setSectionSettings(data) { this.set(this.KEYS.SECTION_SETTINGS, data); },
+
+    getLogoSettings() { return this.get(this.KEYS.LOGO_SETTINGS) || {}; },
+    setLogoSettings(data) { this.set(this.KEYS.LOGO_SETTINGS, data); },
 
     getLayout() { return this.get('websiteLayout') || []; },
     setLayout(data) { this.set('websiteLayout', data); },
@@ -485,6 +489,25 @@ init() {
                 'ai-ai-rec': { enabled: true, order: 12, title: 'AI Recommendations', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3 },
                 'ai-favorites': { enabled: false, order: 13, title: 'Favourites', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3 },
                 'ai-decades': { enabled: true, order: 14, title: 'Music by Era', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3, card: { width: 160, height: 0, gap: 12, radius: 14, thumbAspect: '1/1', design: 'standard', animation: 'none', animSpeed: 0.3, hover: 'lift' }, responsive: { mobile: { width: 140, gap: 10, radius: 12 }, tablet: { width: 155, gap: 11, radius: 13 }, desktop: { width: 160, gap: 12, radius: 14 } } }
+            });
+        }
+
+        // Logo Settings (Global 3D Logo defaults)
+        if (!localStorage.getItem(this.KEYS.LOGO_SETTINGS)) {
+            this.setLogoSettings({
+                logo: '',
+                logoWidth: 40,
+                animation3d: false,
+                animationStyle: 'float',
+                animationSpeed: 3,
+                sizeDesktop: 40,
+                sizeTablet: 36,
+                sizeMobile: 32,
+                position: 'left',
+                headerPlacement: 'topnav',
+                showSplash: true,
+                showPwa: true,
+                showFavicon: true
             });
         }
     },
