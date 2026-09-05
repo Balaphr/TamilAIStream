@@ -1594,16 +1594,45 @@
 }
 .ai-playlist-count { font-size: 0.72rem; color: var(--ai-text-3); }
 
-/* ---------- 7b. For You — Collection Cards (JioHotstar Style) ---------- */
+/* ---------- 7b. For You — Premium Portrait Carousel ---------- */
 .foryou-section { overflow: hidden; }
+.foryou-section .ai-sec-head { padding: 18px 20px 4px; }
+
+/* Upgrade button — top-right */
+.foryou-upgrade-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    font-family: var(--ai-ff);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.foryou-upgrade-btn i { font-size: 0.65rem; }
+.foryou-upgrade-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(245,158,11,0.35);
+}
+.foryou-upgrade-btn:active { transform: scale(0.96); }
+
+/* Carousel scroll container */
 .foryou-carousel-wrap {
     position: relative;
     overflow: hidden;
 }
 .foryou-carousel {
     display: flex;
-    gap: 14px;
-    padding: 10px 20px 20px;
+    gap: 16px;
+    padding: 12px 24px 28px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
@@ -1614,128 +1643,115 @@
 }
 .foryou-carousel::-webkit-scrollbar { display: none; }
 
-/* Collection card — JioHotstar style square card */
-.foryou-coll-card {
-    flex: 0 0 150px;
+/* Individual portrait slide */
+.foryou-slide {
+    flex: 0 0 auto;
+    width: 220px;
     position: relative;
-    border-radius: 14px;
+    border-radius: 18px;
     overflow: hidden;
     background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.08);
     cursor: pointer;
-    scroll-snap-align: start;
+    scroll-snap-align: center;
     will-change: transform;
     transform: translateZ(0);
-    transition: transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94),
-                box-shadow 0.25s;
+    transition: transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94),
+                box-shadow 0.3s;
     -webkit-tap-highlight-color: transparent;
+    user-select: none;
 }
-.foryou-coll-card:hover {
-    transform: translateY(-4px) scale(1.03);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.45), 0 0 16px rgba(34,211,238,0.08);
+.foryou-slide:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 20px rgba(34,211,238,0.06);
 }
-.foryou-coll-card:active {
-    transform: scale(0.96);
-    transition-duration: 0.08s;
+.foryou-slide:active {
+    transform: scale(0.97);
+    transition-duration: 0.1s;
 }
 
-/* Card artwork — square 1:1 ratio */
-.foryou-coll-art {
+/* Portrait artwork — 3:4 aspect ratio */
+.foryou-slide-art {
     position: relative;
     width: 100%;
-    aspect-ratio: 1;
+    aspect-ratio: 3/4;
     overflow: hidden;
     background: #0d1330;
 }
-.foryou-coll-art img {
+.foryou-slide-art img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+    transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
 }
-.foryou-coll-card:hover .foryou-coll-art img {
-    transform: scale(1.08);
+.foryou-slide:hover .foryou-slide-art img {
+    transform: scale(1.06);
 }
 
 /* Bottom gradient overlay */
-.foryou-coll-gradient {
+.foryou-slide-gradient {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 60%;
-    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+    height: 55%;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.35) 55%, transparent 100%);
     pointer-events: none;
 }
 
-/* Rank number top-left */
-.foryou-coll-rank {
+/* Trending badge — top-left */
+.foryou-slide-badge {
     position: absolute;
-    top: 8px;
-    left: 8px;
-    width: 26px;
-    height: 26px;
-    display: grid;
-    place-items: center;
-    border-radius: 7px;
-    font-size: 0.65rem;
+    top: 10px;
+    left: 10px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-family: var(--ai-ff);
+    font-size: 0.62rem;
     font-weight: 800;
     color: #fff;
-    background: linear-gradient(135deg, rgba(34,211,238,0.35), rgba(99,102,241,0.35));
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255,255,255,0.15);
     z-index: 2;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+.foryou-slide-badge.foryou-badge-top {
+    background: linear-gradient(135deg, rgba(239,68,68,0.85), rgba(220,38,38,0.75));
+    border-color: rgba(239,68,68,0.4);
+    box-shadow: 0 2px 12px rgba(239,68,68,0.3);
 }
 
-/* Play icon center on hover */
-.foryou-coll-play {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    opacity: 0;
-    transition: opacity 0.25s;
-    z-index: 2;
-}
-.foryou-coll-card:hover .foryou-coll-play { opacity: 1; }
-.foryou-coll-play i {
-    width: 42px;
-    height: 42px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.92);
-    color: #0a0f1e;
-    font-size: 0.9rem;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
-}
-
-/* Card info — name + count at bottom of card */
-.foryou-coll-info {
+/* Song info — bottom of slide */
+.foryou-slide-info {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 10px;
+    padding: 14px 12px 16px;
     z-index: 2;
 }
-.foryou-coll-name {
+.foryou-slide-title {
     font-family: var(--ai-ff);
-    font-size: 0.78rem;
+    font-size: 0.88rem;
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.3;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    text-shadow: 0 1px 6px rgba(0,0,0,0.6);
 }
-.foryou-coll-count {
-    font-size: 0.62rem;
+.foryou-slide-artist {
+    font-size: 0.7rem;
     font-weight: 500;
     color: rgba(255,255,255,0.6);
-    margin-top: 1px;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ---------- 7c. Upcoming Section ---------- */

@@ -340,50 +340,58 @@ window.AIHome = (() => {
         });
     }
 
-    /* ---------------- For You — 10 Collection Cards (JioHotstar Style) ---------------- */
+    /* ---------------- For You — Premium Portrait Carousel ---------------- */
     function renderForYouTrending() {
         const container = $('foryouCarousel');
         if (!container) return;
 
-        /* Build 10 themed collections from available songs */
         const songs = publishedSongs();
         if (!songs.length) {
-            container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ai-text-3);font-size:0.8rem;">No songs available yet</div>';
+            container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ai-text-3);font-size:0.85rem;">No songs available yet</div>';
             return;
         }
 
-        const collections = buildForYouCollections(songs);
-        if (!collections.length) {
-            container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ai-text-3);font-size:0.8rem;">No collections yet</div>';
-            return;
-        }
+        const trending = songs.slice(0, 10);
+        const grads = [
+            'linear-gradient(135deg,#1e3a5f,#0d1f3c)',
+            'linear-gradient(135deg,#3b0a47,#1e0a33)',
+            'linear-gradient(135deg,#0f3b2e,#064e3b)',
+            'linear-gradient(135deg,#7c2d12,#431407)',
+            'linear-gradient(135deg,#312e81,#1e1b4b)',
+            'linear-gradient(135deg,#1e1b4b,#0f172a)',
+            'linear-gradient(135deg,#0c4a6e,#082f49)',
+            'linear-gradient(135deg,#581c87,#3b0764)',
+            'linear-gradient(135deg,#14532d,#052e16)',
+            'linear-gradient(135deg,#78350f,#451a03)'
+        ];
 
-        container.innerHTML = collections.map((col, i) => {
-            const name = (col.name || 'Collection').slice(0, 28);
-            const count = col.songs ? col.songs.length : 0;
-            const art = col.art || '';
-            const grad = col.gradient || 'linear-gradient(135deg,#1a1040,#0d1330)';
-            return '<div class="foryou-coll-card" data-col="' + i + '">' +
-                '<div class="foryou-coll-art" style="background:' + grad + ';' +
-                    (art ? 'background-image:url(\'' + art + '\');background-size:cover;background-position:center;' : '') + '">' +
-                    (art ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
-                    '<div class="foryou-coll-gradient"></div>' +
-                    '<div class="foryou-coll-rank">#' + (i + 1) + '</div>' +
-                    '<div class="foryou-coll-play"><i class="fas fa-play"></i></div>' +
+        container.innerHTML = trending.map((song, i) => {
+            const title = (song.title || song.name || 'Untitled').slice(0, 40);
+            const artist = (song.artist || song.movie || '').slice(0, 30);
+            const art = song.albumCover || song.image || song.artwork || song.thumbnail || '';
+            const grad = grads[i % grads.length];
+            const badgeClass = i < 3 ? ' foryou-badge-top' : '';
+            return '<div class="foryou-slide" data-song-idx="' + i + '">' +
+                '<div class="foryou-slide-art" style="background:' + grad + ';' +
+                    (art ? 'background-image:url(\'' + escapeHtml(art) + '\');background-size:cover;background-position:center;' : '') + '">' +
+                    (art ? '<img src="' + escapeHtml(art) + '" alt="" loading="' + (i < 3 ? 'eager' : 'lazy') + '" decoding="async" onerror="this.remove()">' : '') +
+                    '<div class="foryou-slide-gradient"></div>' +
+                    '<div class="foryou-slide-badge' + badgeClass + '">#' + (i + 1) + ' Trending</div>' +
                 '</div>' +
-                '<div class="foryou-coll-info">' +
-                    '<div class="foryou-coll-name" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</div>' +
-                    '<div class="foryou-coll-count">' + count + ' songs</div>' +
+                '<div class="foryou-slide-info">' +
+                    '<div class="foryou-slide-title">' + escapeHtml(title) + '</div>' +
+                    (artist ? '<div class="foryou-slide-artist">' + escapeHtml(artist) + '</div>' : '') +
                 '</div>' +
             '</div>';
         }).join('');
 
-        container.querySelectorAll('.foryou-coll-card').forEach((card, idx) => {
-            card.addEventListener('click', () => {
-                const col = collections[idx];
-                if (!col || !col.songs || !col.songs.length) return;
-                if (typeof window.playSong === 'function') window.playSong(col.songs[0], col.songs);
-                else showToastSafe('Playing: ' + col.name, 'info');
+        container.querySelectorAll('.foryou-slide').forEach((slide, idx) => {
+            slide.addEventListener('click', (e) => {
+                e.preventDefault();
+                const song = trending[idx];
+                if (!song) return;
+                if (typeof window.playSong === 'function') window.playSong(song, trending);
+                else showToastSafe('Playing: ' + (song.title || song.name), 'info');
             });
         });
     }
@@ -2108,8 +2116,8 @@ window.AIHome = (() => {
                 var hArt = artOf(heroSongs[0]);
                 if (hArt) urls.push(hArt);
             }
-            /* For You collection cards — first 6 */
-            var fyCards = document.querySelectorAll('#foryouCarousel .foryou-coll-art img');
+            /* For You slides — first 6 */
+            var fyCards = document.querySelectorAll('#foryouCarousel .foryou-slide-art img');
             for (var i = 0; i < Math.min(6, fyCards.length); i++) {
                 if (fyCards[i].src) urls.push(fyCards[i].src);
             }

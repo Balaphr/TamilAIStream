@@ -77,7 +77,7 @@ body {
 .tamil-hit-card,
 .ad-banner-card,
 .hero-ad-card,
-.foryou-coll-card,
+.foryou-slide,
 .upcoming-card {
     overscroll-behavior: auto;
 }
@@ -103,7 +103,7 @@ body {
 .tamil-hit-card,
 .ad-banner-card,
 .hero-ad-card,
-.foryou-coll-card,
+.foryou-slide,
 .upcoming-card {
     contain: layout style;
 }
@@ -153,7 +153,7 @@ body {
 .movie-card,
 .artist-hit-card,
 .tamil-hit-card,
-.foryou-coll-card,
+.foryou-slide,
 .upcoming-card {
     transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
                 opacity 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
@@ -167,7 +167,7 @@ body {
 .movie-card:hover,
 .artist-hit-card:hover,
 .tamil-hit-card:hover,
-.foryou-coll-card:hover,
+.foryou-slide:hover,
 .upcoming-card:hover {
     transform: translateZ(0) scale(1.02);
 }

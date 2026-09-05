@@ -74,12 +74,10 @@ body {
     .grid-3 { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
     .slide-art { width: 120px; height: 120px; }
 
-    /* For You Collection Cards — Tablet (JioHotstar Style) */
-    .foryou-coll-card {
-        flex: 0 0 160px;
-    }
-    .foryou-coll-info { padding: 10px; }
-    .foryou-coll-name { font-size: 0.82rem; }
+    /* For You — Premium Portrait Carousel Tablet */
+    .foryou-slide { width: 200px; border-radius: 16px; }
+    .foryou-slide-title { font-size: 0.84rem; }
+    .foryou-slide-artist { font-size: 0.68rem; }
 
     /* Upcoming Section — Tablet */
     .upcoming-card {
@@ -430,31 +428,26 @@ body {
         will-change: transform;
     }
 
-    /* ======== For You Collection Cards — Mobile (JioHotstar Style) ======== */
+    /* ======== For You — Premium Portrait Carousel Mobile ======== */
     .foryou-carousel {
-        gap: 10px;
-        padding: 8px 14px 16px;
+        gap: 12px;
+        padding: 10px 16px 24px;
     }
-    .foryou-coll-card {
-        flex: 0 0 130px;
-        border-radius: 12px;
+    .foryou-slide {
+        width: 170px;
+        border-radius: 14px;
     }
-    .foryou-coll-rank {
-        width: 22px;
-        height: 22px;
-        font-size: 0.58rem;
+    .foryou-slide-badge {
+        top: 8px;
+        left: 8px;
+        padding: 3px 8px;
+        font-size: 0.56rem;
         border-radius: 6px;
-        top: 6px;
-        left: 6px;
     }
-    .foryou-coll-play i {
-        width: 36px;
-        height: 36px;
-        font-size: 0.8rem;
-    }
-    .foryou-coll-info { padding: 8px; }
-    .foryou-coll-name { font-size: 0.72rem; }
-    .foryou-coll-count { font-size: 0.58rem; }
+    .foryou-slide-info { padding: 10px 10px 14px; }
+    .foryou-slide-title { font-size: 0.78rem; }
+    .foryou-slide-artist { font-size: 0.62rem; }
+    .foryou-upgrade-btn { padding: 5px 12px; font-size: 0.66rem; }
 
     /* ======== Upcoming Section — Mobile ======== */
     .upcoming-row {
@@ -625,14 +618,14 @@ body {
     /* Ticker */
     .ytm-ticker-item { padding: 0 8px; }
 
-    /* ======== For You Collection Cards — Small Mobile ======== */
-    .foryou-coll-card {
-        flex: 0 0 115px;
-        border-radius: 10px;
+    /* ======== For You — Premium Portrait Carousel Small Mobile ======== */
+    .foryou-slide {
+        width: 150px;
+        border-radius: 12px;
     }
-    .foryou-coll-info { padding: 6px; }
-    .foryou-coll-name { font-size: 0.66rem; }
-    .foryou-coll-rank { width: 20px; height: 20px; font-size: 0.52rem; }
+    .foryou-slide-info { padding: 8px 8px 12px; }
+    .foryou-slide-title { font-size: 0.72rem; }
+    .foryou-slide-badge { font-size: 0.5rem; padding: 2px 7px; }
 
     /* ======== Upcoming Section — Small Mobile ======== */
     .upcoming-card {
