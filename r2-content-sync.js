@@ -194,7 +194,14 @@
                             }
                         });
                     }
-                    mergedData[key] = Array.from(mergedMap.values());
+                    // If remote is empty but local has items, preserve local.
+                    // This prevents seeded defaults (e.g. stations) from being lost
+                    // when the R2 manifest has an empty array for this key.
+                    if (mergedMap.size === 0 && Array.isArray(localValue) && localValue.length > 0) {
+                        mergedData[key] = localValue;
+                    } else {
+                        mergedData[key] = Array.from(mergedMap.values());
+                    }
                 } else if (Array.isArray(localValue) && localValue.length > 0 && isWriter) {
                     mergedData[key] = localValue;
                 } else if (remoteValue !== undefined && remoteValue !== null) {

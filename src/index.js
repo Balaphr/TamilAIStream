@@ -356,7 +356,28 @@ async function handleManifestGet(env) {
     if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
     const obj = await env.MEDIA_BUCKET.get('content-manifest.json');
     if (!obj) return json({ version: 1, data: {}, updatedAt: new Date().toISOString() });
-    return new Response(await obj.text(), {
+
+    // Seed default Tamil FM stations if manifest has none.
+    // This ensures the live site always has radio stations without requiring
+    // the Builder to explicitly save them first.
+    let manifest = JSON.parse(await obj.text());
+    const stations = manifest?.data?.stations;
+    if (Array.isArray(stations) && stations.length === 0) {
+      manifest.data.stations = [
+        { id: 'st_radio_mirchi', name: 'Radio Mirchi Tamil', freq: '98.3', streamUrl: 'https://listen.openstream.co/4543/audio', genre: 'Music', city: 'Chennai', status: 'active', thumbnail: '' },
+        { id: 'st_suryan_fm', name: 'Suryan FM', freq: '93.5', streamUrl: 'https://listen.openstream.co/6714/audio', genre: 'Music', city: 'Chennai', status: 'active', thumbnail: '' },
+        { id: 'st_hello_fm', name: 'Hello FM', freq: '106.4', streamUrl: 'https://listen.openstream.co/4428/audio', genre: 'Music', city: 'Chennai', status: 'active', thumbnail: '' },
+        { id: 'st_big_fm', name: 'Big FM Tamil', freq: '92.7', streamUrl: 'https://listen.openstream.co/4434/audio', genre: 'Music', city: 'Chennai', status: 'active', thumbnail: '' },
+        { id: 'st_radio_city', name: 'Radio City Tamil', freq: '91.1', streamUrl: 'https://listen.openstream.co/4426/audio', genre: 'Music', city: 'Chennai', status: 'active', thumbnail: '' },
+        { id: 'st_fm_rainbow', name: 'FM Rainbow Chennai', freq: '101.4', streamUrl: 'https://air.pc.cdn.bitgravity.com/air/live/pbaudio022/playlist.m3u8', genre: 'Music', city: 'Chennai', status: 'active', thumbnail: '' },
+        { id: 'st_ilayaraja', name: 'Ilayaraja Radio', freq: 'Online', streamUrl: 'https://server.geetradio.com:8100/radio.mp3', genre: 'Music', city: 'India', status: 'active', thumbnail: '' },
+        { id: 'st_ar_rahman', name: 'AR Rahman Radio', freq: 'Online', streamUrl: 'https://stream.zeno.fm/ihpr0rqzoxquv', genre: 'Music', city: 'India', status: 'active', thumbnail: '' },
+        { id: 'st_radio_tamizha', name: 'Radio Tamizha', freq: 'Online', streamUrl: 'https://c22.radioboss.fm:8832/stream', genre: 'Music', city: 'India', status: 'active', thumbnail: '' },
+        { id: 'st_tamil_ai_fm', name: 'Tamil AI FM', freq: 'Online', streamUrl: 'https://servidor23-4.brlogic.com:7072/live?source=website', genre: 'Music', city: 'Malaysia', status: 'active', thumbnail: '' }
+      ];
+    }
+
+    return new Response(JSON.stringify(manifest), {
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache', 'Expires': '0', 'CDN-Cache-Control': 'no-store', 'Surrogate-Control': 'no-cache' },
     });
   } catch (e) {

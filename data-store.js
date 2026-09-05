@@ -347,9 +347,20 @@ init() {
             this.setSongs([]);
         }
         
-        // Stations
+        // Stations (seed with default Tamil FM stations if empty)
         if (!localStorage.getItem(this.KEYS.STATIONS)) {
-            this.setStations([]);
+            this.setStations([
+                { id: 'st_radio_mirchi', name: 'Radio Mirchi Tamil', freq: '98.3', streamUrl: 'https://listen.openstream.co/4543/audio', genre: 'Music', city: 'Chennai', status: 'active', thumbnail: '' },
+                { id: 'st_suryan_fm', name: 'Suryan FM', freq: '93.5', streamUrl: 'https://listen.openstream.co/6714/audio', genre: 'Music', city: 'Chennai', status: 'active', thumbnail: '' },
+                { id: 'st_hello_fm', name: 'Hello FM', freq: '106.4', streamUrl: 'https://listen.openstream.co/4428/audio', genre: 'Music', city: 'Chennai', status: 'active', thumbnail: '' },
+                { id: 'st_big_fm', name: 'Big FM Tamil', freq: '92.7', streamUrl: 'https://listen.openstream.co/4434/audio', genre: 'Music', city: 'Chennai', status: 'active', thumbnail: '' },
+                { id: 'st_radio_city', name: 'Radio City Tamil', freq: '91.1', streamUrl: 'https://listen.openstream.co/4426/audio', genre: 'Music', city: 'Chennai', status: 'active', thumbnail: '' },
+                { id: 'st_fm_rainbow', name: 'FM Rainbow Chennai', freq: '101.4', streamUrl: 'https://air.pc.cdn.bitgravity.com/air/live/pbaudio022/playlist.m3u8', genre: 'Music', city: 'Chennai', status: 'active', thumbnail: '' },
+                { id: 'st_ilayaraja', name: 'Ilayaraja Radio', freq: 'Online', streamUrl: 'https://server.geetradio.com:8100/radio.mp3', genre: 'Music', city: 'India', status: 'active', thumbnail: '' },
+                { id: 'st_ar_rahman', name: 'AR Rahman Radio', freq: 'Online', streamUrl: 'https://stream.zeno.fm/ihpr0rqzoxquv', genre: 'Music', city: 'India', status: 'active', thumbnail: '' },
+                { id: 'st_radio_tamizha', name: 'Radio Tamizha', freq: 'Online', streamUrl: 'https://c22.radioboss.fm:8832/stream', genre: 'Music', city: 'India', status: 'active', thumbnail: '' },
+                { id: 'st_tamil_ai_fm', name: 'Tamil AI FM', freq: 'Online', streamUrl: 'https://servidor23-4.brlogic.com:7072/live?source=website', genre: 'Music', city: 'Malaysia', status: 'active', thumbnail: '' }
+            ]);
         }
         
         // Categories
