@@ -6387,6 +6387,17 @@ function elUpdateSetting(key, value) {
     elUpdatePreview();
 }
 
+function elUpdateDeviceSetting(device, key, value) {
+    const all = DataStore.getEntranceLogo() || {};
+    if (!all[device]) all[device] = {};
+    all[device][key] = value;
+    DataStore.setEntranceLogo(all);
+    // Update preview if we're currently viewing that device
+    if (_elCurrentDevice === device) {
+        elUpdatePreview();
+    }
+}
+
 function elUploadLogo(event) {
     const file = event.target.files[0];
     if (!file) return;

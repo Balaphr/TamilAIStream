@@ -3760,6 +3760,26 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 }
 .el-select { cursor: pointer; }
 
+/* Form input wrapper for inline units */
+.form-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.form-input-wrapper .form-input { flex: 1; }
+.form-unit {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    padding-top: 8px; /* align with input */
+}
+.form-hint {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    display: block;
+}
+
 .el-file-upload {
     display: flex;
     gap: 8px;
