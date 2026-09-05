@@ -1624,24 +1624,37 @@
 }
 .foryou-upgrade-btn:active { transform: scale(0.96); }
 
-/* Carousel scroll container */
+/* Carousel scroll container — auto-scrolling (no manual scroll) */
 .foryou-carousel-wrap {
     position: relative;
     overflow: hidden;
+    /* Fade edges for smooth visual */
+    mask-image: linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%);
 }
 .foryou-carousel {
     display: flex;
     gap: 16px;
     padding: 12px 24px 28px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-    scroll-behavior: smooth;
-    will-change: scroll-position;
+    width: max-content;
+    will-change: transform;
+    transform: translateZ(0);
 }
 .foryou-carousel::-webkit-scrollbar { display: none; }
+
+/* Horizontal auto-scroll — CSS only, never pauses */
+@keyframes foryou-scroll-left {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+.foryou-carousel.foryou-autoscroll {
+    animation: foryou-scroll-left var(--foryou-duration, 30s) linear infinite;
+    /* Never pause on hover, touch, or focus */
+    animation-play-state: running !important;
+}
+.foryou-carousel.foryou-autoscroll * {
+    animation-play-state: running !important;
+}
 
 /* Individual portrait slide */
 .foryou-slide {
@@ -1653,7 +1666,6 @@
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.08);
     cursor: pointer;
-    scroll-snap-align: center;
     will-change: transform;
     transform: translateZ(0);
     transition: transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94),
@@ -5043,7 +5055,8 @@ body.ai-playlist-detail-open { overflow: hidden; }
     .ai-orb-ring,
     .ai-orb-glow,
     .ai-orb-core,
-    .ai-orb-wave span {
+    .ai-orb-wave span,
+    .foryou-carousel {
         animation: none !important;
         transition: none !important;
         transform: none !important;

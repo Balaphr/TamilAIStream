@@ -783,6 +783,12 @@ a,
     .sc-paused {
         animation-play-state: paused !important;
     }
+    /* Keep For You horizontal auto-scroll alive in PWA */
+    .foryou-autoscroll {
+        animation-duration: var(--foryou-duration, 30s) !important;
+        animation-iteration-count: infinite !important;
+        animation-play-state: running !important;
+    }
     .ai-playlist-card,
     .ai-fm-card,
     .ai-song-card,

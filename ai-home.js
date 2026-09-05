@@ -340,7 +340,7 @@ window.AIHome = (() => {
         });
     }
 
-    /* ---------------- For You — Premium Portrait Carousel ---------------- */
+    /* ---------------- For You — Premium Portrait Carousel (Auto-Scroll) ---------------- */
     function renderForYouTrending() {
         const container = $('foryouCarousel');
         if (!container) return;
@@ -365,7 +365,7 @@ window.AIHome = (() => {
             'linear-gradient(135deg,#78350f,#451a03)'
         ];
 
-        container.innerHTML = trending.map((song, i) => {
+        function buildSlideHTML(song, i) {
             const title = (song.title || song.name || 'Untitled').slice(0, 40);
             const artist = (song.artist || song.movie || '').slice(0, 30);
             const art = song.albumCover || song.image || song.artwork || song.thumbnail || '';
@@ -383,16 +383,31 @@ window.AIHome = (() => {
                     (artist ? '<div class="foryou-slide-artist">' + escapeHtml(artist) + '</div>' : '') +
                 '</div>' +
             '</div>';
-        }).join('');
+        }
 
-        container.querySelectorAll('.foryou-slide').forEach((slide, idx) => {
+        const slidesHTML = trending.map((s, i) => buildSlideHTML(s, i)).join('');
+
+        /* Duplicate for seamless infinite loop (same technique as Songs Collections) */
+        container.innerHTML = slidesHTML + slidesHTML;
+
+        /* Bind click → play on ALL slides (originals + duplicates) */
+        container.querySelectorAll('.foryou-slide').forEach((slide) => {
             slide.addEventListener('click', (e) => {
                 e.preventDefault();
+                const idx = parseInt(slide.dataset.songIdx, 10);
                 const song = trending[idx];
                 if (!song) return;
                 if (typeof window.playSong === 'function') window.playSong(song, trending);
                 else showToastSafe('Playing: ' + (song.title || song.name), 'info');
             });
+        });
+
+        /* Calculate animation duration: ~40px per second scroll speed */
+        requestAnimationFrame(() => {
+            const halfWidth = container.scrollWidth / 2;
+            const duration = Math.max(12, halfWidth / 40);
+            container.style.setProperty('--foryou-duration', duration + 's');
+            container.classList.add('foryou-autoscroll');
         });
     }
 
