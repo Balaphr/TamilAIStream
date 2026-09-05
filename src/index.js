@@ -8,7 +8,6 @@ const REDIRECTS = {
   '/login': '/login.html',
   '/builder': '/builder.html',
   '/admin': '/builder.html',
-  '/admin.html': '/builder.html',
   '/playlist': '/playlist.html',
   '/profile': '/profile.html',
   '/dashboard': '/dashboard.html',
@@ -163,12 +162,6 @@ export default {
       }
       if (url.pathname === '/api/global-settings' && request.method === 'POST') {
         return handleGlobalSettingsPost(request, env);
-      }
-
-      if (url.pathname === '/admin.html') {
-        const newUrl = new URL(url.origin + '/builder.html');
-        const assetReq = new Request(newUrl.toString(), request);
-        return env.ASSETS.fetch(assetReq);
       }
 
       if (url.pathname === '/api/media/list' && request.method === 'GET') {

@@ -71,9 +71,9 @@ loginForm?.addEventListener('submit', async (e) => {
         
         showToast('Login successful! Redirecting...', 'success');
         
-        // Redirect to admin dashboard
+        // Redirect to admin dashboard (Builder)
         setTimeout(() => {
-            window.location.href = 'admin.html';
+            window.location.href = '/builder.html';
         }, 1000);
         
     } catch (error) {
@@ -94,7 +94,7 @@ function checkExistingSession() {
         const sessionData = JSON.parse(session);
         if (sessionData.expiry > Date.now()) {
             // Session is valid, redirect to dashboard
-            window.location.href = 'admin.html';
+            window.location.href = '/builder.html';
             return true;
         } else {
             // Session expired, clear it
@@ -267,7 +267,7 @@ async function signInWithGoogle() {
         }
 
         showToast('Login successful! Redirecting...', 'success');
-        setTimeout(() => { window.location.href = 'admin.html'; }, 800);
+        setTimeout(() => { window.location.href = '/builder.html'; }, 800);
 
     } catch (error) {
         console.error('Google sign-in error:', error);
