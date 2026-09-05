@@ -165,6 +165,12 @@ export default {
         return handleGlobalSettingsPost(request, env);
       }
 
+      if (url.pathname === '/admin.html') {
+        const newUrl = new URL(url.origin + '/builder.html');
+        const assetReq = new Request(newUrl.toString(), request);
+        return env.ASSETS.fetch(assetReq);
+      }
+
       if (url.pathname === '/api/media/list' && request.method === 'GET') {
         return handleMediaList(url, env);
       }
