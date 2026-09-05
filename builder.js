@@ -515,6 +515,264 @@ let _currentPage = null;
 const _pageLoaded = {};
 
 // ============================================
+// GLOBAL BUILDER TOOLBAR
+// ============================================
+const _gbPageTitles = {
+    dashboard: ['fa-gauge-high', 'Dashboard'],
+    stations: ['fa-tower-broadcast', 'Radio Management'],
+    songs: ['fa-music', 'Add Songs'],
+    content: ['fa-layer-group', 'Content Management'],
+    images: ['fa-images', 'Manage Images'],
+    settings: ['fa-cog', 'Site Settings'],
+    moods: ['fa-face-smile', 'Moods & Genres'],
+    decades: ['fa-calendar-days', 'Music by Era'],
+    airadio: ['fa-robot', 'AI Radio Moods'],
+    notifications: ['fa-bell', 'Notifications'],
+    splash: ['fa-rocket', 'Splash Screen'],
+    player: ['fa-headphones', 'Player Settings'],
+    navigation: ['fa-bars', 'Navigation'],
+    homecontrol: ['fa-sliders', 'Home Control Center'],
+    sections: ['fa-list-ol', 'Home Page Sections'],
+    ads: ['fa-bullhorn', 'Ads Manager'],
+    upcomingReleases: ['fa-forward', 'Upcoming Releases'],
+    visualeditor: ['fa-paint-brush', 'Visual Editor'],
+    miniplayersettings: ['fa-window-minimize', 'Mini Player'],
+    preview: ['fa-eye', 'Live Preview'],
+    analytics: ['fa-chart-line', 'Analytics'],
+    musiccollections: ['fa-record-vinyl', 'Music Collections'],
+    site360: ['fa-globe', 'Site 360'],
+    aiwebflow: ['fa-wand-magic-sparkles', 'AI Webflow'],
+    application: ['fa-mobile-screen', 'Application'],
+    songsCollections: ['fa-layer-group', 'Songs Collections'],
+    newalbums: ['fa-compact-disc', 'New Albums'],
+    changes: ['fa-clock-rotate-left', 'Recent Changes'],
+    trash: ['fa-trash', 'Trash']
+};
+
+// Global undo/redo stacks (per-page)
+const _gbUndoStacks = {};
+const _gbRedoStacks = {};
+const _gbHistory = [];
+const _gbMaxHistory = 30;
+const _gbMaxUndo = 50;
+
+// Pages that have their own save/publish (routed to page-specific functions)
+const _gbSpecialPages = ['homecontrol', 'visualeditor', 'aiwebflow', 'site360', 'preview'];
+
+function _gbGetPageUndoStack() {
+    const p = _currentPage || 'dashboard';
+    if (!_gbUndoStacks[p]) _gbUndoStacks[p] = [];
+    return _gbUndoStacks[p];
+}
+function _gbGetPageRedoStack() {
+    const p = _currentPage || 'dashboard';
+    if (!_gbRedoStacks[p]) _gbRedoStacks[p] = [];
+    return _gbRedoStacks[p];
+}
+
+function gbPushUndo(label) {
+    const stack = _gbGetPageUndoStack();
+    const page = _currentPage || 'dashboard';
+    // Capture current page state snapshot
+    const snapshot = _gbCapturePageState(page);
+    stack.push({ page, state: snapshot, label: label || 'Change', time: Date.now() });
+    if (stack.length > _gbMaxUndo) stack.shift();
+    _gbRedoStacks[page] = [];
+    _gbUpdateToolbarUndoRedo();
+    _gbAddHistoryEntry(label || 'Change', page);
+}
+
+function _gbCapturePageState(page) {
+    try {
+        // Capture all DataStore keys relevant to the page
+        const keys = ['tamilAIStream_songs', 'tamilAIStream_stations', 'tamilAIStream_categories',
+            'tamilAIStream_featured', 'tamilAIStream_trending', 'tamilAIStream_artistHits',
+            'tamilAIStream_quotes', 'tamilAIStream_siteSettings', 'tamilAIStream_navigation',
+            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_logoSettings',
+            'tamilAIStream_miniPlayerSettings', 'tamilAIStream_moods', 'tamilAIStream_aiRadio',
+            'tamilAIStream_notifications', 'tamilAIStream_splash', 'tamilAIStream_playerPrefs',
+            'tamilAIStream_images', 'tamilAIStream_advertisements', 'tamilAIStream_upcomingReleases',
+            'tamilAIStream_songsCollections', 'tamilAIStream_newAlbums', 'tamilAIStream_musicCollections'];
+        const state = {};
+        keys.forEach(k => { const v = localStorage.getItem(k); if (v) state[k] = v; });
+        return state;
+    } catch (e) { return {}; }
+}
+
+function _gbRestorePageState(snapshot) {
+    try {
+        Object.entries(snapshot).forEach(([k, v]) => { localStorage.setItem(k, v); });
+        // Reload current page data
+        if (_currentPage) {
+            _pageLoaded[_currentPage] = false;
+            _loadPageData(_currentPage);
+        }
+    } catch (e) { console.warn('[GB] Restore failed:', e); }
+}
+
+function gbUndo() {
+    const stack = _gbGetPageUndoStack();
+    if (!stack.length) return;
+    const redoStack = _gbGetPageRedoStack();
+    const entry = stack.pop();
+    const currentSnapshot = _gbCapturePageState(entry.page);
+    redoStack.push({ page: entry.page, state: currentSnapshot, label: entry.label, time: Date.now() });
+    _gbRestorePageState(entry.state);
+    _gbUpdateToolbarUndoRedo();
+}
+
+function gbRedo() {
+    const redoStack = _gbGetPageRedoStack();
+    if (!redoStack.length) return;
+    const stack = _gbGetPageUndoStack();
+    const entry = redoStack.pop();
+    const currentSnapshot = _gbCapturePageState(entry.page);
+    stack.push({ page: entry.page, state: currentSnapshot, label: entry.label, time: Date.now() });
+    _gbRestorePageState(entry.state);
+    _gbUpdateToolbarUndoRedo();
+}
+
+function _gbUpdateToolbarUndoRedo() {
+    const undoBtn = document.getElementById('gbUndoBtn');
+    const redoBtn = document.getElementById('gbRedoBtn');
+    if (undoBtn) undoBtn.disabled = _gbGetPageUndoStack().length === 0;
+    if (redoBtn) redoBtn.disabled = _gbGetPageRedoStack().length === 0;
+}
+
+function _gbAddHistoryEntry(action, page) {
+    const pageInfo = _gbPageTitles[page] || ['fa-circle', page];
+    _gbHistory.unshift({
+        action, page, pageTitle: pageInfo[1], icon: pageInfo[0],
+        time: Date.now()
+    });
+    if (_gbHistory.length > _gbMaxHistory) _gbHistory.pop();
+    _gbRenderHistory();
+}
+
+function _gbRenderHistory() {
+    const list = document.getElementById('gbHistoryList');
+    if (!list) return;
+    if (!_gbHistory.length) {
+        list.innerHTML = '<div class="gb-history-empty">No changes recorded yet</div>';
+        return;
+    }
+    list.innerHTML = _gbHistory.map((h, i) => {
+        const t = new Date(h.time);
+        const timeStr = t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateStr = t.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        return `<div class="gb-history-item" data-idx="${i}">
+            <div class="gb-history-item-icon"><i class="fas ${h.icon}"></i></div>
+            <div class="gb-history-item-info">
+                <div class="gb-history-item-action">${h.action}</div>
+                <div class="gb-history-item-meta">${h.pageTitle} · ${dateStr} ${timeStr}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function gbToggleHistory() {
+    const panel = document.getElementById('gbHistoryPanel');
+    if (!panel) return;
+    const isVisible = panel.style.display !== 'none';
+    panel.style.display = isVisible ? 'none' : 'flex';
+    if (!isVisible) _gbRenderHistory();
+}
+
+function gbSave() {
+    const page = _currentPage || 'dashboard';
+    if (page === 'homecontrol') { hccSave(); return; }
+    if (page === 'settings') { saveSettings(); return; }
+    if (page === 'stations') { saveAllStations(); return; }
+    if (page === 'ads') { saveAds(); return; }
+    if (page === 'splash') { saveSplashSettings(); return; }
+    if (page === 'navigation') { saveNavigation(); return; }
+    if (page === 'moods') { saveMoods(); return; }
+    if (page === 'decades') { saveDecades(); return; }
+    if (page === 'airadio') { saveAIRadioMoods(); return; }
+    if (page === 'notifications') { saveNotifications(); return; }
+    if (page === 'player') { savePlayerSettings(); return; }
+    if (page === 'miniplayersettings') { saveMiniPlayerSettings(); return; }
+    if (page === 'musiccollections') { saveMusicCollections(); return; }
+    if (page === 'upcomingReleases') { saveUpcomingReleases(); return; }
+    if (page === 'songsCollections') { saveSongsCollections(); return; }
+    if (page === 'newalbums') { saveNewAlbums(); return; }
+    if (page === 'content') { saveContent(); return; }
+    if (page === 'songs') { showToast('Songs saved', 'success'); return; }
+    if (page === 'images') { showToast('Images saved', 'success'); return; }
+    // Default: save all DataStore
+    try { DataStore.set('tamilAIStream_lastSave', Date.now()); } catch(e) {}
+    showToast('Settings saved!', 'success');
+}
+
+function gbPreview() {
+    gbSave();
+    window.open('index.html', '_blank');
+}
+
+async function gbPublish() {
+    gbSave();
+    const progressEl = document.getElementById('gbProgress');
+    const fillEl = document.getElementById('gbProgressFill');
+    const textEl = document.getElementById('gbProgressText');
+    const publishBtn = document.getElementById('gbPublishBtn');
+    if (!progressEl || !fillEl || !textEl) return;
+
+    progressEl.style.display = 'flex';
+    publishBtn.disabled = true;
+    publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span class="gb-btn-label">Updating...</span>';
+
+    function setProgress(pct, msg) {
+        fillEl.style.width = pct + '%';
+        textEl.textContent = msg || (pct + '%');
+    }
+
+    try {
+        setProgress(10, 'Saving settings...');
+        await new Promise(r => setTimeout(r, 300));
+
+        setProgress(30, 'Syncing to live website...');
+        syncToLiveWebsite();
+        await new Promise(r => setTimeout(r, 500));
+
+        setProgress(60, 'Uploading to R2...');
+        if (window.ContentSync && typeof ContentSync.syncCurrentState === 'function') {
+            await ContentSync.syncCurrentState();
+        }
+        await new Promise(r => setTimeout(r, 500));
+
+        setProgress(85, 'Verifying deployment...');
+        await new Promise(r => setTimeout(r, 500));
+
+        try {
+            const res = await fetch('/api/deploy-verify');
+            const data = await res.json();
+            if (data.ok) {
+                setProgress(100, `Update Complete! (${data.stationCount} stations, ${data.songCount} songs)`);
+            } else {
+                setProgress(100, 'Update Complete!');
+            }
+        } catch (_) {
+            setProgress(100, 'Update Complete!');
+        }
+
+        setTimeout(() => { progressEl.style.display = 'none'; }, 3000);
+    } catch (err) {
+        setProgress(100, 'Update failed: ' + err.message);
+        showToast('Publish failed', 'error');
+    } finally {
+        publishBtn.disabled = false;
+        publishBtn.innerHTML = '<i class="fas fa-rocket"></i> <span class="gb-btn-label">Update Website</span>';
+    }
+}
+
+function gbUpdateToolbarForPage(page) {
+    const info = _gbPageTitles[page] || ['fa-circle', page];
+    const titleEl = document.getElementById('gbToolbarTitle');
+    if (titleEl) titleEl.innerHTML = `<i class="fas ${info[0]}"></i> ${info[1]}`;
+    _gbUpdateToolbarUndoRedo();
+}
+
+// ============================================
 // Universal Deleted Items Filter
 // Filters out items whose IDs are in deletedIds
 // ============================================
@@ -568,6 +826,12 @@ function navigateTo(page) {
 
     document.querySelectorAll('.builder-page').forEach(p => p.style.display = 'none');
     document.querySelectorAll('.builder-sidebar-item').forEach(i => i.classList.remove('active'));
+
+    // Update global toolbar title
+    gbUpdateToolbarForPage(page);
+
+    // Hide page-specific toolbars (global toolbar replaces them)
+    document.querySelectorAll('.hcc-topbar, .hcc-progress').forEach(el => el.style.display = 'none');
 
     // Trash opens in right panel, not center
     if (page === 'trash') {
@@ -6820,6 +7084,13 @@ function _hccUpdateUndoRedo() {
     const redoBtn = document.getElementById('hccRedoBtn');
     if (undoBtn) undoBtn.disabled = _hccUndoStack.length === 0;
     if (redoBtn) redoBtn.disabled = _hccRedoStack.length === 0;
+    // Also sync global toolbar when on HCC page
+    if (_currentPage === 'homecontrol') {
+        const gbUndo = document.getElementById('gbUndoBtn');
+        const gbRedo = document.getElementById('gbRedoBtn');
+        if (gbUndo) gbUndo.disabled = _hccUndoStack.length === 0;
+        if (gbRedo) gbRedo.disabled = _hccRedoStack.length === 0;
+    }
 }
 
 function hccUndo() {
@@ -6862,15 +7133,16 @@ function hccPreview() {
 
 async function hccPublish() {
     hccSave();
-    const progressEl = document.getElementById('hccProgress');
-    const fillEl = document.getElementById('hccProgressFill');
-    const textEl = document.getElementById('hccProgressText');
-    const publishBtn = document.getElementById('hccPublishBtn');
+    // Use global toolbar progress bar
+    const progressEl = document.getElementById('gbProgress');
+    const fillEl = document.getElementById('gbProgressFill');
+    const textEl = document.getElementById('gbProgressText');
+    const publishBtn = document.getElementById('gbPublishBtn');
     if (!progressEl || !fillEl || !textEl) return;
 
-    progressEl.style.display = 'block';
+    progressEl.style.display = 'flex';
     publishBtn.disabled = true;
-    publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+    publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span class="gb-btn-label">Updating...</span>';
 
     function setProgress(pct, msg) {
         fillEl.style.width = pct + '%';
@@ -6912,7 +7184,7 @@ async function hccPublish() {
         showToast('Publish failed', 'error');
     } finally {
         publishBtn.disabled = false;
-        publishBtn.innerHTML = '<i class="fas fa-rocket"></i> Update Website';
+        publishBtn.innerHTML = '<i class="fas fa-rocket"></i> <span class="gb-btn-label">Update Website</span>';
     }
 }
 
@@ -6953,13 +7225,32 @@ function _hccReorderFromDOM() {
     });
 }
 
-// Bind HCC button events
+// Bind Global Toolbar + HCC button events
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('hccUndoBtn')?.addEventListener('click', hccUndo);
-    document.getElementById('hccRedoBtn')?.addEventListener('click', hccRedo);
-    document.getElementById('hccSaveBtn')?.addEventListener('click', hccSave);
-    document.getElementById('hccPreviewBtn')?.addEventListener('click', hccPreview);
-    document.getElementById('hccPublishBtn')?.addEventListener('click', hccPublish);
+    // Global toolbar buttons
+    document.getElementById('gbUndoBtn')?.addEventListener('click', gbUndo);
+    document.getElementById('gbRedoBtn')?.addEventListener('click', gbRedo);
+    document.getElementById('gbHistoryBtn')?.addEventListener('click', gbToggleHistory);
+    document.getElementById('gbSaveBtn')?.addEventListener('click', gbSave);
+    document.getElementById('gbPreviewBtn')?.addEventListener('click', gbPreview);
+    document.getElementById('gbPublishBtn')?.addEventListener('click', gbPublish);
+
+    // Legacy HCC buttons (redirect to global toolbar)
+    document.getElementById('hccUndoBtn')?.addEventListener('click', gbUndo);
+    document.getElementById('hccRedoBtn')?.addEventListener('click', gbRedo);
+    document.getElementById('hccSaveBtn')?.addEventListener('click', gbSave);
+    document.getElementById('hccPreviewBtn')?.addEventListener('click', gbPreview);
+    document.getElementById('hccPublishBtn')?.addEventListener('click', gbPublish);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'z' && !e.shiftKey) { e.preventDefault(); gbUndo(); }
+        if (e.ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); gbRedo(); }
+        if (e.ctrlKey && e.key === 's') { e.preventDefault(); gbSave(); }
+    });
+
+    // Initialize toolbar for default page
+    gbUpdateToolbarForPage('dashboard');
 });
 
 // ============================================

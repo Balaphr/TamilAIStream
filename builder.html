@@ -370,6 +370,37 @@
 
                 <!-- Content Area -->
                 <div class="builder-content">
+                    <!-- Global Builder Toolbar -->
+                    <div class="gb-toolbar" id="gbToolbar">
+                        <div class="gb-toolbar-left">
+                            <h1 class="gb-toolbar-title" id="gbToolbarTitle"><i class="fas fa-gauge-high"></i> Dashboard</h1>
+                        </div>
+                        <div class="gb-toolbar-actions">
+                            <button class="gb-btn gb-btn-undo" id="gbUndoBtn" title="Undo (Ctrl+Z)" disabled><i class="fas fa-undo"></i> <span class="gb-btn-label">Undo</span></button>
+                            <button class="gb-btn gb-btn-redo" id="gbRedoBtn" title="Redo (Ctrl+Y)" disabled><i class="fas fa-redo"></i> <span class="gb-btn-label">Redo</span></button>
+                            <button class="gb-btn gb-btn-history" id="gbHistoryBtn" title="History"><i class="fas fa-clock-rotate-left"></i> <span class="gb-btn-label">History</span></button>
+                            <div class="gb-toolbar-divider"></div>
+                            <button class="gb-btn gb-btn-save" id="gbSaveBtn" title="Save"><i class="fas fa-save"></i> <span class="gb-btn-label">Save</span></button>
+                            <button class="gb-btn gb-btn-preview" id="gbPreviewBtn" title="Preview"><i class="fas fa-eye"></i> <span class="gb-btn-label">Preview</span></button>
+                            <button class="gb-btn gb-btn-publish" id="gbPublishBtn" title="Update Website"><i class="fas fa-rocket"></i> <span class="gb-btn-label">Update Website</span></button>
+                        </div>
+                        <!-- Progress Bar (shown during publish) -->
+                        <div class="gb-progress" id="gbProgress" style="display:none;">
+                            <div class="gb-progress-bar"><div class="gb-progress-fill" id="gbProgressFill"></div></div>
+                            <div class="gb-progress-text" id="gbProgressText">0%</div>
+                        </div>
+                    </div>
+                    <!-- History Panel (slide-in) -->
+                    <div class="gb-history-panel" id="gbHistoryPanel" style="display:none;">
+                        <div class="gb-history-header">
+                            <h3><i class="fas fa-clock-rotate-left"></i> Change History</h3>
+                            <button class="gb-btn" onclick="gbToggleHistory()"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="gb-history-list" id="gbHistoryList">
+                            <div class="gb-history-empty">No changes recorded yet</div>
+                        </div>
+                    </div>
+
                     <!-- Dashboard Page -->
                     <div class="builder-page" id="dashboardPage">
                         <div class="builder-page-header">
@@ -1913,24 +1944,6 @@
 
                     <!-- Home Control Center Page -->
                     <div class="builder-page" id="homecontrolPage" style="display:none;">
-                        <!-- Top Bar -->
-                        <div class="hcc-topbar">
-                            <div class="hcc-topbar-left">
-                                <h1 class="hcc-topbar-title"><i class="fas fa-sliders"></i> Home Control Center</h1>
-                            </div>
-                            <div class="hcc-topbar-actions">
-                                <button class="hcc-topbar-btn" id="hccUndoBtn" title="Undo" disabled><i class="fas fa-undo"></i></button>
-                                <button class="hcc-topbar-btn" id="hccRedoBtn" title="Redo" disabled><i class="fas fa-redo"></i></button>
-                                <button class="hcc-topbar-btn hcc-save" id="hccSaveBtn" title="Save"><i class="fas fa-save"></i> Save</button>
-                                <button class="hcc-topbar-btn" id="hccPreviewBtn" title="Preview"><i class="fas fa-eye"></i> Preview</button>
-                                <button class="hcc-topbar-btn hcc-publish" id="hccPublishBtn" title="Update Website"><i class="fas fa-rocket"></i> Update Website</button>
-                            </div>
-                        </div>
-                        <!-- Progress Bar -->
-                        <div class="hcc-progress" id="hccProgress" style="display:none;">
-                            <div class="hcc-progress-bar"><div class="hcc-progress-fill" id="hccProgressFill"></div></div>
-                            <div class="hcc-progress-text" id="hccProgressText">0%</div>
-                        </div>
                         <!-- Global 3D Logo -->
                         <div class="hcc-logo-panel" id="hccLogoPanel"></div>
                         <!-- Section List -->
