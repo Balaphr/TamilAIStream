@@ -187,10 +187,33 @@
                         if (item && item.id !== undefined && item.id !== null) mergedMap.set(item.id, item);
                     });
                     // Writers may hold local-only items (new additions not yet pushed).
+                    // Writers also hold LOCAL updates (e.g. thumbnails) that haven't
+                    // been synced to R2 yet. For items present in BOTH local and
+                    // remote, merge them with local taking priority for fields
+                    // that remote left empty — this prevents losing Builder-only
+                    // data (like station thumbnails) when pulling from R2.
                     if (isWriter && Array.isArray(localValue)) {
                         localValue.forEach(item => {
-                            if (item && item.id !== undefined && item.id !== null && !mergedMap.has(item.id)) {
-                                mergedMap.set(item.id, item);
+                            if (item && item.id !== undefined && item.id !== null) {
+                                const existing = mergedMap.get(item.id);
+                                if (existing) {
+                                    // Merge: remote base + local overrides for empty fields
+                                    const merged = { ...existing };
+                                    Object.keys(item).forEach(k => {
+                                        if (k === 'id') return;
+                                        const localVal = item[k];
+                                        const remoteVal = existing[k];
+                                        // Keep local value if remote is empty/null/undefined
+                                        // but local has a value — this preserves thumbnails,
+                                        // listeners, and other Builder-set fields.
+                                        if (localVal && (!remoteVal || remoteVal === '' || remoteVal === null || remoteVal === undefined)) {
+                                            merged[k] = localVal;
+                                        }
+                                    });
+                                    mergedMap.set(item.id, merged);
+                                } else {
+                                    mergedMap.set(item.id, item);
+                                }
                             }
                         });
                     }
