@@ -241,28 +241,163 @@
   }
 
   /* ============================================================
-     PWA Install Prompt
+     PWA Install Prompt — Premium Mobile Banner
      ============================================================ */
+  var DISMISS_KEY = 'tamilai_pwa_install_dismissed';
+  var INSTALLED_KEY = 'tamilai_pwa_installed';
   var _deferredPrompt = null;
+  var _bannerShown = false;
+
+  function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      || (navigator.maxTouchPoints > 0 && window.innerWidth <= 768);
+  }
+
+  function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+  }
+
+  function isDismissed() {
+    try { return localStorage.getItem(DISMISS_KEY) === '1'; } catch (_) { return false; }
+  }
+
+  function isAlreadyInstalled() {
+    try { return localStorage.getItem(INSTALLED_KEY) === '1'; } catch (_) { return false; }
+  }
+
+  function markDismissed() {
+    try { localStorage.setItem(DISMISS_KEY, '1'); } catch (_) {}
+  }
+
+  function markInstalled() {
+    try {
+      localStorage.setItem(INSTALLED_KEY, '1');
+      localStorage.removeItem(DISMISS_KEY);
+    } catch (_) {}
+  }
+
+  function getLogoSVG() {
+    return '<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<circle cx="20" cy="20" r="18" fill="url(#pwaInstallGrad)"/>' +
+      '<path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/>' +
+      '<defs><linearGradient id="pwaInstallGrad" x1="0" y1="0" x2="40" y2="40">' +
+      '<stop stop-color="#22d3ee"/><stop offset="0.5" stop-color="#3b82f6"/>' +
+      '<stop offset="1" stop-color="#a855f7"/></linearGradient></defs></svg>';
+  }
+
+  function createInstallBanner() {
+    if (_bannerShown || !isMobile() || isStandalone() || isDismissed() || isAlreadyInstalled()) return;
+    _bannerShown = true;
+
+    var banner = document.createElement('div');
+    banner.className = 'pwa-install-banner';
+    banner.setAttribute('role', 'alert');
+    banner.setAttribute('aria-label', 'Install Tamil AI Stream App');
+
+    banner.innerHTML =
+      '<div class="pwa-install-logo">' + getLogoSVG() + '</div>' +
+      '<div class="pwa-install-text">' +
+        '<div class="pwa-install-title">Install Tamil AI Stream</div>' +
+        '<div class="pwa-install-subtitle">AI-Powered Tamil Radio — Free App</div>' +
+      '</div>' +
+      '<button class="pwa-install-btn" aria-label="Install App">' +
+        '<i class="fas fa-arrow-down"></i>Install' +
+      '</button>' +
+      '<button class="pwa-install-dismiss" aria-label="Dismiss">' +
+        '<i class="fas fa-xmark"></i>' +
+      '</button>';
+
+    document.body.appendChild(banner);
+    document.body.classList.add('pwa-install-visible');
+
+    var installBtn = banner.querySelector('.pwa-install-btn');
+    var dismissBtn = banner.querySelector('.pwa-install-dismiss');
+
+    installBtn.addEventListener('click', function() {
+      if (!_deferredPrompt) {
+        showInstallInstructions();
+        return;
+      }
+      _deferredPrompt.prompt();
+      _deferredPrompt.userChoice.then(function(choice) {
+        if (choice.outcome === 'accepted') {
+          markInstalled();
+          hideBanner(banner);
+        }
+        _deferredPrompt = null;
+      });
+    });
+
+    dismissBtn.addEventListener('click', function() {
+      markDismissed();
+      hideBanner(banner);
+    });
+  }
+
+  function hideBanner(banner) {
+    if (!banner) return;
+    banner.classList.add('pwa-exiting');
+    banner.addEventListener('animationend', function() {
+      banner.remove();
+      document.body.classList.remove('pwa-install-visible');
+    }, { once: true });
+    setTimeout(function() {
+      if (banner.parentNode) {
+        banner.remove();
+        document.body.classList.remove('pwa-install-visible');
+      }
+    }, 500);
+  }
+
+  function showInstallInstructions() {
+    var ua = navigator.userAgent.toLowerCase();
+    var isIOS = /iphone|ipad|ipod/.test(ua);
+    var isAndroid = /android/.test(ua);
+    var instructions = '';
+
+    if (isIOS) {
+      instructions = 'Tap the Share button, then "Add to Home Screen".';
+    } else if (isAndroid) {
+      instructions = 'Tap the menu (3 dots), then "Add to Home Screen" or "Install App".';
+    } else {
+      instructions = 'Use your browser\'s "Install App" or "Add to Home Screen" option.';
+    }
+
+    var toast = document.createElement('div');
+    toast.style.cssText =
+      'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:99999;' +
+      'background:rgba(15,20,30,0.95);backdrop-filter:blur(20px);color:#fff;' +
+      'padding:14px 22px;border-radius:14px;font-size:13px;font-weight:500;' +
+      'font-family:Inter,system-ui,sans-serif;max-width:85vw;text-align:center;' +
+      'box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08);' +
+      'animation:pwaBannerSlideDown 0.4s cubic-bezier(0.16,1,0.3,1);';
+    toast.textContent = instructions;
+    document.body.appendChild(toast);
+    setTimeout(function() {
+      toast.style.animation = 'pwaBannerSlideUp 0.3s ease forwards';
+      setTimeout(function() { toast.remove(); }, 400);
+    }, 4000);
+  }
+
   window.addEventListener('beforeinstallprompt', function(e) {
     e.preventDefault();
     _deferredPrompt = e;
-    setTimeout(function() {
-      if (!_deferredPrompt) return;
-      var btn = document.createElement('button');
-      btn.id = 'pwaInstallBtn';
-      btn.className = 'pwa-install-banner';
-      btn.innerHTML = '<i class="fas fa-download"></i> Install Tamil AI Stream';
-      btn.onclick = async function() {
-        _deferredPrompt.prompt();
-        await _deferredPrompt.userChoice;
-        _deferredPrompt = null;
-        btn.remove();
-      };
-      document.body.appendChild(btn);
-    }, 30000);
+    if (isMobile() && !isStandalone() && !isDismissed() && !isAlreadyInstalled()) {
+      setTimeout(createInstallBanner, 2500);
+    }
   });
-  window.addEventListener('appinstalled', function() { _deferredPrompt = null; });
+
+  window.addEventListener('appinstalled', function() {
+    _deferredPrompt = null;
+    markInstalled();
+    var existing = document.querySelector('.pwa-install-banner');
+    if (existing) hideBanner(existing);
+  });
+
+  if (isStandalone()) {
+    markInstalled();
+  }
 
   /* ============================================================
      Boot

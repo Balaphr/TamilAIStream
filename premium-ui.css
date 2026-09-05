@@ -2577,37 +2577,8 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
 }
 
 /* ============================================================
-   PWA INSTALL BANNER
+   PWA INSTALL BANNER — styles moved to pwa-install.css
    ============================================================ */
-.pwa-install-banner {
-    position: fixed;
-    bottom: 90px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #34d399, #10b981);
-    border: none;
-    border-radius: 30px;
-    color: #fff;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 8px 32px rgba(52, 211, 153, 0.4);
-    animation: pwaInstallBounce 3s ease-in-out infinite;
-    white-space: nowrap;
-}
-@keyframes pwaInstallBounce {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(-4px); }
-}
-.pwa-install-banner:hover {
-    box-shadow: 0 12px 40px rgba(52, 211, 153, 0.5);
-}
-.pwa-install-banner i { font-size: 1rem; }
 
 /* ============================================================
    AI FEATURES — OVERLAY PANEL

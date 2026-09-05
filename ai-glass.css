@@ -2803,8 +2803,7 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
     .ai-fm-grid { grid-template-columns: repeat(2, 1fr); }
     .premium-topnav-right > .premium-topnav-right-cluster { display: none !important; }
     .ai-header-actions { gap: 8px; }
-    .ai-hdr-btn.ai-install-btn span { display: none; }
-    .ai-hdr-btn.ai-install-btn { width: 38px; justify-content: center; padding: 0; }
+    .ai-hdr-btn.ai-install-btn { display: none !important; }
     .ai-user-meta, .ai-user-caret { display: none; }
 }
 
