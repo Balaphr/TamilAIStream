@@ -7,6 +7,7 @@ const REDIRECTS = {
   '/': '/index.html',
   '/login': '/login.html',
   '/builder': '/builder.html',
+  '/admin': '/builder.html',
   '/playlist': '/playlist.html',
   '/profile': '/profile.html',
   '/dashboard': '/dashboard.html',
