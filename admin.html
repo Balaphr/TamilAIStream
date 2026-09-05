@@ -168,6 +168,7 @@
         .h-meta { font-size:9px; color:var(--text3); margin-top:2px; display:flex; gap:8px; }
         .h-status { font-size:8px; font-weight:700; padding:1px 5px; border-radius:3px; text-transform:uppercase; }
         .h-s-staging { background:rgba(59,130,246,0.2); color:#3b82f6; }
+        .h-s-live { background:rgba(16,185,129,0.2); color:#10b981; }
         .h-s-published { background:rgba(16,185,129,0.2); color:#10b981; }
         .h-s-reverted { background:rgba(239,68,68,0.2); color:#ef4444; }
         .empty-state { text-align:center; padding:30px 16px; color:var(--text3); }
@@ -228,19 +229,19 @@
 
     <div class="tb-sep"></div>
 
-    <!-- Staging indicator -->
-    <button class="tb-pill off" id="pillStaging" title="Staging mode ΓÇö always active">
+    <!-- Direct Deploy indicator -->
+    <button class="tb-pill on" id="pillDirectDeploy" title="Direct Deploy ΓÇö changes go live immediately">
         <span style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block;"></span>
-        <span id="pillStagingText">Staging: Active</span>
+        <span id="pillDirectDeployText">Direct Deploy</span>
     </button>
 
-    <span class="tb-status" id="tbStatus">LoadingΓÇª</span>
+    <span class="tb-status" id="tbStatus">All changes live</span>
 
     <div class="tb-spacer"></div>
 
     <!-- Actions -->
     <button class="tb-btn" id="btnPreview" title="Preview (hide panels)"><i class="fas fa-eye"></i> Preview</button>
-    <button class="tb-btn" id="btnSave" title="Save to staging"><i class="fas fa-save"></i> Save</button>
+    <button class="tb-btn" id="btnSave" title="Save & deploy to live"><i class="fas fa-save"></i> Save</button>
     <button class="tb-btn tb-btn-green" id="btnPublish" title="Publish to live"><i class="fas fa-rocket"></i> Publish</button>
     <button class="tb-btn" id="btnVersions" title="Version history"><i class="fas fa-code-branch"></i></button>
     <button class="tb-btn" id="btnHistory" title="Changes history"><i class="fas fa-clock-rotate-left"></i></button>
@@ -605,18 +606,23 @@
         try {
             const overrides = AdminEditor.exportOverrides();
             const globalSettings = AdminEditor.getGlobalSettings();
+            
+            // Direct deploy - save directly to production
             await fetch('/api/admin-overrides', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'save-staging', overrides, admin: 'Admin' }),
+                body: JSON.stringify({ action: 'save-direct', overrides, admin: 'Admin' }),
             });
+            
+            // Also save global settings directly
             await fetch('/api/global-settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ settings: globalSettings, admin: 'Admin' }),
+                body: JSON.stringify({ settings: globalSettings, admin: 'Admin', publish: true }),
             });
+            
             AdminEditor.markClean();
-            toast('Saved to staging', 'ok');
+            toast('Saved & deployed to live website', 'ok');
             refreshStatus();
         } catch (e) { toast('Save failed: ' + e.message, 'err'); }
     }
@@ -625,14 +631,8 @@
     async function doPublish() {
         if (!confirm('Publish all changes to the live website?')) return;
         try {
+            // Just trigger save which now directly deploys
             await saveToStaging();
-            await PublishManager.publish();
-            const globalSettings = AdminEditor.getGlobalSettings();
-            await fetch('/api/global-settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ settings: globalSettings, admin: 'Admin', publish: true }),
-            });
             toast('Published to live website!', 'ok');
             refreshStatus();
         } catch (e) { toast('Publish failed: ' + e.message, 'err'); }
@@ -655,12 +655,8 @@
     async function refreshStatus() {
         try {
             const st = await PublishManager.refreshStatus();
-            if (st.hasStaging) {
-                const dt = st.stagingSavedAt ? new Date(st.stagingSavedAt).toLocaleTimeString() : '';
-                $('tbStatus').textContent = 'Staging pending' + (dt ? ' ΓÇö ' + dt : '');
-            } else {
-                $('tbStatus').textContent = 'No pending changes';
-            }
+            // In direct deploy model, changes are immediately live
+            $('tbStatus').textContent = 'All changes live';
         } catch (e) { $('tbStatus').textContent = ''; }
     }
 
@@ -675,7 +671,7 @@
         $('mHistoryBody').innerHTML = entries.slice(0, 80).map(e => {
             const icon = e.type === 'publish' ? 'pub' : e.type === 'revert' ? 'rev' : 'sync';
             const iconClass = e.type === 'publish' ? 'fa-rocket' : e.type === 'revert' ? 'fa-rotate-left' : 'fa-pen';
-            const statusClass = e.status === 'published' ? 'h-s-published' : e.status === 'reverted' ? 'h-s-reverted' : 'h-s-staging';
+            const statusClass = e.status === 'published' ? 'h-s-published' : e.status === 'reverted' ? 'h-s-reverted' : 'h-s-live';
             return '<div class="h-entry"><div class="h-icon h-icon-' + icon + '"><i class="fas ' + iconClass + '"></i></div><div class="h-info"><div class="h-title">' + (e.type === 'publish' ? 'Published' : e.type === 'revert' ? 'Reverted' : 'Edited') + '</div><div class="h-detail">' + (e.details || 'ΓÇö') + '</div><div class="h-meta"><span>' + new Date(e.timestamp).toLocaleString() + '</span><span class="h-status ' + statusClass + '">' + e.status + '</span></div></div></div>';
         }).join('');
     });
@@ -709,7 +705,7 @@
         if (!confirm('Restore to "' + label + '"?')) return;
         try {
             await PublishManager.revertToVersion(id);
-            toast('Restored to "' + label + '" ΓÇö in staging', 'ok');
+            toast('Restored to "' + label + '"', 'ok');
             closeModal('mVersions');
             refreshStatus();
         } catch (e) { toast('Failed: ' + e.message, 'err'); }

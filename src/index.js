@@ -598,30 +598,28 @@ async function handleAdminOverridesPost(request, env) {
   try {
     if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
     const body = await request.json();
-    const action = body.action || 'save-staging';
+    const action = body.action || 'save-direct';
 
-    if (action === 'save-staging') {
+    if (action === 'save-direct' || action === 'save-staging') {
+      // DIRECT DEPLOY: Save directly to production manifest
       const payload = { overrides: body.overrides, savedAt: new Date().toISOString(), savedBy: body.admin || 'Admin' };
-      await env.MEDIA_BUCKET.put('admin-overrides-staging.json', JSON.stringify(payload, null, 2), {
+      await env.MEDIA_BUCKET.put('admin-overrides.json', JSON.stringify(payload, null, 2), {
         httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
       });
-      return json({ success: true, savedAt: payload.savedAt });
+      return json({ success: true, savedAt: payload.savedAt, published: true });
     }
 
     if (action === 'publish') {
-      const stagingObj = await env.MEDIA_BUCKET.get('admin-overrides-staging.json');
-      if (!stagingObj) return json({ error: 'No staging overrides to publish' }, 400);
-      const staging = JSON.parse(await stagingObj.text());
-      staging.publishedAt = new Date().toISOString();
-      await env.MEDIA_BUCKET.put('admin-overrides.json', JSON.stringify(staging, null, 2), {
+      // In direct deploy model, save and publish are the same
+      const payload = { overrides: body.overrides, savedAt: new Date().toISOString(), savedBy: body.admin || 'Admin' };
+      await env.MEDIA_BUCKET.put('admin-overrides.json', JSON.stringify(payload, null, 2), {
         httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
       });
-      await env.MEDIA_BUCKET.delete('admin-overrides-staging.json');
-      return json({ success: true, publishedAt: staging.publishedAt });
+      return json({ success: true, publishedAt: payload.savedAt });
     }
 
     if (action === 'discard') {
-      await env.MEDIA_BUCKET.delete('admin-overrides-staging.json');
+      // No staging to discard in direct deploy model
       return json({ success: true });
     }
 
