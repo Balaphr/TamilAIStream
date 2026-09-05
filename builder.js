@@ -835,15 +835,19 @@ function navigateTo(page) {
     // Hide page-specific toolbars (global toolbar replaces them)
     document.querySelectorAll('.hcc-topbar, .hcc-progress').forEach(el => el.style.display = 'none');
 
+    // Force close right panel for ALL center pages (including entrancelogo)
+    closeRightPanel();
+    const panel = document.getElementById('builderRightPanel');
+    const overlay = document.getElementById('rightPanelOverlay');
+    if (panel) { panel.classList.remove('open'); panel.style.display = 'none'; }
+    if (overlay) { overlay.classList.remove('active'); overlay.style.display = 'none'; }
+
     // Trash opens in right panel, not center
     if (page === 'trash') {
         document.querySelectorAll(`[data-page="trash"]`).forEach(el => el.classList.add('active'));
         _openTrashInRightPanel();
         return;
     }
-
-    // Close right panel when navigating to a center page
-    closeRightPanel();
 
     const pageMap = {
         'dashboard': 'dashboardPage',
@@ -879,7 +883,12 @@ function navigateTo(page) {
 
     const pageId = pageMap[page];
     if (pageId) {
-        document.getElementById(pageId).style.display = 'block';
+        const pageEl = document.getElementById(pageId);
+        if (pageEl) {
+            pageEl.style.display = 'block';
+            pageEl.style.visibility = 'visible';
+            pageEl.style.opacity = '1';
+        }
     }
 
     // Update active states
