@@ -45,7 +45,16 @@ self.addEventListener('install', (event) => {
   if (isDev) { self.skipWaiting(); return; }
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(CRITICAL_ASSETS))
+      .then((cache) => {
+        // Use individual puts instead of addAll so one 404 doesn't break install.
+        return Promise.allSettled(
+          CRITICAL_ASSETS.map((url) =>
+            fetch(url, { cache: 'no-store' }).then((resp) => {
+              if (resp.ok) return cache.put(url, resp);
+            }).catch(() => {})
+          )
+        );
+      })
       .then(() => self.skipWaiting())
   );
 });

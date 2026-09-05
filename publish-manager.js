@@ -1,14 +1,11 @@
 'use strict';
 
 /* ============================================================
-   PublishManager — Staging / Publish Workflow for Tamil AI Stream
+   PublishManager — Content Sync for Tamil AI Stream
 
-   STRICT FLOW: Builder Change → Staging → Admin Tests → Publish → Public
-
-   - ALL Builder writes go to staging-manifest.json (R2)
-   - Public site ONLY reads content-manifest.json (R2)
-   - Admin previews staging, reviews diffs, publishes or discards
-   - Full changes history, publish history, and version snapshots
+   All Builder saves go directly to production via POST /api/manifest.
+   The live site reads from the same R2 manifest on each page load.
+   Full changes history, version snapshots, and event system included.
    ============================================================ */
 
 const PublishManager = (() => {

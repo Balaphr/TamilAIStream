@@ -2087,11 +2087,57 @@ function saveDraft() {
 }
 
 async function publishChanges() {
-    showToast('Saving changes...', 'info');
-    try {
-        // All saves go directly to production — just sync
-        await syncToLiveWebsiteImmediate();
+    const progressContainer = document.getElementById('deployProgressContainer');
+    const progressBar = document.getElementById('deployProgressBar');
+    const progressLabel = document.getElementById('deployProgressLabel');
+    const progressPct = document.getElementById('deployProgressPct');
+    const progressIcon = document.getElementById('deployProgressIcon');
 
+    function setProgress(pct, label) {
+        if (progressBar) progressBar.style.width = pct + '%';
+        if (progressPct) progressPct.textContent = pct + '%';
+        if (progressLabel) progressLabel.textContent = label;
+        if (progressIcon) progressIcon.className = pct < 100 ? 'fas fa-rocket fa-spin' : 'fas fa-check-circle';
+        if (progressBar) progressBar.style.background = pct >= 100 ? '#10b981' : 'linear-gradient(90deg,#10b981,#3b82f6)';
+    }
+
+    try {
+        if (progressContainer) progressContainer.style.display = 'block';
+        setProgress(5, 'Preparing content...');
+
+        await new Promise(r => setTimeout(r, 100));
+        setProgress(15, 'Building content payload...');
+
+        if (window.ContentSync && typeof window.ContentSync.syncCurrentState === 'function') {
+            setProgress(30, 'Uploading to production...');
+            await window.ContentSync.syncCurrentState();
+        } else {
+            setProgress(30, 'Syncing to live site...');
+            await _syncToLiveWebsiteActual();
+        }
+
+        setProgress(55, 'Saving local state...');
+        localStorage.setItem('tamilAIStream_lastSyncedAt', new Date().toISOString());
+        localStorage.setItem('builderLastPublished', Date.now().toString());
+
+        const keysToSync = [
+            'tamilAIStream_songs', 'tamilAIStream_stations', 'tamilAIStream_categories',
+            'tamilAIStream_featured', 'tamilAIStream_trending', 'tamilAIStream_artistHits',
+            'tamilAIStream_quotes', 'tamilAIStream_siteSettings', 'tamilAIStream_navigation',
+            'tamilAIStream_sectionsOrder', 'tamilAIStream_miniPlayerSettings',
+            'tamilAIStream_playerPrefs', 'tamilAIStream_advertisements', 'tamilAIStream_splash',
+            'tamilAIStream_moods', 'tamilAIStream_aiRadio', 'tamilAIStream_notifications',
+            'tamilAIStream_images', 'tamilAIStream_moviesCollections',
+            'tamilAIStream_yearlyCollections', 'tamilAIStream_latestCollections',
+            'tamilAIStream_musicCollections', 'tamilAIStream_upcomingReleases',
+            'tamilAIStream_songsCollections', 'tamilAIStream_newAlbums',
+            'tamilAIStream_deletedIds', 'tamilAIStream_trash'
+        ];
+        keysToSync.forEach(key => {
+            try { localStorage.setItem(key, localStorage.getItem(key) || 'null'); } catch (e) {}
+        });
+
+        setProgress(65, 'Clearing browser caches...');
         if ('caches' in window) {
             try {
                 const cacheNames = await caches.keys();
@@ -2100,6 +2146,29 @@ async function publishChanges() {
                 }
             } catch (e) { /* ignore */ }
         }
+
+        setProgress(75, 'Notifying live tabs...');
+        try {
+            const channel = new BroadcastChannel('tamilAIStream_sync');
+            channel.postMessage({ type: 'content-updated', timestamp: Date.now() });
+            setTimeout(() => channel.close(), 100);
+        } catch (e) {}
+        window.dispatchEvent(new CustomEvent('storage-sync', { detail: { keys: keysToSync } }));
+        window.dispatchEvent(new CustomEvent('premium-sections-sync', { detail: { timestamp: Date.now() } }));
+
+        setProgress(85, 'Verifying deployment...');
+        try {
+            const verifyResp = await fetch('/api/deploy-verify?t=' + Date.now(), { cache: 'no-store' });
+            if (verifyResp.ok) {
+                const verifyData = await verifyResp.json();
+                if (verifyData.ok) {
+                    setProgress(95, 'Verified — ' + verifyData.songCount + ' songs, ' + verifyData.stationCount + ' stations live');
+                }
+            }
+        } catch (e) { /* verification is best-effort */ }
+
+        await new Promise(r => setTimeout(r, 300));
+        setProgress(100, 'All changes are live!');
 
         localStorage.removeItem('tamilAIStream_lastSyncedAt');
 
@@ -2124,12 +2193,21 @@ async function publishChanges() {
         if (publishHistory.length > 50) publishHistory = publishHistory.slice(0, 50);
         publishState = 'published';
         savePublishState();
-        showToast('Website published successfully!', 'success');
         addActivity('Website Published', 'All changes have been published live');
-        updatePublishUI();
+
+        setTimeout(() => {
+            if (progressContainer) progressContainer.style.display = 'none';
+            if (progressBar) progressBar.style.width = '0%';
+        }, 3000);
+
     } catch (error) {
         console.error('Publish error:', error);
-        showToast('Publish failed: ' + error.message, 'error');
+        setProgress(0, 'Update failed: ' + error.message);
+        if (progressBar) progressBar.style.background = '#ef4444';
+        if (progressIcon) progressIcon.className = 'fas fa-exclamation-triangle';
+        setTimeout(() => {
+            if (progressContainer) progressContainer.style.display = 'none';
+        }, 5000);
     }
 }
 

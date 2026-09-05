@@ -186,8 +186,17 @@
                     <a href="index.html" target="_blank" class="builder-btn visit-website-btn" title="Visit Website">
                         <i class="fas fa-globe"></i> Website
                     </a>
-                    <div class="publish-status">
-                        <span class="publish-state-badge draft" id="publishStatusBadge">DRAFT</span>
+                    <div id="deployProgressContainer" style="display:none;position:fixed;top:0;left:0;right:0;z-index:10000;">
+                        <div style="background:rgba(15,20,30,0.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.08);padding:8px 20px;">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+                                <i class="fas fa-rocket" style="color:#10b981;font-size:12px;" id="deployProgressIcon"></i>
+                                <span style="color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;" id="deployProgressLabel">Updating...</span>
+                                <span style="color:rgba(255,255,255,0.5);font-size:11px;margin-left:auto;" id="deployProgressPct">0%</span>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:4px;overflow:hidden;">
+                                <div id="deployProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#10b981,#3b82f6);border-radius:4px;transition:width 0.3s ease;"></div>
+                            </div>
+                        </div>
                     </div>
                     <button class="builder-btn ai-assistant-toggle" onclick="AICommandBot.toggleBot()" title="AI Assistant">
                         <i class="fas fa-robot"></i> <span class="ai-toggle-text">AI</span>

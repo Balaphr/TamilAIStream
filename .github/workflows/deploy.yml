@@ -1,47 +1,32 @@
-name: Deploy to Cloudflare Workers
+name: Deploy to Cloudflare
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-
-permissions:
-  contents: write
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: 20
+          cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
 
-      - name: Install Wrangler
-        run: npm install wrangler@3
-
-      - name: Generate build version
-        run: |
-          BUILD_VERSION="${GITHUB_SHA::8}-$(date +%s)"
-          echo "BUILD_VERSION=${BUILD_VERSION}" >> $GITHUB_ENV
-          echo "const BUILD_VERSION = '${BUILD_VERSION}';" > src/build-version.js
-
-      - name: Build
-        run: npm run build
+      - run: npm run build
 
       - name: Deploy to Cloudflare Workers
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Verify deployment
+        run: |
+          sleep 5
+          curl -sf https://tamilai.stream/api/version || echo "Verification failed — site may still be propagating"

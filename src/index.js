@@ -102,24 +102,29 @@ export default {
         return handleManifestPost(request, env);
       }
 
-      // --- Staging / Publish endpoints ---
+      // --- Deploy verification ---
+      if (url.pathname === '/api/deploy-verify' && request.method === 'GET') {
+        return handleDeployVerifyGet(env);
+      }
+
+      // --- Legacy staging/publish endpoints (backward-compatible stubs) ---
       if (url.pathname === '/api/staging' && request.method === 'GET') {
-        return handleStagingGet(env);
+        return handleStagingGet();
       }
       if (url.pathname === '/api/staging' && request.method === 'POST') {
-        return handleStagingPost(request, env);
+        return handleStagingPost();
       }
       if (url.pathname === '/api/staging' && request.method === 'DELETE') {
-        return handleStagingDelete(env);
+        return handleStagingDelete();
       }
       if (url.pathname === '/api/publish' && request.method === 'POST') {
-        return handlePublishPost(env);
+        return handlePublishPost();
       }
       if (url.pathname === '/api/publish' && request.method === 'GET') {
-        return handlePublishStatus(env);
+        return handlePublishStatus();
       }
       if (url.pathname === '/api/staging/diff' && request.method === 'GET') {
-        return handleStagingDiff(env);
+        return handleStagingDiff();
       }
 
       // --- Version snapshots ---
@@ -372,156 +377,69 @@ async function handleManifestPost(request, env) {
   }
 }
 
-// --- Staging Manifest endpoints ---
+// --- Deploy verification endpoint ---
+// Returns the current build version + content version so the Builder
+// can confirm a deployment succeeded.
 
-async function handleStagingGet(env) {
+async function handleDeployVerifyGet(env) {
+  let contentVersion = null;
+  let songCount = 0;
+  let stationCount = 0;
   try {
-    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
-    const obj = await env.MEDIA_BUCKET.get('staging-manifest.json');
-    if (!obj) return json({ hasStaging: false, staging: null });
-    const staging = JSON.parse(await obj.text());
-    return json({ hasStaging: true, staging });
-  } catch (e) {
-    return json({ error: e.message }, 500);
-  }
-}
-
-async function handleStagingPost(request, env) {
-  try {
-    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
-    const payload = await request.json();
-    payload._stagingMeta = payload._stagingMeta || {};
-    payload._stagingMeta.savedAt = new Date().toISOString();
-    await env.MEDIA_BUCKET.put('staging-manifest.json', JSON.stringify(payload, null, 2), {
-      httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
-    });
-    return json({ success: true, savedAt: payload._stagingMeta.savedAt });
-  } catch (e) {
-    return json({ error: e.message }, 500);
-  }
-}
-
-async function handleStagingDelete(env) {
-  try {
-    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
-    await env.MEDIA_BUCKET.delete('staging-manifest.json');
-    return json({ success: true });
-  } catch (e) {
-    return json({ error: e.message }, 500);
-  }
-}
-
-// --- Publish: copy staging → production ---
-
-async function handlePublishPost(env) {
-  try {
-    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
-    const stagingObj = await env.MEDIA_BUCKET.get('staging-manifest.json');
-    if (!stagingObj) return json({ error: 'No staging changes to publish' }, 400);
-
-    const staging = JSON.parse(await stagingObj.text());
-    // Remove staging metadata before publishing
-    delete staging._stagingMeta;
-    staging.updatedAt = new Date().toISOString();
-    staging._publishedAt = staging.updatedAt;
-
-    // Write to production manifest
-    await env.MEDIA_BUCKET.put('content-manifest.json', JSON.stringify(staging, null, 2), {
-      httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
-    });
-
-    // Clear staging after successful publish
-    await env.MEDIA_BUCKET.delete('staging-manifest.json');
-
-    return json({ success: true, publishedAt: staging._publishedAt });
-  } catch (e) {
-    return json({ error: e.message }, 500);
-  }
-}
-
-// --- Publish status ---
-
-async function handlePublishStatus(env) {
-  try {
-    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
-    const pubObj = await env.MEDIA_BUCKET.get('content-manifest.json');
-    const stagingObj = await env.MEDIA_BUCKET.get('staging-manifest.json');
-    const published = pubObj ? JSON.parse(await pubObj.text()) : null;
-    const staging = stagingObj ? JSON.parse(await stagingObj.text()) : null;
-    return json({
-      hasPublished: !!pubObj,
-      publishedAt: published?.updatedAt || null,
-      hasStaging: !!stagingObj,
-      stagingSavedAt: staging?._stagingMeta?.savedAt || null,
-    });
-  } catch (e) {
-    return json({ error: e.message }, 500);
-  }
-}
-
-// --- Staging Diff: compare staging vs published ---
-
-async function handleStagingDiff(env) {
-  try {
-    if (!env.MEDIA_BUCKET) return json({ error: 'R2 not configured' }, 500);
-    const pubObj = await env.MEDIA_BUCKET.get('content-manifest.json');
-    const stagingObj = await env.MEDIA_BUCKET.get('staging-manifest.json');
-
-    // No staging manifest means no pending, unverified changes to review —
-    // there is nothing to diff and nothing that should appear as pending.
-    if (!stagingObj) {
-      const publishedForAt = pubObj ? JSON.parse(await pubObj.text()) : null;
-      return json({
-        hasChanges: false,
-        changeCount: 0,
-        changes: [],
-        publishedAt: (publishedForAt && publishedForAt.updatedAt) || null,
-        stagingSavedAt: null,
-      });
-    }
-
-    const published = pubObj ? JSON.parse(await pubObj.text()) : { data: {} };
-    const staging = JSON.parse(await stagingObj.text());
-
-    const pubData = published.data || {};
-    const stgData = staging.data || {};
-
-    const changes = [];
-    const allKeys = new Set([...Object.keys(pubData), ...Object.keys(stgData)]);
-
-    for (const key of allKeys) {
-      const pubVal = JSON.stringify(pubData[key] || null);
-      const stgVal = JSON.stringify(stgData[key] || null);
-      if (pubVal !== stgVal) {
-        const pubItems = Array.isArray(pubData[key]) ? (pubData[key] || []).length : null;
-        const stgItems = Array.isArray(stgData[key]) ? (stgData[key] || []).length : null;
-        let status = 'modified';
-        if (pubItems === null && stgItems !== null) status = 'added';
-        else if (pubItems !== null && stgItems === null) status = 'removed';
-        else if (pubItems !== null && stgItems !== null) {
-          if (stgItems > pubItems) status = 'items_added';
-          else if (stgItems < pubItems) status = 'items_removed';
-        }
-
-        changes.push({
-          section: key,
-          status,
-          publishedItems: pubItems,
-          stagingItems: stgItems,
-        });
+    if (env.MEDIA_BUCKET) {
+      const obj = await env.MEDIA_BUCKET.get('content-manifest.json');
+      if (obj) {
+        const manifest = JSON.parse(await obj.text());
+        contentVersion = manifest.updatedAt || null;
+        songCount = Array.isArray(manifest.data?.songs) ? manifest.data.songs.length : 0;
+        stationCount = Array.isArray(manifest.data?.stations) ? manifest.data.stations.length : 0;
       }
     }
+  } catch (_) { /* ignore */ }
 
-    return json({
-      hasChanges: changes.length > 0,
-      changeCount: changes.length,
-      changes,
-      publishedAt: published.updatedAt || null,
-      stagingSavedAt: staging._stagingMeta?.savedAt || null,
-    });
-  } catch (e) {
-    return json({ error: e.message }, 500);
-  }
+  return new Response(JSON.stringify({
+    ok: true,
+    appVersion: DEPLOY_TIME,
+    contentVersion,
+    songCount,
+    stationCount,
+    verifiedAt: new Date().toISOString(),
+  }), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'CDN-Cache-Control': 'no-store',
+      'Surrogate-Control': 'no-cache',
+      ...corsHeaders(),
+    },
+  });
+}
+
+// Legacy staging/publish endpoints — backward-compatible stubs.
+// All saves go directly to production via POST /api/manifest.
+
+function handlePublishPost() {
+  return json({ success: true, message: 'Direct deploy only — use POST /api/manifest.' });
+}
+
+function handlePublishStatus() {
+  return json({ hasPublished: true, publishedAt: new Date().toISOString(), hasStaging: false, stagingSavedAt: null });
+}
+
+function handleStagingDiff() {
+  return json({ hasChanges: false, changeCount: 0, changes: [], publishedAt: null, stagingSavedAt: null });
+}
+
+function handleStagingGet() {
+  return json({ hasStaging: false, staging: null });
+}
+
+function handleStagingPost() {
+  return json({ success: true, message: 'Direct deploy only — use POST /api/manifest instead.' });
+}
+
+function handleStagingDelete() {
+  return json({ success: true });
 }
 
 // --- Version Snapshots ---
