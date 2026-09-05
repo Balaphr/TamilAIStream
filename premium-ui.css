@@ -3145,6 +3145,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     background: rgba(10, 12, 20, 0.95);
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
+    padding-top: env(safe-area-inset-top, 0);
 }
 .premium-topnav-inner {
     display: flex;
