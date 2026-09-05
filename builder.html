@@ -239,6 +239,9 @@
                     <div class="builder-sidebar-section">
                         <div class="builder-sidebar-title">Website</div>
                         <div class="builder-sidebar-menu">
+                            <button class="builder-sidebar-item" data-page="homecontrol">
+                                <i class="fas fa-sliders"></i> Home Control Center
+                            </button>
                             <button class="builder-sidebar-item" data-page="sections">
                                 <i class="fas fa-sort-amount-up"></i> Home Sections
                             </button>
@@ -1906,6 +1909,30 @@
                                 <div id="sectionsList" class="sections-drag-list"></div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Home Control Center Page -->
+                    <div class="builder-page" id="homecontrolPage" style="display:none;">
+                        <!-- Top Bar -->
+                        <div class="hcc-topbar">
+                            <div class="hcc-topbar-left">
+                                <h1 class="hcc-topbar-title"><i class="fas fa-sliders"></i> Home Control Center</h1>
+                            </div>
+                            <div class="hcc-topbar-actions">
+                                <button class="hcc-topbar-btn" id="hccUndoBtn" title="Undo" disabled><i class="fas fa-undo"></i></button>
+                                <button class="hcc-topbar-btn" id="hccRedoBtn" title="Redo" disabled><i class="fas fa-redo"></i></button>
+                                <button class="hcc-topbar-btn hcc-save" id="hccSaveBtn" title="Save"><i class="fas fa-save"></i> Save</button>
+                                <button class="hcc-topbar-btn" id="hccPreviewBtn" title="Preview"><i class="fas fa-eye"></i> Preview</button>
+                                <button class="hcc-topbar-btn hcc-publish" id="hccPublishBtn" title="Update Website"><i class="fas fa-rocket"></i> Update Website</button>
+                            </div>
+                        </div>
+                        <!-- Progress Bar -->
+                        <div class="hcc-progress" id="hccProgress" style="display:none;">
+                            <div class="hcc-progress-bar"><div class="hcc-progress-fill" id="hccProgressFill"></div></div>
+                            <div class="hcc-progress-text" id="hccProgressText">0%</div>
+                        </div>
+                        <!-- Section List -->
+                        <div class="hcc-sections" id="hccSectionsList"></div>
                     </div>
 
                     <!-- Ads Manager Page -->

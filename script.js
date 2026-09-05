@@ -2663,6 +2663,128 @@ function applyVEOverrides() {
 }
 
 // ============================================
+// Section Settings (Home Control Center)
+// Applies section visibility, order, titles, spacing, backgrounds,
+// card dimensions, auto-scroll, and responsive overrides from Builder.
+// ============================================
+function applySectionSettings() {
+    try {
+        const raw = localStorage.getItem('tamilAIStream_sectionSettings');
+        if (!raw) return;
+        const settings = JSON.parse(raw);
+        if (!settings || typeof settings !== 'object') return;
+
+        const mainContent = document.querySelector('.ai-home') || document.querySelector('main') || document.body;
+        const w = window.innerWidth;
+        const device = w < 640 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop';
+
+        // Sort sections by order
+        const sorted = Object.entries(settings)
+            .map(([id, s]) => ({ id, ...(s || {}) }))
+            .sort((a, b) => (a.order || 99) - (b.order || 99));
+
+        // 1. Apply visibility and reorder DOM
+        sorted.forEach(sec => {
+            const el = mainContent.querySelector(`[data-section="${sec.id}"]`);
+            if (!el) return;
+            el.style.display = sec.enabled === false ? 'none' : '';
+            if (sec.enabled !== false && el.parentElement) {
+                el.parentElement.appendChild(el);
+            }
+        });
+
+        // 2. Apply per-section settings
+        sorted.forEach(sec => {
+            if (sec.enabled === false) return;
+            const el = mainContent.querySelector(`[data-section="${sec.id}"]`);
+            if (!el) return;
+
+            // Spacing
+            if (sec.topSpacing) el.style.marginTop = sec.topSpacing + 'px';
+            if (sec.bottomSpacing) el.style.marginBottom = sec.bottomSpacing + 'px';
+
+            // Background
+            if (sec.bg) el.style.background = sec.bg;
+
+            // Title / Subtitle
+            if (sec.title) {
+                const titleEl = el.querySelector('.ai-sec-title');
+                if (titleEl) {
+                    const icon = titleEl.querySelector('i');
+                    titleEl.textContent = sec.title;
+                    if (icon) titleEl.prepend(icon);
+                }
+            }
+            if (sec.subtitle !== undefined && sec.subtitle !== '') {
+                let subEl = el.querySelector('.ai-sec-subtitle');
+                if (!subEl) {
+                    const head = el.querySelector('.ai-sec-head');
+                    if (head) {
+                        subEl = document.createElement('div');
+                        subEl.className = 'ai-sec-subtitle';
+                        subEl.style.cssText = 'font-size:0.72rem;color:rgba(255,255,255,0.5);padding:0 20px 4px;';
+                        head.after(subEl);
+                    }
+                }
+                if (subEl) subEl.textContent = sec.subtitle;
+            }
+
+            // Card settings (apply as CSS custom properties)
+            if (sec.card) {
+                const c = sec.card;
+                const r = (sec.responsive && sec.responsive[device]) || {};
+                if (c.width || r.width) el.style.setProperty('--hcc-card-width', (r.width || c.width) + 'px');
+                if (c.gap || r.gap) el.style.setProperty('--hcc-card-gap', (r.gap || c.gap) + 'px');
+                if (c.radius || r.radius) el.style.setProperty('--hcc-card-radius', (r.radius || c.radius) + 'px');
+                if (c.thumbAspect) el.style.setProperty('--hcc-thumb-aspect', c.thumbAspect);
+            }
+
+            // Animation
+            if (sec.animation && sec.animation !== 'none') {
+                el.style.animation = sec.animation + ' ' + (sec.animationSpeed || 0.3) + 's ease both';
+            }
+        });
+
+        // 3. Apply auto-scroll overrides
+        sorted.forEach(sec => {
+            if (sec.enabled === false || !sec.autoScroll) return;
+            const a = sec.autoScroll;
+            const el = mainContent.querySelector(`[data-section="${sec.id}"]`);
+            if (!el) return;
+
+            // For You carousel auto-scroll direction override
+            if (sec.id === 'foryou-trending' && a.direction) {
+                const carousel = el.querySelector('.foryou-carousel');
+                if (carousel) {
+                    if (a.direction === 'rtl') {
+                        carousel.style.animationDirection = 'reverse';
+                    } else {
+                        carousel.style.animationDirection = 'normal';
+                    }
+                    if (a.speed) {
+                        const halfW = carousel.scrollWidth / 2;
+                        carousel.style.setProperty('--foryou-duration', Math.max(12, halfW / a.speed) + 's');
+                    }
+                }
+            }
+
+            // Songs Collections scroll speed override
+            if (sec.id === 'ai-songs-collections' && a.speed) {
+                const tracks = el.querySelectorAll('.sc-col-track');
+                tracks.forEach(track => {
+                    const halfH = track.scrollHeight / 2;
+                    track.style.setProperty('--sc-duration', Math.max(8, halfH / a.speed) + 's');
+                });
+            }
+        });
+
+        console.log('[HCC] Applied section settings from Builder');
+    } catch (err) {
+        console.warn('[HCC] Failed to apply section settings:', err);
+    }
+}
+
+// ============================================
 // User Profile Update
 // ============================================
 function updateUserProfile(userData) {
@@ -4997,6 +5119,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Apply visual editor overrides from builder
     applyVEOverrides();
+
+    // Apply Home Control Center section settings
+    applySectionSettings();
 
     // Setup filter buttons
     setTimeout(() => {

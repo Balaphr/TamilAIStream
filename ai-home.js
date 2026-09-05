@@ -2156,7 +2156,7 @@ window.AIHome = (() => {
     }
 
     function bindDataSync() {
-        const refresh = () => setTimeout(refreshHome, 300);
+        const refresh = () => setTimeout(() => { refreshHome(); if (typeof applySectionSettings === 'function') applySectionSettings(); }, 300);
         window.addEventListener('storage-sync', refresh);
         window.addEventListener('premium-sections-sync', refresh);
         window.addEventListener('tamilAIStream-content-synced', refresh);
@@ -2183,7 +2183,7 @@ window.AIHome = (() => {
             'tamilAIStream_musicCollections', 'tamilAIStream_advertisements',
             'tamilAIStream_moods', 'tamilAIStream_aiRadio',
             'tamilAIStream_splash', 'tamilAIStream_playerPrefs',
-            'tamilAIStream_navigation', 'tamilAIStream_sectionsOrder',
+            'tamilAIStream_navigation', 'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings',
             'tamilAIStream_miniPlayerSettings', 'tamilAIStream_upcomingReleases',
             'tamilAIStream_songsCollections'
         ];

@@ -25,6 +25,7 @@ const DataStore = {
         PLAYER_PREFS: 'tamilAIStream_playerPrefs',
         NAVIGATION: 'tamilAIStream_navigation',
         SECTIONS_ORDER: 'tamilAIStream_sectionsOrder',
+        SECTION_SETTINGS: 'tamilAIStream_sectionSettings',
         LIKED_SONGS: 'ytm_likedSongs',
         PLAYLISTS: 'ytm_playlists',
         HISTORY: 'ytm_history',
@@ -192,6 +193,9 @@ const DataStore = {
 
     getSectionsOrder() { return this.get('tamilAIStream_sectionsOrder') || []; },
     setSectionsOrder(data) { this.set('tamilAIStream_sectionsOrder', data); },
+
+    getSectionSettings() { return this.get(this.KEYS.SECTION_SETTINGS) || {}; },
+    setSectionSettings(data) { this.set(this.KEYS.SECTION_SETTINGS, data); },
 
     getLayout() { return this.get('websiteLayout') || []; },
     setLayout(data) { this.set('websiteLayout', data); },
@@ -462,6 +466,26 @@ init() {
         }
         if (!localStorage.getItem(this.KEYS.DELETED_IDS)) {
             this.setDeletedIds({});
+        }
+
+        // Section Settings (Home Control Center defaults)
+        if (!localStorage.getItem(this.KEYS.SECTION_SETTINGS)) {
+            this.setSectionSettings({
+                greeting: { enabled: true, order: 1, title: '', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3 },
+                'foryou-trending': { enabled: true, order: 2, title: 'For You', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3, autoScroll: { enabled: true, direction: 'ltr', speed: 40, infinite: true, touch: 'pass-through', click: 'play', hover: 'ignore' }, card: { width: 220, height: 0, gap: 16, radius: 18, thumbAspect: '3/4', design: 'portrait', animation: 'none', animSpeed: 0.3, hover: 'lift' }, responsive: { mobile: { width: 170, gap: 12, radius: 14 }, tablet: { width: 200, gap: 14, radius: 16 }, desktop: { width: 220, gap: 16, radius: 18 } } },
+                'upcoming-new': { enabled: true, order: 3, title: 'Upcoming', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3, autoScroll: { enabled: false, direction: 'ltr', speed: 30, infinite: true, touch: 'pass-through', click: 'play', hover: 'ignore' }, card: { width: 180, height: 0, gap: 14, radius: 14, thumbAspect: '1/1', design: 'standard', animation: 'none', animSpeed: 0.3, hover: 'lift' }, responsive: { mobile: { width: 150, gap: 10, radius: 12 }, tablet: { width: 170, gap: 12, radius: 13 }, desktop: { width: 180, gap: 14, radius: 14 } } },
+                'ai-new-album': { enabled: false, order: 4, title: 'New Album', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3 },
+                'ur-auto-slider': { enabled: false, order: 5, title: 'Upcoming Releases', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3 },
+                'ai-one-tap-radio': { enabled: true, order: 6, title: 'One Tap Radio', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3 },
+                'ai-songs-collections': { enabled: true, order: 7, title: 'Songs Collections', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3, autoScroll: { enabled: true, direction: 'up-down', speed: 18, infinite: true, touch: 'pass-through', click: 'play', hover: 'ignore' } },
+                'ai-music-hero': { enabled: true, order: 8, title: '', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3 },
+                'ai-trending': { enabled: true, order: 9, title: 'Trending', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3, card: { width: 160, height: 0, gap: 12, radius: 14, thumbAspect: '1/1', design: 'standard', animation: 'none', animSpeed: 0.3, hover: 'lift' }, responsive: { mobile: { width: 140, gap: 10, radius: 12 }, tablet: { width: 155, gap: 11, radius: 13 }, desktop: { width: 160, gap: 12, radius: 14 } } },
+                'ai-live-fm': { enabled: true, order: 10, title: 'Live FM', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3, card: { width: 160, height: 0, gap: 12, radius: 14, thumbAspect: '1/1', design: 'standard', animation: 'none', animSpeed: 0.3, hover: 'lift' }, responsive: { mobile: { width: 140, gap: 10, radius: 12 }, tablet: { width: 155, gap: 11, radius: 13 }, desktop: { width: 160, gap: 12, radius: 14 } } },
+                'ai-evergreen': { enabled: true, order: 11, title: 'Evergreen Classics', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3, card: { width: 160, height: 0, gap: 12, radius: 14, thumbAspect: '1/1', design: 'standard', animation: 'none', animSpeed: 0.3, hover: 'lift' }, responsive: { mobile: { width: 140, gap: 10, radius: 12 }, tablet: { width: 155, gap: 11, radius: 13 }, desktop: { width: 160, gap: 12, radius: 14 } } },
+                'ai-ai-rec': { enabled: true, order: 12, title: 'AI Recommendations', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3 },
+                'ai-favorites': { enabled: false, order: 13, title: 'Favourites', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3 },
+                'ai-decades': { enabled: true, order: 14, title: 'Music by Era', subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3, card: { width: 160, height: 0, gap: 12, radius: 14, thumbAspect: '1/1', design: 'standard', animation: 'none', animSpeed: 0.3, hover: 'lift' }, responsive: { mobile: { width: 140, gap: 10, radius: 12 }, tablet: { width: 155, gap: 11, radius: 13 }, desktop: { width: 160, gap: 12, radius: 14 } } }
+            });
         }
     },
 

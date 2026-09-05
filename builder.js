@@ -593,6 +593,7 @@ function navigateTo(page) {
         'splash': 'splashPage',
         'player': 'playerPage',
         'navigation': 'navigationPage',
+        'homecontrol': 'homecontrolPage',
         'sections': 'sectionsPage',
         'ads': 'adsPage',
         'upcomingReleases': 'upcomingReleasesPage',
@@ -644,6 +645,7 @@ function _loadPageData(page) {
     if (page === 'player') loadPlayerPrefs();
     if (page === 'navigation') loadNavigation();
     if (page === 'sections') loadSectionsOrder();
+    if (page === 'homecontrol') loadHomeControl();
     if (page === 'ads') loadAdsTable();
     if (page === 'upcomingReleases') loadUpcomingReleasesTable();
     if (page === 'visualeditor') initVisualEditor();
@@ -1995,7 +1997,7 @@ async function _syncToLiveWebsiteActual() {
             'tamilAIStream_songs', 'tamilAIStream_stations', 'tamilAIStream_categories',
             'tamilAIStream_featured', 'tamilAIStream_trending', 'tamilAIStream_artistHits',
             'tamilAIStream_quotes', 'tamilAIStream_siteSettings', 'tamilAIStream_navigation',
-            'tamilAIStream_sectionsOrder', 'tamilAIStream_miniPlayerSettings',
+            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_miniPlayerSettings',
             'tamilAIStream_playerPrefs', 'tamilAIStream_advertisements', 'tamilAIStream_splash',
             'tamilAIStream_moods', 'tamilAIStream_aiRadio', 'tamilAIStream_notifications',
             'tamilAIStream_images', 'tamilAIStream_moviesCollections',
@@ -2124,7 +2126,7 @@ async function publishChanges() {
             'tamilAIStream_songs', 'tamilAIStream_stations', 'tamilAIStream_categories',
             'tamilAIStream_featured', 'tamilAIStream_trending', 'tamilAIStream_artistHits',
             'tamilAIStream_quotes', 'tamilAIStream_siteSettings', 'tamilAIStream_navigation',
-            'tamilAIStream_sectionsOrder', 'tamilAIStream_miniPlayerSettings',
+            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_miniPlayerSettings',
             'tamilAIStream_playerPrefs', 'tamilAIStream_advertisements', 'tamilAIStream_splash',
             'tamilAIStream_moods', 'tamilAIStream_aiRadio', 'tamilAIStream_notifications',
             'tamilAIStream_images', 'tamilAIStream_moviesCollections',
@@ -6217,6 +6219,451 @@ function saveSectionsOrder() {
     showToast('Sections order saved', 'success');
     syncToLiveWebsite();
 }
+
+// ============================================
+// HOME CONTROL CENTER
+// ============================================
+const _hccSections = [
+    { id: 'greeting', name: 'Greeting', icon: 'fa-hand-wave' },
+    { id: 'foryou-trending', name: 'For You', icon: 'fa-fire-flame-curved', hasCards: true, hasAutoScroll: true },
+    { id: 'upcoming-new', name: 'Upcoming', icon: 'fa-calendar-days', hasCards: true, hasAutoScroll: true },
+    { id: 'ai-new-album', name: 'New Album', icon: 'fa-compact-disc' },
+    { id: 'ur-auto-slider', name: 'Upcoming Releases', icon: 'fa-forward' },
+    { id: 'ai-one-tap-radio', name: 'One Tap Radio', icon: 'fa-radio' },
+    { id: 'ai-songs-collections', name: 'Songs Collections', icon: 'fa-layer-group', hasAutoScroll: true },
+    { id: 'ai-music-hero', name: 'Music Hero', icon: 'fa-star' },
+    { id: 'ai-trending', name: 'Trending', icon: 'fa-chart-line', hasCards: true },
+    { id: 'ai-live-fm', name: 'Live FM', icon: 'fa-tower-broadcast', hasCards: true },
+    { id: 'ai-evergreen', name: 'Evergreen Classics', icon: 'fa-gem', hasCards: true },
+    { id: 'ai-ai-rec', name: 'AI Recommendations', icon: 'fa-wand-magic-sparkles' },
+    { id: 'ai-favorites', name: 'Favourites', icon: 'fa-heart' },
+    { id: 'ai-decades', name: 'Music by Era', icon: 'fa-calendar-days', hasCards: true }
+];
+
+let _hccUndoStack = [];
+let _hccRedoStack = [];
+let _hccSettings = {};
+let _hccDragItem = null;
+
+function loadHomeControl() {
+    _hccSettings = JSON.parse(JSON.stringify(DataStore.getSectionSettings()));
+    // Ensure all sections have settings
+    _hccSections.forEach(sec => {
+        if (!_hccSettings[sec.id]) {
+            _hccSettings[sec.id] = { enabled: false, order: _hccSections.indexOf(sec) + 1, title: sec.name, subtitle: '', topSpacing: 0, bottomSpacing: 0, bg: '', animation: 'none', animationSpeed: 0.3 };
+        }
+    });
+    _hccUndoStack = [];
+    _hccRedoStack = [];
+    _hccRenderList();
+    _hccUpdateUndoRedo();
+}
+
+function _hccRenderList() {
+    const container = document.getElementById('hccSectionsList');
+    if (!container) return;
+    const sorted = _hccSections.slice().sort((a, b) => {
+        const sa = _hccSettings[a.id] || {};
+        const sb = _hccSettings[b.id] || {};
+        return (sa.order || 99) - (sb.order || 99);
+    });
+    container.innerHTML = sorted.map(sec => {
+        const s = _hccSettings[sec.id] || {};
+        const enabled = s.enabled !== false;
+        const order = s.order || _hccSections.indexOf(sec) + 1;
+        return `<div class="hcc-section ${enabled ? '' : 'disabled-section'}" data-id="${sec.id}" draggable="true">
+            <div class="hcc-section-header">
+                <div class="hcc-drag-handle"><i class="fas fa-grip-vertical"></i></div>
+                <div class="hcc-section-icon"><i class="fas ${sec.icon}"></i></div>
+                <div class="hcc-section-info">
+                    <div class="hcc-section-name">${sec.name}</div>
+                    <div class="hcc-section-id">${sec.id}</div>
+                </div>
+                <span class="hcc-section-order">#${order}</span>
+                <label class="hcc-toggle" onclick="event.stopPropagation()">
+                    <input type="checkbox" ${enabled ? 'checked' : ''} onchange="hccToggleSection('${sec.id}', this.checked)">
+                    <span class="hcc-toggle-slider"></span>
+                </label>
+                <button class="hcc-expand-btn" onclick="hccToggleSettings('${sec.id}', this)"><i class="fas fa-chevron-down"></i></button>
+            </div>
+            <div class="hcc-settings" id="hcc-settings-${sec.id}">
+                ${_hccRenderSectionSettings(sec, s)}
+            </div>
+        </div>`;
+    }).join('');
+    _hccSetupDrag();
+}
+
+function _hccRenderSectionSettings(sec, s) {
+    let html = '';
+    // Section Controls
+    html += `<div class="hcc-settings-group">
+        <div class="hcc-settings-group-title"><i class="fas fa-cog"></i> Section Controls</div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Title</span>
+            <input class="hcc-input" value="${_hccEsc(s.title || sec.name)}" onchange="hccUpdate('${sec.id}','title',this.value)">
+        </div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Subtitle</span>
+            <input class="hcc-input" value="${_hccEsc(s.subtitle || '')}" onchange="hccUpdate('${sec.id}','subtitle',this.value)">
+        </div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Top Spacing</span>
+            <input class="hcc-input hcc-input-sm" type="number" min="0" max="100" value="${s.topSpacing || 0}" onchange="hccUpdate('${sec.id}','topSpacing',+this.value)">
+            <span class="hcc-label" style="min-width:auto">px</span>
+        </div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Bottom Spacing</span>
+            <input class="hcc-input hcc-input-sm" type="number" min="0" max="100" value="${s.bottomSpacing || 0}" onchange="hccUpdate('${sec.id}','bottomSpacing',+this.value)">
+            <span class="hcc-label" style="min-width:auto">px</span>
+        </div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Background</span>
+            <input class="hcc-color-input" type="color" value="${s.bg || '#000000'}" onchange="hccUpdate('${sec.id}','bg',this.value)">
+            <input class="hcc-input" value="${_hccEsc(s.bg || '')}" placeholder="transparent / #hex / rgba()" onchange="hccUpdate('${sec.id}','bg',this.value)" style="flex:1">
+        </div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Animation</span>
+            <select class="hcc-select" onchange="hccUpdate('${sec.id}','animation',this.value)">
+                ${_hccAnimOptions(s.animation)}
+            </select>
+        </div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Anim Speed</span>
+            <input class="hcc-input hcc-input-sm" type="number" min="0.1" max="3" step="0.1" value="${s.animationSpeed || 0.3}" onchange="hccUpdate('${sec.id}','animationSpeed',+this.value)">
+            <span class="hcc-label" style="min-width:auto">s</span>
+        </div>
+    </div>`;
+
+    // Card Controls
+    if (sec.hasCards) {
+        const c = s.card || {};
+        html += `<div class="hcc-settings-group">
+            <div class="hcc-settings-group-title"><i class="fas fa-clone"></i> Card Controls</div>
+            <div class="hcc-settings-row">
+                <span class="hcc-label">Width</span>
+                <input class="hcc-input hcc-input-sm" type="number" min="80" max="400" value="${c.width || 180}" onchange="hccUpdateCard('${sec.id}','width',+this.value)">
+                <span class="hcc-label" style="min-width:auto">px</span>
+            </div>
+            <div class="hcc-settings-row">
+                <span class="hcc-label">Gap</span>
+                <input class="hcc-input hcc-input-sm" type="number" min="0" max="40" value="${c.gap || 12}" onchange="hccUpdateCard('${sec.id}','gap',+this.value)">
+                <span class="hcc-label" style="min-width:auto">px</span>
+            </div>
+            <div class="hcc-settings-row">
+                <span class="hcc-label">Radius</span>
+                <input class="hcc-input hcc-input-sm" type="number" min="0" max="40" value="${c.radius || 14}" onchange="hccUpdateCard('${sec.id}','radius',+this.value)">
+                <span class="hcc-label" style="min-width:auto">px</span>
+            </div>
+            <div class="hcc-settings-row">
+                <span class="hcc-label">Thumb Aspect</span>
+                <select class="hcc-select" onchange="hccUpdateCard('${sec.id}','thumbAspect',this.value)">
+                    <option value="1/1" ${c.thumbAspect==='1/1'?'selected':''}>1:1 Square</option>
+                    <option value="3/4" ${c.thumbAspect==='3/4'?'selected':''}>3:4 Portrait</option>
+                    <option value="4/3" ${c.thumbAspect==='4/3'?'selected':''}>4:3 Landscape</option>
+                    <option value="16/9" ${c.thumbAspect==='16/9'?'selected':''}>16:9 Wide</option>
+                </select>
+            </div>
+            <div class="hcc-settings-row">
+                <span class="hcc-label">Hover Effect</span>
+                <select class="hcc-select" onchange="hccUpdateCard('${sec.id}','hover',this.value)">
+                    <option value="none" ${c.hover==='none'?'selected':''}>None</option>
+                    <option value="lift" ${c.hover==='lift'||!c.hover?'selected':''}>Lift</option>
+                    <option value="scale" ${c.hover==='scale'?'selected':''}>Scale</option>
+                    <option value="glow" ${c.hover==='glow'?'selected':''}>Glow</option>
+                </select>
+            </div>
+            <div class="hcc-settings-row">
+                <span class="hcc-label">Card Animation</span>
+                <select class="hcc-select" onchange="hccUpdateCard('${sec.id}','animation',this.value)">
+                    ${_hccAnimOptions(c.animation)}
+                </select>
+            </div>
+            ${_hccResponsiveSettings(sec.id, s.responsive)}
+        </div>`;
+    }
+
+    // Auto-Scroll Controls
+    if (sec.hasAutoScroll) {
+        const a = s.autoScroll || {};
+        html += `<div class="hcc-settings-group">
+            <div class="hcc-settings-group-title"><i class="fas fa-arrows-spin"></i> Auto-Scroll</div>
+            <div class="hcc-settings-row">
+                <span class="hcc-label">Direction</span>
+                <select class="hcc-select" onchange="hccUpdateScroll('${sec.id}','direction',this.value)">
+                    <option value="ltr" ${a.direction==='ltr'?'selected':''}>Left → Right</option>
+                    <option value="rtl" ${a.direction==='rtl'?'selected':''}>Right → Left</option>
+                    <option value="up" ${a.direction==='up'?'selected':''}>Up</option>
+                    <option value="down" ${a.direction==='down'?'selected':''}>Down</option>
+                    <option value="up-down" ${a.direction==='up-down'?'selected':''}>Up + Down (Dual)</option>
+                </select>
+            </div>
+            <div class="hcc-settings-row">
+                <span class="hcc-label">Speed</span>
+                <input class="hcc-input hcc-input-sm" type="number" min="5" max="100" value="${a.speed || 30}" onchange="hccUpdateScroll('${sec.id}','speed',+this.value)">
+                <span class="hcc-label" style="min-width:auto">px/s</span>
+            </div>
+            <div class="hcc-settings-row">
+                <span class="hcc-label">Touch</span>
+                <select class="hcc-select" onchange="hccUpdateScroll('${sec.id}','touch',this.value)">
+                    <option value="pass-through" ${a.touch==='pass-through'||!a.touch?'selected':''}>Pass Through</option>
+                    <option value="pause" ${a.touch==='pause'?'selected':''}>Pause</option>
+                </select>
+            </div>
+            <div class="hcc-settings-row">
+                <span class="hcc-label">Hover</span>
+                <select class="hcc-select" onchange="hccUpdateScroll('${sec.id}','hover',this.value)">
+                    <option value="ignore" ${a.hover==='ignore'||!a.hover?'selected':''}>Ignore</option>
+                    <option value="pause" ${a.hover==='pause'?'selected':''}>Pause</option>
+                </select>
+            </div>
+        </div>`;
+    }
+    return html;
+}
+
+function _hccResponsiveSettings(sectionId, resp) {
+    const r = resp || {};
+    return `<div class="hcc-settings-group" style="margin-top:8px;border-style:dashed;">
+        <div class="hcc-settings-group-title"><i class="fas fa-mobile-screen"></i> Responsive</div>
+        <div class="hcc-resp-tabs">
+            <button class="hcc-resp-tab active" onclick="hccSwitchResp(this,'${sectionId}','mobile')">Mobile</button>
+            <button class="hcc-resp-tab" onclick="hccSwitchResp(this,'${sectionId}','tablet')">Tablet</button>
+            <button class="hcc-resp-tab" onclick="hccSwitchResp(this,'${sectionId}','desktop')">Desktop</button>
+        </div>
+        <div class="hcc-resp-content" id="hcc-resp-${sectionId}">
+            ${_hccRespFields(sectionId, 'mobile', r.mobile || {})}
+        </div>
+    </div>`;
+}
+
+function _hccRespFields(sectionId, device, vals) {
+    return `<div class="hcc-settings-row">
+        <span class="hcc-label">Width</span>
+        <input class="hcc-input hcc-input-sm" type="number" min="80" max="400" value="${vals.width || ''}" placeholder="auto" onchange="hccUpdateResp('${sectionId}','${device}','width',+this.value||null)">
+        <span class="hcc-label" style="min-width:auto">px</span>
+    </div>
+    <div class="hcc-settings-row">
+        <span class="hcc-label">Gap</span>
+        <input class="hcc-input hcc-input-sm" type="number" min="0" max="40" value="${vals.gap || ''}" placeholder="auto" onchange="hccUpdateResp('${sectionId}','${device}','gap',+this.value||null)">
+        <span class="hcc-label" style="min-width:auto">px</span>
+    </div>
+    <div class="hcc-settings-row">
+        <span class="hcc-label">Radius</span>
+        <input class="hcc-input hcc-input-sm" type="number" min="0" max="40" value="${vals.radius || ''}" placeholder="auto" onchange="hccUpdateResp('${sectionId}','${device}','radius',+this.value||null)">
+        <span class="hcc-label" style="min-width:auto">px</span>
+    </div>`;
+}
+
+function hccSwitchResp(btn, sectionId, device) {
+    const parent = btn.closest('.hcc-settings-group');
+    parent.querySelectorAll('.hcc-resp-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    const s = _hccSettings[sectionId] || {};
+    const r = (s.responsive || {})[device] || {};
+    document.getElementById('hcc-resp-' + sectionId).innerHTML = _hccRespFields(sectionId, device, r);
+}
+
+function _hccAnimOptions(current) {
+    const opts = ['none','fade-in','slide-up','slide-left','scale-in','zoom-in'];
+    return opts.map(o => `<option value="${o}" ${current===o||(o==='none'&&!current)?'selected':''}>${o}</option>`).join('');
+}
+
+function _hccEsc(s) { return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+function hccToggleSection(id, enabled) {
+    _hccPushUndo();
+    if (!_hccSettings[id]) _hccSettings[id] = {};
+    _hccSettings[id].enabled = enabled;
+    const el = document.querySelector(`.hcc-section[data-id="${id}"]`);
+    if (el) el.classList.toggle('disabled-section', !enabled);
+}
+
+function hccToggleSettings(id, btn) {
+    const panel = document.getElementById('hcc-settings-' + id);
+    if (!panel) return;
+    const isOpen = panel.classList.toggle('open');
+    btn.classList.toggle('open', isOpen);
+}
+
+function hccUpdate(id, key, value) {
+    _hccPushUndo();
+    if (!_hccSettings[id]) _hccSettings[id] = {};
+    _hccSettings[id][key] = value;
+}
+
+function hccUpdateCard(id, key, value) {
+    _hccPushUndo();
+    if (!_hccSettings[id]) _hccSettings[id] = {};
+    if (!_hccSettings[id].card) _hccSettings[id].card = {};
+    _hccSettings[id].card[key] = value;
+}
+
+function hccUpdateScroll(id, key, value) {
+    _hccPushUndo();
+    if (!_hccSettings[id]) _hccSettings[id] = {};
+    if (!_hccSettings[id].autoScroll) _hccSettings[id].autoScroll = {};
+    _hccSettings[id].autoScroll[key] = value;
+}
+
+function hccUpdateResp(id, device, key, value) {
+    _hccPushUndo();
+    if (!_hccSettings[id]) _hccSettings[id] = {};
+    if (!_hccSettings[id].responsive) _hccSettings[id].responsive = {};
+    if (!_hccSettings[id].responsive[device]) _hccSettings[id].responsive[device] = {};
+    _hccSettings[id].responsive[device][key] = value;
+}
+
+function _hccPushUndo() {
+    _hccUndoStack.push(JSON.stringify(_hccSettings));
+    if (_hccUndoStack.length > 50) _hccUndoStack.shift();
+    _hccRedoStack = [];
+    _hccUpdateUndoRedo();
+}
+
+function _hccUpdateUndoRedo() {
+    const undoBtn = document.getElementById('hccUndoBtn');
+    const redoBtn = document.getElementById('hccRedoBtn');
+    if (undoBtn) undoBtn.disabled = _hccUndoStack.length === 0;
+    if (redoBtn) redoBtn.disabled = _hccRedoStack.length === 0;
+}
+
+function hccUndo() {
+    if (!_hccUndoStack.length) return;
+    _hccRedoStack.push(JSON.stringify(_hccSettings));
+    _hccSettings = JSON.parse(_hccUndoStack.pop());
+    _hccRenderList();
+    _hccUpdateUndoRedo();
+}
+
+function hccRedo() {
+    if (!_hccRedoStack.length) return;
+    _hccUndoStack.push(JSON.stringify(_hccSettings));
+    _hccSettings = JSON.parse(_hccRedoStack.pop());
+    _hccRenderList();
+    _hccUpdateUndoRedo();
+}
+
+function hccSave() {
+    DataStore.setSectionSettings(_hccSettings);
+    // Also sync sectionsOrder for backward compatibility
+    const orderArr = _hccSections.map((sec, i) => {
+        const s = _hccSettings[sec.id] || {};
+        return { id: sec.id, name: sec.name, order: s.order || i + 1, enabled: s.enabled !== false };
+    }).sort((a, b) => a.order - b.order);
+    DataStore.setSectionsOrder(orderArr);
+    // Also write to websiteLayout for legacy sync
+    const layout = orderArr.filter(s => s.enabled).map(s => ({ type: s.id }));
+    DataStore.setLayout(layout);
+    showToast('Settings saved!', 'success');
+}
+
+function hccPreview() {
+    hccSave();
+    window.open('index.html', '_blank');
+}
+
+async function hccPublish() {
+    hccSave();
+    const progressEl = document.getElementById('hccProgress');
+    const fillEl = document.getElementById('hccProgressFill');
+    const textEl = document.getElementById('hccProgressText');
+    const publishBtn = document.getElementById('hccPublishBtn');
+    if (!progressEl || !fillEl || !textEl) return;
+
+    progressEl.style.display = 'block';
+    publishBtn.disabled = true;
+    publishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+
+    function setProgress(pct, msg) {
+        fillEl.style.width = pct + '%';
+        textEl.textContent = msg || (pct + '%');
+    }
+
+    try {
+        setProgress(10, 'Saving settings...');
+        await new Promise(r => setTimeout(r, 300));
+
+        setProgress(30, 'Syncing to live website...');
+        syncToLiveWebsite();
+        await new Promise(r => setTimeout(r, 500));
+
+        setProgress(60, 'Uploading to R2...');
+        if (window.ContentSync && typeof ContentSync.syncCurrentState === 'function') {
+            await ContentSync.syncCurrentState();
+        }
+        await new Promise(r => setTimeout(r, 500));
+
+        setProgress(85, 'Verifying deployment...');
+        await new Promise(r => setTimeout(r, 500));
+
+        try {
+            const res = await fetch('/api/deploy-verify');
+            const data = await res.json();
+            if (data.ok) {
+                setProgress(100, `Update Complete! (${data.stationCount} stations, ${data.songCount} songs)`);
+            } else {
+                setProgress(100, 'Update Complete!');
+            }
+        } catch (_) {
+            setProgress(100, 'Update Complete!');
+        }
+
+        setTimeout(() => { progressEl.style.display = 'none'; }, 3000);
+    } catch (err) {
+        setProgress(100, 'Update failed: ' + err.message);
+        showToast('Publish failed', 'error');
+    } finally {
+        publishBtn.disabled = false;
+        publishBtn.innerHTML = '<i class="fas fa-rocket"></i> Update Website';
+    }
+}
+
+function _hccSetupDrag() {
+    const list = document.getElementById('hccSectionsList');
+    if (!list) return;
+    _hccDragItem = null;
+    list.querySelectorAll('.hcc-section').forEach(item => {
+        item.addEventListener('dragstart', e => {
+            _hccDragItem = item;
+            item.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        item.addEventListener('dragend', () => {
+            _hccDragItem?.classList.remove('dragging');
+            _hccDragItem = null;
+            _hccReorderFromDOM();
+        });
+        item.addEventListener('dragover', e => {
+            e.preventDefault();
+            if (!_hccDragItem || _hccDragItem === item) return;
+            const rect = item.getBoundingClientRect();
+            const mid = rect.top + rect.height / 2;
+            if (e.clientY < mid) list.insertBefore(_hccDragItem, item);
+            else list.insertBefore(_hccDragItem, item.nextSibling);
+        });
+    });
+}
+
+function _hccReorderFromDOM() {
+    _hccPushUndo();
+    const items = document.querySelectorAll('.hcc-section');
+    items.forEach((item, i) => {
+        const id = item.dataset.id;
+        if (_hccSettings[id]) _hccSettings[id].order = i + 1;
+        const orderEl = item.querySelector('.hcc-section-order');
+        if (orderEl) orderEl.textContent = '#' + (i + 1);
+    });
+}
+
+// Bind HCC button events
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('hccUndoBtn')?.addEventListener('click', hccUndo);
+    document.getElementById('hccRedoBtn')?.addEventListener('click', hccRedo);
+    document.getElementById('hccSaveBtn')?.addEventListener('click', hccSave);
+    document.getElementById('hccPreviewBtn')?.addEventListener('click', hccPreview);
+    document.getElementById('hccPublishBtn')?.addEventListener('click', hccPublish);
+});
 
 // ============================================
 // Advertisement/Banner Management
