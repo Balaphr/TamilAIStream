@@ -2813,14 +2813,218 @@ function applySectionSettings() {
         });
 
         console.log('[HCC] Applied section settings from Builder');
-    } catch (err) {
-        console.warn('[HCC] Failed to apply section settings:', err);
+    
+    // 4. Apply Entrance Logo settings (on first load)
+    if (!window._elApplied) {
+        window._elApplied = true;
+        applyEntranceLogo();
     }
+    
+} catch (err) {
+    console.warn('[HCC] Failed to apply section settings:', err);
+}
 }
 
 // ============================================
-// User Profile Update
+// Entrance Logo Application
 // ============================================
+function applyEntranceLogo() {
+    try {
+        const raw = localStorage.getItem('tamilAIStream_entranceLogo');
+        if (!raw) return;
+        const all = JSON.parse(raw);
+        if (!all || typeof all !== 'object') return;
+
+        const w = window.innerWidth;
+        const device = w < 640 ? 'pwa' : w < 1024 ? 'tablet' : 'desktop';
+        const d = all[device] || all.desktop || {};
+        if (!d.enabled) return;
+
+        // Check frequency
+        const freq = d.frequency || 'first-visit';
+        const visitedKey = 'el_visited';
+        if (freq === 'first-visit' && localStorage.getItem(visitedKey)) return;
+        if (freq === 'session' && sessionStorage.getItem(visitedKey)) return;
+        
+        // Mark as visited
+        localStorage.setItem(visitedKey, '1');
+        sessionStorage.setItem(visitedKey, '1');
+
+        // Check device-specific enable flags
+        if (device === 'desktop' && !d.website) return;
+        if (device === 'pwa' && !d.pwa) return;
+        if (device === 'tablet' && !d.tablet) return;
+
+        // Create entrance logo overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'elOverlay';
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: ${d.background === 'transparent' ? 'linear-gradient(135deg, #060e1a, #0a0f1e)' : d.background};
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+        if (d.mode === 'contained') {
+            overlay.style.padding = '40px';
+        }
+
+        const content = document.createElement('div');
+        content.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        `;
+
+        // Apply alignment
+        const alignMap = {
+            'top-left': { alignItems: 'flex-start', justifyContent: 'flex-start' },
+            'top-center': { alignItems: 'flex-start', justifyContent: 'center' },
+            'top-right': { alignItems: 'flex-start', justifyContent: 'flex-end' },
+            'middle-left': { alignItems: 'center', justifyContent: 'flex-start' },
+            'middle-center': { alignItems: 'center', justifyContent: 'center' },
+            'middle-right': { alignItems: 'center', justifyContent: 'flex-end' },
+            'bottom-left': { alignItems: 'flex-end', justifyContent: 'flex-start' },
+            'bottom-center': { alignItems: 'flex-end', justifyContent: 'center' },
+            'bottom-right': { alignItems: 'flex-end', justifyContent: 'flex-end' },
+            'center': { alignItems: 'center', justifyContent: 'center' }
+        };
+        const align = alignMap[d.alignment] || alignMap.center;
+        content.style.alignItems = align.alignItems;
+        content.style.justifyContent = align.justifyContent;
+
+        // Build animation keyframes
+        const animType = d.animType || 'zoom';
+        const duration = d.animDuration || 1000;
+        const easing = d.animEasing || 'ease-out';
+        
+        let keyframes = '';
+        switch (animType) {
+            case 'fade': keyframes = 'from { opacity: 0; } to { opacity: 1; }'; break;
+            case 'zoom': keyframes = 'from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); }'; break;
+            case 'rotate': keyframes = 'from { opacity: 0; transform: rotate(-180deg) scale(0.5); } to { opacity: 1; transform: rotate(0) scale(1); }'; break;
+            case 'scale': keyframes = 'from { opacity: 0; transform: scale(1.5); } to { opacity: 1; transform: scale(1); }'; break;
+            case 'slide-up': keyframes = 'from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); }'; break;
+            case 'slide-down': keyframes = 'from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); }'; break;
+            case 'slide-left': keyframes = 'from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); }'; break;
+            case 'slide-right': keyframes = 'from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); }'; break;
+            case 'flip': keyframes = 'from { opacity: 0; transform: rotateY(90deg); } to { opacity: 1; transform: rotateY(0); }'; break;
+            case 'bounce': keyframes = '0% { opacity: 0; transform: scale(0.3); } 50% { opacity: 1; transform: scale(1.1); } 70% { transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); }'; break;
+            default: keyframes = 'from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); }';
+        }
+
+        // Inject keyframes
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes elEntranceAnim { ${keyframes} }
+            @keyframes elFadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes elFadeOut { from { opacity: 1; } to { opacity: 0; } }
+            @keyframes elScaleOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.8); } }
+        `;
+        document.head.appendChild(style);
+
+        // Add logo
+        if (d.showLogo !== false) {
+            const logo = d.logo || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22 fill=%22none%22%3E%3Ccircle cx=%2220%22 cy=%2220%22 r=%2218%22 fill=%22url(%23g)%22/%3E%3Cpath d=%22M14 28V14l14 7-14 7z%22 fill=%22%23fff%22 opacity=%22.9%22/%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%2240%22 y2=%2240%22%3E%3Cstop stop-color=%22%2322d3ee%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%233b82f6%22/%3E%3Cstop offset=%221%22 stop-color=%22%23a855f7%22/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E';
+            const img = document.createElement('img');
+            img.src = logo;
+            img.alt = d.brandName || 'Tamil AI Stream';
+            img.className = 'el-logo';
+            img.style.cssText = `
+                width: ${d.logoSize || 120}px;
+                height: ${d.logoSize || 120}px;
+                object-fit: contain;
+                border-radius: 50%;
+                opacity: 0;
+                animation: elEntranceAnim ${(duration / 1000)}s ${easing} forwards, elFadeIn 0.3s ease-out 0.1s forwards;
+            `;
+            content.appendChild(img);
+        }
+
+        // Add brand name
+        const brandName = document.createElement('div');
+        brandName.textContent = d.brandName || 'Tamil AI Stream';
+        brandName.style.cssText = `
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 20px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            opacity: 0;
+            animation: elFadeIn 0.6s ease-out 0.4s forwards;
+        `;
+        content.appendChild(brandName);
+
+        // Add skip button
+        if (d.skipBtn !== false) {
+            const skipBtn = document.createElement('button');
+            skipBtn.textContent = 'Skip';
+            skipBtn.style.cssText = `
+                position: absolute;
+                bottom: 30px;
+                padding: 10px 24px;
+                border: 1px solid rgba(255,255,255,0.3);
+                background: rgba(255,255,255,0.1);
+                color: #fff;
+                border-radius: 24px;
+                cursor: pointer;
+                font-size: 0.85rem;
+                font-weight: 600;
+                transition: all 0.2s;
+                opacity: 0;
+                animation: elFadeIn 0.6s ease-out 0.8s forwards;
+            `;
+            skipBtn.onmouseover = () => { skipBtn.style.background = 'rgba(255,255,255,0.2)'; };
+            skipBtn.onmouseout = () => { skipBtn.style.background = 'rgba(255,255,255,0.1)'; };
+            skipBtn.onclick = () => closeEntranceLogo(overlay, d);
+            content.appendChild(skipBtn);
+        }
+
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+        });
+
+        // Play sound
+        if (d.soundEnabled && d.soundUrl) {
+            const audio = new Audio(d.soundUrl);
+            audio.volume = d.soundVolume || 0.5;
+            audio.play().catch(() => {});
+        }
+
+        // Auto close
+        const loadDuration = d.loadDuration || 2000;
+        setTimeout(() => {
+            if (d.autoTransition !== false) {
+                closeEntranceLogo(overlay, d);
+            } else if (d.skipBtn === false) {
+                // No skip button and no auto transition - keep open
+            }
+        }, loadDuration);
+
+        function closeEntranceLogo(overlay, d) {
+            if (!overlay || !overlay.parentElement) return;
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => {
+                if (overlay.parentElement) overlay.parentElement.removeChild(overlay);
+            }, 500);
+        }
+    } catch (err) {
+        console.warn('[EL] Failed to apply entrance logo:', err);
+    }
+}
 function updateUserProfile(userData) {
     const avatar = document.getElementById('userAvatar');
     if (avatar) {

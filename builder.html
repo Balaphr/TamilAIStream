@@ -286,6 +286,9 @@
                             <button class="builder-sidebar-item" data-page="splash">
                                 <i class="fas fa-play-circle"></i> Splash Screen
                             </button>
+                            <button class="builder-sidebar-item" data-page="entrancelogo">
+                                <i class="fas fa-door-open"></i> Entrance Logo
+                            </button>
                             <button class="builder-sidebar-item" data-page="player">
                                 <i class="fas fa-sliders-h"></i> Player Settings
                             </button>
@@ -3592,6 +3595,288 @@
         </div>
     </div>
     <!-- ========== END TRASH PAGE ========== -->
+
+    <!-- Entrance Logo Page -->
+    <div class="builder-page" id="entranceLogoPage" style="display:none;">
+        <div class="builder-page-header">
+            <h1 class="builder-page-title"><i class="fas fa-door-open"></i> Entrance Logo</h1>
+            <p class="builder-page-subtitle">Configure the entrance/splash logo for the app</p>
+        </div>
+
+        <!-- Device Tabs -->
+        <div class="el-device-tabs">
+            <button class="el-device-tab active" data-device="desktop" onclick="elSwitchDevice(this,'desktop')"><i class="fas fa-desktop"></i> Desktop / Website</button>
+            <button class="el-device-tab" data-device="pwa" onclick="elSwitchDevice(this,'pwa')"><i class="fas fa-mobile-alt"></i> PWA / Mobile</button>
+            <button class="el-device-tab" data-device="tablet" onclick="elSwitchDevice(this,'tablet')"><i class="fas fa-tablet-alt"></i> Tablet</button>
+        </div>
+
+        <!-- Logo Section -->
+        <div class="el-section" id="elLogoSection">
+            <div class="el-section-header"><i class="fas fa-image"></i> Logo</div>
+            <div class="el-settings-grid">
+                <div class="el-setting-group">
+                    <label class="el-label">Entrance Logo</label>
+                    <div class="el-file-upload">
+                        <input type="file" accept="image/*" id="elLogoFile" style="display:none;" onchange="elUploadLogo(event)">
+                        <button class="el-btn" onclick="document.getElementById('elLogoFile').click()"><i class="fas fa-upload"></i> Choose File</button>
+                        <button class="el-btn secondary" onclick="elResetLogo()"><i class="fas fa-undo"></i> Reset</button>
+                    </div>
+                    <input type="text" class="el-input" id="elLogoUrl" placeholder="https://... or data:image/..." onchange="elUpdateSetting('logo', this.value)">
+                    <small class="el-hint">Upload an image or paste a URL. SVG, PNG, JPG supported. Max 2MB.</small>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Brand Name</label>
+                    <input type="text" class="el-input" id="elBrandName" value="Tamil AI Stream" onchange="elUpdateSetting('brandName', this.value)">
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Logo Size</label>
+                    <input type="number" class="el-input" id="elLogoSize" min="40" max="400" step="4" value="120" onchange="elUpdateSetting('logoSize', +this.value)">
+                    <span class="el-unit">px</span>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Background</label>
+                    <div class="el-color-picker">
+                        <input type="color" class="el-color-input" id="elBgColor" onchange="elUpdateSetting('background', this.value)">
+                        <input type="text" class="el-input" id="elBgText" placeholder="transparent / #hex / gradient" onchange="elUpdateSetting('background', this.value)">
+                    </div>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Mode</label>
+                    <select class="el-select" id="elMode" onchange="elUpdateSetting('mode', this.value)">
+                        <option value="fullscreen">Full-screen</option>
+                        <option value="contained">Contained</option>
+                    </select>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Alignment</label>
+                    <select class="el-select" id="elAlignment" onchange="elUpdateSetting('alignment', this.value)">
+                        <option value="center">Center</option>
+                        <option value="top-left">Top Left</option>
+                        <option value="top-center">Top Center</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="middle-left">Middle Left</option>
+                        <option value="middle-center">Middle Center</option>
+                        <option value="middle-right">Middle Right</option>
+                        <option value="bottom-left">Bottom Left</option>
+                        <option value="bottom-center">Bottom Center</option>
+                        <option value="bottom-right">Bottom Right</option>
+                    </select>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Show Logo</label>
+                    <label class="el-toggle">
+                        <input type="checkbox" id="elShowLogo" checked onchange="elUpdateSetting('showLogo', this.checked)">
+                        <span class="el-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Animation Section -->
+        <div class="el-section" id="elAnimationSection">
+            <div class="el-section-header"><i class="fas fa-magic"></i> Animation</div>
+            <div class="el-settings-grid">
+                <div class="el-setting-group">
+                    <label class="el-label">Enable Animation</label>
+                    <label class="el-toggle">
+                        <input type="checkbox" id="elAnimEnabled" checked onchange="elUpdateSetting('animEnabled', this.checked)">
+                        <span class="el-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">3D Animation</label>
+                    <label class="el-toggle">
+                        <input type="checkbox" id="elAnim3D" onchange="elUpdateSetting('anim3D', this.checked)">
+                        <span class="el-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Animation Type</label>
+                    <select class="el-select" id="elAnimType" onchange="elUpdateSetting('animType', this.value)">
+                        <option value="fade">Fade</option>
+                        <option value="zoom">Zoom</option>
+                        <option value="rotate">Rotate</option>
+                        <option value="scale">Scale</option>
+                        <option value="slide-up">Slide Up</option>
+                        <option value="slide-down">Slide Down</option>
+                        <option value="slide-left">Slide Left</option>
+                        <option value="slide-right">Slide Right</option>
+                        <option value="flip">Flip</option>
+                        <option value="bounce">Bounce</option>
+                        <option value="custom">Custom CSS</option>
+                    </select>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Speed</label>
+                    <input type="number" class="el-input" id="elAnimSpeed" min="0.1" max="10" step="0.1" value="1" onchange="elUpdateSetting('animSpeed', +this.value)">
+                    <span class="el-unit">×</span>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Duration</label>
+                    <input type="number" class="el-input" id="elAnimDuration" min="100" max="10000" step="100" value="1000" onchange="elUpdateSetting('animDuration', +this.value)">
+                    <span class="el-unit">ms</span>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Easing</label>
+                    <select class="el-select" id="elAnimEasing" onchange="elUpdateSetting('animEasing', this.value)">
+                        <option value="ease">Ease</option>
+                        <option value="ease-in">Ease In</option>
+                        <option value="ease-out">Ease Out</option>
+                        <option value="ease-in-out">Ease In-Out</option>
+                        <option value="linear">Linear</option>
+                        <option value="cubic-bezier(0.68,-0.55,0.27,1.55)">Bounce</option>
+                        <option value="cubic-bezier(0.17,0.67,0.83,0.67)">Elastic</option>
+                    </select>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Entrance Animation</label>
+                    <label class="el-toggle">
+                        <input type="checkbox" id="elAnimEntrance" checked onchange="elUpdateSetting('animEntrance', this.checked)">
+                        <span class="el-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Exit Animation</label>
+                    <label class="el-toggle">
+                        <input type="checkbox" id="elAnimExit" onchange="elUpdateSetting('animExit', this.checked)">
+                        <span class="el-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="el-setting-group full-width">
+                    <button class="el-btn primary" onclick="elPreviewAnimation()"><i class="fas fa-play"></i> Preview Animation</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sound Section -->
+        <div class="el-section" id="elSoundSection">
+            <div class="el-section-header"><i class="fas fa-volume-up"></i> Sound</div>
+            <div class="el-settings-grid">
+                <div class="el-setting-group">
+                    <label class="el-label">Enable Sound</label>
+                    <label class="el-toggle">
+                        <input type="checkbox" id="elSoundEnabled" onchange="elUpdateSetting('soundEnabled', this.checked)">
+                        <span class="el-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Sound File</label>
+                    <div class="el-file-upload">
+                        <input type="file" accept="audio/*" id="elSoundFile" style="display:none;" onchange="elUploadSound(event)">
+                        <button class="el-btn" onclick="document.getElementById('elSoundFile').click()"><i class="fas fa-upload"></i> Choose File</button>
+                        <button class="el-btn secondary" onclick="elRemoveSound()"><i class="fas fa-trash"></i> Remove</button>
+                    </div>
+                    <input type="text" class="el-input" id="elSoundUrl" placeholder="https://... or data:audio/..." onchange="elUpdateSetting('soundUrl', this.value)">
+                    <small class="el-hint">MP3, WAV, OGG supported. Max 500KB recommended.</small>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Volume</label>
+                    <input type="range" class="el-range" id="elSoundVolume" min="0" max="1" step="0.05" value="0.5" oninput="elUpdateSetting('soundVolume', +this.value); document.getElementById('elSoundVolumeVal').textContent = Math.round(this.value * 100) + '%'">
+                    <span class="el-range-value" id="elSoundVolumeVal">50%</span>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Duration</label>
+                    <input type="number" class="el-input" id="elSoundDuration" min="0" max="30000" step="100" value="3000" onchange="elUpdateSetting('soundDuration', +this.value)">
+                    <span class="el-unit">ms</span>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Play Mode</label>
+                    <select class="el-select" id="elSoundMode" onchange="elUpdateSetting('soundMode', this.value)">
+                        <option value="once">Play Once</option>
+                        <option value="repeat">Repeat</option>
+                        <option value="loop">Loop Until Dismissed</option>
+                    </select>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Fade In</label>
+                    <input type="number" class="el-input" id="elSoundFadeIn" min="0" max="5000" step="100" value="200" onchange="elUpdateSetting('soundFadeIn', +this.value)">
+                    <span class="el-unit">ms</span>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Fade Out</label>
+                    <input type="number" class="el-input" id="elSoundFadeOut" min="0" max="5000" step="100" value="500" onchange="elUpdateSetting('soundFadeOut', +this.value)">
+                    <span class="el-unit">ms</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Startup Behavior Section -->
+        <div class="el-section" id="elStartupSection">
+            <div class="el-section-header"><i class="fas fa-play-circle"></i> Startup Behavior</div>
+            <div class="el-settings-grid">
+                <div class="el-setting-group">
+                    <label class="el-label">Enable Entrance Logo</label>
+                    <label class="el-toggle">
+                        <input type="checkbox" id="elEnabled" checked onchange="elUpdateSetting('enabled', this.checked)">
+                        <span class="el-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Show Frequency</label>
+                    <select class="el-select" id="elFrequency" onchange="elUpdateSetting('frequency', this.value)">
+                        <option value="first-visit">First Visit Only</option>
+                        <option value="every-visit">Every Visit</option>
+                        <option value="session">Once Per Session</option>
+                    </select>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Website Startup</label>
+                    <label class="el-toggle">
+                        <input type="checkbox" id="elWebsite" checked onchange="elUpdateSetting('website', this.checked)">
+                        <span class="el-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">PWA Startup</label>
+                    <label class="el-toggle">
+                        <input type="checkbox" id="elPwa" checked onchange="elUpdateSetting('pwa', this.checked)">
+                        <span class="el-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Tablet Startup</label>
+                    <label class="el-toggle">
+                        <input type="checkbox" id="elTablet" checked onchange="elUpdateSetting('tablet', this.checked)">
+                        <span class="el-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Skip Button</label>
+                    <label class="el-toggle">
+                        <input type="checkbox" id="elSkipBtn" checked onchange="elUpdateSetting('skipBtn', this.checked)">
+                        <span class="el-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Loading Duration</label>
+                    <input type="number" class="el-input" id="elLoadDuration" min="500" max="15000" step="500" value="2000" onchange="elUpdateSetting('loadDuration', +this.value)">
+                    <span class="el-unit">ms</span>
+                </div>
+                <div class="el-setting-group">
+                    <label class="el-label">Auto Transition</label>
+                    <label class="el-toggle">
+                        <input type="checkbox" id="elAutoTransition" checked onchange="elUpdateSetting('autoTransition', this.checked)">
+                        <span class="el-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Area -->
+        <div class="el-section">
+            <div class="el-section-header"><i class="fas fa-eye"></i> Live Preview</div>
+            <div class="el-preview-container">
+                <div class="el-preview-frame" id="elPreviewFrame">
+                    <div class="el-preview-placeholder">Click "Preview Animation" or "Preview Full" to see the entrance logo</div>
+                </div>
+                <div class="el-preview-actions">
+                    <button class="el-btn primary" onclick="elPreviewFull()"><i class="fas fa-play-circle"></i> Preview Full Experience</button>
+                    <button class="el-btn" onclick="elPreviewAnimation()"><i class="fas fa-magic"></i> Preview Animation Only</button>
+                    <button class="el-btn" onclick="elPreviewSound()"><i class="fas fa-volume-up"></i> Test Sound</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="preview-player" id="previewPlayer" style="display:none;">
         <div class="preview-player-info">

@@ -546,7 +546,8 @@ const _gbPageTitles = {
     songsCollections: ['fa-layer-group', 'Songs Collections'],
     newalbums: ['fa-compact-disc', 'New Albums'],
     changes: ['fa-clock-rotate-left', 'Recent Changes'],
-    trash: ['fa-trash', 'Trash']
+    trash: ['fa-trash', 'Trash'],
+    entrancelogo: ['fa-door-open', 'Entrance Logo']
 };
 
 // Global undo/redo stacks (per-page)
@@ -588,7 +589,7 @@ function _gbCapturePageState(page) {
         const keys = ['tamilAIStream_songs', 'tamilAIStream_stations', 'tamilAIStream_categories',
             'tamilAIStream_featured', 'tamilAIStream_trending', 'tamilAIStream_artistHits',
             'tamilAIStream_quotes', 'tamilAIStream_siteSettings', 'tamilAIStream_navigation',
-            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_logoSettings',
+            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_logoSettings', 'tamilAIStream_entranceLogo',
             'tamilAIStream_miniPlayerSettings', 'tamilAIStream_moods', 'tamilAIStream_aiRadio',
             'tamilAIStream_notifications', 'tamilAIStream_splash', 'tamilAIStream_playerPrefs',
             'tamilAIStream_images', 'tamilAIStream_advertisements', 'tamilAIStream_upcomingReleases',
@@ -699,6 +700,7 @@ function gbSave() {
     if (page === 'content') { saveContent(); return; }
     if (page === 'songs') { showToast('Songs saved', 'success'); return; }
     if (page === 'images') { showToast('Images saved', 'success'); return; }
+    if (page === 'entrancelogo') { elSaveEntranceLogo(); return; }
     // Default: save all DataStore
     try { DataStore.set('tamilAIStream_lastSave', Date.now()); } catch(e) {}
     showToast('Settings saved!', 'success');
@@ -871,7 +873,8 @@ function navigateTo(page) {
         'application': 'applicationPage',
         'songsCollections': 'songsCollectionsPage',
         'newalbums': 'newAlbumsPage',
-        'changes': 'changesPage'
+        'changes': 'changesPage',
+        'entrancelogo': 'entranceLogoPage'
     };
 
     const pageId = pageMap[page];
@@ -920,6 +923,7 @@ function _loadPageData(page) {
     if (page === 'aiwebflow' && typeof AIWebflow !== 'undefined') AIWebflow.activate();
     if (page === 'application') AppBuilder.loadApplicationSettings();
     if (page === 'trash') loadTrashPage();
+    if (page === 'entrancelogo') loadEntranceLogoSettings();
 }
 
 // ============================================
@@ -2261,7 +2265,7 @@ async function _syncToLiveWebsiteActual() {
             'tamilAIStream_songs', 'tamilAIStream_stations', 'tamilAIStream_categories',
             'tamilAIStream_featured', 'tamilAIStream_trending', 'tamilAIStream_artistHits',
             'tamilAIStream_quotes', 'tamilAIStream_siteSettings', 'tamilAIStream_navigation',
-            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_logoSettings', 'tamilAIStream_miniPlayerSettings',
+            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_logoSettings', 'tamilAIStream_entranceLogo', 'tamilAIStream_miniPlayerSettings',
             'tamilAIStream_playerPrefs', 'tamilAIStream_advertisements', 'tamilAIStream_splash',
             'tamilAIStream_moods', 'tamilAIStream_aiRadio', 'tamilAIStream_notifications',
             'tamilAIStream_images', 'tamilAIStream_moviesCollections',
@@ -2390,7 +2394,7 @@ async function publishChanges() {
             'tamilAIStream_songs', 'tamilAIStream_stations', 'tamilAIStream_categories',
             'tamilAIStream_featured', 'tamilAIStream_trending', 'tamilAIStream_artistHits',
             'tamilAIStream_quotes', 'tamilAIStream_siteSettings', 'tamilAIStream_navigation',
-            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_logoSettings', 'tamilAIStream_miniPlayerSettings',
+            'tamilAIStream_sectionsOrder', 'tamilAIStream_sectionSettings', 'tamilAIStream_logoSettings', 'tamilAIStream_entranceLogo', 'tamilAIStream_miniPlayerSettings',
             'tamilAIStream_playerPrefs', 'tamilAIStream_advertisements', 'tamilAIStream_splash',
             'tamilAIStream_moods', 'tamilAIStream_aiRadio', 'tamilAIStream_notifications',
             'tamilAIStream_images', 'tamilAIStream_moviesCollections',
@@ -6313,6 +6317,335 @@ function saveSplashSettings(e) {
     showToast('Splash settings saved', 'success');
     syncToLiveWebsite();
     return false;
+}
+
+// ============================================
+// Entrance Logo Settings
+// ============================================
+let _elCurrentDevice = 'desktop';
+
+function loadEntranceLogoSettings() {
+    const all = DataStore.getEntranceLogo() || {};
+    const d = all[_elCurrentDevice] || all.desktop || {};
+    
+    // Logo
+    document.getElementById('elLogoUrl').value = d.logo || '';
+    document.getElementById('elBrandName').value = d.brandName || 'Tamil AI Stream';
+    document.getElementById('elLogoSize').value = d.logoSize || 120;
+    document.getElementById('elBgColor').value = d.background || '#000000';
+    document.getElementById('elBgText').value = d.background || 'transparent';
+    document.getElementById('elMode').value = d.mode || 'fullscreen';
+    document.getElementById('elAlignment').value = d.alignment || 'center';
+    document.getElementById('elShowLogo').checked = d.showLogo !== false;
+    
+    // Animation
+    document.getElementById('elAnimEnabled').checked = d.animEnabled !== false;
+    document.getElementById('elAnim3D').checked = d.anim3D || false;
+    document.getElementById('elAnimType').value = d.animType || 'zoom';
+    document.getElementById('elAnimSpeed').value = d.animSpeed || 1;
+    document.getElementById('elAnimDuration').value = d.animDuration || 1000;
+    document.getElementById('elAnimEasing').value = d.animEasing || 'ease-out';
+    document.getElementById('elAnimEntrance').checked = d.animEntrance !== false;
+    document.getElementById('elAnimExit').checked = d.animExit || false;
+    
+    // Sound
+    document.getElementById('elSoundEnabled').checked = d.soundEnabled || false;
+    document.getElementById('elSoundUrl').value = d.soundUrl || '';
+    document.getElementById('elSoundVolume').value = d.soundVolume !== undefined ? d.soundVolume : 0.5;
+    document.getElementById('elSoundVolumeVal').textContent = Math.round((d.soundVolume !== undefined ? d.soundVolume : 0.5) * 100) + '%';
+    document.getElementById('elSoundDuration').value = d.soundDuration || 3000;
+    document.getElementById('elSoundMode').value = d.soundMode || 'once';
+    document.getElementById('elSoundFadeIn').value = d.soundFadeIn || 200;
+    document.getElementById('elSoundFadeOut').value = d.soundFadeOut || 500;
+    
+    // Startup Behavior
+    document.getElementById('elEnabled').checked = d.enabled !== false;
+    document.getElementById('elFrequency').value = d.frequency || 'first-visit';
+    document.getElementById('elWebsite').checked = d.website !== false;
+    document.getElementById('elPwa').checked = d.pwa !== false;
+    document.getElementById('elTablet').checked = d.tablet !== false;
+    document.getElementById('elSkipBtn').checked = d.skipBtn !== false;
+    document.getElementById('elLoadDuration').value = d.loadDuration || 2000;
+    document.getElementById('elAutoTransition').checked = d.autoTransition !== false;
+    
+    // Update preview
+    elUpdatePreview();
+}
+
+function elSwitchDevice(btn, device) {
+    _elCurrentDevice = device;
+    document.querySelectorAll('.el-device-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    loadEntranceLogoSettings();
+}
+
+function elUpdateSetting(key, value) {
+    const all = DataStore.getEntranceLogo() || {};
+    if (!all[_elCurrentDevice]) all[_elCurrentDevice] = {};
+    all[_elCurrentDevice][key] = value;
+    DataStore.setEntranceLogo(all);
+    elUpdatePreview();
+}
+
+function elUploadLogo(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { showToast('Logo must be under 2MB', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        elUpdateSetting('logo', e.target.result);
+        document.getElementById('elLogoUrl').value = e.target.result;
+        showToast('Logo uploaded!', 'success');
+    };
+    reader.readAsDataURL(file);
+}
+
+function elResetLogo() {
+    elUpdateSetting('logo', '');
+    document.getElementById('elLogoUrl').value = '';
+    showToast('Logo reset to default', 'success');
+}
+
+function elUploadSound(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) { showToast('Sound must be under 500KB', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        elUpdateSetting('soundUrl', e.target.result);
+        document.getElementById('elSoundUrl').value = e.target.result;
+        showToast('Sound uploaded!', 'success');
+    };
+    reader.readAsDataURL(file);
+}
+
+function elRemoveSound() {
+    elUpdateSetting('soundUrl', '');
+    document.getElementById('elSoundUrl').value = '';
+    showToast('Sound removed', 'success');
+}
+
+function elUpdatePreview() {
+    const all = DataStore.getEntranceLogo() || {};
+    const d = all[_elCurrentDevice] || all.desktop || {};
+    const frame = document.getElementById('elPreviewFrame');
+    if (!frame) return;
+    
+    const logo = d.logo || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22 fill=%22none%22%3E%3Ccircle cx=%2220%22 cy=%2220%22 r=%2218%22 fill=%22url(%23g)%22/%3E%3Cpath d=%22M14 28V14l14 7-14 7z%22 fill=%22%23fff%22 opacity=%22.9%22/%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%2240%22 y2=%2240%22%3E%3Cstop stop-color=%22%2322d3ee%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%233b82f6%22/%3E%3Cstop offset=%221%22 stop-color=%22%23a855f7%22/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E';
+    const size = d.logoSize || 120;
+    const bg = d.background || 'transparent';
+    const mode = d.mode || 'fullscreen';
+    
+    frame.innerHTML = '';
+    frame.style.background = bg === 'transparent' ? 'linear-gradient(135deg, #060e1a, #0a0f1e)' : bg;
+    
+    const preview = document.createElement('div');
+    preview.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        position: relative;
+    `;
+    
+    if (d.showLogo !== false) {
+        const img = document.createElement('img');
+        img.src = logo;
+        img.alt = d.brandName || 'Logo';
+        img.style.cssText = `
+            width: ${size}px;
+            height: ${size}px;
+            object-fit: contain;
+            border-radius: 50%;
+            animation: elPreviewAnim ${(d.animDuration || 1000) / 1000}s ${d.animEasing || 'ease-out'} forwards;
+            opacity: 0;
+        `;
+        preview.appendChild(img);
+    }
+    
+    const brandName = document.createElement('div');
+    brandName.textContent = d.brandName || 'Tamil AI Stream';
+    brandName.style.cssText = `
+        color: #fff;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-top: 16px;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        opacity: 0;
+        animation: fadeIn 0.6s ease-out 0.3s forwards;
+    `;
+    preview.appendChild(brandName);
+    
+    frame.appendChild(preview);
+    
+    // Add animation keyframes dynamically
+    const animType = d.animType || 'zoom';
+    const duration = d.animDuration || 1000;
+    const easing = d.animEasing || 'ease-out';
+    
+    let keyframes = '';
+    switch (animType) {
+        case 'fade':
+            keyframes = 'from { opacity: 0; } to { opacity: 1; }';
+            break;
+        case 'zoom':
+            keyframes = 'from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); }';
+            break;
+        case 'rotate':
+            keyframes = 'from { opacity: 0; transform: rotate(-180deg) scale(0.5); } to { opacity: 1; transform: rotate(0) scale(1); }';
+            break;
+        case 'scale':
+            keyframes = 'from { opacity: 0; transform: scale(1.5); } to { opacity: 1; transform: scale(1); }';
+            break;
+        case 'slide-up':
+            keyframes = 'from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); }';
+            break;
+        case 'slide-down':
+            keyframes = 'from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); }';
+            break;
+        case 'slide-left':
+            keyframes = 'from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); }';
+            break;
+        case 'slide-right':
+            keyframes = 'from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); }';
+            break;
+        case 'flip':
+            keyframes = 'from { opacity: 0; transform: rotateY(90deg); } to { opacity: 1; transform: rotateY(0); }';
+            break;
+        case 'bounce':
+            keyframes = '0% { opacity: 0; transform: scale(0.3); } 50% { opacity: 1; transform: scale(1.1); } 70% { transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); }';
+            break;
+        default:
+            keyframes = 'from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); }';
+    }
+    
+    // Inject keyframes
+    let style = document.getElementById('elPreviewStyles');
+    if (!style) {
+        style = document.createElement('style');
+        style.id = 'elPreviewStyles';
+        document.head.appendChild(style);
+    }
+    style.textContent = `
+        @keyframes elPreviewAnim { ${keyframes} }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    `;
+}
+
+function elPreviewAnimation() {
+    elUpdatePreview();
+    const frame = document.getElementById('elPreviewFrame');
+    if (frame) {
+        const img = frame.querySelector('img');
+        if (img) {
+            img.style.animation = 'none';
+            img.offsetHeight; // trigger reflow
+            img.style.animation = '';
+        }
+    }
+}
+
+function elPreviewSound() {
+    const all = DataStore.getEntranceLogo() || {};
+    const d = all[_elCurrentDevice] || all.desktop || {};
+    if (d.soundUrl && d.soundEnabled) {
+        const audio = new Audio(d.soundUrl);
+        audio.volume = d.soundVolume || 0.5;
+        audio.play().catch(() => showToast('Could not play sound', 'error'));
+    } else {
+        showToast('No sound configured or sound disabled', 'warning');
+    }
+}
+
+function elPreviewFull() {
+    const all = DataStore.getEntranceLogo() || {};
+    const d = all[_elCurrentDevice] || all.desktop || {};
+    
+    // Create full preview modal
+    let modal = document.getElementById('elPreviewModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'elPreviewModal';
+        modal.className = 'el-preview-modal';
+        modal.innerHTML = `
+            <div class="el-preview-modal-content" id="elPreviewModalContent">
+                <button class="el-preview-modal-close" onclick="elClosePreviewModal()"><i class="fas fa-times"></i></button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    const content = document.getElementById('elPreviewModalContent');
+    const logo = d.logo || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22 fill=%22none%22%3E%3Ccircle cx=%2220%22 cy=%2220%22 r=%2218%22 fill=%22url(%23g)%22/%3E%3Cpath d=%22M14 28V14l14 7-14 7z%22 fill=%22%23fff%22 opacity=%22.9%22/%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%2240%22 y2=%2240%22%3E%3Cstop stop-color=%22%2322d3ee%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%233b82f6%22/%3E%3Cstop offset=%221%22 stop-color=%22%23a855f7%22/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%22';
+    const size = d.logoSize || 120;
+    const bg = d.background || 'transparent';
+    const mode = d.mode || 'fullscreen';
+    const duration = d.animDuration || 1000;
+    const easing = d.animEasing || 'ease-out';
+    
+    let keyframes = '';
+    switch (d.animType) {
+        case 'fade': keyframes = 'from { opacity: 0; } to { opacity: 1; }'; break;
+        case 'zoom': keyframes = 'from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); }'; break;
+        case 'rotate': keyframes = 'from { opacity: 0; transform: rotate(-180deg) scale(0.5); } to { opacity: 1; transform: rotate(0) scale(1); }'; break;
+        case 'scale': keyframes = 'from { opacity: 0; transform: scale(1.5); } to { opacity: 1; transform: scale(1); }'; break;
+        case 'slide-up': keyframes = 'from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); }'; break;
+        case 'slide-down': keyframes = 'from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); }'; break;
+        case 'slide-left': keyframes = 'from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); }'; break;
+        case 'slide-right': keyframes = 'from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); }'; break;
+        case 'flip': keyframes = 'from { opacity: 0; transform: rotateY(90deg); } to { opacity: 1; transform: rotateY(0); }'; break;
+        case 'bounce': keyframes = '0% { opacity: 0; transform: scale(0.3); } 50% { opacity: 1; transform: scale(1.1); } 70% { transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); }'; break;
+        default: keyframes = 'from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); }';
+    }
+    
+    let style = document.getElementById('elPreviewModalStyles');
+    if (!style) {
+        style = document.createElement('style');
+        style.id = 'elPreviewModalStyles';
+        document.head.appendChild(style);
+    }
+    style.textContent = `
+        @keyframes elFullPreviewAnim { ${keyframes} }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .el-preview-logo { 
+            width: ${size}px; height: ${size}px; object-fit: contain; border-radius: 50%; 
+            animation: elFullPreviewAnim ${duration / 1000}s ${easing} forwards, fadeIn 0.6s ease-out 0.3s forwards; 
+            opacity: 0; 
+        }
+    `;
+    
+    content.innerHTML = `
+        <button class="el-preview-modal-close" onclick="elClosePreviewModal()"><i class="fas fa-times"></i></button>
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;background:${bg === 'transparent' ? 'linear-gradient(135deg, #060e1a, #0a0f1e)' : bg};">
+            ${d.showLogo !== false ? `<img src="${logo}" alt="${d.brandName}" class="el-preview-logo">` : ''}
+            <div style="color:#fff;font-size:1.5rem;font-weight:700;margin-top:20px;text-shadow:0 2px 8px rgba(0,0,0,0.5);opacity:0;animation:fadeIn 0.6s ease-out 0.5s forwards;">${d.brandName || 'Tamil AI Stream'}</div>
+        </div>
+    `;
+    
+    modal.classList.add('active');
+    
+    // Play sound if enabled
+    if (d.soundUrl && d.soundEnabled) {
+        const audio = new Audio(d.soundUrl);
+        audio.volume = d.soundVolume || 0.5;
+        audio.play().catch(() => {});
+    }
+}
+
+function elClosePreviewModal() {
+    const modal = document.getElementById('elPreviewModal');
+    if (modal) modal.classList.remove('active');
+}
+
+function elSaveEntranceLogo() {
+    // Save all device settings
+    const all = DataStore.getEntranceLogo() || {};
+    // Current device already saved via elUpdateSetting
+    DataStore.setEntranceLogo(all);
+    showToast('Entrance Logo settings saved!', 'success');
+    gbPushUndo('Entrance Logo settings changed');
 }
 
 // ============================================
