@@ -6420,10 +6420,12 @@ function _hccRenderList() {
         const sb = _hccSettings[b.id] || {};
         return (sa.order || 99) - (sb.order || 99);
     });
-    container.innerHTML = sorted.map(sec => {
+    container.innerHTML = sorted.map((sec, idx) => {
         const s = _hccSettings[sec.id] || {};
         const enabled = s.enabled !== false;
         const order = s.order || _hccSections.indexOf(sec) + 1;
+        const isFirst = idx === 0;
+        const isLast = idx === sorted.length - 1;
         return `<div class="hcc-section ${enabled ? '' : 'disabled-section'}" data-id="${sec.id}" draggable="true">
             <div class="hcc-section-header">
                 <div class="hcc-drag-handle"><i class="fas fa-grip-vertical"></i></div>
@@ -6433,6 +6435,10 @@ function _hccRenderList() {
                     <div class="hcc-section-id">${sec.id}</div>
                 </div>
                 <span class="hcc-section-order">#${order}</span>
+                <div class="hcc-move-btns">
+                    <button class="hcc-move-btn" title="Move Up" ${isFirst ? 'disabled' : ''} onclick="hccMoveSection('${sec.id}','up')"><i class="fas fa-chevron-up"></i></button>
+                    <button class="hcc-move-btn" title="Move Down" ${isLast ? 'disabled' : ''} onclick="hccMoveSection('${sec.id}','down')"><i class="fas fa-chevron-down"></i></button>
+                </div>
                 <label class="hcc-toggle" onclick="event.stopPropagation()">
                     <input type="checkbox" ${enabled ? 'checked' : ''} onchange="hccToggleSection('${sec.id}', this.checked)">
                     <span class="hcc-toggle-slider"></span>
@@ -6440,14 +6446,14 @@ function _hccRenderList() {
                 <button class="hcc-expand-btn" onclick="hccToggleSettings('${sec.id}', this)"><i class="fas fa-chevron-down"></i></button>
             </div>
             <div class="hcc-settings" id="hcc-settings-${sec.id}">
-                ${_hccRenderSectionSettings(sec, s)}
+                ${_hccRenderSectionSettings(sec, s, sorted)}
             </div>
         </div>`;
     }).join('');
     _hccSetupDrag();
 }
 
-function _hccRenderSectionSettings(sec, s) {
+function _hccRenderSectionSettings(sec, s, allSorted) {
     let html = '';
     // Section Controls
     html += `<div class="hcc-settings-group">
@@ -6462,12 +6468,22 @@ function _hccRenderSectionSettings(sec, s) {
         </div>
         <div class="hcc-settings-row">
             <span class="hcc-label">Top Spacing</span>
-            <input class="hcc-input hcc-input-sm" type="number" min="0" max="100" value="${s.topSpacing || 0}" onchange="hccUpdate('${sec.id}','topSpacing',+this.value)">
+            <input class="hcc-input hcc-input-sm" type="number" min="0" max="200" value="${s.topSpacing || 0}" onchange="hccUpdate('${sec.id}','topSpacing',+this.value)">
             <span class="hcc-label" style="min-width:auto">px</span>
         </div>
         <div class="hcc-settings-row">
             <span class="hcc-label">Bottom Spacing</span>
-            <input class="hcc-input hcc-input-sm" type="number" min="0" max="100" value="${s.bottomSpacing || 0}" onchange="hccUpdate('${sec.id}','bottomSpacing',+this.value)">
+            <input class="hcc-input hcc-input-sm" type="number" min="0" max="200" value="${s.bottomSpacing || 0}" onchange="hccUpdate('${sec.id}','bottomSpacing',+this.value)">
+            <span class="hcc-label" style="min-width:auto">px</span>
+        </div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Left Spacing</span>
+            <input class="hcc-input hcc-input-sm" type="number" min="0" max="200" value="${s.leftSpacing || 0}" onchange="hccUpdate('${sec.id}','leftSpacing',+this.value)">
+            <span class="hcc-label" style="min-width:auto">px</span>
+        </div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Right Spacing</span>
+            <input class="hcc-input hcc-input-sm" type="number" min="0" max="200" value="${s.rightSpacing || 0}" onchange="hccUpdate('${sec.id}','rightSpacing',+this.value)">
             <span class="hcc-label" style="min-width:auto">px</span>
         </div>
         <div class="hcc-settings-row">
@@ -6485,6 +6501,45 @@ function _hccRenderSectionSettings(sec, s) {
             <span class="hcc-label">Anim Speed</span>
             <input class="hcc-input hcc-input-sm" type="number" min="0.1" max="3" step="0.1" value="${s.animationSpeed || 0.3}" onchange="hccUpdate('${sec.id}','animationSpeed',+this.value)">
             <span class="hcc-label" style="min-width:auto">s</span>
+        </div>
+    </div>`;
+
+    // Layout & Position Controls
+    html += `<div class="hcc-settings-group">
+        <div class="hcc-settings-group-title"><i class="fas fa-arrows-alt"></i> Layout & Position</div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Section Width</span>
+            <input class="hcc-input" value="${_hccEsc(s.sectionWidth || '')}" placeholder="auto / 800px / 90%" onchange="hccUpdate('${sec.id}','sectionWidth',this.value||null)">
+        </div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Alignment</span>
+            <select class="hcc-select" onchange="hccUpdate('${sec.id}','alignment',this.value)">
+                <option value="stretch" ${(!s.alignment||s.alignment==='stretch')?'selected':''}>Stretch (Full)</option>
+                <option value="left" ${s.alignment==='left'?'selected':''}>Left</option>
+                <option value="center" ${s.alignment==='center'?'selected':''}>Center</option>
+                <option value="right" ${s.alignment==='right'?'selected':''}>Right</option>
+            </select>
+        </div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Position</span>
+            <select class="hcc-select" onchange="hccUpdate('${sec.id}','position',this.value)">
+                <option value="static" ${(!s.position||s.position==='static')?'selected':''}>Static (Flow)</option>
+                <option value="relative" ${s.position==='relative'?'selected':''}>Relative</option>
+            </select>
+        </div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Move Before</span>
+            <select class="hcc-select" onchange="hccMoveBefore('${sec.id}',this.value);this.value='';">
+                <option value="">-- Select Section --</option>
+                ${(allSorted||[]).filter(x=>x.id!==sec.id).map(x=>`<option value="${x.id}">${x.name}</option>`).join('')}
+            </select>
+        </div>
+        <div class="hcc-settings-row">
+            <span class="hcc-label">Move After</span>
+            <select class="hcc-select" onchange="hccMoveAfter('${sec.id}',this.value);this.value='';">
+                <option value="">-- Select Section --</option>
+                ${(allSorted||[]).filter(x=>x.id!==sec.id).map(x=>`<option value="${x.id}">${x.name}</option>`).join('')}
+            </select>
         </div>
     </div>`;
 
@@ -6605,6 +6660,24 @@ function _hccRespFields(sectionId, device, vals) {
         <span class="hcc-label">Radius</span>
         <input class="hcc-input hcc-input-sm" type="number" min="0" max="40" value="${vals.radius || ''}" placeholder="auto" onchange="hccUpdateResp('${sectionId}','${device}','radius',+this.value||null)">
         <span class="hcc-label" style="min-width:auto">px</span>
+    </div>
+    <div class="hcc-settings-row">
+        <span class="hcc-label">Position</span>
+        <select class="hcc-select" onchange="hccUpdateResp('${sectionId}','${device}','position',this.value||null)">
+            <option value="" ${!vals.position?'selected':''}>Default</option>
+            <option value="static" ${vals.position==='static'?'selected':''}>Static</option>
+            <option value="relative" ${vals.position==='relative'?'selected':''}>Relative</option>
+        </select>
+    </div>
+    <div class="hcc-settings-row">
+        <span class="hcc-label">Alignment</span>
+        <select class="hcc-select" onchange="hccUpdateResp('${sectionId}','${device}','alignment',this.value||null)">
+            <option value="" ${!vals.alignment?'selected':''}>Default</option>
+            <option value="stretch" ${vals.alignment==='stretch'?'selected':''}>Stretch</option>
+            <option value="left" ${vals.alignment==='left'?'selected':''}>Left</option>
+            <option value="center" ${vals.alignment==='center'?'selected':''}>Center</option>
+            <option value="right" ${vals.alignment==='right'?'selected':''}>Right</option>
+        </select>
     </div>`;
 }
 
@@ -6665,6 +6738,74 @@ function hccUpdateResp(id, device, key, value) {
     if (!_hccSettings[id].responsive) _hccSettings[id].responsive = {};
     if (!_hccSettings[id].responsive[device]) _hccSettings[id].responsive[device] = {};
     _hccSettings[id].responsive[device][key] = value;
+}
+
+function hccMoveSection(id, dir) {
+    _hccPushUndo();
+    const sorted = _hccSections.slice().sort((a, b) => {
+        const sa = _hccSettings[a.id] || {};
+        const sb = _hccSettings[b.id] || {};
+        return (sa.order || 99) - (sb.order || 99);
+    });
+    const idx = sorted.findIndex(s => s.id === id);
+    if (idx < 0) return;
+    const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= sorted.length) return;
+    // Swap orders
+    const currentOrder = (_hccSettings[id] || {}).order || (idx + 1);
+    const targetId = sorted[targetIdx].id;
+    const targetOrder = (_hccSettings[targetId] || {}).order || (targetIdx + 1);
+    if (!_hccSettings[id]) _hccSettings[id] = {};
+    if (!_hccSettings[targetId]) _hccSettings[targetId] = {};
+    _hccSettings[id].order = targetOrder;
+    _hccSettings[targetId].order = currentOrder;
+    _hccRenderList();
+}
+
+function hccMoveBefore(id, beforeId) {
+    if (!beforeId || id === beforeId) return;
+    _hccPushUndo();
+    const sorted = _hccSections.slice().sort((a, b) => {
+        const sa = _hccSettings[a.id] || {};
+        const sb = _hccSettings[b.id] || {};
+        return (sa.order || 99) - (sb.order || 99);
+    });
+    const beforeIdx = sorted.findIndex(s => s.id === beforeId);
+    if (beforeIdx < 0) return;
+    // Set order to target order - 0.5, then reindex
+    const targetOrder = (_hccSettings[beforeId] || {}).order || (beforeIdx + 1);
+    if (!_hccSettings[id]) _hccSettings[id] = {};
+    _hccSettings[id].order = targetOrder - 0.5;
+    _hccReindexOrders();
+    _hccRenderList();
+}
+
+function hccMoveAfter(id, afterId) {
+    if (!afterId || id === afterId) return;
+    _hccPushUndo();
+    const sorted = _hccSections.slice().sort((a, b) => {
+        const sa = _hccSettings[a.id] || {};
+        const sb = _hccSettings[b.id] || {};
+        return (sa.order || 99) - (sb.order || 99);
+    });
+    const afterIdx = sorted.findIndex(s => s.id === afterId);
+    if (afterIdx < 0) return;
+    const targetOrder = (_hccSettings[afterId] || {}).order || (afterIdx + 1);
+    if (!_hccSettings[id]) _hccSettings[id] = {};
+    _hccSettings[id].order = targetOrder + 0.5;
+    _hccReindexOrders();
+    _hccRenderList();
+}
+
+function _hccReindexOrders() {
+    const sorted = _hccSections.slice().sort((a, b) => {
+        const sa = _hccSettings[a.id] || {};
+        const sb = _hccSettings[b.id] || {};
+        return (sa.order || 99) - (sb.order || 99);
+    });
+    sorted.forEach((sec, i) => {
+        if (_hccSettings[sec.id]) _hccSettings[sec.id].order = i + 1;
+    });
 }
 
 function _hccPushUndo() {

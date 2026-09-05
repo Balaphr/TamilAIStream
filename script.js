@@ -2702,9 +2702,43 @@ function applySectionSettings() {
             // Spacing
             if (sec.topSpacing) el.style.marginTop = sec.topSpacing + 'px';
             if (sec.bottomSpacing) el.style.marginBottom = sec.bottomSpacing + 'px';
+            if (sec.leftSpacing) el.style.marginLeft = sec.leftSpacing + 'px';
+            if (sec.rightSpacing) el.style.marginRight = sec.rightSpacing + 'px';
 
             // Background
             if (sec.bg) el.style.background = sec.bg;
+
+            // Section width
+            if (sec.sectionWidth) el.style.maxWidth = sec.sectionWidth;
+
+            // Alignment
+            if (sec.alignment && sec.alignment !== 'stretch') {
+                el.style.marginLeft = sec.alignment === 'center' ? 'auto' : (sec.leftSpacing ? sec.leftSpacing + 'px' : '');
+                el.style.marginRight = sec.alignment === 'center' ? 'auto' : (sec.rightSpacing ? sec.rightSpacing + 'px' : '');
+                if (sec.alignment === 'center') el.style.display = 'block';
+            }
+
+            // Position
+            if (sec.position) el.style.position = sec.position;
+
+            // Responsive overrides
+            if (sec.responsive) {
+                const r = sec.responsive[device] || {};
+                if (r.position) el.style.position = r.position;
+                if (r.alignment) {
+                    if (r.alignment === 'center') {
+                        el.style.marginLeft = 'auto';
+                        el.style.marginRight = 'auto';
+                        el.style.display = 'block';
+                    } else if (r.alignment === 'left') {
+                        el.style.marginLeft = '0';
+                        el.style.marginRight = 'auto';
+                    } else if (r.alignment === 'right') {
+                        el.style.marginLeft = 'auto';
+                        el.style.marginRight = '0';
+                    }
+                }
+            }
 
             // Title / Subtitle
             if (sec.title) {
