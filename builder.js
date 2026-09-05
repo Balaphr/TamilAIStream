@@ -606,7 +606,7 @@ function navigateTo(page) {
         'application': 'applicationPage',
         'songsCollections': 'songsCollectionsPage',
         'newalbums': 'newAlbumsPage',
-        'staging': 'stagingPage'
+        'changes': 'changesPage'
     };
 
     const pageId = pageMap[page];
@@ -633,7 +633,7 @@ function _loadPageData(page) {
     if (page === 'musiccollections') loadMusicCollections();
     if (page === 'newalbums') loadNewAlbums();
     if (page === 'songsCollections') loadSongsCollectionsPage();
-    if (page === 'staging') loadStagingPage();
+    if (page === 'changes') refreshChangesLog();
     if (page === 'images') loadAllImages();
     if (page === 'settings') loadSettings();
     if (page === 'moods') loadMoods();
@@ -719,6 +719,113 @@ function _openTrashInRightPanel() {
 
 // ============================================
 // Application Settings in Right Panel
+// ============================================
+// ============================================
+// Changes Log
+// ============================================
+function refreshChangesLog() {
+    const list = document.getElementById('changesList');
+    if (!list) return;
+
+    // Collect recent changes from localStorage timestamps
+    const changes = [];
+    const lastSynced = localStorage.getItem('tamilAIStream_lastSyncedAt');
+    if (lastSynced) {
+        changes.push({
+            time: lastSynced,
+            action: 'Content synced to live site',
+            icon: 'fa-cloud-arrow-up',
+            color: '#10b981'
+        });
+    }
+
+    // Check for recent song additions
+    try {
+        const songs = DataStore.getSongs() || [];
+        const recentSongs = songs.filter(s => {
+            if (!s.createdAt) return false;
+            const age = Date.now() - new Date(s.createdAt).getTime();
+            return age < 7 * 24 * 60 * 60 * 1000; // last 7 days
+        }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        recentSongs.slice(0, 5).forEach(s => {
+            changes.push({
+                time: s.createdAt,
+                action: `Song added: ${s.title || 'Untitled'}`,
+                icon: 'fa-music',
+                color: '#3b82f6'
+            });
+        });
+    } catch (e) { /* ignore */ }
+
+    // Check for recent station additions
+    try {
+        const stations = DataStore.getStations() || [];
+        const recentStations = stations.filter(s => {
+            if (!s.createdAt) return false;
+            const age = Date.now() - new Date(s.createdAt).getTime();
+            return age < 7 * 24 * 60 * 60 * 1000;
+        }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        recentStations.slice(0, 5).forEach(s => {
+            changes.push({
+                time: s.createdAt,
+                action: `Station added: ${s.name || 'Untitled'}`,
+                icon: 'fa-tower-broadcast',
+                color: '#8b5cf6'
+            });
+        });
+    } catch (e) { /* ignore */ }
+
+    // Check for recent image uploads
+    try {
+        const images = DataStore.getImages() || [];
+        const recentImages = images.filter(img => {
+            if (!img.uploadedAt) return false;
+            const age = Date.now() - new Date(img.uploadedAt).getTime();
+            return age < 7 * 24 * 60 * 60 * 1000;
+        }).sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+        recentImages.slice(0, 5).forEach(img => {
+            changes.push({
+                time: img.uploadedAt,
+                action: `Image uploaded: ${img.name || img.key || 'Untitled'}`,
+                icon: 'fa-image',
+                color: '#f59e0b'
+            });
+        });
+    } catch (e) { /* ignore */ }
+
+    // Sort by time, most recent first
+    changes.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+    if (!changes.length) {
+        list.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,0.4);font-size:13px;"><i class="fas fa-clock-rotate-left" style="font-size:32px;margin-bottom:12px;display:block;opacity:0.3;"></i>No changes recorded yet. Start editing content to see changes here.</div>';
+        return;
+    }
+
+    list.innerHTML = changes.slice(0, 20).map(c => {
+        const timeAgo = _timeAgo(c.time);
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;">
+            <div style="width:32px;height:32px;border-radius:8px;background:${c.color}15;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas ${c.icon}" style="color:${c.color};font-size:14px;"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div style="color:rgba(255,255,255,0.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.action}</div>
+                <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:2px;">${timeAgo}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function _timeAgo(dateStr) {
+    const now = Date.now();
+    const then = new Date(dateStr).getTime();
+    const diff = now - then;
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+    if (diff < 604800000) return Math.floor(diff / 86400000) + 'd ago';
+    return new Date(dateStr).toLocaleDateString();
+}
+
 // ============================================
 // ============================================
 // Dashboard Stats
@@ -1980,34 +2087,10 @@ function saveDraft() {
 }
 
 async function publishChanges() {
-    // Pre-publish AI check
-    if (typeof AIAutomation !== 'undefined') {
-        const check = AIAutomation.runPublishChecks(DataStore);
-        if (!check.passed) {
-            const proceed = confirm(
-                'Publish check found issues:\n\n' +
-                check.summary + '\n\n' +
-                'Publish anyway?'
-            );
-            if (!proceed) {
-                AIPublishCheck.runAndShow();
-                return;
-            }
-        }
-    }
-
-    showToast('Publishing changes...', 'info');
+    showToast('Saving changes...', 'info');
     try {
-        // ALL Builder writes go to staging. PublishManager.publish() promotes staging → production.
-        if (typeof PublishManager !== 'undefined') {
-            // First ensure current state is saved to staging
-            await PublishManager.saveToStaging();
-            // Then publish staging to production
-            await PublishManager.publish();
-        } else {
-            // Fallback if PublishManager not loaded — still goes through staging
-            await syncToLiveWebsiteImmediate();
-        }
+        // All saves go directly to production — just sync
+        await syncToLiveWebsiteImmediate();
 
         if ('caches' in window) {
             try {
@@ -2051,17 +2134,7 @@ async function publishChanges() {
 }
 
 function unpublish() {
-    if (!confirm('Are you sure you want to unpublish the website? The live site will show the previous published version.')) return;
-    try {
-        publishState = 'unpublished';
-        savePublishState();
-        showToast('Website unpublished. Previous version is now live.', 'info');
-        addActivity('Website Unpublished', 'The website has been taken offline');
-        updatePublishUI();
-    } catch (error) {
-        console.error('Unpublish error:', error);
-        showToast('Unpublish failed: ' + error.message, 'error');
-    }
+    showToast('All saves go directly to live. No unpublish needed.', 'info');
 }
 
 function discardChanges() {

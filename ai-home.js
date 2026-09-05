@@ -1242,9 +1242,37 @@ window.AIHome = (() => {
                 const open = chip.classList.toggle('open');
                 document.querySelectorAll('.ai-user-chip.open').forEach(c => { if (c !== chip) c.classList.remove('open'); });
                 document.querySelectorAll('.ai-notif-btn.open').forEach(b => b.classList.remove('open'));
+                /* Close 3-dot menu if open */
+                const moreChip = $('aiMoreChip');
+                if (moreChip) moreChip.classList.remove('open');
             });
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.ai-user-chip')) chip.classList.remove('open');
+            });
+        }
+        /* 3-Dot More Menu toggle */
+        const moreChip = $('aiMoreChip');
+        if (moreChip) {
+            moreChip.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const open = moreChip.classList.toggle('open');
+                /* Close user menu if open */
+                if (chip) chip.classList.remove('open');
+                document.querySelectorAll('.ai-notif-btn.open').forEach(b => b.classList.remove('open'));
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.ai-more-chip')) moreChip.classList.remove('open');
+            });
+            /* Menu item clicks — navigate to page */
+            moreChip.querySelectorAll('.ai-more-menu-item[data-page]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const page = btn.dataset.page;
+                    if (page && typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {
+                        YTMusic.navigateTo(page);
+                    }
+                    moreChip.classList.remove('open');
+                });
             });
         }
         document.querySelectorAll('[data-ai-menu]').forEach(btn => {
@@ -1331,6 +1359,8 @@ window.AIHome = (() => {
                 btn.classList.toggle('open', panel.classList.contains('open'));
                 const chip = $('aiUserChip');
                 if (chip) chip.classList.remove('open');
+                const moreChip = $('aiMoreChip');
+                if (moreChip) moreChip.classList.remove('open');
             });
             document.addEventListener('click', (e) => {
                 if (btn && !e.target.closest('#aiNotifBtn') && !e.target.closest('#aiNotifPanel')) {
@@ -2051,7 +2081,6 @@ window.AIHome = (() => {
         renderTrendingPlaylists();
         renderLiveFm();
         renderEvergreen();
-        renderRecentlyPlayed();
         renderAIRecommendations();
         renderFavoritesSection();
         renderDecadeCards();

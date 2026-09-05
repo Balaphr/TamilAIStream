@@ -327,7 +327,6 @@
                     <button class="ai-sidebar-item" data-ai-page="replays"><i class="fas fa-rotate"></i><span>Replays</span></button>
                     <button class="ai-sidebar-item" data-ai-page="community"><i class="fas fa-users"></i><span>Community</span></button>
                     <button class="ai-sidebar-item" data-ai-page="charts"><i class="fas fa-chart-line"></i><span>Charts</span></button>
-                    <button class="ai-sidebar-item" data-ai-page="history"><i class="fas fa-clock-rotate-left"></i><span>History</span></button>
                     <div class="ai-sidebar-divider"></div>
                     <button class="ai-sidebar-item" data-ai-page="settings"><i class="fas fa-gear"></i><span>Settings</span></button>
                 </nav>
@@ -377,14 +376,8 @@
                         <button class="premium-nav-item premium-topnav-item" data-page="playlists" title="Playlists">
                             <i class="fas fa-list"></i><span>Playlists</span>
                         </button>
-                        <button class="premium-nav-item premium-topnav-item" data-page="ai-assistant" title="AI Assistant">
-                            <i class="fas fa-robot"></i><span>AI Assistant</span>
-                        </button>
                         <button class="premium-nav-item premium-topnav-item" data-page="stations" title="Stations">
                             <i class="fas fa-tower-broadcast"></i><span>Stations</span>
-                        </button>
-                        <button class="premium-nav-item premium-topnav-item" data-page="history" title="History">
-                            <i class="fas fa-clock-rotate-left"></i><span>History</span>
                         </button>
                     </nav>
 
@@ -426,6 +419,20 @@
                                 <span class="ai-notif-dot"></span>
                                 <div class="ai-notif-panel" id="aiNotifPanel"></div>
                             </button>
+                            <!-- 3-dot More menu -->
+                            <div class="ai-more-chip" id="aiMoreChip" tabindex="0">
+                                <button class="ai-hdr-btn ai-more-btn" id="aiMoreBtn" title="More options" aria-label="More options">
+                                    <i class="fas fa-ellipsis-vertical"></i>
+                                </button>
+                                <div class="ai-more-menu" id="aiMoreMenu">
+                                    <button class="ai-more-menu-item" data-page="history">
+                                        <i class="fas fa-clock-rotate-left"></i> Listening History
+                                    </button>
+                                    <button class="ai-more-menu-item" data-page="ai-assistant">
+                                        <i class="fas fa-robot"></i> AI Assistant
+                                    </button>
+                                </div>
+                            </div>
                             <div class="ai-user-chip" id="aiUserChip" tabindex="0">
                                 <div class="ai-user-avatar" id="aiUserAvatar">G</div>
                                 <div class="ai-user-meta">
@@ -548,10 +555,6 @@
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-list"></i></div>
                                 <span>Playlists</span>
                             </button>
-                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="ai-assistant">
-                                <div class="premium-sidebar-item-icon"><i class="fas fa-robot"></i></div>
-                                <span>AI Assistant</span>
-                            </button>
                         </div>
 
                         <div class="premium-sidebar-divider"></div>
@@ -572,10 +575,6 @@
                             <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="charts">
                                 <div class="premium-sidebar-item-icon"><i class="fas fa-chart-line"></i></div>
                                 <span>Charts</span>
-                            </button>
-                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="history">
-                                <div class="premium-sidebar-item-icon"><i class="fas fa-clock-rotate-left"></i></div>
-                                <span>History</span>
                             </button>
                         </div>
 
@@ -764,16 +763,8 @@
                         </section>
                     </div>
 
-                    <!-- Row 3: Recently Played + AI Recommendations -->
+                    <!-- Row 3: AI Recommendations -->
                     <div class="ai-home-row">
-                        <section class="ai-panel ai-recently" data-section="ai-recently">
-                            <div class="ai-sec-head">
-                                <h2 class="ai-sec-title"><i class="fas fa-clock-rotate-left"></i> Recently Played</h2>
-                                <button class="ai-see-all" data-ai-seeall="history">See All</button>
-                            </div>
-                            <div class="ai-recent-row" id="aiRecentlyPlayed"></div>
-                        </section>
-
                         <section class="ai-panel ai-ai-rec" data-section="ai-ai-rec">
                             <div class="ai-sec-head">
                                 <h2 class="ai-sec-title"><i class="fas fa-wand-magic-sparkles"></i> AI Recommendations</h2>
@@ -1474,10 +1465,6 @@
     <button class="tamilai-nav-item" data-page="search" aria-label="Search">
         <div class="tamilai-nav-icon"><i class="fas fa-magnifying-glass"></i></div>
         <span class="tamilai-nav-label">Search</span>
-    </button>
-    <button class="tamilai-nav-item" data-page="ai-assistant" aria-label="AI Assistant">
-        <div class="tamilai-nav-icon"><i class="fas fa-robot"></i></div>
-        <span class="tamilai-nav-label">AI Assistant</span>
     </button>
     <button class="tamilai-nav-item" data-page="music" aria-label="Library">
         <div class="tamilai-nav-icon"><i class="fas fa-layer-group"></i></div>

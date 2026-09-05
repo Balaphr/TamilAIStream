@@ -315,7 +315,7 @@ const PublishManager = (() => {
         }
     }
 
-    /** Save current DataStore state to staging manifest */
+    /** Save current DataStore state directly to production manifest */
     async function saveToStaging() {
         try {
             let payload;
@@ -325,73 +325,39 @@ const PublishManager = (() => {
                 payload = _buildPayloadFromStorage();
             }
 
-            payload._stagingMeta = {
-                savedAt: new Date().toISOString(),
-                savedBy: _getAdminName(),
-            };
-
-            const result = await _api('POST', '/api/staging', payload);
-            _state.hasStaging = true;
-            _state.stagingSavedAt = result.savedAt;
-            _emit('staging-saved', _state);
+            // DIRECT DEPLOY: Write straight to production manifest
+            payload.updatedAt = new Date().toISOString();
+            const result = await _api('POST', '/api/manifest', payload);
+            _state.hasStaging = false;
+            _state.stagingSavedAt = null;
+            _emit('published', _state);
             return result;
         } catch (e) {
-            console.error('PublishManager: save to staging failed', e);
+            console.error('PublishManager: save to production failed', e);
             throw e;
         }
     }
 
-    /** Publish staging to production */
+    /** Publish — no-op since saves go directly to production */
     async function publish() {
         try {
-            // Save a version snapshot before publishing
+            // Save a version snapshot before "publishing"
             try {
-                await saveVersionSnapshot('Pre-publish snapshot');
+                await saveVersionSnapshot('Snapshot before save');
             } catch (e) { /* non-critical */ }
 
-            // Publish content manifest (staging → production)
-            const result = await _api('POST', '/api/publish');
-
-            // Also publish admin-overrides if they exist in staging
-            try {
-                await _api('POST', '/api/admin-overrides', { action: 'publish' });
-            } catch (e) { /* admin-overrides may not exist */ }
-
-            // Also publish global settings if they exist in staging
-            try {
-                const gsResp = await fetch('/api/global-settings');
-                const gsData = await gsResp.json();
-                if (gsData.settings) {
-                    await fetch('/api/global-settings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ settings: gsData.settings, admin: 'Admin', publish: true }),
-                    });
-                }
-            } catch (e) { /* global settings may not exist */ }
-
+            // Everything is already in production — just notify
             _state.hasStaging = false;
             _state.stagingSavedAt = null;
-            _state.publishedAt = result.publishedAt;
-            _state.hasPublished = true;
-            _saveLocalState();
-
-            // Track publish event
-            const diff = await getDiff();
-            trackPublish({
-                sections: (diff.changes || []).map(c => c.section),
-                details: (diff.changeCount || 0) + ' section(s) published',
-            });
-
             _emit('published', _state);
-            return result;
+            return { success: true, publishedAt: new Date().toISOString() };
         } catch (e) {
             console.error('PublishManager: publish failed', e);
             throw e;
         }
     }
 
-    /** Discard staging changes */
+    /** Discard staging changes — no-op since there is no staging */
     async function discardStaging() {
         try {
             await _api('DELETE', '/api/staging');

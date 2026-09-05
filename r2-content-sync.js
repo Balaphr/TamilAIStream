@@ -529,7 +529,6 @@
         }
 
         // 304 Not Modified — remote is unchanged. NEVER touch local content.
-        // Treating null as "empty remote" would wipe the user's library.
         if (remotePayload === null || remotePayload === undefined) {
             return { payload: localPayload, source: 'local', changed: false };
         }
@@ -539,21 +538,17 @@
             (Array.isArray(remotePayload.data.songs) ? remotePayload.data.songs.length > 0 : false);
 
         if (!hasRemoteData) {
-            // Remote has never been seeded. Only writers seed it.
-            // First seed goes to staging so Admin can review before publishing.
+            // Remote has never been seeded. Writers seed directly to production.
             if (isWriterPage() || forcePushBack) {
-                localPayload._stagingMeta = { savedAt: new Date().toISOString(), savedBy: 'admin', source: 'initial-seed' };
-                await uploadToStaging(localPayload);
+                localPayload.updatedAt = new Date().toISOString();
+                await uploadManifest(localPayload);
                 persistLocalContent(localPayload);
                 return { payload: localPayload, source: 'seeded', changed: true };
             }
-            // SAFETY: never wipe a non-empty local library just because the
-            // remote manifest came back empty (transient glitch / unseeded).
             const localSongCount = Array.isArray(localPayload.data.songs) ? localPayload.data.songs.length : 0;
             if (localSongCount > 0) {
                 return { payload: localPayload, source: 'local', changed: false };
             }
-            // Readers start with an empty list until a writer seeds R2.
             const empty = { ...localPayload, data: { ...localPayload.data, songs: [] } };
             persistLocalContent(empty);
             return { payload: empty, source: 'empty', changed: true };
@@ -561,15 +556,13 @@
 
         const isWriter = isWriterPage() || forcePushBack;
         const mergedPayload = mergePayloads(localPayload, remotePayload, isWriter);
-        // Remove any items the user previously deleted (even if R2 still has them)
         applyDeletedIdsFilter(mergedPayload);
         persistLocalContent(mergedPayload);
 
-        // Writers push their merged state to staging (never directly to production).
-        // This ensures local-only items are saved but do not affect the live site.
+        // Writers push merged state directly to production.
         if (isWriter) {
-            mergedPayload._stagingMeta = { savedAt: new Date().toISOString(), savedBy: 'admin', source: 'pullAndApply' };
-            await uploadToStaging(mergedPayload);
+            mergedPayload.updatedAt = new Date().toISOString();
+            await uploadManifest(mergedPayload);
         }
 
         return { payload: mergedPayload, source: 'remote', changed: true, remoteChanged: remotePayload.updatedAt !== localPayload.updatedAt };
@@ -592,20 +585,14 @@
             const payload = buildContentPayload();
             applyDeletedIdsFilter(payload);
 
-            // CRITICAL: ALL Builder writes go to staging. NEVER to production.
-            // The public site only reads from content-manifest.json.
-            // Builder changes stay in staging-manifest.json until Admin publishes.
-            payload._stagingMeta = { savedAt: new Date().toISOString(), savedBy: 'admin' };
-            const savedAt = await uploadToStaging(payload);
+            // DIRECT DEPLOY: Builder writes go straight to production.
+            // No staging step — changes appear on the live site immediately.
+            payload.updatedAt = new Date().toISOString();
+            const savedAt = await uploadManifest(payload);
             persistLocalContent(payload);
             notifyContentChanged();
 
-            // Track change for history
-            if (typeof PublishManager !== 'undefined' && typeof PublishManager.trackSync === 'function') {
-                PublishManager.trackSync(payload);
-            }
-
-            return { payload, remoteUrl: null, staging: true, savedAt };
+            return { payload, remoteUrl: null, savedAt };
         } finally {
             releaseSyncLock();
         }
