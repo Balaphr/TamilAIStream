@@ -778,7 +778,7 @@
 .ai-home {
     max-width: 1360px;
     margin: 0 auto;
-    padding: 22px 24px 40px;
+    padding: 0 24px 40px;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -3172,12 +3172,12 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
 }
 
 @media (max-width: 1024px) {
-    .ai-home { padding: 16px 16px 20px; gap: 16px; }
+    .ai-home { padding: 0 16px 20px; gap: 16px; }
     .ai-music-hero { min-height: 280px; }
 }
 
 @media (max-width: 767px) {
-    .ai-home { padding: 12px 12px 20px; gap: 14px; }
+    .ai-home { padding: 0 12px 20px; gap: 14px; }
     .ai-home-row { gap: 14px; }
     .ai-fm-grid { grid-template-columns: 1fr; }
     .ai-rec-inner { flex-direction: column; gap: 14px; }

@@ -25,7 +25,7 @@
     --ytm-mini-player-height: 72px;
     --ytm-progress-height: 3px;
     --ytm-player-height: 80px;
-    --ytm-header-height: 64px;
+    --ytm-header-height: 60px;
     --ytm-radius: 8px;
     --ytm-radius-lg: 12px;
     --ytm-transition: 0.2s ease;
@@ -273,7 +273,7 @@
 /* Page System */
 .ytm-page {
     display: none;
-    min-height: calc(100vh - var(--ytm-header-height));
+    min-height: 100vh;
     padding: 0;
 }
 
@@ -4028,7 +4028,6 @@ body.home-active .ytm-page-home {
     position: sticky;
     top: 0;
     z-index: 200;
-    height: var(--ytm-header-height, 64px);
     background: linear-gradient(135deg, rgba(10,15,30,0.85), rgba(5,10,20,0.92));
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
@@ -5065,10 +5064,6 @@ body.home-active .ytm-page-home {
    RESPONSIVE: MOBILE (≤640px)
    ============================================ */
 @media (max-width: 640px) {
-    .premium-top-nav {
-        height: 52px;
-    }
-
     .premium-topnav-inner {
         padding: 0 12px;
         gap: 10px;
