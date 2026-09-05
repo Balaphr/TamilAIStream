@@ -800,9 +800,10 @@
                 return { added: 0, total: existing.length, scanned: 0 };
             }
 
-            // Best-effort album cover matching using the leading upload timestamp.
+            // Best-effort album cover matching using timestamp proximity (±60s).
+            // Audio and album images are uploaded seconds apart, not simultaneously.
             pct(55, 'Matching covers', 'Scanning image files for album covers…');
-            const imageByTs = new Map();
+            const imageEntries = [];
             for (const prefix of ['albums/', 'images/']) {
                 const objs = await listR2Objects(prefix, 1000, (p, msg) => {
                     if (msg) pct(null, null, msg);
@@ -810,8 +811,27 @@
                 for (const o of objs) {
                     if (!o || !o.key || !R2_IMAGE_EXT_RE.test(o.key)) continue;
                     const m = /^(\d{10,})/.exec(o.key.split('/').pop() || '');
-                    if (m && !imageByTs.has(m[1])) imageByTs.set(m[1], o.key);
+                    if (m) imageEntries.push({ ts: parseInt(m[1], 10), key: o.key });
                 }
+            }
+            // Sort by timestamp for proximity search
+            imageEntries.sort((a, b) => a.ts - b.ts);
+
+            function findClosestImage(audioTs, maxDeltaSec = 60) {
+                if (!audioTs) return '';
+                const target = audioTs;
+                let bestKey = '';
+                let bestDelta = maxDeltaSec * 1000 + 1; // start beyond max
+                for (const img of imageEntries) {
+                    const delta = Math.abs(img.ts - target);
+                    if (delta < bestDelta) {
+                        bestDelta = delta;
+                        bestKey = img.key;
+                    }
+                    // Since sorted, if we passed the target we can stop early
+                    if (img.ts > target + bestDelta) break;
+                }
+                return bestKey;
             }
 
             pct(65, 'Importing', 'Building song entries from R2 files…');
@@ -821,10 +841,10 @@
                 if (existingByKey.has(key)) return;
                 const url = r2PublicUrl(key);
                 const tsMatch = /^(\d{10,})/.exec(key.split('/').pop() || '');
-                const ts = tsMatch ? tsMatch[1] : '';
+                const ts = tsMatch ? parseInt(tsMatch[1], 10) : 0;
                 const createdAt = obj.uploaded ||
-                    (ts ? new Date(parseInt(ts, 10)).toISOString() : new Date().toISOString());
-                const coverKey = ts && imageByTs.has(ts) ? imageByTs.get(ts) : '';
+                    (ts ? new Date(ts).toISOString() : new Date().toISOString());
+                const coverKey = findClosestImage(ts);
 
                 additions.push({
                     id: 'r2_' + hashCode(key),
@@ -879,6 +899,38 @@
                 notifyContentChanged();
             }
 
+            // ── Patch existing songs with missing album covers ──
+            // Songs uploaded via the Builder may have empty albumCover/thumbnail
+            // because the image was uploaded separately. Match them now.
+            let patchedCount = 0;
+            const existingSongs = safeGet(global.DataStore.getSongs?.bind(global.DataStore), []) || [];
+            const patched = existingSongs.map(s => {
+                if (s && s.r2Key && (!s.albumCover || !s.thumbnail)) {
+                    const tsMatch = /^(\d{10,})/.exec((s.r2Key.split('/').pop() || ''));
+                    const ts = tsMatch ? parseInt(tsMatch[1], 10) : 0;
+                    const coverKey = findClosestImage(ts);
+                    if (coverKey) {
+                        patchedCount++;
+                        return { ...s, albumCover: r2PublicUrl(coverKey), thumbnail: r2PublicUrl(coverKey) };
+                    }
+                }
+                return s;
+            });
+            if (patchedCount > 0) {
+                pct(95, 'Patching', 'Matching album covers for ' + patchedCount + ' song(s)…');
+                if (typeof global.DataStore?.setSongs === 'function') {
+                    global.DataStore.setSongs(patched);
+                }
+                writeLocalStorage('tamilAIStream_songs', patched);
+                try {
+                    const manifestPayload = buildContentPayload();
+                    manifestPayload.updatedAt = new Date().toISOString();
+                    await uploadManifest(manifestPayload);
+                } catch (e) {
+                    console.warn('[ContentSync] Failed to persist cover patches to manifest:', e);
+                }
+            }
+
             const total = existing.length + additions.length;
             pct(100, 'Done', additions.length + ' song(s) imported from R2 — ' + total + ' total');
             return { added: additions.length, total, scanned: audioObjects.length };
@@ -914,12 +966,11 @@
     global.addEventListener?.('DOMContentLoaded', () => {
         // Pull the authoritative R2 manifest once on load.
         global.ContentSync?.bootstrapSharedContent?.().then((result) => {
-            // After manifest sync, check if we have songs. If the manifest was
-            // empty (no songs), scan R2 for audio files and seed the manifest.
-            const songCount = (global.DataStore?.getSongs?.() || []).length;
-            if (songCount === 0) {
-                global.ContentSync?.discoverR2Songs?.().catch(() => {});
-            }
+            // Always run R2 discovery to:
+            // 1. Import any new audio files not yet in the manifest
+            // 2. Patch existing songs with missing album covers (proximity match)
+            // This is idempotent — existing songs are never duplicated.
+            global.ContentSync?.discoverR2Songs?.().catch(() => {});
             // Sync every 10 minutes (304 Not Modified avoids data transfer when unchanged)
             global.ContentSync?.startSyncing?.(600000);
         }).catch(() => {});
