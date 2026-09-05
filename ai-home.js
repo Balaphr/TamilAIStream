@@ -926,7 +926,7 @@ window.AIHome = (() => {
                     ${badges.length ? `<div class="new-album-badges">${badges.join('')}</div>` : ''}
                     <button class="card-menu-trigger" onclick="event.stopPropagation();AIHome.openCardContextMenu(event, JSON.parse(this.dataset.song))" data-song='${songJson}' aria-label="More options"><i class="fas fa-ellipsis-vertical"></i></button>
                     <div class="new-album-thumb">
-                        <img src="${art}" alt="${album.name || ''}" loading="lazy">
+                        <img src="${art}" alt="${album.name || ''}" loading="lazy" onerror="this.style.display='none'">
                         <button class="new-album-play-btn" aria-label="Play album"><i class="fas fa-play"></i></button>
                     </div>
                 </div>
@@ -2058,6 +2058,49 @@ window.AIHome = (() => {
         bindHeroPlay();
         bindDiscoverAI();
         syncFmPlaying();
+        /* Proactively preload above-the-fold thumbnails so they appear
+           instantly — browser native lazy loading can defer too aggressively. */
+        _preloadVisibleThumbnails();
+    }
+
+    /**
+     * Proactively preload the first N thumbnail images visible in the
+     * viewport.  Uses `new Image()` to warm the browser decode cache
+     * without touching the DOM layout.  Runs once after refreshHome().
+     */
+    function _preloadVisibleThumbnails() {
+        /* Skip aggressive preload on mobile to conserve bandwidth */
+        if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) return;
+        var urls = [];
+        try {
+            /* Hero image */
+            var heroSongs = publishedSongs();
+            if (heroSongs.length) {
+                var hArt = artOf(heroSongs[0]);
+                if (hArt) urls.push(hArt);
+            }
+            /* For You collection cards — first 6 */
+            var fyCards = document.querySelectorAll('#foryouCarousel .foryou-coll-art img');
+            for (var i = 0; i < Math.min(6, fyCards.length); i++) {
+                if (fyCards[i].src) urls.push(fyCards[i].src);
+            }
+            /* Trending playlists — first 4 */
+            var tpCards = document.querySelectorAll('#aiTrendingPlaylists .ai-playlist-art img');
+            for (var i = 0; i < Math.min(4, tpCards.length); i++) {
+                if (tpCards[i].src) urls.push(tpCards[i].src);
+            }
+            /* FM stations — first 4 */
+            var fmCards = document.querySelectorAll('#aiLiveFmGrid .ai-fm-art img');
+            for (var i = 0; i < Math.min(4, fmCards.length); i++) {
+                if (fmCards[i].src) urls.push(fmCards[i].src);
+            }
+        } catch (_) { /* ignore */ }
+        for (var j = 0; j < urls.length; j++) {
+            try {
+                var img = new Image();
+                img.src = urls[j];
+            } catch (_) { /* ignore */ }
+        }
     }
 
     function bindDataSync() {

@@ -105,7 +105,7 @@ body {
 .hero-ad-card,
 .foryou-coll-card,
 .upcoming-card {
-    contain: layout style paint;
+    contain: layout style;
 }
 /* Cards inside horizontal scroll tracks — relax paint containment so
    touch gestures propagate correctly to the parent scroll container */
@@ -127,8 +127,9 @@ body {
 
 /* ============================================
    5. CONTENT VISIBILITY — Skip off-screen rendering
+   Only for sections guaranteed to be below the fold.
    ============================================ */
-.ytm-page .section:nth-child(n+4) {
+.ytm-page .section:nth-child(n+6) {
     content-visibility: auto;
     contain-intrinsic-size: 0 300px;
 }
@@ -137,9 +138,7 @@ body {
 .yearly-collection-section,
 .tamil-hits-section,
 .albums-section,
-.ai-recommended-section,
-.foryou-section,
-.upcoming-section {
+.ai-recommended-section {
     content-visibility: auto;
     contain-intrinsic-size: 0 320px;
 }
@@ -220,15 +219,7 @@ body {
 /* ============================================
    9. IMAGE PERFORMANCE
    ============================================ */
-img,
-.premium-radio-art img,
-.song-thumbnail img,
-.movie-poster img,
-.artist-avatar img,
-.collection-poster img,
-.hero-ad-image {
-    content-visibility: auto;
-    contain-intrinsic-size: 0 200px;
+img {
     image-rendering: -webkit-optimize-contrast;
 }
 
@@ -929,7 +920,7 @@ a,
     .ai-song-card,
     .ai-rec-song,
     .ai-news-card {
-        contain: layout style paint;
+        contain: layout style;
     }
     /* Content-visibility for below-fold sections on mobile */
     .ytm-page:not(.ytm-page-home),
@@ -947,11 +938,7 @@ a,
     }
 }
 
-/* Lazy image rendering */
-img[loading="lazy"] {
-    content-visibility: auto;
-    contain-intrinsic-size: 200px 200px;
-}
+/* Lazy images — let browser native loading="lazy" handle deferral */
 
 /* ============================================
    33. FM WAVE ANIMATION — Reduce on mobile
@@ -1318,11 +1305,7 @@ audio {
     50% { transform: translate3d(0, -4px, 8px); }
 }
 
-/* Content visibility for below-fold sections */
-section:not(:first-of-type) {
-    content-visibility: auto;
-    contain-intrinsic-size: 500px;
-}
+/* Content visibility for deeply below-fold sections only */
 
 /* Efficient font loading */
 @font-face {
@@ -1520,11 +1503,9 @@ section:not(:first-of-type) {
 /* ============================================
    CONTENT VISIBILITY — Off-screen sections skip
    paint/layout until near viewport (huge win).
+   For You and Upcoming are above the fold — no CV.
    ============================================ */
-#foryouSection,
-#upcomingSection,
 .ai-evergreen-grid,
-.ai-new-album,
 .ai-station-section,
 .ai-category-section,
 .ai-section-playlists,
