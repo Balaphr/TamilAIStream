@@ -864,6 +864,17 @@
                     global.DataStore.setSongs(merged);
                 }
                 writeLocalStorage('tamilAIStream_songs', merged);
+
+                // Persist discovered songs to the production manifest so they
+                // survive page reloads and appear in the Builder.
+                try {
+                    const manifestPayload = buildContentPayload();
+                    manifestPayload.updatedAt = new Date().toISOString();
+                    await uploadManifest(manifestPayload);
+                } catch (e) {
+                    console.warn('[ContentSync] Failed to persist R2 discoveries to manifest:', e);
+                }
+
                 pct(96, 'Syncing', 'Notifying content listeners…');
                 notifyContentChanged();
             }
@@ -902,11 +913,11 @@
 
     global.addEventListener?.('DOMContentLoaded', () => {
         // Pull the authoritative R2 manifest once on load.
-        global.ContentSync?.bootstrapSharedContent?.().then(() => {
-            // Only scan R2 if user has NO songs locally (first visit).
-            // Users with existing songs get their data from the manifest sync.
-            const hasLocalSongs = (global.DataStore?.getSongs?.() || []).length > 0;
-            if (!hasLocalSongs) {
+        global.ContentSync?.bootstrapSharedContent?.().then((result) => {
+            // After manifest sync, check if we have songs. If the manifest was
+            // empty (no songs), scan R2 for audio files and seed the manifest.
+            const songCount = (global.DataStore?.getSongs?.() || []).length;
+            if (songCount === 0) {
                 global.ContentSync?.discoverR2Songs?.().catch(() => {});
             }
             // Sync every 10 minutes (304 Not Modified avoids data transfer when unchanged)

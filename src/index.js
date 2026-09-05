@@ -759,6 +759,19 @@ async function handleMediaGet(url, request, env) {
 
     const headers = new Headers();
     headObj.writeHttpMetadata(headers);
+    // Ensure correct Content-Type for images/audio even if metadata is missing
+    if (!headers.get('Content-Type') || headers.get('Content-Type') === 'application/octet-stream') {
+      const ext = key.split('.').pop().toLowerCase();
+      const mimeMap = {
+        'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png',
+        'gif': 'image/gif', 'webp': 'image/webp', 'svg': 'image/svg+xml',
+        'avif': 'image/avif', 'ico': 'image/x-icon', 'bmp': 'image/bmp',
+        'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'ogg': 'audio/ogg',
+        'oga': 'audio/ogg', 'aac': 'audio/aac', 'm4a': 'audio/mp4',
+        'flac': 'audio/flac', 'opus': 'audio/opus', 'webm': 'audio/webm',
+      };
+      if (mimeMap[ext]) headers.set('Content-Type', mimeMap[ext]);
+    }
     headers.set('Accept-Ranges', 'bytes');
     headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     headers.set('CDN-Cache-Control', 'no-store');
