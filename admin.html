@@ -1,0 +1,868 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tamil AI Stream ΓÇö Admin Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <style>
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --accent:#10b981; --accent2:#34d399; --danger:#ef4444; --warn:#f59e0b; --blue:#3b82f6;
+            --bg:#0a0a0a; --bg2:#111; --bg3:#1a1a1a; --bg4:#222;
+            --glass:rgba(255,255,255,0.06); --glass2:rgba(255,255,255,0.10);
+            --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.15);
+            --text:#fff; --text2:rgba(255,255,255,0.6); --text3:rgba(255,255,255,0.35);
+            --left-w:240px; --right-w:300px; --topbar-h:44px;
+        }
+        html, body { height:100%; overflow:hidden; background:#000; font-family:'Inter',sans-serif; color:var(--text); font-size:12px; }
+
+        /* ΓòÉΓòÉΓòÉΓòÉ TOP BAR ΓòÉΓòÉΓòÉΓòÉ */
+        #topbar {
+            position:fixed; top:0; left:0; right:0; z-index:999999; height:var(--topbar-h);
+            display:flex; align-items:center; gap:6px; padding:0 10px;
+            background:rgba(10,10,10,0.97); backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--border);
+        }
+        .tb-brand { display:flex; align-items:center; gap:6px; font-weight:700; font-size:13px; color:var(--accent); margin-right:4px; }
+        .tb-sep { width:1px; height:20px; background:var(--border); margin:0 2px; flex-shrink:0; }
+        .tb-spacer { flex:1; }
+        .tb-group { display:flex; align-items:center; gap:3px; }
+        .tb-btn {
+            display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:6px;
+            border:1px solid var(--border); background:var(--glass); color:var(--text2);
+            font-size:11px; font-weight:500; cursor:pointer; transition:all 0.15s; white-space:nowrap;
+            text-decoration:none; line-height:1;
+        }
+        .tb-btn:hover { background:var(--glass2); color:var(--text); }
+        .tb-btn:disabled { opacity:0.3; cursor:not-allowed; }
+        .tb-btn-green { background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.4); color:var(--accent); }
+        .tb-btn-green:hover:not(:disabled) { background:rgba(16,185,129,0.25); }
+        .tb-btn-red { color:var(--danger); border-color:rgba(239,68,68,0.3); }
+        .tb-btn-red:hover:not(:disabled) { background:rgba(239,68,68,0.12); }
+        .tb-btn.active { background:rgba(16,185,129,0.2); border-color:var(--accent); color:var(--accent); }
+        .tb-device { padding:4px 8px; font-size:14px; }
+        .tb-pill { padding:4px 10px; border-radius:999px; font-size:10px; font-weight:600; }
+        .tb-pill.on { background:rgba(16,185,129,0.2); color:var(--accent); border-color:rgba(16,185,129,0.4); }
+        .tb-pill.off { background:var(--glass); color:var(--text3); border-color:var(--border); }
+        .tb-status { font-size:10px; color:var(--text3); }
+
+        /* ΓòÉΓòÉΓòÉΓòÉ LEFT PANEL ΓòÉΓòÉΓòÉΓòÉ */
+        #left-panel {
+            position:fixed; top:var(--topbar-h); left:0; bottom:0; width:var(--left-w);
+            background:var(--bg); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; z-index:99999;
+            overflow:hidden;
+        }
+        .lp-head { padding:10px 12px; border-bottom:1px solid var(--border); font-weight:600; font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; justify-content:space-between; }
+        .lp-list { flex:1; overflow-y:auto; padding:4px 0; }
+        .lp-item {
+            display:flex; align-items:center; gap:8px; padding:7px 12px;
+            cursor:pointer; transition:all 0.12s; border-left:2px solid transparent;
+        }
+        .lp-item:hover { background:var(--glass); }
+        .lp-item.selected { background:rgba(16,185,129,0.1); border-left-color:var(--accent); }
+        .lp-item.hidden-section { opacity:0.4; }
+        .lp-item-icon { width:16px; text-align:center; font-size:10px; color:var(--text3); flex-shrink:0; }
+        .lp-item-label { flex:1; font-size:11px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .lp-item-actions { display:flex; gap:2px; opacity:0; transition:opacity 0.12s; }
+        .lp-item:hover .lp-item-actions { opacity:1; }
+        .lp-act {
+            width:20px; height:20px; display:flex; align-items:center; justify-content:center;
+            border-radius:4px; border:none; background:transparent; color:var(--text3);
+            cursor:pointer; font-size:9px; transition:all 0.12s;
+        }
+        .lp-act:hover { background:var(--glass2); color:var(--text); }
+        .lp-act.red:hover { color:var(--danger); }
+        .lp-footer { padding:8px 12px; border-top:1px solid var(--border); display:flex; gap:4px; }
+        .lp-footer .tb-btn { flex:1; justify-content:center; font-size:10px; padding:5px 6px; }
+
+        /* ΓòÉΓòÉΓòÉΓòÉ RIGHT PANEL ΓòÉΓòÉΓòÉΓòÉ */
+        #right-panel {
+            position:fixed; top:var(--topbar-h); right:0; bottom:0; width:var(--right-w);
+            background:var(--bg); border-left:1px solid var(--border);
+            display:flex; flex-direction:column; z-index:99999;
+            overflow:hidden;
+        }
+        .rp-head { padding:10px 12px; border-bottom:1px solid var(--border); font-weight:600; font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; justify-content:space-between; }
+        .rp-body { flex:1; overflow-y:auto; }
+        .rp-empty { padding:30px 16px; text-align:center; color:var(--text3); }
+        .rp-empty i { font-size:24px; margin-bottom:8px; display:block; opacity:0.4; }
+        .rp-empty h4 { font-size:12px; color:var(--text2); margin-bottom:4px; }
+        .rp-empty p { font-size:10px; line-height:1.5; }
+
+        /* Category tabs */
+        .rp-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); overflow-x:auto; flex-shrink:0; }
+        .rp-tab {
+            padding:7px 10px; font-size:10px; font-weight:600; color:var(--text3);
+            cursor:pointer; border-bottom:2px solid transparent; transition:all 0.15s;
+            white-space:nowrap; background:none; border-top:none; border-left:none; border-right:none;
+        }
+        .rp-tab:hover { color:var(--text2); }
+        .rp-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+        /* Property rows */
+        .rp-props { padding:8px 12px; }
+        .rp-prop { margin-bottom:8px; }
+        .rp-prop-label { font-size:10px; font-weight:500; color:var(--text3); margin-bottom:3px; display:flex; align-items:center; justify-content:space-between; }
+        .rp-prop-reset { width:14px; height:14px; border:none; background:transparent; color:var(--text3); cursor:pointer; font-size:8px; border-radius:3px; display:flex; align-items:center; justify-content:center; }
+        .rp-prop-reset:hover { background:var(--glass2); color:var(--danger); }
+        .rp-prop-row { display:flex; gap:4px; align-items:center; }
+        .rp-input {
+            flex:1; padding:5px 7px; border-radius:5px; border:1px solid var(--border);
+            background:var(--bg3); color:var(--text); font-size:11px; font-family:inherit;
+            outline:none; transition:border-color 0.15s;
+        }
+        .rp-input:focus { border-color:var(--accent); }
+        .rp-input-color { width:28px; height:28px; padding:2px; border-radius:5px; border:1px solid var(--border); background:var(--bg3); cursor:pointer; flex-shrink:0; }
+        .rp-input-color::-webkit-color-swatch-wrapper { padding:0; }
+        .rp-input-color::-webkit-color-swatch { border:none; border-radius:3px; }
+        .rp-select { padding:5px 7px; border-radius:5px; border:1px solid var(--border); background:var(--bg3); color:var(--text); font-size:11px; outline:none; cursor:pointer; }
+        .rp-select:focus { border-color:var(--accent); }
+        .rp-range { width:100%; accent-color:var(--accent); }
+        .rp-unit { padding:4px 6px; border-radius:5px; border:1px solid var(--border); background:var(--bg3); color:var(--text2); font-size:10px; cursor:pointer; flex-shrink:0; }
+
+        /* ΓòÉΓòÉΓòÉΓòÉ CENTER IFRAME ΓòÉΓòÉΓòÉΓòÉ */
+        #center-area {
+            position:fixed; top:var(--topbar-h); left:var(--left-w); right:var(--right-w); bottom:0;
+            background:#111; overflow:hidden;
+        }
+        #site-frame {
+            border:none; background:#000; width:100%; height:100%;
+            transition: width 0.3s, max-width 0.3s, margin 0.3s;
+        }
+
+        /* ΓòÉΓòÉΓòÉΓòÉ MODALS ΓòÉΓòÉΓòÉΓòÉ */
+        .modal-bg {
+            display:none; position:fixed; inset:0; z-index:99999990;
+            background:rgba(0,0,0,0.65); backdrop-filter:blur(8px);
+            align-items:center; justify-content:center;
+        }
+        .modal-bg.open { display:flex; }
+        .modal {
+            background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+            width:92%; max-width:640px; max-height:85vh; display:flex; flex-direction:column;
+            overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,0.7);
+        }
+        .modal-h { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border); }
+        .modal-h h3 { font-size:13px; font-weight:700; display:flex; align-items:center; gap:7px; }
+        .modal-x { width:26px; height:26px; border-radius:6px; border:none; background:var(--glass); color:var(--text2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; }
+        .modal-x:hover { background:var(--glass2); }
+        .modal-b { padding:12px 16px; overflow-y:auto; flex:1; font-size:12px; }
+        .modal-f { padding:10px 16px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:6px; }
+
+        .h-entry { display:flex; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+        .h-icon { width:26px; height:26px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:10px; flex-shrink:0; }
+        .h-icon-sync { background:rgba(59,130,246,0.15); color:#3b82f6; }
+        .h-icon-pub { background:rgba(16,185,129,0.15); color:#10b981; }
+        .h-icon-rev { background:rgba(239,68,68,0.15); color:#ef4444; }
+        .h-info { flex:1; min-width:0; }
+        .h-title { font-weight:600; font-size:11px; margin-bottom:1px; }
+        .h-detail { font-size:10px; color:var(--text3); line-height:1.4; }
+        .h-meta { font-size:9px; color:var(--text3); margin-top:2px; display:flex; gap:8px; }
+        .h-status { font-size:8px; font-weight:700; padding:1px 5px; border-radius:3px; text-transform:uppercase; }
+        .h-s-staging { background:rgba(59,130,246,0.2); color:#3b82f6; }
+        .h-s-published { background:rgba(16,185,129,0.2); color:#10b981; }
+        .h-s-reverted { background:rgba(239,68,68,0.2); color:#ef4444; }
+        .empty-state { text-align:center; padding:30px 16px; color:var(--text3); }
+        .empty-state i { font-size:28px; margin-bottom:8px; display:block; opacity:0.4; }
+        .empty-state h4 { font-size:12px; color:var(--text2); margin-bottom:3px; }
+        .empty-state p { font-size:10px; line-height:1.5; }
+
+        /* Toast */
+        #toast-box { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:99999999; display:flex; flex-direction:column; gap:6px; align-items:center; }
+        .toast { padding:7px 14px; border-radius:8px; font-size:11px; font-weight:500; backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:6px; opacity:0; transform:translateY(8px); transition:all 0.25s; }
+        .toast.show { opacity:1; transform:translateY(0); }
+        .toast-ok { background:rgba(16,185,129,0.9); color:#fff; }
+        .toast-err { background:rgba(239,68,68,0.9); color:#fff; }
+        .toast-info { background:rgba(59,130,246,0.9); color:#fff; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:3px; }
+        ::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body>
+
+<!-- ΓòÉΓòÉΓòÉΓòÉ TOP BAR ΓòÉΓòÉΓòÉΓòÉ -->
+<div id="topbar">
+    <div class="tb-brand"><i class="fas fa-shield-halved"></i> TamilAI Editor</div>
+    <div class="tb-sep"></div>
+
+    <!-- Mode toggle + Element tools -->
+    <button class="tb-pill off" id="pillElementMode" title="Toggle element-level editing mode">
+        <i class="fas fa-mouse-pointer"></i>
+        <span id="pillElementModeText">Element Mode</span>
+    </button>
+
+    <div class="tb-group">
+        <button class="tb-btn" id="btnCopy" title="Copy CSS (Ctrl+C)"><i class="fas fa-copy"></i></button>
+        <button class="tb-btn" id="btnPaste" title="Paste CSS (Ctrl+V)"><i class="fas fa-paste"></i></button>
+        <button class="tb-btn" id="btnLock" title="Lock/Unlock element"><i class="fas fa-lock"></i></button>
+    </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Undo / Redo -->
+    <div class="tb-group">
+        <button class="tb-btn" id="btnUndo" title="Undo (Ctrl+Z)" disabled><i class="fas fa-rotate-left"></i></button>
+        <button class="tb-btn" id="btnRedo" title="Redo (Ctrl+Y)" disabled><i class="fas fa-rotate-right"></i></button>
+    </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Device toggle -->
+    <div class="tb-group">
+        <button class="tb-btn tb-device active" data-device="desktop" title="Desktop"><i class="fas fa-desktop"></i></button>
+        <button class="tb-btn tb-device" data-device="tablet" title="Tablet (768px)"><i class="fas fa-tablet-screen-button"></i></button>
+        <button class="tb-btn tb-device" data-device="mobile" title="Mobile (375px)"><i class="fas fa-mobile-screen-button"></i></button>
+    </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Staging indicator -->
+    <button class="tb-pill off" id="pillStaging" title="Staging mode ΓÇö always active">
+        <span style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block;"></span>
+        <span id="pillStagingText">Staging: Active</span>
+    </button>
+
+    <span class="tb-status" id="tbStatus">LoadingΓÇª</span>
+
+    <div class="tb-spacer"></div>
+
+    <!-- Actions -->
+    <button class="tb-btn" id="btnPreview" title="Preview (hide panels)"><i class="fas fa-eye"></i> Preview</button>
+    <button class="tb-btn" id="btnSave" title="Save to staging"><i class="fas fa-save"></i> Save</button>
+    <button class="tb-btn tb-btn-green" id="btnPublish" title="Publish to live"><i class="fas fa-rocket"></i> Publish</button>
+    <button class="tb-btn" id="btnVersions" title="Version history"><i class="fas fa-code-branch"></i></button>
+    <button class="tb-btn" id="btnHistory" title="Changes history"><i class="fas fa-clock-rotate-left"></i></button>
+    <button class="tb-btn" id="btnGlobal" title="Toggle global settings"><i class="fas fa-globe"></i></button>
+</div>
+
+<!-- ΓòÉΓòÉΓòÉΓòÉ LEFT PANEL ΓòÉΓòÉΓòÉΓòÉ -->
+<div id="left-panel">
+    <div class="lp-head">
+        <div style="display:flex;gap:0;border-bottom:none;">
+            <button class="rp-tab active" id="tabSections" data-panel="sections"><i class="fas fa-layer-group"></i> Sections</button>
+            <button class="rp-tab" id="tabLayers" data-panel="layers"><i class="fas fa-sitemap"></i> Layers</button>
+        </div>
+    </div>
+    <div class="lp-list" id="sectionList"></div>
+    <div class="lp-list" id="layerList" style="display:none;"></div>
+    <div class="lp-footer">
+        <button class="tb-btn" id="btnRefreshSections" title="Re-detect sections"><i class="fas fa-sync-alt"></i></button>
+        <button class="tb-btn" id="btnExpandAll" title="Expand all"><i class="fas fa-expand"></i></button>
+    </div>
+</div>
+
+<!-- ΓòÉΓòÉΓòÉΓòÉ RIGHT PANEL ΓòÉΓòÉΓòÉΓòÉ -->
+<div id="right-panel">
+    <div class="rp-head">
+        <span id="rpTitle"><i class="fas fa-sliders"></i> Properties</span>
+        <span id="rpSectionName" style="font-weight:400;color:var(--text3);"></span>
+    </div>
+    <div class="rp-tabs" id="rpTabs"></div>
+    <div class="rp-body" id="rpBody">
+        <div class="rp-empty">
+            <i class="fas fa-arrow-pointer"></i>
+            <h4>Select a Section</h4>
+            <p>Click any section in the left panel or directly in the preview to edit its properties.</p>
+        </div>
+    </div>
+    <!-- Global Settings panel (toggled) -->
+    <div id="globalPanel" style="display:none;padding:12px;">
+        <div style="font-weight:600;font-size:11px;color:var(--text2);margin-bottom:10px;"><i class="fas fa-globe"></i> Global Settings</div>
+        <div id="globalPanelBody"></div>
+    </div>
+</div>
+
+<!-- ΓòÉΓòÉΓòÉΓòÉ CENTER IFRAME ΓòÉΓòÉΓòÉΓòÉ -->
+<div id="center-area">
+    <iframe id="site-frame" src="/"></iframe>
+</div>
+
+<!-- ΓòÉΓòÉΓòÉΓòÉ MODALS ΓòÉΓòÉΓòÉΓòÉ -->
+<div class="modal-bg" id="mHistory">
+    <div class="modal">
+        <div class="modal-h"><h3><i class="fas fa-clock-rotate-left"></i> Changes History</h3><button class="modal-x" onclick="closeModal('mHistory')"><i class="fas fa-xmark"></i></button></div>
+        <div class="modal-b" id="mHistoryBody"></div>
+        <div class="modal-f"><button class="tb-btn" onclick="closeModal('mHistory')">Close</button></div>
+    </div>
+</div>
+
+<div class="modal-bg" id="mVersions">
+    <div class="modal">
+        <div class="modal-h"><h3><i class="fas fa-code-branch"></i> Version History</h3><button class="modal-x" onclick="closeModal('mVersions')"><i class="fas fa-xmark"></i></button></div>
+        <div class="modal-b" id="mVersionsBody"></div>
+        <div class="modal-f">
+            <button class="tb-btn" onclick="closeModal('mVersions')">Close</button>
+            <button class="tb-btn tb-btn-green" id="mSaveSnap"><i class="fas fa-camera"></i> Save Snapshot</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast-box"></div>
+
+<!-- ΓòÉΓòÉΓòÉΓòÉ SCRIPTS ΓòÉΓòÉΓòÉΓòÉ -->
+    <script src="firebase-config.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        // Admin auth gate ΓÇö blocks rendering until auth is verified
+        (function() {
+            if (typeof Auth !== 'undefined' && !Auth.requireAdmin()) {
+                // requireAdmin already redirected ΓÇö stop further script execution
+                throw new Error('Access denied');
+            }
+        })();
+    </script>
+    <script src="publish-manager.js"></script>
+    <script src="admin-editor.js"></script>
+<script>
+(function() {
+    'use strict';
+    const $ = id => document.getElementById(id);
+
+    window.closeModal = id => $(id).classList.remove('open');
+    function openModal(id) { $(id).classList.add('open'); }
+    function toast(msg, type) {
+        const t = document.createElement('div');
+        t.className = 'toast toast-' + (type || 'info');
+        t.innerHTML = '<i class="fas fa-' + (type === 'ok' ? 'check-circle' : type === 'err' ? 'exclamation-circle' : 'info-circle') + '"></i> ' + msg;
+        $('toast-box').appendChild(t);
+        requestAnimationFrame(() => t.classList.add('show'));
+        setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 350); }, 3000);
+    }
+
+    // ΓöÇΓöÇ Init editor ΓöÇΓöÇ
+    const frame = $('site-frame');
+    AdminEditor.init(frame);
+
+    // ΓöÇΓöÇ Section list ΓöÇΓöÇ
+    let _selectedCat = 'layout';
+    let _activePanel = 'sections'; // 'sections' or 'layers'
+
+    function renderSectionList() {
+        const sections = AdminEditor.getSections();
+        const list = $('sectionList');
+
+        list.innerHTML = sections.map(sec => {
+            const sel = AdminEditor.getSelectedSectionId() === sec.id;
+            const hid = AdminEditor.getAllOverrides().hidden?.[sec.id];
+            return '<div class="lp-item' + (sel ? ' selected' : '') + (hid ? ' hidden-section' : '') + '" data-sid="' + sec.id + '">' +
+                '<span class="lp-item-icon"><i class="fas ' + (hid ? 'fa-eye-slash' : 'fa-eye') + '"></i></span>' +
+                '<span class="lp-item-label">' + sec.label + '</span>' +
+                '<span class="lp-item-actions">' +
+                '<button class="lp-act" data-act="up" title="Move up"><i class="fas fa-arrow-up"></i></button>' +
+                '<button class="lp-act" data-act="down" title="Move down"><i class="fas fa-arrow-down"></i></button>' +
+                '<button class="lp-act" data-act="toggle" title="Show/Hide"><i class="fas fa-eye"></i></button>' +
+                '<button class="lp-act" data-act="dup" title="Duplicate"><i class="fas fa-copy"></i></button>' +
+                '<button class="lp-act red" data-act="del" title="Delete"><i class="fas fa-trash"></i></button>' +
+                '</span></div>';
+        }).join('');
+
+        list.querySelectorAll('.lp-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (e.target.closest('.lp-act')) return;
+                AdminEditor.selectSection(el.dataset.sid);
+                AdminEditor.setElementMode(false);
+                renderSectionList();
+                renderPropertyPanel();
+                updateElementModeUI();
+            });
+        });
+        list.querySelectorAll('.lp-act').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const sid = btn.closest('.lp-item').dataset.sid;
+                const act = btn.dataset.act;
+                if (act === 'up') AdminEditor.moveSection(sid, 'up');
+                else if (act === 'down') AdminEditor.moveSection(sid, 'down');
+                else if (act === 'toggle') AdminEditor.toggleVisibility(sid);
+                else if (act === 'dup') { AdminEditor.duplicateSection(sid); toast('Section duplicated', 'ok'); }
+                else if (act === 'del') { if (confirm('Delete this section?')) AdminEditor.deleteSection(sid); }
+                renderSectionList();
+                renderPropertyPanel();
+            });
+        });
+    }
+
+    // ΓöÇΓöÇ Layer tree rendering ΓöÇΓöÇ
+    function renderLayerList() {
+        const tree = AdminEditor.getElementTree();
+        const list = $('layerList');
+
+        function renderNode(node, depth) {
+            const indent = depth * 14;
+            const sel = AdminEditor.getSelectedElementId() === node.id;
+            let html = '<div class="lp-item' + (sel ? ' selected' : '') + (node.locked ? ' hidden-section' : '') + '" data-eid="' + node.id + '" style="padding-left:' + (12 + indent) + 'px;">';
+            html += '<span class="lp-item-icon" style="width:12px;font-size:8px;">' + (node.children && node.children.length ? '<i class="fas fa-caret-down"></i>' : '<i class="fas fa-minus"></i>') + '</span>';
+            html += '<span class="lp-item-icon"><i class="fas fa-' + (node.locked ? 'lock' : node.visible ? 'eye' : 'eye-slash') + '" style="font-size:9px;"></i></span>';
+            html += '<span class="lp-item-label" style="font-size:10px;">' + node.label + '</span>';
+            html += '<span class="lp-item-actions">';
+            html += '<button class="lp-act" data-act="lock" title="Lock"><i class="fas fa-' + (node.locked ? 'lock' : 'unlock') + '"></i></button>';
+            html += '<button class="lp-act" data-act="vis" title="Visibility"><i class="fas fa-' + (node.visible ? 'eye' : 'eye-slash') + '"></i></button>';
+            html += '</span></div>';
+
+            if (node.children) {
+                node.children.forEach(child => { html += renderNode(child, depth + 1); });
+            }
+            return html;
+        }
+
+        list.innerHTML = tree.map(n => renderNode(n, 0)).join('');
+
+        list.querySelectorAll('.lp-item').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (e.target.closest('.lp-act')) return;
+                AdminEditor.setElementMode(true);
+                AdminEditor.selectElement(el.dataset.eid);
+                renderLayerList();
+                renderPropertyPanel();
+                updateElementModeUI();
+            });
+        });
+        list.querySelectorAll('.lp-act').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const eid = btn.closest('.lp-item').dataset.eid;
+                const act = btn.dataset.act;
+                if (act === 'lock') AdminEditor.toggleLock(eid);
+                else if (act === 'vis') { /* toggle visibility */ }
+                renderLayerList();
+            });
+        });
+    }
+
+    AdminEditor.on('sections-detected', renderSectionList);
+    AdminEditor.on('section-selected', () => { renderSectionList(); renderPropertyPanel(); });
+    AdminEditor.on('visibility-changed', renderSectionList);
+    AdminEditor.on('section-moved', renderSectionList);
+    AdminEditor.on('sections-reordered', renderSectionList);
+    AdminEditor.on('undo', () => { renderSectionList(); renderLayerList(); renderPropertyPanel(); updateUndoRedo(); });
+    AdminEditor.on('redo', () => { renderSectionList(); renderLayerList(); renderPropertyPanel(); updateUndoRedo(); });
+    AdminEditor.on('override-changed', updateUndoRedo);
+    AdminEditor.on('element-selected', () => { renderLayerList(); renderPropertyPanel(); });
+    AdminEditor.on('elements-detected', renderLayerList);
+    AdminEditor.on('element-override-changed', updateUndoRedo);
+
+    // ΓöÇΓöÇ Panel tabs (Sections / Layers) ΓöÇΓöÇ
+    $('tabSections').addEventListener('click', () => {
+        _activePanel = 'sections';
+        $('tabSections').classList.add('active');
+        $('tabLayers').classList.remove('active');
+        $('sectionList').style.display = '';
+        $('layerList').style.display = 'none';
+    });
+    $('tabLayers').addEventListener('click', () => {
+        _activePanel = 'layers';
+        $('tabLayers').classList.add('active');
+        $('tabSections').classList.remove('active');
+        $('layerList').style.display = '';
+        $('sectionList').style.display = 'none';
+        AdminEditor.detectElements();
+        renderLayerList();
+    });
+
+    // ΓöÇΓöÇ Property Panel ΓöÇΓöÇ
+    function renderPropertyPanel() {
+        const sid = AdminEditor.getSelectedSectionId();
+        const body = $('rpBody');
+        const tabs = $('rpTabs');
+        const nameEl = $('rpSectionName');
+
+        if (!sid) {
+            nameEl.textContent = '';
+            tabs.innerHTML = '';
+            body.innerHTML = '<div class="rp-empty"><i class="fas fa-arrow-pointer"></i><h4>Select a Section</h4><p>Click any section in the left panel or in the preview to edit its properties.</p></div>';
+            return;
+        }
+
+        const sec = AdminEditor.getSections().find(s => s.id === sid);
+        nameEl.textContent = sec ? sec.label : sid;
+
+        // Render category tabs
+        const cats = Object.entries(AdminEditor.CSS_CATEGORIES);
+        tabs.innerHTML = cats.map(([key, cat]) =>
+            '<button class="rp-tab' + (key === _selectedCat ? ' active' : '') + '" data-cat="' + key + '">' +
+            '<i class="fas ' + cat.icon + '"></i> ' + cat.label + '</button>'
+        ).join('');
+
+        tabs.querySelectorAll('.rp-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                _selectedCat = tab.dataset.cat;
+                renderPropertyPanel();
+            });
+        });
+
+        // Render properties for selected category
+        const cat = AdminEditor.CSS_CATEGORIES[_selectedCat];
+        if (!cat) { body.innerHTML = ''; return; }
+
+        const overrides = AdminEditor.getOverrides(sid);
+
+        body.innerHTML = '<div class="rp-props">' + cat.properties.map(prop => {
+            const val = overrides[prop.key] || '';
+            let input = '';
+
+            if (prop.type === 'color') {
+                input = '<div class="rp-prop-row">' +
+                    '<input type="color" class="rp-input-color" data-prop="' + prop.key + '" value="' + (val || '#000000') + '">' +
+                    '<input type="text" class="rp-input" data-prop="' + prop.key + '" value="' + val + '" placeholder="e.g. #10b981, rgba(0,0,0,0.5)">' +
+                    '</div>';
+            } else if (prop.type === 'select') {
+                input = '<select class="rp-select" data-prop="' + prop.key + '">' +
+                    '<option value="">ΓÇö</option>' +
+                    prop.options.map(o => '<option value="' + o + '"' + (val === o ? ' selected' : '') + '>' + o + '</option>').join('') +
+                    '</select>';
+            } else if (prop.type === 'range') {
+                input = '<div class="rp-prop-row">' +
+                    '<input type="range" class="rp-range" data-prop="' + prop.key + '" min="' + (prop.min||0) + '" max="' + (prop.max||1) + '" step="' + (prop.step||0.05) + '" value="' + (val || prop.max || 1) + '">' +
+                    '<span style="font-size:10px;color:var(--text3);min-width:28px;text-align:right;">' + (val || '1') + '</span>' +
+                    '</div>';
+            } else if (prop.type === 'number') {
+                input = '<input type="number" class="rp-input" data-prop="' + prop.key + '" value="' + val + '" placeholder="0">';
+            } else if (prop.type === 'size') {
+                input = '<div class="rp-prop-row">' +
+                    '<input type="text" class="rp-input" data-prop="' + prop.key + '" value="' + val + '" placeholder="e.g. 20px, 2rem, 50%">' +
+                    '</div>';
+            } else {
+                input = '<input type="text" class="rp-input" data-prop="' + prop.key + '" value="' + val + '" placeholder="' + prop.label + '">';
+            }
+
+            return '<div class="rp-prop">' +
+                '<div class="rp-prop-label"><span>' + prop.label + '</span>' +
+                (val ? '<button class="rp-prop-reset" data-prop="' + prop.key + '" title="Reset"><i class="fas fa-xmark"></i></button>' : '') +
+                '</div>' + input + '</div>';
+        }).join('') + '</div>';
+
+        // Bind inputs
+        body.querySelectorAll('.rp-input, .rp-select, .rp-input-color, .rp-range').forEach(input => {
+            const handler = () => {
+                const prop = input.dataset.prop;
+                const val = input.type === 'range' ? input.value : input.value;
+                AdminEditor.setOverride(sid, prop, val);
+                // Update range display
+                if (input.type === 'range') {
+                    const span = input.parentElement.querySelector('span');
+                    if (span) span.textContent = val;
+                }
+            };
+            input.addEventListener('input', handler);
+            input.addEventListener('change', handler);
+        });
+
+        // Bind color picker sync
+        body.querySelectorAll('.rp-input-color').forEach(colorInput => {
+            colorInput.addEventListener('input', () => {
+                const textInput = colorInput.parentElement.querySelector('.rp-input');
+                if (textInput) textInput.value = colorInput.value;
+            });
+        });
+
+        // Bind reset buttons
+        body.querySelectorAll('.rp-prop-reset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const prop = btn.dataset.prop;
+                AdminEditor.setOverride(sid, prop, '');
+                renderPropertyPanel();
+            });
+        });
+    }
+
+    // ΓöÇΓöÇ Undo / Redo ΓöÇΓöÇ
+    function updateUndoRedo() {
+        $('btnUndo').disabled = !AdminEditor.canUndo();
+        $('btnRedo').disabled = !AdminEditor.canRedo();
+    }
+    $('btnUndo').addEventListener('click', () => { AdminEditor.undo(); toast('Undo', 'info'); });
+    $('btnRedo').addEventListener('click', () => { AdminEditor.redo(); toast('Redo', 'info'); });
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); AdminEditor.undo(); }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); AdminEditor.redo(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveToStaging(); }
+    });
+
+    // ΓöÇΓöÇ Device toggle ΓöÇΓöÇ
+    document.querySelectorAll('[data-device]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('[data-device]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            AdminEditor.setDevice(btn.dataset.device);
+        });
+    });
+
+    // ΓöÇΓöÇ Save / Publish ΓöÇΓöÇ
+    async function saveToStaging() {
+        try {
+            const overrides = AdminEditor.exportOverrides();
+            const globalSettings = AdminEditor.getGlobalSettings();
+            await fetch('/api/admin-overrides', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'save-staging', overrides, admin: 'Admin' }),
+            });
+            await fetch('/api/global-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ settings: globalSettings, admin: 'Admin' }),
+            });
+            AdminEditor.markClean();
+            toast('Saved to staging', 'ok');
+            refreshStatus();
+        } catch (e) { toast('Save failed: ' + e.message, 'err'); }
+    }
+    $('btnSave').addEventListener('click', saveToStaging);
+
+    async function doPublish() {
+        if (!confirm('Publish all changes to the live website?')) return;
+        try {
+            await saveToStaging();
+            await PublishManager.publish();
+            const globalSettings = AdminEditor.getGlobalSettings();
+            await fetch('/api/global-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ settings: globalSettings, admin: 'Admin', publish: true }),
+            });
+            toast('Published to live website!', 'ok');
+            refreshStatus();
+        } catch (e) { toast('Publish failed: ' + e.message, 'err'); }
+    }
+    $('btnPublish').addEventListener('click', doPublish);
+
+    // ΓöÇΓöÇ Preview mode ΓöÇΓöÇ
+    let _previewMode = false;
+    $('btnPreview').addEventListener('click', () => {
+        _previewMode = !_previewMode;
+        $('left-panel').style.display = _previewMode ? 'none' : '';
+        $('right-panel').style.display = _previewMode ? 'none' : '';
+        $('center-area').style.left = _previewMode ? '0' : 'var(--left-w)';
+        $('center-area').style.right = _previewMode ? '0' : 'var(--right-w)';
+        $('btnPreview').classList.toggle('active', _previewMode);
+        $('btnPreview').innerHTML = _previewMode ? '<i class="fas fa-pen"></i> Edit' : '<i class="fas fa-eye"></i> Preview';
+    });
+
+    // ΓöÇΓöÇ Status ΓöÇΓöÇ
+    async function refreshStatus() {
+        try {
+            const st = await PublishManager.refreshStatus();
+            if (st.hasStaging) {
+                const dt = st.stagingSavedAt ? new Date(st.stagingSavedAt).toLocaleTimeString() : '';
+                $('tbStatus').textContent = 'Staging pending' + (dt ? ' ΓÇö ' + dt : '');
+            } else {
+                $('tbStatus').textContent = 'No pending changes';
+            }
+        } catch (e) { $('tbStatus').textContent = ''; }
+    }
+
+    // ΓöÇΓöÇ History modal ΓöÇΓöÇ
+    $('btnHistory').addEventListener('click', () => {
+        openModal('mHistory');
+        const entries = PublishManager.getChangesHistory();
+        if (!entries.length) {
+            $('mHistoryBody').innerHTML = '<div class="empty-state"><i class="fas fa-clock-rotate-left"></i><h4>No Changes Yet</h4><p>Edit sections and save to see change history.</p></div>';
+            return;
+        }
+        $('mHistoryBody').innerHTML = entries.slice(0, 80).map(e => {
+            const icon = e.type === 'publish' ? 'pub' : e.type === 'revert' ? 'rev' : 'sync';
+            const iconClass = e.type === 'publish' ? 'fa-rocket' : e.type === 'revert' ? 'fa-rotate-left' : 'fa-pen';
+            const statusClass = e.status === 'published' ? 'h-s-published' : e.status === 'reverted' ? 'h-s-reverted' : 'h-s-staging';
+            return '<div class="h-entry"><div class="h-icon h-icon-' + icon + '"><i class="fas ' + iconClass + '"></i></div><div class="h-info"><div class="h-title">' + (e.type === 'publish' ? 'Published' : e.type === 'revert' ? 'Reverted' : 'Edited') + '</div><div class="h-detail">' + (e.details || 'ΓÇö') + '</div><div class="h-meta"><span>' + new Date(e.timestamp).toLocaleString() + '</span><span class="h-status ' + statusClass + '">' + e.status + '</span></div></div></div>';
+        }).join('');
+    });
+
+    // ΓöÇΓöÇ Versions modal ΓöÇΓöÇ
+    $('btnVersions').addEventListener('click', async () => {
+        openModal('mVersions');
+        $('mVersionsBody').innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>LoadingΓÇª</p></div>';
+        try {
+            const res = await PublishManager.getVersions();
+            const versions = res.versions || [];
+            if (!versions.length) {
+                $('mVersionsBody').innerHTML = '<div class="empty-state"><i class="fas fa-code-branch"></i><h4>No Versions</h4><p>Versions are saved automatically on publish.</p></div>';
+                return;
+            }
+            $('mVersionsBody').innerHTML = versions.map(v => {
+                return '<div class="h-entry"><div class="h-icon h-icon-sync"><i class="fas fa-code-commit"></i></div><div class="h-info"><div class="h-title">' + (v.label || v.id) + '</div><div class="h-meta"><span>' + new Date(v.savedAt).toLocaleString() + '</span><span>' + (v.savedBy || 'Admin') + '</span></div></div><button class="tb-btn" style="flex-shrink:0;" onclick="restoreVersion(\'' + v.id + '\',\'' + (v.label||'').replace(/'/g,"\\'") + '\')"><i class="fas fa-rotate-left"></i></button></div>';
+            }).join('');
+        } catch (e) {
+            $('mVersionsBody').innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><h4>Error</h4><p>' + e.message + '</p></div>';
+        }
+    });
+    $('mSaveSnap').addEventListener('click', async () => {
+        try {
+            await PublishManager.saveVersionSnapshot('Manual snapshot');
+            toast('Snapshot saved', 'ok');
+            $('btnVersions').click();
+        } catch (e) { toast('Failed: ' + e.message, 'err'); }
+    });
+    window.restoreVersion = async (id, label) => {
+        if (!confirm('Restore to "' + label + '"?')) return;
+        try {
+            await PublishManager.revertToVersion(id);
+            toast('Restored to "' + label + '" ΓÇö in staging', 'ok');
+            closeModal('mVersions');
+            refreshStatus();
+        } catch (e) { toast('Failed: ' + e.message, 'err'); }
+    };
+
+    // ΓöÇΓöÇ Refresh sections ΓöÇΓöÇ
+    $('btnRefreshSections').addEventListener('click', () => {
+        AdminEditor.detectSections();
+        AdminEditor.detectElements();
+        renderSectionList();
+        renderLayerList();
+        toast('Sections refreshed', 'info');
+    });
+
+    // ΓöÇΓöÇ Element Mode toggle ΓöÇΓöÇ
+    function updateElementModeUI() {
+        const on = AdminEditor.isElementMode();
+        $('pillElementMode').classList.toggle('on', on);
+        $('pillElementMode').classList.toggle('off', !on);
+        $('pillElementModeText').textContent = on ? 'Element Mode ON' : 'Element Mode';
+    }
+    $('pillElementMode').addEventListener('click', () => {
+        AdminEditor.setElementMode(!AdminEditor.isElementMode());
+        updateElementModeUI();
+        toast(AdminEditor.isElementMode() ? 'Element mode: click any element to edit' : 'Section mode: click sections to edit', 'info');
+    });
+    AdminEditor.on('element-mode-changed', updateElementModeUI);
+
+    // ΓöÇΓöÇ Copy / Paste ΓöÇΓöÇ
+    $('btnCopy').addEventListener('click', () => { AdminEditor.copyProperties(); toast('Properties copied', 'info'); });
+    $('btnPaste').addEventListener('click', () => { AdminEditor.pasteProperties(); toast('Properties pasted', 'ok'); renderPropertyPanel(); });
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !window.getSelection().toString()) { AdminEditor.copyProperties(); }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'v') { AdminEditor.pasteProperties(); renderPropertyPanel(); }
+    });
+
+    // ΓöÇΓöÇ Lock ΓöÇΓöÇ
+    $('btnLock').addEventListener('click', () => {
+        const id = AdminEditor.getSelectedElementId() || AdminEditor.getSelectedSectionId();
+        if (!id) { toast('Select an element first', 'err'); return; }
+        AdminEditor.toggleLock(id);
+        toast(AdminEditor.isLocked(id) ? 'Element locked' : 'Element unlocked', 'info');
+        renderLayerList();
+    });
+
+    // ΓöÇΓöÇ Global Settings ΓöÇΓöÇ
+    function renderGlobalSettings() {
+        const gs = AdminEditor.getGlobalSettings();
+        const body = $('globalPanelBody');
+        const colorVars = [
+            { key: '--bg-primary', label: 'Background' },
+            { key: '--bg-secondary', label: 'Surface' },
+            { key: '--text-primary', label: 'Text' },
+            { key: '--text-secondary', label: 'Text Secondary' },
+            { key: '--emerald-500', label: 'Accent Primary' },
+            { key: '--emerald-400', label: 'Accent Light' },
+            { key: '--emerald-600', label: 'Accent Dark' },
+            { key: '--border-glass', label: 'Border' },
+        ];
+        const fontVars = [
+            { key: '--font-family', label: 'Font Family' },
+        ];
+        const spacingVars = [
+            { key: '--radius-sm', label: 'Radius SM' },
+            { key: '--radius-md', label: 'Radius MD' },
+            { key: '--radius-lg', label: 'Radius LG' },
+        ];
+
+        function renderVarGroup(title, vars, category) {
+            return '<div style="margin-bottom:10px;"><div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:6px;">' + title + '</div>' +
+                vars.map(v => {
+                    const val = gs[category]?.[v.key] || '';
+                    const isColor = v.key.includes('color') || v.key.includes('bg') || v.key.includes('text') || v.key.includes('emerald') || v.key.includes('border');
+                    return '<div class="rp-prop"><div class="rp-prop-label">' + v.label + '</div>' +
+                        (isColor ?
+                            '<div class="rp-prop-row"><input type="color" class="rp-input-color" data-gcat="' + category + '" data-gkey="' + v.key + '" value="' + (val || '#000000') + '"><input type="text" class="rp-input" data-gcat="' + category + '" data-gkey="' + v.key + '" value="' + val + '" placeholder="e.g. #000"></div>' :
+                            '<input type="text" class="rp-input" data-gcat="' + category + '" data-gkey="' + v.key + '" value="' + val + '" placeholder="' + v.label + '">') +
+                        '</div>';
+                }).join('') + '</div>';
+        }
+
+        body.innerHTML = renderVarGroup('Colors', colorVars, 'colors') + renderVarGroup('Typography', fontVars, 'fonts') + renderVarGroup('Spacing & Radius', spacingVars, 'spacing');
+
+        body.querySelectorAll('.rp-input, .rp-input-color').forEach(input => {
+            const handler = () => {
+                const cat = input.dataset.gcat;
+                const key = input.dataset.gkey;
+                if (!cat || !key) return;
+                const gs2 = AdminEditor.getGlobalSettings();
+                if (!gs2[cat]) gs2[cat] = {};
+                gs2[cat][key] = input.value;
+                AdminEditor.setGlobalSettings(gs2);
+            };
+            input.addEventListener('input', handler);
+            input.addEventListener('change', handler);
+        });
+    }
+
+    // ΓöÇΓöÇ Load overrides on frame load ΓöÇΓöÇ
+    AdminEditor.on('frame-loaded', async () => {
+        try {
+            const resp = await fetch('/api/admin-overrides');
+            const data = await resp.json();
+            if (data.overrides) {
+                AdminEditor.importOverrides(data.overrides);
+            }
+        } catch (e) { /* ignore */ }
+        try {
+            const resp2 = await fetch('/api/global-settings');
+            const data2 = await resp2.json();
+            if (data2.settings) AdminEditor.setGlobalSettings(data2.settings);
+        } catch (e) { /* ignore */ }
+        AdminEditor.detectSections();
+        AdminEditor.detectElements();
+        renderSectionList();
+        renderLayerList();
+        renderGlobalSettings();
+        refreshStatus();
+    });
+
+    // ΓöÇΓöÇ Auto-save on section edit ΓöÇΓöÇ
+    AdminEditor.on('override-changed', () => {
+        clearTimeout(window._autoSaveTimer);
+        window._autoSaveTimer = setTimeout(() => saveToStaging(), 3000);
+    });
+    AdminEditor.on('global-settings-changed', () => {
+        clearTimeout(window._autoSaveTimer);
+        window._autoSaveTimer = setTimeout(() => saveToStaging(), 3000);
+    });
+
+    // ΓöÇΓöÇ Global settings toggle ΓöÇΓöÇ
+    $('btnGlobal').addEventListener('click', () => {
+        const panel = $('globalPanel');
+        const rightBody = $('rpBody');
+        const rpTabs = document.querySelector('.rp-tabs');
+        if (panel.style.display === 'none') {
+            panel.style.display = '';
+            rightBody.style.display = 'none';
+            if (rpTabs) rpTabs.style.display = 'none';
+            $('rpTitle').innerHTML = '<i class="fas fa-globe"></i> Global Settings';
+            renderGlobalSettings();
+        } else {
+            panel.style.display = 'none';
+            rightBody.style.display = '';
+            if (rpTabs) rpTabs.style.display = '';
+            $('rpTitle').innerHTML = '<i class="fas fa-sliders"></i> Properties';
+            renderPropertyPanel();
+        }
+    });
+
+    // ΓöÇΓöÇ Init ΓöÇΓöÇ
+    updateUndoRedo();
+})();
+</script>
+</body>
+</html>

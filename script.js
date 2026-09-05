@@ -3044,7 +3044,7 @@ function checkAuth() {
     // Allow unauthenticated users to view the home page (public radio site).
     // Only redirect to login for protected routes.
     const page = window.location.pathname.split('/').pop() || 'index.html';
-    const protectedPages = ['admin-login.html', 'builder.html', 'admin-upload.html'];
+    const protectedPages = ['admin.html', 'admin-login.html', 'builder.html', 'admin-upload.html'];
     if (protectedPages.includes(page) && !Auth.isAuthenticated()) {
         Auth.requireAuth();
         return false;
