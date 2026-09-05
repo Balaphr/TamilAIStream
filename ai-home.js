@@ -332,6 +332,141 @@ window.AIHome = (() => {
         });
     }
 
+    /* ---------------- For You — 10 Collection Cards (JioHotstar Style) ---------------- */
+    function renderForYouTrending() {
+        const container = $('foryouCarousel');
+        if (!container) return;
+
+        /* Build 10 themed collections from available songs */
+        const songs = publishedSongs();
+        if (!songs.length) {
+            container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ai-text-3);font-size:0.8rem;">No songs available yet</div>';
+            return;
+        }
+
+        const collections = buildForYouCollections(songs);
+        if (!collections.length) {
+            container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ai-text-3);font-size:0.8rem;">No collections yet</div>';
+            return;
+        }
+
+        container.innerHTML = collections.map((col, i) => {
+            const name = (col.name || 'Collection').slice(0, 28);
+            const count = col.songs ? col.songs.length : 0;
+            const art = col.art || '';
+            const grad = col.gradient || 'linear-gradient(135deg,#1a1040,#0d1330)';
+            return '<div class="foryou-coll-card" data-col="' + i + '">' +
+                '<div class="foryou-coll-art" style="background:' + grad + ';' +
+                    (art ? 'background-image:url(\'' + art + '\');background-size:cover;background-position:center;' : '') + '">' +
+                    (art ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+                    '<div class="foryou-coll-gradient"></div>' +
+                    '<div class="foryou-coll-rank">#' + (i + 1) + '</div>' +
+                    '<div class="foryou-coll-play"><i class="fas fa-play"></i></div>' +
+                '</div>' +
+                '<div class="foryou-coll-info">' +
+                    '<div class="foryou-coll-name" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</div>' +
+                    '<div class="foryou-coll-count">' + count + ' songs</div>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+
+        container.querySelectorAll('.foryou-coll-card').forEach((card, idx) => {
+            card.addEventListener('click', () => {
+                const col = collections[idx];
+                if (!col || !col.songs || !col.songs.length) return;
+                if (typeof window.playSong === 'function') window.playSong(col.songs[0], col.songs);
+                else showToastSafe('Playing: ' + col.name, 'info');
+            });
+        });
+    }
+
+    function buildForYouCollections(songs) {
+        /* Group songs by genre, movie, mood, or decade */
+        const groups = {};
+        songs.forEach(s => {
+            const key = (s.genre || s.mood || s.movie || s.album || 'Tamil Hits').trim();
+            if (!groups[key]) groups[key] = [];
+            if (groups[key].length < 15) groups[key].push(s);
+        });
+
+        const grads = [
+            'linear-gradient(135deg,#1e3a5f,#0d1f3c)',
+            'linear-gradient(135deg,#3b0a47,#1e0a33)',
+            'linear-gradient(135deg,#0f3b2e,#064e3b)',
+            'linear-gradient(135deg,#7c2d12,#431407)',
+            'linear-gradient(135deg,#312e81,#1e1b4b)',
+            'linear-gradient(135deg,#1e1b4b,#0f172a)',
+            'linear-gradient(135deg,#0c4a6e,#082f49)',
+            'linear-gradient(135deg,#581c87,#3b0764)',
+            'linear-gradient(135deg,#14532d,#052e16)',
+            'linear-gradient(135deg,#78350f,#451a03)'
+        ];
+
+        const keys = Object.keys(groups);
+        /* Shuffle and pick up to 10 */
+        const shuffled = keys.sort(() => Math.random() - 0.5).slice(0, 10);
+
+        return shuffled.map((name, i) => ({
+            name: name.length > 24 ? name.slice(0, 24) + '...' : name,
+            songs: groups[name],
+            art: groups[name][0] ? (groups[name][0].albumCover || groups[name][0].image || groups[name][0].artwork || groups[name][0].thumbnail || '') : '',
+            gradient: grads[i % grads.length]
+        }));
+    }
+
+    /* ---------------- Upcoming Section ---------------- */
+    function renderUpcomingNew() {
+        const row = $('upcomingRow');
+        if (!row) return;
+        let upcoming = [];
+        try { upcoming = JSON.parse(localStorage.getItem('tamilAIStream_upcomingReleases') || '[]'); } catch (_) {}
+        if (!upcoming.length) {
+            const songs = publishedSongs();
+            upcoming = songs.slice(10, 18).map((s, i) => ({
+                title: s.title || s.name || 'Upcoming Release',
+                movie: s.movie || s.album || 'Tamil Album',
+                date: 'Coming Soon',
+                genre: s.genre || 'Music',
+                image: s.albumCover || s.image || '',
+                id: s.id || i
+            }));
+        }
+        const items = upcoming.slice(0, 8);
+        if (!items.length) {
+            row.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ai-text-3);font-size:0.8rem;">No upcoming releases</div>';
+            return;
+        }
+        row.innerHTML = items.map((item, i) => {
+            const title = (item.title || item.name || 'Upcoming').slice(0, 32);
+            const movie = (item.movie || item.album || '').slice(0, 28);
+            const date = item.date || 'Coming Soon';
+            const genre = item.genre || 'Music';
+            const art = item.image || item.thumbnail || '';
+            return '<div class="upcoming-card" data-idx="' + i + '">' +
+                '<div class="upcoming-card-art">' +
+                    (art ? '<img src="' + escapeHtml(art) + '" alt="' + escapeHtml(title) + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=upcoming-placeholder><i class=fa-solid fa-calendar-days></i></div>\'">' :
+                    '<div class="upcoming-placeholder"><i class="fa-solid fa-calendar-days"></i></div>') +
+                    '<div class="upcoming-badge"><i class="fas fa-bell"></i> Soon</div>' +
+                '</div>' +
+                '<div class="upcoming-card-info">' +
+                    '<div class="upcoming-card-title" title="' + escapeHtml(title) + '">' + escapeHtml(title) + '</div>' +
+                    (movie ? '<div class="upcoming-card-date">' + escapeHtml(movie) + '</div>' : '') +
+                    '<div class="upcoming-card-genre"><i class="fas fa-music"></i> ' + escapeHtml(genre) + ' &middot; ' + escapeHtml(date) + '</div>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+        row.querySelectorAll('.upcoming-card').forEach((card, idx) => {
+            card.addEventListener('click', () => {
+                const item = items[idx];
+                if (!item) return;
+                const allSongs = publishedSongs();
+                const match = allSongs.find(s => s.id === item.id);
+                if (match && typeof window.playSong === 'function') window.playSong(match, allSongs);
+                else showToastSafe(item.title || 'Upcoming release', 'info');
+            });
+        });
+    }
+
     function buildDerivedPlaylists() {
         const songs = publishedSongs();
         if (!songs.length) return [];
@@ -1896,6 +2031,8 @@ window.AIHome = (() => {
         // Greeting hero bar sits at the top of Home. Idempotent — builds once,
         // then only updates greeting/date/quote text in place.
         if (typeof renderGreetingSection === 'function') renderGreetingSection();
+        renderForYouTrending();
+        renderUpcomingNew();
         renderUpcomingReleasesAuto();
         renderNewAlbums();
         renderOneTapRadio();

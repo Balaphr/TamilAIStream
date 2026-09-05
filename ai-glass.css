@@ -1510,6 +1510,258 @@
 }
 .ai-playlist-count { font-size: 0.72rem; color: var(--ai-text-3); }
 
+/* ---------- 7b. For You — Collection Cards (JioHotstar Style) ---------- */
+.foryou-section { overflow: hidden; }
+.foryou-carousel-wrap {
+    position: relative;
+    overflow: hidden;
+}
+.foryou-carousel {
+    display: flex;
+    gap: 14px;
+    padding: 10px 20px 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scroll-behavior: smooth;
+    will-change: scroll-position;
+}
+.foryou-carousel::-webkit-scrollbar { display: none; }
+
+/* Collection card — JioHotstar style square card */
+.foryou-coll-card {
+    flex: 0 0 150px;
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    cursor: pointer;
+    scroll-snap-align: start;
+    will-change: transform;
+    transform: translateZ(0);
+    transition: transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94),
+                box-shadow 0.25s;
+    -webkit-tap-highlight-color: transparent;
+}
+.foryou-coll-card:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.45), 0 0 16px rgba(34,211,238,0.08);
+}
+.foryou-coll-card:active {
+    transform: scale(0.96);
+    transition-duration: 0.08s;
+}
+
+/* Card artwork — square 1:1 ratio */
+.foryou-coll-art {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: #0d1330;
+}
+.foryou-coll-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.foryou-coll-card:hover .foryou-coll-art img {
+    transform: scale(1.08);
+}
+
+/* Bottom gradient overlay */
+.foryou-coll-gradient {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+    pointer-events: none;
+}
+
+/* Rank number top-left */
+.foryou-coll-rank {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(34,211,238,0.35), rgba(99,102,241,0.35));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+    z-index: 2;
+}
+
+/* Play icon center on hover */
+.foryou-coll-play {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    transition: opacity 0.25s;
+    z-index: 2;
+}
+.foryou-coll-card:hover .foryou-coll-play { opacity: 1; }
+.foryou-coll-play i {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.92);
+    color: #0a0f1e;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+}
+
+/* Card info — name + count at bottom of card */
+.foryou-coll-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    z-index: 2;
+}
+.foryou-coll-name {
+    font-family: var(--ai-ff);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.foryou-coll-count {
+    font-size: 0.62rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.6);
+    margin-top: 1px;
+}
+
+/* ---------- 7c. Upcoming Section ---------- */
+.upcoming-section { overflow: hidden; }
+.upcoming-row {
+    display: flex;
+    gap: 14px;
+    padding: 8px 20px 16px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    will-change: scroll-position;
+}
+.upcoming-row::-webkit-scrollbar { display: none; }
+
+.upcoming-card {
+    flex: 0 0 200px;
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.07);
+    backdrop-filter: blur(14px) saturate(1.3);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    cursor: pointer;
+    scroll-snap-align: start;
+    will-change: transform;
+    transform: translateZ(0);
+    transition: transform 0.25s cubic-bezier(0.25,0.46,0.45,0.94),
+                border-color 0.25s, box-shadow 0.25s;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+}
+.upcoming-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(168,85,247,0.25);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 16px rgba(168,85,247,0.06);
+}
+
+.upcoming-card-art {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    background: #0d1330;
+}
+.upcoming-card-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s;
+}
+.upcoming-card:hover .upcoming-card-art img {
+    transform: scale(1.05);
+}
+.upcoming-card-art .upcoming-placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #0d1330 0%, #1a1040 100%);
+}
+.upcoming-card-art .upcoming-placeholder i {
+    font-size: 1.6rem;
+    color: rgba(255,255,255,0.12);
+}
+
+.upcoming-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(168,85,247,0.85), rgba(99,102,241,0.85));
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 1;
+}
+
+.upcoming-card-info {
+    padding: 10px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.upcoming-card-title {
+    font-family: var(--ai-ff);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--ai-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.upcoming-card-date {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--ai-purple);
+}
+.upcoming-card-genre {
+    font-size: 0.62rem;
+    color: var(--ai-text-3);
+}
+
 /* ---------- 8. Live FM Stations ---------- */
 .ai-live-fm, .ai-live-news, .ai-recently, .ai-ai-rec { min-width: 0; }
 .ai-fm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; padding: 8px 20px 16px; }

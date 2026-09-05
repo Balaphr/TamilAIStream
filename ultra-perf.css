@@ -58,7 +58,9 @@ body {
 .gp-lyrics-content,
 .categories-grid,
 .stations-grid,
-.ai-artists-row {
+.ai-artists-row,
+.foryou-carousel,
+.upcoming-row {
     overscroll-behavior-x: contain;
     overscroll-behavior-y: auto;
 }
@@ -74,7 +76,9 @@ body {
 .artist-hit-card,
 .tamil-hit-card,
 .ad-banner-card,
-.hero-ad-card {
+.hero-ad-card,
+.foryou-coll-card,
+.upcoming-card {
     overscroll-behavior: auto;
 }
 
@@ -98,7 +102,9 @@ body {
 .artist-hit-card,
 .tamil-hit-card,
 .ad-banner-card,
-.hero-ad-card {
+.hero-ad-card,
+.foryou-coll-card,
+.upcoming-card {
     contain: layout style paint;
 }
 /* Cards inside horizontal scroll tracks — relax paint containment so
@@ -131,7 +137,9 @@ body {
 .yearly-collection-section,
 .tamil-hits-section,
 .albums-section,
-.ai-recommended-section {
+.ai-recommended-section,
+.foryou-section,
+.upcoming-section {
     content-visibility: auto;
     contain-intrinsic-size: 0 320px;
 }
@@ -145,7 +153,9 @@ body {
 .collection-card,
 .movie-card,
 .artist-hit-card,
-.tamil-hit-card {
+.tamil-hit-card,
+.foryou-coll-card,
+.upcoming-card {
     transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
                 opacity 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
                 box-shadow 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -157,7 +167,9 @@ body {
 .collection-card:hover,
 .movie-card:hover,
 .artist-hit-card:hover,
-.tamil-hit-card:hover {
+.tamil-hit-card:hover,
+.foryou-coll-card:hover,
+.upcoming-card:hover {
     transform: translateZ(0) scale(1.02);
 }
 

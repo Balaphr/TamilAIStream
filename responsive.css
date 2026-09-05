@@ -73,6 +73,18 @@ body {
     .show-tablet { display: block !important; }
     .grid-3 { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
     .slide-art { width: 120px; height: 120px; }
+
+    /* For You Collection Cards — Tablet (JioHotstar Style) */
+    .foryou-coll-card {
+        flex: 0 0 160px;
+    }
+    .foryou-coll-info { padding: 10px; }
+    .foryou-coll-name { font-size: 0.82rem; }
+
+    /* Upcoming Section — Tablet */
+    .upcoming-card {
+        flex: 0 0 190px;
+    }
 }
 
 /* ============================================
@@ -417,6 +429,46 @@ body {
            constant layer thrash that caused jank on 60/120Hz mobile. */
         will-change: transform;
     }
+
+    /* ======== For You Collection Cards — Mobile (JioHotstar Style) ======== */
+    .foryou-carousel {
+        gap: 10px;
+        padding: 8px 14px 16px;
+    }
+    .foryou-coll-card {
+        flex: 0 0 130px;
+        border-radius: 12px;
+    }
+    .foryou-coll-rank {
+        width: 22px;
+        height: 22px;
+        font-size: 0.58rem;
+        border-radius: 6px;
+        top: 6px;
+        left: 6px;
+    }
+    .foryou-coll-play i {
+        width: 36px;
+        height: 36px;
+        font-size: 0.8rem;
+    }
+    .foryou-coll-info { padding: 8px; }
+    .foryou-coll-name { font-size: 0.72rem; }
+    .foryou-coll-count { font-size: 0.58rem; }
+
+    /* ======== Upcoming Section — Mobile ======== */
+    .upcoming-row {
+        gap: 10px;
+        padding: 6px 14px 14px;
+    }
+    .upcoming-card {
+        flex: 0 0 170px;
+        border-radius: 14px;
+    }
+    .upcoming-card-info { padding: 8px 10px 10px; }
+    .upcoming-card-title { font-size: 0.72rem; }
+    .upcoming-card-date { font-size: 0.6rem; }
+    .upcoming-card-genre { font-size: 0.58rem; }
 }
 
 /* ============================================
@@ -572,6 +624,25 @@ body {
 
     /* Ticker */
     .ytm-ticker-item { padding: 0 8px; }
+
+    /* ======== For You Collection Cards — Small Mobile ======== */
+    .foryou-coll-card {
+        flex: 0 0 115px;
+        border-radius: 10px;
+    }
+    .foryou-coll-info { padding: 6px; }
+    .foryou-coll-name { font-size: 0.66rem; }
+    .foryou-coll-rank { width: 20px; height: 20px; font-size: 0.52rem; }
+
+    /* ======== Upcoming Section — Small Mobile ======== */
+    .upcoming-card {
+        flex: 0 0 155px;
+        border-radius: 12px;
+    }
+    .upcoming-card-info { padding: 7px 8px 9px; }
+    .upcoming-card-title { font-size: 0.68rem; }
+    .upcoming-card-date { font-size: 0.56rem; }
+    .upcoming-card-genre { font-size: 0.54rem; }
 }
 
 /* ============================================
