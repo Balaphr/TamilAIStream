@@ -2600,7 +2600,59 @@ function setupLayoutSync() {
 function applyVEOverrides() {
     try {
         const raw = localStorage.getItem('tamilAIStream_veOverrides');
-        if (!raw) return;
+        if (raw) {
+            _applyVEOverridesFromRaw(raw);
+            return;
+        }
+        // Fallback: fetch VE overrides from R2 server if localStorage is empty
+        if (!window._veOverridesFetchPending) {
+            window._veOverridesFetchPending = true;
+            fetch('/api/admin-overrides').then(r => r.json()).then(data => {
+                if (data && data.overrides) {
+                    const converted = _convertAdminOverridesToVE(data.overrides);
+                    if (converted) {
+                        localStorage.setItem('tamilAIStream_veOverrides', JSON.stringify(converted));
+                        _applyVEOverridesFromRaw(JSON.stringify(converted));
+                    }
+                }
+            }).catch(() => {}).finally(() => { window._veOverridesFetchPending = false; });
+        }
+    } catch (err) {
+        console.warn('[VE] Failed to apply overrides:', err);
+    }
+}
+
+function _convertAdminOverridesToVE(adminOverrides) {
+    try {
+        var sectionStates = [];
+        var veOverrides = {};
+        var sections = adminOverrides.sections || {};
+        var order = adminOverrides.order || Object.keys(sections);
+        var hidden = adminOverrides.hidden || {};
+        order.forEach(function(id) {
+            sectionStates.push({ id: id, hidden: !!hidden[id], display: hidden[id] ? 'none' : '', order: order.indexOf(id) });
+            if (sections[id]) {
+                veOverrides['[data-section="' + id + '"]'] = {};
+                Object.keys(sections[id]).forEach(function(device) {
+                    veOverrides['[data-section="' + id + '"]'][device] = sections[id][device];
+                });
+            }
+        });
+        Object.keys(sections).forEach(function(id) {
+            if (order.indexOf(id) === -1) {
+                sectionStates.push({ id: id, hidden: !!hidden[id], display: hidden[id] ? 'none' : '', order: 999 });
+                veOverrides['[data-section="' + id + '"]'] = {};
+                Object.keys(sections[id]).forEach(function(device) {
+                    veOverrides['[data-section="' + id + '"]'][device] = sections[id][device];
+                });
+            }
+        });
+        return { sectionStates: sectionStates, overrides: veOverrides, timestamp: Date.now() };
+    } catch (e) { return null; }
+}
+
+function _applyVEOverridesFromRaw(raw) {
+    try {
         const data = JSON.parse(raw);
         if (!data || !data.timestamp) return;
 
@@ -5267,14 +5319,19 @@ function setupRealtimeSync() {
             renderYearlyCollectionsDynamic();
             renderLatestCollectionsDynamic();
         }
+        if (e.key === 'tamilAIStream_veOverrides') {
+            setTimeout(() => applyVEOverrides(), 100);
+        }
     });
     // Custom event from builder for immediate sync
     window.addEventListener('storage-sync', () => {
         refreshLiveContent();
+        setTimeout(() => applyVEOverrides(), 500);
     });
     // ContentSync change notifications (manifest pulled/applied)
     window.addEventListener('tamilAIStream-content-synced', () => {
         refreshLiveContent();
+        setTimeout(() => applyVEOverrides(), 500);
     });
     window.addEventListener('premium-sections-sync', () => {
         refreshLiveContent();
