@@ -470,10 +470,15 @@
                 <!-- AI Premium Home -->
                 <div class="ai-home">
 
-                    <!-- Good Morning Section (top of Home) -->
+                    <!-- Futuristic Audio Visualizer (behind player area) -->
+                    <div class="premium-fm-visualizer-wrap" id="premiumFmVisualizerWrap">
+                        <canvas id="premiumVizCanvas"></canvas>
+                    </div>
+
+                    <!-- 1. Good Morning Section (top of Home) -->
                     <div class="greeting-section" data-section="greeting"></div>
 
-                    <!-- For You — Premium Trending Carousel -->
+                    <!-- 2. For You — Premium Trending Carousel -->
                     <section class="ai-panel foryou-section" data-section="foryou-trending" id="foryouSection">
                         <div class="ai-sec-head">
                             <h2 class="ai-sec-title"><i class="fas fa-fire-flame-curved"></i> For You</h2>
@@ -484,40 +489,7 @@
                         </div>
                     </section>
 
-                    <!-- Upcoming Section -->
-                    <section class="ai-panel upcoming-section" data-section="upcoming-new" id="upcomingSection">
-                        <div class="ai-sec-head">
-                            <h2 class="ai-sec-title"><i class="fas fa-calendar-days"></i> Upcoming</h2>
-                            <button class="ai-see-all" id="upcomingSeeAll" style="display:none;">See All</button>
-                        </div>
-                        <div class="upcoming-row" id="upcomingRow"></div>
-                    </section>
-
-                    <!-- New Album Section -->
-                    <section class="ai-panel new-album-section" data-section="ai-new-album" id="newAlbumSection" style="display:none;">
-                        <div class="ai-sec-head">
-                            <h2 class="ai-sec-title"><i class="fas fa-record-vinyl"></i> <span id="newAlbumSectionTitle">New Album</span></h2>
-                            <button class="ai-see-all" id="newAlbumSeeAll" style="display:none;">See All</button>
-                        </div>
-                        <div class="new-album-row" id="newAlbumRow"></div>
-                    </section>
-
-                    <!-- Futuristic Audio Visualizer (behind player area) -->
-                    <div class="premium-fm-visualizer-wrap" id="premiumFmVisualizerWrap">
-                        <canvas id="premiumVizCanvas"></canvas>
-                    </div>
-
-                    <!-- Upcoming Releases Auto-Slider (above One Tap Radio) -->
-                    <section class="ai-panel ur-auto-section" data-section="ur-auto-slider" id="urAutoSection" style="display:none;">
-                        <div class="ai-sec-head">
-                            <h2 class="ai-sec-title"><i class="fas fa-rocket"></i> Upcoming Releases</h2>
-                        </div>
-                        <div class="ur-auto-viewport" id="urAutoViewport">
-                            <div class="ur-auto-track" id="urAutoTrack"></div>
-                        </div>
-                    </section>
-
-                    <!-- One Tap Radio -->
+                    <!-- 3. One Tap Radio -->
                     <section class="ai-panel one-tap-radio" data-section="ai-one-tap-radio">
                         <div class="ai-sec-head">
                             <h2 class="ai-sec-title"><i class="fas fa-tower-cell"></i> One Tap Radio</h2>
@@ -532,10 +504,7 @@
                         </div>
                     </section>
 
-                    <!-- Ad Slot: Home -->
-                    <div class="tas-ad-slot" id="tasAdHome" data-ad-location="home" style="display:none;"></div>
-
-                    <!-- Songs Collections — Dual Vertical Scroll -->
+                    <!-- 4. Songs Collections — Dual Vertical Scroll -->
                     <section class="ai-panel songs-collections-section" data-section="ai-songs-collections" id="songsCollectionsSection" style="display:none;">
                         <div class="ai-sec-head">
                             <h2 class="ai-sec-title"><i class="fas fa-layer-group"></i> Songs Collections</h2>
@@ -572,77 +541,107 @@
                         </div>
                     </section>
 
-                    <!-- Row 1: Music Hero + Trending Playlists -->
-                    <div class="ai-home-row ai-home-row-hero">
-                        <section class="ai-panel ai-music-hero" data-section="ai-music-hero">
-                            <div class="ai-sec-head">
-                                <h2 class="ai-sec-title"><i class="fas fa-music"></i> Music</h2>
-                            </div>
-                            <div class="ai-hero-art-wrap">
-                                <div class="ai-hero-bg-layer active" id="aiHeroBgA"></div>
-                                <div class="ai-hero-bg-layer" id="aiHeroBgB"></div>
-                                <div class="ai-hero-wave"></div>
-                                <div class="ai-hero-art" id="aiHeroBackdrop"></div>
-                                <div class="ai-hero-art-ring"></div>
-                            </div>
-                            <div class="ai-hero-info-row" id="aiHeroInfoRow" style="display:none;">
-                                <div class="ai-hero-song-name" id="aiHeroSongName">—</div>
-                                <button class="ai-play-now" id="aiHeroPlayBtn"><i class="fas fa-play"></i> Play Now</button>
-                                <div class="ai-hero-movie-name" id="aiHeroMovieName">—</div>
-                            </div>
-                            <div class="ai-hero-dots" id="aiHeroDotsWrap"></div>
-                        </section>
+                    <!-- 5. Music Hero -->
+                    <section class="ai-panel ai-music-hero" data-section="ai-music-hero">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-music"></i> Music</h2>
+                        </div>
+                        <div class="ai-hero-art-wrap">
+                            <div class="ai-hero-bg-layer active" id="aiHeroBgA"></div>
+                            <div class="ai-hero-bg-layer" id="aiHeroBgB"></div>
+                            <div class="ai-hero-wave"></div>
+                            <div class="ai-hero-art" id="aiHeroBackdrop"></div>
+                            <div class="ai-hero-art-ring"></div>
+                        </div>
+                        <div class="ai-hero-info-row" id="aiHeroInfoRow" style="display:none;">
+                            <div class="ai-hero-song-name" id="aiHeroSongName">—</div>
+                            <button class="ai-play-now" id="aiHeroPlayBtn"><i class="fas fa-play"></i> Play Now</button>
+                            <div class="ai-hero-movie-name" id="aiHeroMovieName">—</div>
+                        </div>
+                        <div class="ai-hero-dots" id="aiHeroDotsWrap"></div>
+                    </section>
 
-                        <section class="ai-panel ai-trending" data-section="ai-trending">
-                            <div class="ai-sec-head">
-                                <h2 class="ai-sec-title"><i class="fas fa-fire"></i> Trending Playlists</h2>
-                                <button class="ai-see-all" data-ai-seeall="playlists">See All</button>
-                            </div>
-                            <div class="ai-card-row" id="aiTrendingPlaylists"></div>
-                        </section>
-                    </div>
+                    <!-- 6. Trending Playlists -->
+                    <section class="ai-panel ai-trending" data-section="ai-trending">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-fire"></i> Trending Playlists</h2>
+                            <button class="ai-see-all" data-ai-seeall="playlists">See All</button>
+                        </div>
+                        <div class="ai-card-row" id="aiTrendingPlaylists"></div>
+                    </section>
 
-                    <!-- Ad Slot: Between Content -->
-                    <div class="tas-ad-slot" id="tasAdBetween" data-ad-location="between" style="display:none;"></div>
+                    <!-- 7. Live FM Stations -->
+                    <section class="ai-panel ai-live-fm" data-section="ai-live-fm">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><span class="ai-live-dot"></span> Live FM Stations</h2>
+                            <button class="ai-see-all" data-ai-seeall="live-fm">See All</button>
+                        </div>
+                        <div class="ai-fm-grid" id="aiLiveFmGrid"></div>
+                    </section>
 
-                    <!-- Row 2: Live FM + Evergreen Classics -->
-                    <div class="ai-home-row">
-                        <section class="ai-panel ai-live-fm" data-section="ai-live-fm">
-                            <div class="ai-sec-head">
-                                <h2 class="ai-sec-title"><span class="ai-live-dot"></span> Live FM Stations</h2>
-                                <button class="ai-see-all" data-ai-seeall="live-fm">See All</button>
-                            </div>
-                            <div class="ai-fm-grid" id="aiLiveFmGrid"></div>
-                        </section>
+                    <!-- 8. Evergreen Classics -->
+                    <section class="ai-panel ai-evergreen" data-section="ai-evergreen">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-gem"></i> Evergreen Classics</h2>
+                            <button class="ai-see-all" data-ai-seeall="evergreen">See All</button>
+                        </div>
+                        <div class="ai-evergreen-grid" id="aiEvergreenGrid"></div>
+                    </section>
 
-                        <section class="ai-panel ai-evergreen" data-section="ai-evergreen">
-                            <div class="ai-sec-head">
-                                <h2 class="ai-sec-title"><i class="fas fa-gem"></i> Evergreen Classics</h2>
-                                <button class="ai-see-all" data-ai-seeall="evergreen">See All</button>
+                    <!-- 9. Music by Era -->
+                    <section class="ai-panel ai-decades" data-section="ai-decades">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-clock"></i> Music by Era</h2>
+                            <div class="ai-decade-bot-status" id="aiDecadeBotStatus" style="display:none;">
+                                <span class="ai-decade-bot-dot"></span>
+                                <span class="ai-decade-bot-text">Auto-Playing</span>
+                                <button class="ai-decade-bot-stop" id="aiDecadeBotStop" aria-label="Stop auto-play"><i class="fas fa-stop"></i></button>
                             </div>
-                            <div class="ai-evergreen-grid" id="aiEvergreenGrid"></div>
-                        </section>
-                    </div>
+                        </div>
+                        <div class="ai-decade-cards" id="aiDecadeCards"></div>
+                    </section>
 
-                    <!-- Row 3: AI Recommendations -->
-                    <div class="ai-home-row">
-                        <section class="ai-panel ai-ai-rec" data-section="ai-ai-rec">
-                            <div class="ai-sec-head">
-                                <h2 class="ai-sec-title"><i class="fas fa-wand-magic-sparkles"></i> AI Recommendations</h2>
-                                <button class="ai-see-all" data-ai-seeall="explore">See All</button>
-                            </div>
-                            <div class="ai-rec-inner">
-                                <div class="ai-rec-intro">
-                                    <div class="ai-rec-greeting" id="aiRecGreeting"></div>
-                                    <p>Discover songs curated just for you by our AI engine.</p>
-                                    <button class="ai-discover-btn" id="aiDiscoverBtn"><i class="fas fa-wand-magic-sparkles"></i> Discover with AI</button>
-                                </div>
-                                <div class="ai-rec-songs" id="aiRecSongs"></div>
-                            </div>
-                        </section>
-                    </div>
+                    <!-- Hidden sections (disabled but kept in DOM for builder/VE) -->
+                    <section class="ai-panel upcoming-section" data-section="upcoming-new" id="upcomingSection" style="display:none;">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-calendar-days"></i> Upcoming</h2>
+                            <button class="ai-see-all" id="upcomingSeeAll" style="display:none;">See All</button>
+                        </div>
+                        <div class="upcoming-row" id="upcomingRow"></div>
+                    </section>
 
-                    <!-- Row 4: Decades by Era -->
+                    <section class="ai-panel new-album-section" data-section="ai-new-album" id="newAlbumSection" style="display:none;">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-record-vinyl"></i> <span id="newAlbumSectionTitle">New Album</span></h2>
+                            <button class="ai-see-all" id="newAlbumSeeAll" style="display:none;">See All</button>
+                        </div>
+                        <div class="new-album-row" id="newAlbumRow"></div>
+                    </section>
+
+                    <section class="ai-panel ur-auto-section" data-section="ur-auto-slider" id="urAutoSection" style="display:none;">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-rocket"></i> Upcoming Releases</h2>
+                        </div>
+                        <div class="ur-auto-viewport" id="urAutoViewport">
+                            <div class="ur-auto-track" id="urAutoTrack"></div>
+                        </div>
+                    </section>
+
+                    <section class="ai-panel ai-ai-rec" data-section="ai-ai-rec">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-wand-magic-sparkles"></i> AI Recommendations</h2>
+                            <button class="ai-see-all" data-ai-seeall="explore">See All</button>
+                        </div>
+                        <div class="ai-rec-inner">
+                            <div class="ai-rec-intro">
+                                <div class="ai-rec-greeting" id="aiRecGreeting"></div>
+                                <p>Discover songs curated just for you by our AI engine.</p>
+                                <button class="ai-discover-btn" id="aiDiscoverBtn"><i class="fas fa-wand-magic-sparkles"></i> Discover with AI</button>
+                            </div>
+                            <div class="ai-rec-songs" id="aiRecSongs"></div>
+                        </div>
+                    </section>
+
                     <section class="ai-panel ai-panel-favorites" data-section="ai-favorites" id="aiFavoritesSection" style="display:none;">
                         <div class="ai-sec-head">
                             <h2 class="ai-sec-title"><i class="fas fa-heart" style="color:#f43f5e;"></i> Favourite Songs</h2>
@@ -657,18 +656,6 @@
                             <span>Auto-Playing favourites</span>
                             <button class="ai-decade-bot-stop" id="aiFavBotStop" aria-label="Stop auto-play"><i class="fas fa-stop"></i></button>
                         </div>
-                    </section>
-
-                    <section class="ai-panel ai-decades" data-section="ai-decades">
-                        <div class="ai-sec-head">
-                            <h2 class="ai-sec-title"><i class="fas fa-clock"></i> Music by Era</h2>
-                            <div class="ai-decade-bot-status" id="aiDecadeBotStatus" style="display:none;">
-                                <span class="ai-decade-bot-dot"></span>
-                                <span class="ai-decade-bot-text">Auto-Playing</span>
-                                <button class="ai-decade-bot-stop" id="aiDecadeBotStop" aria-label="Stop auto-play"><i class="fas fa-stop"></i></button>
-                            </div>
-                        </div>
-                        <div class="ai-decade-cards" id="aiDecadeCards"></div>
                     </section>
 
                 </div>
