@@ -566,6 +566,7 @@
                 try { await ContentSync.syncCurrentState(); } catch(e) {}
             }
             if (typeof AdminEditor !== 'undefined') { try { AdminEditor.markClean(); } catch(e) {} }
+            if (typeof AdminEditor !== 'undefined') { try { AdminEditor.applyAllOverrides(); } catch(e) {} }
             showProgress(100, 'Live!');
             toast('Saved & deployed', 'ok'); refreshStatus(); hideProgress();
         } catch (e) { toast('Save failed: ' + e.message, 'err'); hideProgress(); }
@@ -590,6 +591,7 @@
             }
             showProgress(95, 'Applying...');
             if (typeof AdminEditor !== 'undefined') { try { AdminEditor.markClean(); } catch(e) {} }
+            if (typeof AdminEditor !== 'undefined') { try { AdminEditor.applyAllOverrides(); } catch(e) {} }
             showProgress(100, 'All changes live!');
             toast('All settings saved & published', 'ok');
             hideProgress();

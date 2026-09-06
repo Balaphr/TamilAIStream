@@ -2599,6 +2599,9 @@ function setupLayoutSync() {
 // ============================================
 function applyVEOverrides() {
     try {
+        if (window.parent !== window) {
+            try { if (window.parent.document && window.parent.document.getElementById('site-frame')) return; } catch(e) {}
+        }
         const raw = localStorage.getItem('tamilAIStream_veOverrides');
         if (raw) {
             _applyVEOverridesFromRaw(raw);
@@ -2721,6 +2724,9 @@ function _applyVEOverridesFromRaw(raw) {
 // ============================================
 function applySectionSettings() {
     try {
+        if (window.parent !== window) {
+            try { if (window.parent.document && window.parent.document.getElementById('site-frame')) return; } catch(e) {}
+        }
         const raw = localStorage.getItem('tamilAIStream_sectionSettings');
         if (!raw) return;
         const settings = JSON.parse(raw);
