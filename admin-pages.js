@@ -520,15 +520,20 @@
     function _syncVEOrderToSectionSettings(overrides) {
         try {
             var order = overrides.order || [];
-            if (!order.length) return;
+            var hidden = overrides.hidden || {};
             var ssRaw = localStorage.getItem('tamilAIStream_sectionSettings');
             var ss = ssRaw ? JSON.parse(ssRaw) : null;
             if (!ss || typeof ss !== 'object') return;
+            // Sync order
             order.forEach(function(id, i) {
                 if (ss[id]) ss[id].order = i + 1;
             });
             Object.keys(ss).forEach(function(id) {
                 if (order.indexOf(id) === -1 && ss[id]) ss[id].order = 999;
+            });
+            // Sync visibility (VE hidden → sectionSettings enabled)
+            Object.keys(ss).forEach(function(id) {
+                if (hidden.hasOwnProperty(id)) ss[id].enabled = !hidden[id];
             });
             localStorage.setItem('tamilAIStream_sectionSettings', JSON.stringify(ss));
         } catch(e) { console.warn('[Admin] Failed to sync VE order to sectionSettings:', e); }
@@ -594,8 +599,13 @@
             var gsRes = await fetch('/api/global-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings: gs, admin: 'Admin', publish: true }) });
             var gsData = await gsRes.json().catch(function() { return null; });
             if (!gsRes.ok || (gsData && !gsData.success)) { console.warn('[Admin] Global settings save warning:', gsData); }
-            if (typeof ContentSync !== 'undefined' && typeof ContentSync.syncCurrentState === 'function') {
-                try { await ContentSync.syncCurrentState(); } catch(e) {}
+            if (typeof ContentSync !== 'undefined') {
+                try {
+                    const mPayload = ContentSync.buildContentPayload();
+                    mPayload.updatedAt = new Date().toISOString();
+                    await ContentSync.uploadManifest(mPayload);
+                    ContentSync.persistLocalContent(mPayload);
+                } catch(e) { console.warn('[Admin] Manifest upload failed:', e); }
             }
             if (typeof AdminEditor !== 'undefined') { try { AdminEditor.markClean(); } catch(e) {} }
             if (typeof AdminEditor !== 'undefined') { try { AdminEditor.applyAllOverrides(); } catch(e) {} }
@@ -624,8 +634,13 @@
             var gsData2 = await gsRes2.json().catch(function() { return null; });
             if (!gsRes2.ok || (gsData2 && !gsData2.success)) { console.warn('[Admin] Global settings save warning:', gsData2); }
             showProgress(80, 'Syncing content to R2...');
-            if (typeof ContentSync !== 'undefined' && typeof ContentSync.syncCurrentState === 'function') {
-                try { await ContentSync.syncCurrentState(); } catch(e) {}
+            if (typeof ContentSync !== 'undefined') {
+                try {
+                    const mPayload2 = ContentSync.buildContentPayload();
+                    mPayload2.updatedAt = new Date().toISOString();
+                    await ContentSync.uploadManifest(mPayload2);
+                    ContentSync.persistLocalContent(mPayload2);
+                } catch(e) { console.warn('[Admin] Manifest upload failed:', e); }
             }
             showProgress(95, 'Applying...');
             if (typeof AdminEditor !== 'undefined') { try { AdminEditor.markClean(); } catch(e) {} }

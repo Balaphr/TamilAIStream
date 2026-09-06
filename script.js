@@ -2684,23 +2684,29 @@ function _applyVEOverridesFromRaw(raw) {
         }
 
         // Apply element style overrides (position, size, etc.)
+        // Desktop overrides serve as base for all viewports; device-specific
+        // overrides layer on top so VE edits reflect on every screen size.
         if (data.overrides && typeof data.overrides === 'object') {
+            const w = window.innerWidth;
             Object.keys(data.overrides).forEach(selector => {
                 const bpData = data.overrides[selector];
                 if (!bpData || typeof bpData !== 'object') return;
-                Object.keys(bpData).forEach(bp => {
+                let el;
+                try { el = document.querySelector(selector); } catch(e) {}
+                if (!el) return;
+
+                // Layer order: desktop (base) → tablet → mobile → all
+                const applyOrder = ['desktop'];
+                if (w >= 576 && w < 992 && bpData.tablet) applyOrder.push('tablet');
+                if (w < 576 && bpData.mobile) applyOrder.push('mobile');
+                if (bpData.all) applyOrder.push('all');
+                // Also apply the exact matching bp if not already included
+                const exactBp = w >= 992 ? 'desktop' : w >= 576 ? 'tablet' : 'mobile';
+                if (bpData[exactBp] && !applyOrder.includes(exactBp)) applyOrder.push(exactBp);
+
+                applyOrder.forEach(bp => {
                     const styles = bpData[bp];
                     if (!styles || typeof styles !== 'object') return;
-                    let el;
-                    try { el = document.querySelector(selector); } catch(e) {}
-                    if (!el) return;
-                    // Apply only for matching breakpoint
-                    const w = window.innerWidth;
-                    const matchesBp = (bp === 'desktop' && w >= 992) ||
-                                      (bp === 'tablet' && w >= 576 && w < 992) ||
-                                      (bp === 'mobile' && w < 576) ||
-                                      (bp === 'all');
-                    if (!matchesBp) return;
                     Object.keys(styles).forEach(prop => {
                         if (prop === 'visibility') el.style.visibility = styles[prop];
                         else if (prop === 'display') el.style.display = styles[prop];

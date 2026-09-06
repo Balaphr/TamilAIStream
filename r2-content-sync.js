@@ -235,8 +235,18 @@
                     }
                 } else if (Array.isArray(localValue) && localValue.length > 0 && isWriter) {
                     mergedData[key] = localValue;
-                } else if (key === 'veOverrides' && isWriter && localValue && Object.keys(localValue).length > 0) {
-                    mergedData[key] = localValue;
+                } else if (key === 'veOverrides') {
+                    // VE overrides: always keep the newer version by timestamp
+                    // to prevent stale R2 data from overwriting fresh local edits.
+                    const localTs = localValue?.timestamp || 0;
+                    const remoteTs = remoteValue?.timestamp || 0;
+                    if (localTs >= remoteTs && localValue) {
+                        mergedData[key] = localValue;
+                    } else if (remoteValue) {
+                        mergedData[key] = remoteValue;
+                    } else {
+                        mergedData[key] = localValue || remoteValue || null;
+                    }
                 } else if (remoteValue !== undefined && remoteValue !== null) {
                     mergedData[key] = remoteValue;
                 } else if (localValue !== undefined && localValue !== null) {
