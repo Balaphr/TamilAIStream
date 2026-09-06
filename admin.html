@@ -99,7 +99,7 @@
         .tb-pill.on { background:rgba(16,185,129,0.2); color:var(--accent); border-color:rgba(16,185,129,0.4); }
         .tb-pill.off { background:var(--glass); color:var(--text3); border-color:var(--border); }
         .tb-status { font-size:10px; color:var(--text3); }
-        #left-panel { position:fixed; top:var(--topbar-h); left:0; bottom:0; width:240px; background:var(--bg); border-right:1px solid var(--border); display:flex; flex-direction:column; z-index:99999; overflow:hidden; }
+        #left-panel { position:fixed; top:var(--topbar-h); left:var(--sidebar-w); bottom:0; width:240px; background:var(--bg); border-right:1px solid var(--border); display:flex; flex-direction:column; z-index:99999; overflow:hidden; }
         .lp-head { padding:10px 12px; border-bottom:1px solid var(--border); font-weight:600; font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; justify-content:space-between; }
         .lp-list { flex:1; overflow-y:auto; padding:4px 0; }
         .lp-item { display:flex; align-items:center; gap:8px; padding:7px 12px; cursor:pointer; transition:all 0.12s; border-left:2px solid transparent; }
@@ -140,7 +140,7 @@
         .rp-select { padding:5px 7px; border-radius:5px; border:1px solid var(--border); background:var(--bg3); color:var(--text); font-size:11px; outline:none; cursor:pointer; }
         .rp-select:focus { border-color:var(--accent); }
         .rp-range { width:100%; accent-color:var(--accent); }
-        #center-area { position:fixed; top:var(--topbar-h); left:240px; right:300px; bottom:0; background:#111; overflow:hidden; }
+        #center-area { position:fixed; top:var(--topbar-h); left:calc(var(--sidebar-w) + 240px); right:300px; bottom:0; background:#111; overflow:hidden; }
         #site-frame { border:none; background:#000; width:100%; height:100%; transition:width 0.3s, max-width 0.3s, margin 0.3s; }
         .modal-bg { display:none; position:fixed; inset:0; z-index:99999990; background:rgba(0,0,0,0.65); backdrop-filter:blur(8px); align-items:center; justify-content:center; }
         .modal-bg.open { display:flex; }
