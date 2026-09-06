@@ -93,192 +93,53 @@
             document.documentElement.style.height = 'auto';
         }
     </script>
-    <!-- Startup Splash Screen -->
+    <!-- Splash Screen — single 3D animated logo, 2 seconds, no sound -->
     <div class="splash-overlay" id="splashOverlay">
-        <div class="splash-grid"></div>
-        <div class="splash-noise"></div>
-        <div class="splash-orb splash-orb-1"></div>
-        <div class="splash-orb splash-orb-2"></div>
-        <div class="splash-orb splash-orb-3"></div>
-        <div class="splash-content">
-            <div class="splash-logo-wrap">
-                <div class="splash-logo-glow"></div>
-                <div class="splash-logo" data-brand-logo>
-                    <svg width="48" height="48" viewBox="0 0 40 40" fill="none">
-                        <circle cx="20" cy="20" r="18" fill="url(#splashGrad)"/>
-                        <path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/>
-                        <defs>
-                            <linearGradient id="splashGrad" x1="0" y1="0" x2="40" y2="40">
-                                <stop stop-color="#22d3ee"/>
-                                <stop offset="0.5" stop-color="#3b82f6"/>
-                                <stop offset="1" stop-color="#a855f7"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-            </div>
-            <div class="splash-title" data-brand-text>
-                <span class="highlight">Tamil AI</span> Stream
-            </div>
-            <div class="splash-subtitle" data-brand-tagline>AI-Powered Tamil Radio</div>
-            <div class="splash-equalizer">
-                <div class="splash-eq-bar" style="--eq-min:5px;--eq-max:28px;--eq-duration:0.7s;--eq-delay:0s"></div>
-                <div class="splash-eq-bar" style="--eq-min:8px;--eq-max:36px;--eq-duration:0.55s;--eq-delay:0.1s"></div>
-                <div class="splash-eq-bar" style="--eq-min:4px;--eq-max:22px;--eq-duration:0.85s;--eq-delay:0.2s"></div>
-                <div class="splash-eq-bar" style="--eq-min:10px;--eq-max:40px;--eq-duration:0.5s;--eq-delay:0.05s"></div>
-                <div class="splash-eq-bar" style="--eq-min:6px;--eq-max:30px;--eq-duration:0.65s;--eq-delay:0.15s"></div>
-                <div class="splash-eq-bar" style="--eq-min:3px;--eq-max:20px;--eq-duration:0.9s;--eq-delay:0.25s"></div>
-                <div class="splash-eq-bar" style="--eq-min:8px;--eq-max:34px;--eq-duration:0.58s;--eq-delay:0.08s"></div>
-                <div class="splash-eq-bar" style="--eq-min:5px;--eq-max:26px;--eq-duration:0.75s;--eq-delay:0.18s"></div>
-                <div class="splash-eq-bar" style="--eq-min:9px;--eq-max:38px;--eq-duration:0.52s;--eq-delay:0.12s"></div>
-                <div class="splash-eq-bar" style="--eq-min:4px;--eq-max:24px;--eq-duration:0.82s;--eq-delay:0.22s"></div>
-                <div class="splash-eq-bar" style="--eq-min:7px;--eq-max:32px;--eq-duration:0.62s;--eq-delay:0.03s"></div>
-                <div class="splash-eq-bar" style="--eq-min:6px;--eq-max:28px;--eq-duration:0.72s;--eq-delay:0.16s"></div>
-            </div>
-            <div class="splash-loading">
-                <div class="splash-loading-bar">
-                    <div class="splash-loading-fill"></div>
-                </div>
-                <div class="splash-loading-text">Initializing AI Engine</div>
-            </div>
+        <div class="splash-logo-3d" data-brand-logo>
+            <svg width="80" height="80" viewBox="0 0 40 40" fill="none">
+                <circle cx="20" cy="20" r="18" fill="url(#splashGrad)"/>
+                <path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/>
+                <defs>
+                    <linearGradient id="splashGrad" x1="0" y1="0" x2="40" y2="40">
+                        <stop stop-color="#22d3ee"/>
+                        <stop offset="0.5" stop-color="#3b82f6"/>
+                        <stop offset="1" stop-color="#a855f7"/>
+                    </linearGradient>
+                </defs>
+            </svg>
         </div>
-        <button class="splash-skip" id="splashSkip" aria-label="Skip splash">Skip</button>
     </div>
 
-    <!-- Splash Screen Script (inline for instant execution) -->
     <script>
     (function() {
-        // First visit: show 2.5s premium logo animation. Returning visitors (this session): skip instantly.
-        var splashSeen = false;
-        try { splashSeen = sessionStorage.getItem('tamilai_splash_seen') === '1'; } catch (e) {}
-        const SPLASH_MIN_MS = splashSeen ? 0 : 2500;
-        const overlay = document.getElementById('splashOverlay');
-        const skipBtn = document.getElementById('splashSkip');
+        var overlay = document.getElementById('splashOverlay');
         if (!overlay) return;
-
         var dismissed = false;
-
-        /* ---------- Web Audio splash sound (respects autoplay policy) ---------- */
         var _splashAudioCtx = null;
-        function playSplashSound() {
-            try {
-                var AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (!AudioCtx) return;
-                _splashAudioCtx = new AudioCtx();
-                // If suspended (autoplay blocked), resume on first user interaction
-                if (_splashAudioCtx.state === 'suspended') {
-                    var resume = function() {
-                        _splashAudioCtx.resume();
-                        document.removeEventListener('touchstart', resume);
-                        document.removeEventListener('click', resume);
-                        document.removeEventListener('keydown', resume);
-                    };
-                    document.addEventListener('touchstart', resume, { once: true });
-                    document.addEventListener('click', resume, { once: true });
-                    document.addEventListener('keydown', resume, { once: true });
-                }
-                var ctx = _splashAudioCtx;
-                var t = ctx.currentTime;
-                // Layer 1: Soft whoosh (noise burst via oscillator)
-                var osc1 = ctx.createOscillator();
-                var gain1 = ctx.createGain();
-                osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(400, t);
-                osc1.frequency.exponentialRampToValueAtTime(900, t + 0.12);
-                osc1.frequency.exponentialRampToValueAtTime(300, t + 0.35);
-                gain1.gain.setValueAtTime(0, t);
-                gain1.gain.linearRampToValueAtTime(0.06, t + 0.03);
-                gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
-                osc1.connect(gain1).connect(ctx.destination);
-                osc1.start(t);
-                osc1.stop(t + 0.45);
-                // Layer 2: Crystalline chime
-                var osc2 = ctx.createOscillator();
-                var gain2 = ctx.createGain();
-                osc2.type = 'triangle';
-                osc2.frequency.setValueAtTime(1200, t + 0.08);
-                osc2.frequency.exponentialRampToValueAtTime(1600, t + 0.2);
-                gain2.gain.setValueAtTime(0, t);
-                gain2.gain.linearRampToValueAtTime(0.04, t + 0.1);
-                gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
-                osc2.connect(gain2).connect(ctx.destination);
-                osc2.start(t + 0.08);
-                osc2.stop(t + 0.5);
-            } catch(e) { /* Web Audio not available or blocked */ }
-        }
 
-        /* ---------- Dismiss splash ---------- */
         function dismissSplash() {
             if (dismissed) return;
             dismissed = true;
-            try { sessionStorage.setItem('tamilai_splash_seen', '1'); } catch (e) {}
-
             overlay.classList.add('splash-hide');
             setTimeout(function() {
-                overlay.style.display = 'none';
                 overlay.remove();
+                try { if (_splashAudioCtx) _splashAudioCtx.close(); } catch(e) {}
                 restorePlayerIfPlaying();
-            }, 350);
+            }, 400);
         }
 
-        /* ---------- Restore player after splash ---------- */
         function restorePlayerIfPlaying() {
             try {
                 var up = window.UnifiedPlayer;
-                if (!up) {
-                    document.addEventListener('DOMContentLoaded', function h() {
-                        document.removeEventListener('DOMContentLoaded', h);
-                        restorePlayerIfPlaying();
-                    });
-                    return;
-                }
+                if (!up) return;
                 var s = up.getState ? up.getState() : null;
                 if (!s || !s.track) return;
-
-                /* Show bottom bar */
                 up.showBottomBar();
-
-                /* Resume audio if it was playing before refresh */
-                if (s.isPlaying) {
-                    up.play();
-                }
-            } catch (e) { /* silent */ }
+                if (s.isPlaying) up.play();
+            } catch (e) {}
         }
 
-        /* ---------- Skip button ---------- */
-        skipBtn.addEventListener('click', dismissSplash);
-
-        /* ---------- Play splash sound on first visit ---------- */
-        if (!splashSeen) {
-            playSplashSound();
-        }
-
-        /* ---------- Auto-dismiss after min time + DOM ready ---------- */
-        var domReady;
-        if (splashSeen) {
-            /* Returning visitor: reveal as soon as the HTML is parsed (before heavy scripts). */
-            domReady = new Promise(function(resolve) {
-                if (document.readyState !== 'loading') { resolve(); return; }
-                document.addEventListener('readystatechange', function onReady() {
-                    if (document.readyState === 'interactive') {
-                        document.removeEventListener('readystatechange', onReady);
-                        resolve();
-                    }
-                });
-            });
-        } else {
-            domReady = new Promise(function(resolve) {
-                if (document.readyState !== 'loading') resolve();
-                else document.addEventListener('DOMContentLoaded', resolve);
-            });
-        }
-
-        Promise.all([
-            new Promise(function(r) { setTimeout(r, SPLASH_MIN_MS); }),
-            domReady
-        ]).then(function() {
-            setTimeout(dismissSplash, 50);
-        });
+        setTimeout(dismissSplash, 2000);
     })();
     </script>
 

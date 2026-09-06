@@ -1,12 +1,12 @@
 /* ================================================================
-   Tamil AI Stream – PWA 3D Logo Splash Screen
-   Premium JioHotstar-style app opening animation
+   Tamil AI Stream – PWA Splash Screen
+   Single 3D animated logo, 2 seconds, no sound, no text
    ================================================================ */
 (function() {
   'use strict';
 
-  const SPLASH_KEY = 'tamilai_splash_seen';
-  const SPLASH_DURATION = 2200; // Total splash duration in ms
+  var SPLASH_KEY = 'tamilai_splash_seen';
+  var SPLASH_DURATION = 2000;
 
   function isStandalone() {
     return window.matchMedia('(display-mode: standalone)').matches ||
@@ -14,356 +14,70 @@
   }
 
   function shouldShowSplash() {
-    // Show splash only in PWA standalone mode
     if (!isStandalone()) return false;
-    // Show splash once per session
     if (sessionStorage.getItem(SPLASH_KEY)) return false;
     return true;
   }
 
-  function createSplashScreen() {
-    const splash = document.createElement('div');
-    splash.id = 'pwaSplash';
-    splash.style.cssText = `
-      position: fixed;
-      inset: 0;
-      z-index: 2147483647;
-      background: radial-gradient(ellipse at center, #0a0f1a 0%, #060e1a 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      font-family: Inter, system-ui, sans-serif;
-    `;
-
-    splash.innerHTML = `
-      <div id="splashContainer" style="
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 24px;
-        transform: scale(1);
-      ">
-        <!-- 3D Logo Container -->
-        <div id="logo3D" style="
-          position: relative;
-          width: 120px;
-          height: 120px;
-          transform-style: preserve-3d;
-          perspective: 1000px;
-          animation: logoFloat 3s ease-in-out infinite;
-        ">
-          <!-- Logo Front Face -->
-          <div class="logo-face logo-front" style="
-            position: absolute;
-            inset: 0;
-            transform: translateZ(12px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          ">
-            <svg viewBox="0 0 120 120" width="120" height="120" style="filter: drop-shadow(0 8px 32px rgba(52,211,153,0.4));">
-              <defs>
-                <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#34d399"/>
-                  <stop offset="50%" stop-color="#10b981"/>
-                  <stop offset="100%" stop-color="#059669"/>
-                </linearGradient>
-                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                  <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                  </feMerge>
-                </filter>
-              </defs>
-              <!-- Microphone Icon with Sound Waves -->
-              <g filter="url(#glow)">
-                <path d="M60 20c-11 0-20 9-20 20v40c0 11 9 20 20 20s20-9 20-20V40c0-11-9-20-20-20z" fill="url(#logoGrad)"/>
-                <path d="M60 28c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16s16-7.2 16-16V44c0-8.8-7.2-16-16-16z" fill="#060e1a"/>
-                <path d="M44 40c0-4.4 3.6-8 8-8s8 3.6 8 8v24c0 4.4-3.6 8-8 8s-8-3.6-8-8V40z" fill="url(#logoGrad)"/>
-                <!-- Sound waves -->
-                <g opacity="0.7" fill="url(#logoGrad)">
-                  <path d="M76 32a24 24 0 0 1 0 56" stroke="#34d399" stroke-width="2.5" fill="none" stroke-linecap="round">
-                    <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.5s" repeatCount="indefinite" begin="0s"/>
-                    <animate attributeName="stroke-dashoffset" values="0;100" dur="2s" repeatCount="indefinite"/>
-                  </path>
-                  <path d="M84 24a32 32 0 0 1 0 72" stroke="#10b981" stroke-width="2" fill="none" stroke-linecap="round">
-                    <animate attributeName="opacity" values="0.5;0.2;0.5" dur="1.5s" repeatCount="indefinite" begin="0.3s"/>
-                  </path>
-                  <path d="M92 16a40 40 0 0 1 0 88" stroke="#34d399" stroke-width="1.5" fill="none" stroke-linecap="round">
-                    <animate attributeName="opacity" values="0.4;0.1;0.4" dur="1.5s" repeatCount="indefinite" begin="0.6s"/>
-                  </path>
-                </g>
-              </g>
-            </svg>
-          </div>
-
-          <!-- Logo Back Face (for 3D depth) -->
-          <div class="logo-face logo-back" style="
-            position: absolute;
-            inset: 0;
-            transform: translateZ(-12px) rotateY(180deg);
-            background: linear-gradient(135deg, #059669, #047857);
-            border-radius: 24px;
-            opacity: 0.3;
-          "></div>
-
-          <!-- Logo Side Faces for 3D thickness -->
-          <div class="logo-side logo-right" style="
-            position: absolute;
-            width: 24px;
-            height: 120px;
-            left: 60px;
-            top: 0;
-            transform: rotateY(90deg) translateZ(-12px);
-            background: linear-gradient(180deg, #059669, #047857);
-            opacity: 0.4;
-          "></div>
-          <div class="logo-side logo-left" style="
-            position: absolute;
-            width: 24px;
-            height: 120px;
-            right: 60px;
-            top: 0;
-            transform: rotateY(-90deg) translateZ(-12px);
-            background: linear-gradient(180deg, #059669, #047857);
-            opacity: 0.4;
-          "></div>
-          <div class="logo-side logo-top" style="
-            position: absolute;
-            width: 120px;
-            height: 24px;
-            left: 0;
-            top: 0;
-            transform: rotateX(90deg) translateZ(-12px);
-            background: linear-gradient(90deg, #059669, #047857);
-            opacity: 0.4;
-          "></div>
-          <div class="logo-side logo-bottom" style="
-            position: absolute;
-            width: 120px;
-            height: 24px;
-            left: 0;
-            bottom: 0;
-            transform: rotateX(-90deg) translateZ(-12px);
-            background: linear-gradient(90deg, #059669, #047857);
-            opacity: 0.4;
-          "></div>
-        </div>
-
-        <!-- Rotating Ring Animation -->
-        <div id="logoRing" style="
-          position: absolute;
-          width: 180px;
-          height: 180px;
-          border: 2px solid rgba(52,211,153,0.3);
-          border-radius: 50%;
-          border-top-color: #34d399;
-          border-right-color: #10b981;
-          animation: ringSpin 4s linear infinite;
-        "></div>
-
-        <div id="logoRing2" style="
-          position: absolute;
-          width: 220px;
-          height: 220px;
-          border: 1px solid rgba(16,185,129,0.2);
-          border-radius: 50%;
-          border-bottom-color: #34d399;
-          animation: ringSpin 6s linear infinite reverse;
-        "></div>
-
-        <!-- App Name -->
-        <div id="appName" style="
-          font-size: 28px;
-          font-weight: 800;
-          background: linear-gradient(135deg, #34d399, #10b981, #34d399);
-          background-size: 200% 100%;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          letter-spacing: 1.5px;
-          text-shadow: 0 0 60px rgba(52,211,153,0.3);
-          animation: nameShimmer 3s ease-in-out infinite;
-        ">Tamil AI Stream</div>
-
-        <!-- Tagline -->
-        <div id="appTagline" style="
-          font-size: 14px;
-          color: rgba(255,255,255,0.5);
-          letter-spacing: 3px;
-          text-transform: uppercase;
-          font-weight: 500;
-          opacity: 0;
-          animation: taglineFade 0.8s ease-out 0.6s forwards;
-        ">AI-Powered Tamil Radio</div>
-
-        <!-- Loading Progress -->
-        <div id="loadingProgress" style="
-          margin-top: 40px;
-          width: 200px;
-          height: 4px;
-          background: rgba(255,255,255,0.08);
-          border-radius: 2px;
-          overflow: hidden;
-          opacity: 0;
-          animation: progressFade 0.8s ease-out 1s forwards;
-        ">
-          <div id="progressBar" style="
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #34d399, #10b981, #34d399);
-            background-size: 200% 100%;
-            border-radius: 2px;
-            animation: progressFill 1.8s ease-out 1.2s forwards, progressShimmer 2s linear infinite;
-          "></div>
-        </div>
-
-        <!-- Loading Text -->
-        <div id="loadingText" style="
-          margin-top: 12px;
-          font-size: 12px;
-          color: rgba(255,255,255,0.4);
-          font-weight: 500;
-          min-height: 16px;
-          opacity: 0;
-          animation: textFade 0.8s ease-out 1s forwards;
-        ">Initializing AI Engine...</div>
-      </div>
-
-      <style>
-        @keyframes logoFloat {
-          0%, 100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
-          25% { transform: translateY(-8px) rotateX(5deg) rotateY(-5deg); }
-          50% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
-          75% { transform: translateY(8px) rotateX(-5deg) rotateY(5deg); }
-        }
-        @keyframes ringSpin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes nameShimmer {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        @keyframes taglineFade {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes progressFade {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes progressFill {
-          from { width: 0%; }
-          to { width: 100%; }
-        }
-        @keyframes progressShimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        @keyframes textFade {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes splashFadeOut {
-          from { opacity: 1; transform: scale(1); }
-          to { opacity: 0; transform: scale(1.05); }
-        }
-        @keyframes containerFadeOut {
-          from { opacity: 1; transform: scale(1); }
-          to { opacity: 0; transform: scale(0.95); }
-        }
-      </style>
-    `;
-
-    document.body.appendChild(splash);
-    return splash;
+  function getLogoSrc() {
+    try {
+      if (typeof BrandConfig !== 'undefined' && BrandConfig.getLogo) {
+        return BrandConfig.getLogo();
+      }
+    } catch(e) {}
+    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none'%3E%3Ccircle cx='20' cy='20' r='18' fill='url(%23g)'/%3E%3Cpath d='M14 28V14l14 7-14 7z' fill='%23fff' opacity='.9'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='40' y2='40'%3E%3Cstop stop-color='%2322d3ee'/%3E%3Cstop offset='.5' stop-color='%233b82f6'/%3E%3Cstop offset='1' stop-color='%23a855f7'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E";
   }
 
-  function animateProgress(splash) {
-    const texts = [
-      'Initializing AI Engine...',
-      'Loading Neural Networks...',
-      'Calibrating Audio Engine...',
-      'Connecting to Tamil FM...',
-      'Ready to Stream!'
-    ];
-    let currentIndex = 0;
-    const loadingText = splash.querySelector('#loadingText');
-    const progressBar = splash.querySelector('#progressBar');
+  function createSplash() {
+    var logo = getLogoSrc();
+    var el = document.createElement('div');
+    el.id = 'pwaSplash';
+    el.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#0d1b2a 0%,#060e1a 60%,#020810 100%);opacity:1;transition:opacity 0.4s ease-out,transform 0.4s ease-out;will-change:opacity,transform;';
 
-    const interval = setInterval(() => {
-      if (currentIndex >= texts.length) {
-        clearInterval(interval);
-        return;
-      }
-      if (loadingText) {
-        loadingText.style.opacity = '0';
-        setTimeout(() => {
-          loadingText.textContent = texts[currentIndex];
-          loadingText.style.opacity = '1';
-        }, 150);
-      }
-      if (progressBar) {
-        progressBar.style.width = ((currentIndex + 1) / texts.length * 100) + '%';
-      }
-      currentIndex++;
-    }, SPLASH_DURATION / texts.length);
+    el.innerHTML =
+      '<div style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;border-radius:24px;background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);box-shadow:0 8px 40px rgba(99,102,241,0.25),0 0 80px rgba(99,102,241,0.1),inset 0 1px 0 rgba(255,255,255,0.08);animation:pwaLogo3d 3s ease-in-out infinite;transform-style:preserve-3d;opacity:0;animation:pwaLogoFadeIn 0.5s ease-out forwards,pwaLogo3d 3s ease-in-out infinite;">' +
+        '<img src="' + logo + '" alt="Tamil AI Stream" style="width:80px;height:80px;object-fit:contain;border-radius:50%;pointer-events:none;">' +
+      '</div>' +
+      '<div style="position:absolute;width:150px;height:150px;border:1.5px solid rgba(34,211,238,0.1);border-radius:50%;animation:pwaRingPulse 4s ease-in-out infinite;pointer-events:none;"></div>' +
+      '<style>' +
+      '@keyframes pwaLogo3d{0%{transform:translateY(0) rotateY(0deg) rotateX(0deg) scale(1)}12%{transform:translateY(-6px) rotateY(10deg) rotateX(4deg) scale(1.04)}25%{transform:translateY(-10px) rotateY(-8deg) rotateX(-3deg) scale(1.06)}37%{transform:translateY(-14px) rotateY(12deg) rotateX(5deg) scale(1.08)}50%{transform:translateY(-16px) rotateY(0deg) rotateX(0deg) scale(1.1)}62%{transform:translateY(-12px) rotateY(-12deg) rotateX(4deg) scale(1.07)}75%{transform:translateY(-8px) rotateY(8deg) rotateX(-3deg) scale(1.04)}87%{transform:translateY(-4px) rotateY(-5deg) rotateX(2deg) scale(1.02)}100%{transform:translateY(0) rotateY(0deg) rotateX(0deg) scale(1)}}' +
+      '@keyframes pwaLogoFadeIn{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}' +
+      '@keyframes pwaRingPulse{0%,100%{transform:scale(1);opacity:0.15;border-color:rgba(34,211,238,0.1)}50%{transform:scale(1.35);opacity:0.4;border-color:rgba(168,85,247,0.15)}}' +
+      '</style>';
+
+    document.body.appendChild(el);
+    return el;
   }
 
-  function hideSplash(splash) {
-    return new Promise(resolve => {
-      const container = splash.querySelector('#splashContainer');
-      
-      // Fade out container
-      container.style.animation = 'containerFadeOut 0.5s ease-in forwards';
-      
-      // Fade out splash
-      setTimeout(() => {
-        splash.style.animation = 'splashFadeOut 0.5s ease-in forwards';
-      }, 100);
-      
-      setTimeout(() => {
-        splash.remove();
-        sessionStorage.setItem(SPLASH_KEY, 'true');
-        resolve();
-      }, 600);
-    });
+  function hideSplash(el) {
+    el.style.opacity = '0';
+    el.style.transform = 'scale(1.05)';
+    setTimeout(function() {
+      el.remove();
+      sessionStorage.setItem(SPLASH_KEY, '1');
+    }, 450);
   }
 
-  async function initSplash() {
+  function initSplash() {
     if (!shouldShowSplash()) return;
-    
-    // Wait for DOM ready
     if (document.readyState === 'loading') {
-      await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+      document.addEventListener('DOMContentLoaded', run);
+    } else {
+      run();
     }
-    
-    const splash = createSplashScreen();
-    animateProgress(splash);
-    
-    // Wait for splash duration then hide
-    setTimeout(async () => {
-      await hideSplash(splash);
-    }, SPLASH_DURATION);
+    function run() {
+      var el = createSplash();
+      setTimeout(function() { hideSplash(el); }, SPLASH_DURATION);
+    }
   }
 
-  // Auto-init
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSplash);
-  } else {
-    initSplash();
-  }
+  initSplash();
 
-  // Expose for manual control
   window.PWASplash = {
     show: initSplash,
-    hide: () => {
-      const splash = document.getElementById('pwaSplash');
-      if (splash) hideSplash(splash);
+    hide: function() {
+      var el = document.getElementById('pwaSplash');
+      if (el) hideSplash(el);
     }
   };
-})();
+})(window);
