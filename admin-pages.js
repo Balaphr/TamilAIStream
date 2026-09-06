@@ -476,19 +476,56 @@
         });
     }
 
+    /* ═══════════ CONVERT OVERRIDES TO MAIN SITE FORMAT ═══════════ */
+    function writeOverridesToLocalStorage(overrides) {
+        try {
+            var sectionStates = [];
+            var veOverrides = {};
+            var sections = overrides.sections || {};
+            var order = overrides.order || Object.keys(sections);
+            var hidden = overrides.hidden || {};
+            order.forEach(function(id) {
+                sectionStates.push({ id: id, hidden: !!hidden[id], display: hidden[id] ? 'none' : '', order: order.indexOf(id) });
+                if (sections[id]) {
+                    veOverrides['[data-section="' + id + '"]'] = {};
+                    Object.keys(sections[id]).forEach(function(device) {
+                        veOverrides['[data-section="' + id + '"]'][device] = sections[id][device];
+                    });
+                }
+            });
+            Object.keys(sections).forEach(function(id) {
+                if (order.indexOf(id) === -1) {
+                    sectionStates.push({ id: id, hidden: !!hidden[id], display: hidden[id] ? 'none' : '', order: 999 });
+                    veOverrides['[data-section="' + id + '"]'] = {};
+                    Object.keys(sections[id]).forEach(function(device) {
+                        veOverrides['[data-section="' + id + '"]'][device] = sections[id][device];
+                    });
+                }
+            });
+            var payload = { sectionStates: sectionStates, overrides: veOverrides, timestamp: Date.now() };
+            localStorage.setItem('tamilAIStream_veOverrides', JSON.stringify(payload));
+        } catch(e) { console.warn('[Admin] Failed to write VE overrides to localStorage:', e); }
+    }
+
     /* ═══════════ SAVE ALL + SYNC ═══════════ */
     window.saveAllSettings = async function() {
         showProgress(10, 'Saving...');
         try {
-            showProgress(30, 'Saving overrides...');
+            showProgress(20, 'Saving overrides...');
             let overrides = {};
             try { overrides = AdminEditor.exportOverrides(); } catch(e) {}
+            writeOverridesToLocalStorage(overrides);
+            showProgress(40, 'Uploading to R2...');
             await fetch('/api/admin-overrides', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save-direct', overrides, admin: 'Admin' }) });
             showProgress(60, 'Saving global settings...');
             let gs = {};
             try { gs = AdminEditor.getGlobalSettings(); } catch(e) {}
             await fetch('/api/global-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings: gs, admin: 'Admin', publish: true }) });
-            showProgress(90, 'Applying...');
+            showProgress(80, 'Syncing content to R2...');
+            if (typeof ContentSync !== 'undefined' && typeof ContentSync.syncCurrentState === 'function') {
+                try { await ContentSync.syncCurrentState(); } catch(e) {}
+            }
+            showProgress(95, 'Applying...');
             try { AdminEditor.markClean(); } catch(e) {}
             showProgress(100, 'All changes live!');
             toast('All settings saved & published', 'ok');
@@ -615,10 +652,14 @@
         try {
             const overrides = AdminEditor.exportOverrides();
             const gs = AdminEditor.getGlobalSettings();
+            writeOverridesToLocalStorage(overrides);
             showProgress(50, 'Uploading...');
             await fetch('/api/admin-overrides', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save-direct', overrides, admin: 'Admin' }) });
             showProgress(75, 'Syncing...');
             await fetch('/api/global-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings: gs, admin: 'Admin', publish: true }) });
+            if (typeof ContentSync !== 'undefined' && typeof ContentSync.syncCurrentState === 'function') {
+                try { await ContentSync.syncCurrentState(); } catch(e) {}
+            }
             AdminEditor.markClean();
             showProgress(100, 'Live!');
             toast('Saved & deployed', 'ok'); refreshStatus(); hideProgress();
