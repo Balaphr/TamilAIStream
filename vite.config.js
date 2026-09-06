@@ -17,7 +17,7 @@ const vanillaFiles = [
   'listening-history.js', 'ai-home.js',
   'premium-landing.js',
   'builder.js', 'builder-360.js', 'ai-webflow.js', 'builder-ads.js',
-  'admin.js', 'admin-upload.js', 'admin-login.js',
+  'admin.js', 'admin-pages.js', 'admin-upload.js', 'admin-login.js',
   'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
   'app-init.js', 'site-integration.js', 'pwa.js', 'pwa-splash.js', 'analytics.js', 'analytics-tracker.js',
   'brand-config.js', 've-edit-mode.js',
@@ -70,7 +70,7 @@ function copyVanillaScripts() {
         'listening-history.js', 'ai-home.js',
         'premium-landing.js',
         'builder.js', 'builder-360.js', 'ai-webflow.js', 'builder-ads.js',
-        'admin.js', 'admin-upload.js', 'admin-login.js',
+        'admin.js', 'admin-pages.js', 'admin-upload.js', 'admin-login.js',
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
         'app-init.js', 'site-integration.js', 'pwa.js', 'pwa-splash.js', 'analytics.js', 'analytics-tracker.js',
         'brand-config.js', 've-edit-mode.js',
@@ -163,7 +163,7 @@ export default defineConfig({
       'premium-landing.js', 'script.js', 'yt-music.js', 'global-player.js',
       'premium-effects.js', 'player-engine.js', 'r2-content-sync.js',
       'pwa.js', 'ai-music-assistant.js', 'listening-history.js', 'ai-home.js',
-      'builder.js', 'admin.js', 'login.js', 'profile.js', 'dashboard.js',
+      'builder.js', 'admin.js', 'admin-pages.js', 'login.js', 'profile.js', 'dashboard.js',
       'nexvora-model-manager.js', 'nexvora-api-config.js', 'nexvora-ai-service.js', 'nexvora.js'
     ]
   }
