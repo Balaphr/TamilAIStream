@@ -516,6 +516,33 @@
         });
     }
 
+    /* ═══════════ SYNC VE ORDER → SECTIONSETTINGS ═══════════ */
+    function _syncVEOrderToSectionSettings(overrides) {
+        try {
+            var order = overrides.order || [];
+            if (!order.length) return;
+            var ssRaw = localStorage.getItem('tamilAIStream_sectionSettings');
+            var ss = ssRaw ? JSON.parse(ssRaw) : null;
+            if (!ss || typeof ss !== 'object') return;
+            order.forEach(function(id, i) {
+                if (ss[id]) ss[id].order = i + 1;
+            });
+            Object.keys(ss).forEach(function(id) {
+                if (order.indexOf(id) === -1 && ss[id]) ss[id].order = 999;
+            });
+            localStorage.setItem('tamilAIStream_sectionSettings', JSON.stringify(ss));
+        } catch(e) { console.warn('[Admin] Failed to sync VE order to sectionSettings:', e); }
+    }
+
+    function _broadcastContentUpdate() {
+        try {
+            var bc = new BroadcastChannel('tamilAIStream_sync');
+            bc.postMessage({ type: 'content-updated', timestamp: Date.now() });
+            bc.close();
+        } catch(e) { /* BroadcastChannel not supported */ }
+        try { window.dispatchEvent(new CustomEvent('tamilAIStream-content-synced', { detail: { timestamp: Date.now() } })); } catch(e) {}
+    }
+
     /* ═══════════ CONVERT OVERRIDES TO MAIN SITE FORMAT ═══════════ */
     function writeOverridesToLocalStorage(overrides) {
         try {
@@ -558,6 +585,7 @@
                 try { gs = AdminEditor.getGlobalSettings(); } catch(e) {}
             }
             writeOverridesToLocalStorage(overrides);
+            _syncVEOrderToSectionSettings(overrides);
             showProgress(50, 'Uploading...');
             var saveRes = await fetch('/api/admin-overrides', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save-direct', overrides, admin: 'Admin' }) });
             var saveData = await saveRes.json().catch(function() { return null; });
@@ -571,6 +599,7 @@
             }
             if (typeof AdminEditor !== 'undefined') { try { AdminEditor.markClean(); } catch(e) {} }
             if (typeof AdminEditor !== 'undefined') { try { AdminEditor.applyAllOverrides(); } catch(e) {} }
+            _broadcastContentUpdate();
             showProgress(100, 'Live!');
             toast('Saved & deployed', 'ok'); refreshStatus(); hideProgress();
         } catch (e) { toast('Save failed: ' + e.message, 'err'); hideProgress(); }
@@ -583,6 +612,7 @@
             let overrides = { sections: {}, order: [], hidden: {} };
             if (typeof AdminEditor !== 'undefined') { try { overrides = AdminEditor.exportOverrides(); } catch(e) {} }
             writeOverridesToLocalStorage(overrides);
+            _syncVEOrderToSectionSettings(overrides);
             showProgress(40, 'Uploading to R2...');
             var saveRes2 = await fetch('/api/admin-overrides', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save-direct', overrides, admin: 'Admin' }) });
             var saveData2 = await saveRes2.json().catch(function() { return null; });
@@ -600,6 +630,7 @@
             showProgress(95, 'Applying...');
             if (typeof AdminEditor !== 'undefined') { try { AdminEditor.markClean(); } catch(e) {} }
             if (typeof AdminEditor !== 'undefined') { try { AdminEditor.applyAllOverrides(); } catch(e) {} }
+            _broadcastContentUpdate();
             showProgress(100, 'All changes live!');
             toast('All settings saved & published', 'ok');
             hideProgress();

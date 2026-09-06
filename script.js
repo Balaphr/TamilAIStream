@@ -5325,19 +5325,19 @@ function setupRealtimeSync() {
             renderYearlyCollectionsDynamic();
             renderLatestCollectionsDynamic();
         }
-        if (e.key === 'tamilAIStream_veOverrides') {
-            setTimeout(() => applyVEOverrides(), 100);
+        if (e.key === 'tamilAIStream_veOverrides' || e.key === 'tamilAIStream_sectionSettings') {
+            setTimeout(() => { applySectionSettings(); applyVEOverrides(); }, 100);
         }
     });
     // Custom event from builder for immediate sync
     window.addEventListener('storage-sync', () => {
         refreshLiveContent();
-        setTimeout(() => applyVEOverrides(), 500);
+        setTimeout(() => { applySectionSettings(); applyVEOverrides(); }, 500);
     });
     // ContentSync change notifications (manifest pulled/applied)
     window.addEventListener('tamilAIStream-content-synced', () => {
         refreshLiveContent();
-        setTimeout(() => applyVEOverrides(), 500);
+        setTimeout(() => { applySectionSettings(); applyVEOverrides(); }, 500);
     });
     window.addEventListener('premium-sections-sync', () => {
         refreshLiveContent();
@@ -5418,11 +5418,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Setup layout sync from builder
     setupLayoutSync();
     
-    // Apply visual editor overrides from builder
-    applyVEOverrides();
-
-    // Apply Home Control Center section settings
+    // Apply Home Control Center section settings FIRST (base order)
     applySectionSettings();
+
+    // Apply visual editor overrides AFTER (VE order takes final precedence)
+    applyVEOverrides();
 
     // Setup filter buttons
     setTimeout(() => {
