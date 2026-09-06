@@ -891,6 +891,11 @@ function navigateTo(page) {
         }
     }
 
+    // Scroll the center content area to the top
+    const mainEl = document.querySelector('.builder-main');
+    if (mainEl) mainEl.scrollTop = 0;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
     // Update active states
     document.querySelectorAll(`[data-page="${page}"]`).forEach(el => el.classList.add('active'));
 
