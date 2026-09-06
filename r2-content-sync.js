@@ -235,6 +235,8 @@
                     }
                 } else if (Array.isArray(localValue) && localValue.length > 0 && isWriter) {
                     mergedData[key] = localValue;
+                } else if (key === 'veOverrides' && isWriter && localValue && Object.keys(localValue).length > 0) {
+                    mergedData[key] = localValue;
                 } else if (remoteValue !== undefined && remoteValue !== null) {
                     mergedData[key] = remoteValue;
                 } else if (localValue !== undefined && localValue !== null) {
@@ -1009,6 +1011,16 @@
     global.ContentSync = ContentSync;
 
     global.addEventListener?.('DOMContentLoaded', () => {
+        // On writer pages (Builder/Admin), skip the initial manifest pull —
+        // the writer page manages its own overrides via AdminEditor and
+        // fetches them from /api/admin-overrides on frame-loaded.
+        // Pulling the full manifest on writers can overwrite fresh local
+        // VE overrides with stale remote data.
+        if (isWriterPage()) {
+            // Still start periodic sync so cross-device updates propagate
+            global.ContentSync?.startSyncing?.(600000);
+            return;
+        }
         // Pull the authoritative R2 manifest once on load.
         global.ContentSync?.bootstrapSharedContent?.().then((result) => {
             // Always run R2 discovery to:

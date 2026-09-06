@@ -559,9 +559,13 @@
             }
             writeOverridesToLocalStorage(overrides);
             showProgress(50, 'Uploading...');
-            await fetch('/api/admin-overrides', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save-direct', overrides, admin: 'Admin' }) });
+            var saveRes = await fetch('/api/admin-overrides', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save-direct', overrides, admin: 'Admin' }) });
+            var saveData = await saveRes.json().catch(function() { return null; });
+            if (!saveRes.ok || (saveData && !saveData.success)) { throw new Error('Overrides save failed: ' + (saveData && saveData.error || saveRes.status)); }
             showProgress(75, 'Syncing...');
-            await fetch('/api/global-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings: gs, admin: 'Admin', publish: true }) });
+            var gsRes = await fetch('/api/global-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings: gs, admin: 'Admin', publish: true }) });
+            var gsData = await gsRes.json().catch(function() { return null; });
+            if (!gsRes.ok || (gsData && !gsData.success)) { console.warn('[Admin] Global settings save warning:', gsData); }
             if (typeof ContentSync !== 'undefined' && typeof ContentSync.syncCurrentState === 'function') {
                 try { await ContentSync.syncCurrentState(); } catch(e) {}
             }
@@ -580,11 +584,15 @@
             if (typeof AdminEditor !== 'undefined') { try { overrides = AdminEditor.exportOverrides(); } catch(e) {} }
             writeOverridesToLocalStorage(overrides);
             showProgress(40, 'Uploading to R2...');
-            await fetch('/api/admin-overrides', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save-direct', overrides, admin: 'Admin' }) });
+            var saveRes2 = await fetch('/api/admin-overrides', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save-direct', overrides, admin: 'Admin' }) });
+            var saveData2 = await saveRes2.json().catch(function() { return null; });
+            if (!saveRes2.ok || (saveData2 && !saveData2.success)) { throw new Error('Overrides save failed: ' + (saveData2 && saveData2.error || saveRes2.status)); }
             showProgress(60, 'Saving global settings...');
             let gs = {};
             if (typeof AdminEditor !== 'undefined') { try { gs = AdminEditor.getGlobalSettings(); } catch(e) {} }
-            await fetch('/api/global-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings: gs, admin: 'Admin', publish: true }) });
+            var gsRes2 = await fetch('/api/global-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings: gs, admin: 'Admin', publish: true }) });
+            var gsData2 = await gsRes2.json().catch(function() { return null; });
+            if (!gsRes2.ok || (gsData2 && !gsData2.success)) { console.warn('[Admin] Global settings save warning:', gsData2); }
             showProgress(80, 'Syncing content to R2...');
             if (typeof ContentSync !== 'undefined' && typeof ContentSync.syncCurrentState === 'function') {
                 try { await ContentSync.syncCurrentState(); } catch(e) {}
