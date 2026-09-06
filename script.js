@@ -729,6 +729,9 @@ function initAudioPlayer() {
             if (typeof AnalyticsTracker !== 'undefined' && currentPlaybackTrack) {
                 AnalyticsTracker.trackSongPlay(currentPlaybackTrack);
             }
+            if (typeof PerfAnalytics !== 'undefined' && currentPlaybackTrack) {
+                PerfAnalytics.setCurrentSong(currentPlaybackTrack);
+            }
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
             persistPlaybackState();
             updatePlayPauseButton(true);
@@ -935,6 +938,7 @@ function initAudioPlayer() {
         audioPlayer.addEventListener('ended', () => {
             isStreamPlaying = false;
             ProgressSync.stop();
+            if (typeof PerfAnalytics !== 'undefined') PerfAnalytics.clearCurrentSong();
             persistPlaybackState();
             updatePlayPauseButton(false);
             showLiveStatus(false);
@@ -5172,6 +5176,7 @@ function filterStations() {
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize analytics tracker
     if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.init();
+    if (typeof PerfAnalytics !== 'undefined') PerfAnalytics.init();
     // Builder preview mode: skip auth, splash, particles — keep rendering only
     if (window.__BUILDER_PREVIEW__) {
         const splash = document.getElementById('splashOverlay');

@@ -2699,6 +2699,40 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 .dashboard-list-count { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
 .dashboard-list-empty { text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px; }
 
+/* Performance Analytics KPI Cards */
+.perf-kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.perf-kpi-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px; padding: 14px; text-align: center; transition: all 0.2s;
+}
+.perf-kpi-card:hover { background: rgba(255,255,255,0.06); transform: translateY(-2px); }
+.perf-kpi-icon {
+    width: 36px; height: 36px; border-radius: 10px; display: flex;
+    align-items: center; justify-content: center; margin: 0 auto 8px; font-size: 14px;
+}
+.perf-kpi-value { font-size: 1.3rem; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
+.perf-kpi-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+
+/* Performance Tables */
+.perf-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.perf-table th {
+    text-align: left; padding: 8px 10px; font-weight: 600; color: var(--text-muted);
+    border-bottom: 1px solid var(--border-glass); font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.05em; white-space: nowrap;
+}
+.perf-table td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text-primary); }
+.perf-table tr:hover td { background: rgba(255,255,255,0.02); }
+.perf-table .dashboard-list-empty { padding: 20px; }
+
+@media (max-width: 768px) {
+    .perf-kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .perf-kpi-value { font-size: 1.1rem; }
+}
+@media (max-width: 480px) {
+    .perf-kpi-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .perf-kpi-card { padding: 10px; }
+}
+
 /* ============================================
    SIDEBAR BOTTOM (Logout)
    ============================================ */

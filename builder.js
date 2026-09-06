@@ -162,6 +162,7 @@ function showBuilderDashboard(user) {
     if (accessGate) accessGate.style.display = 'none';
     // Analytics: track login
     if (typeof AnalyticsTracker !== 'undefined') { AnalyticsTracker.setUserId(user.uid || user.email); AnalyticsTracker.track('user_login'); }
+    if (typeof PerfAnalytics !== 'undefined') PerfAnalytics.init();
     
     // Update user info in nav
     const displayName = user.displayName || user.email?.split('@')[0] || 'User';
@@ -905,7 +906,7 @@ function navigateTo(page) {
 }
 
 function _loadPageData(page) {
-    if (page === 'dashboard') { loadDashboardStats(); loadDashboardAnalytics(); refreshDashboardSyncStatus(); }
+    if (page === 'dashboard') { loadDashboardStats(); loadDashboardAnalytics(); refreshDashboardSyncStatus(); loadPerfAnalytics(); }
     if (page === 'stations') loadAllStations();
     if (page === 'songs') loadAllSongs();
     if (page === 'content') { loadFeatured(); loadTrending(); loadCategories(); loadArtistHits(); loadCollectionsTable('movies'); loadCollectionsTable('yearly'); loadCollectionsTable('latest'); loadAllSongs(); loadQuotes(); loadContentSectionStats(); }
@@ -1180,6 +1181,147 @@ async function loadDashboardAnalytics() {
             }
         }
     } catch (e) { console.warn('Dashboard analytics load failed:', e); }
+}
+
+function loadPerfAnalytics() {
+    try {
+        if (typeof PerfAnalytics === 'undefined') return;
+        const d = PerfAnalytics.getAggregated();
+        const s = d.summary;
+        const $ = id => document.getElementById(id);
+        const fmtDur = ms => {
+            if (!ms) return '0m';
+            const h = Math.floor(ms / 3600000);
+            const m = Math.floor((ms % 3600000) / 60000);
+            return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
+        };
+        const fmtBytes = ms => {
+            if (!ms) return '0s';
+            const sec = Math.floor(ms / 1000);
+            const m = Math.floor(sec / 60);
+            return m > 0 ? m + 'm ' + (sec % 60) + 's' : sec + 's';
+        };
+        if ($('perfTotalPlays')) $('perfTotalPlays').textContent = s.totalPlays || 0;
+        if ($('perfTotalListenTime')) $('perfTotalListenTime').textContent = fmtDur(s.totalListenTime);
+        if ($('perfTotalSkips')) $('perfTotalSkips').textContent = s.totalSkips || 0;
+        if ($('perfAvgSession')) $('perfAvgSession').textContent = fmtDur(s.avgSession);
+        if ($('perfBattery')) $('perfBattery').textContent = s.batteryLevel != null ? s.batteryLevel + '%' : '--%';
+        if ($('perfNetwork')) $('perfNetwork').textContent = s.networkSpeed ? s.networkSpeed + ' Mbps' : '--';
+        if ($('perfMemory')) $('perfMemory').textContent = s.memoryUsed ? s.memoryUsed + ' MB' : '--';
+        if ($('perfApiRequests')) $('perfApiRequests').textContent = s.apiRequests || 0;
+        if ($('perfErrors')) $('perfErrors').textContent = s.totalErrors || 0;
+        if ($('perfBuffering')) $('perfBuffering').textContent = fmtBytes(s.totalBuffering);
+        if ($('perfPlatform')) {
+            const pw = d.platformCounts.pwa || 0;
+            const wb = d.platformCounts.web || 0;
+            $('perfPlatform').textContent = pw + ' / ' + wb;
+        }
+        if ($('perfRepeated')) $('perfRepeated').textContent = s.repeatedRequests || 0;
+
+        if (typeof Chart !== 'undefined') {
+            // Sessions chart
+            const sessCtx = $('perfSessionsChart');
+            if (sessCtx) {
+                const days = Object.keys(d.dailySessions).sort();
+                const existing = Chart.getChart(sessCtx);
+                if (existing) existing.destroy();
+                new Chart(sessCtx, {
+                    type: 'line',
+                    data: { labels: days.map(d => d.split('/').slice(0, 2).join('/')), datasets: [
+                        { label: 'Sessions', data: days.map(k => d.dailySessions[k].sessions), borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.1)', fill: true, tension: 0.4 },
+                        { label: 'Duration (min)', data: days.map(k => Math.round(d.dailySessions[k].duration / 60000)), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4 }
+                    ]},
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { boxWidth: 10, font: { size: 10 } } } }, scales: { y: { beginAtZero: true } } }
+                });
+            }
+            // Device chart
+            const devCtx = $('perfDeviceChart');
+            if (devCtx) {
+                const existing = Chart.getChart(devCtx);
+                if (existing) existing.destroy();
+                const labels = Object.keys(d.deviceCounts);
+                new Chart(devCtx, {
+                    type: 'doughnut',
+                    data: { labels, datasets: [{ data: labels.map(k => d.deviceCounts[k]), backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981'] }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
+                });
+            }
+            // Battery chart
+            const batCtx = $('perfBatteryChart');
+            if (batCtx) {
+                const existing = Chart.getChart(batCtx);
+                if (existing) existing.destroy();
+                const pts = d.batteryHistory;
+                new Chart(batCtx, {
+                    type: 'line',
+                    data: { labels: pts.map(p => new Date(p.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })), datasets: [
+                        { label: 'Battery %', data: pts.map(p => p.level), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.3 }
+                    ]},
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100 } } }
+                });
+            }
+            // Browser chart
+            const brCtx = $('perfBrowserChart');
+            if (brCtx) {
+                const existing = Chart.getChart(brCtx);
+                if (existing) existing.destroy();
+                const labels = Object.keys(d.browserCounts);
+                new Chart(brCtx, {
+                    type: 'doughnut',
+                    data: { labels, datasets: [{ data: labels.map(k => d.browserCounts[k]), backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'] }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
+                });
+            }
+        }
+
+        // Top songs table
+        const songsTbody = $('perfTopSongsTable')?.querySelector('tbody');
+        if (songsTbody && d.songs.length) {
+            songsTbody.innerHTML = d.songs.slice(0, 20).map((s, i) => {
+                const skipRate = s.plays > 0 ? Math.round(s.skips / s.plays * 100) : 0;
+                return '<tr><td>' + (i + 1) + '</td><td>' + (s.title || 'Unknown') + '</td><td>' + s.plays + '</td><td>' + fmtDur(s.duration) + '</td><td>' + s.skips + '</td><td>' + s.errors + '</td><td>' + fmtBytes(s.buffering) + '</td></tr>';
+            }).join('');
+        } else if (songsTbody) {
+            songsTbody.innerHTML = '<tr><td colspan="7" class="dashboard-list-empty">No data yet</td></tr>';
+        }
+
+        // Most skipped table
+        const skipTbody = $('perfSkippedTable')?.querySelector('tbody');
+        if (skipTbody) {
+            const skipped = d.songs.filter(s => s.skips > 0).sort((a, b) => b.skips - a.skips);
+            if (skipped.length) {
+                skipTbody.innerHTML = skipped.slice(0, 15).map((s, i) => {
+                    const rate = s.plays > 0 ? Math.round(s.skips / s.plays * 100) + '%' : '0%';
+                    return '<tr><td>' + (i + 1) + '</td><td>' + (s.title || 'Unknown') + '</td><td>' + s.skips + '</td><td>' + s.plays + '</td><td>' + rate + '</td></tr>';
+                }).join('');
+            } else {
+                skipTbody.innerHTML = '<tr><td colspan="5" class="dashboard-list-empty">No skips recorded</td></tr>';
+            }
+        }
+
+        // API endpoints table
+        const apiTbody = $('perfApiTable')?.querySelector('tbody');
+        if (apiTbody && d.topEndpoints.length) {
+            apiTbody.innerHTML = d.topEndpoints.map(([url, info], i) => {
+                const age = info.lastSeen ? Math.round((Date.now() - info.lastSeen) / 60000) : '?';
+                return '<tr><td>' + (i + 1) + '</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + url + '</td><td>' + info.method + '</td><td>' + info.count + '</td><td>' + age + 'm ago</td></tr>';
+            }).join('');
+        } else if (apiTbody) {
+            apiTbody.innerHTML = '<tr><td colspan="5" class="dashboard-list-empty">No API data yet</td></tr>';
+        }
+
+        // Recent errors table
+        const errTbody = $('perfErrorsTable')?.querySelector('tbody');
+        if (errTbody && d.recentErrors.length) {
+            errTbody.innerHTML = d.recentErrors.reverse().map(e => {
+                const t = new Date(e.ts).toLocaleTimeString();
+                const codeMap = { 1: 'ABORTED', 2: 'NETWORK', 3: 'DECODE', 4: 'SRC_NOT_SUPPORTED' };
+                return '<tr><td>' + t + '</td><td>' + (e.songId || 'Unknown') + '</td><td>' + (codeMap[e.code] || e.code || 'UNKNOWN') + '</td></tr>';
+            }).join('');
+        } else if (errTbody) {
+            errTbody.innerHTML = '<tr><td colspan="3" class="dashboard-list-empty">No errors</td></tr>';
+        }
+    } catch (e) { console.warn('Perf analytics load failed:', e); }
 }
 
 function loadContentSectionStats() {

@@ -527,6 +527,158 @@
                             </div>
                         </div>
 
+                        <!-- Performance & Usage Analytics -->
+                        <div class="content-card">
+                            <div class="content-card-header">
+                                <h2 class="content-card-title"><i class="fas fa-tachometer-alt" style="color:#8b5cf6;margin-right:8px;"></i> Usage & Performance Analytics</h2>
+                                <div style="display:flex;gap:8px;align-items:center;">
+                                    <select id="perfDateRange" class="form-input" style="width:auto;padding:4px 8px;font-size:11px;" onchange="loadPerfAnalytics()">
+                                        <option value="7">Last 7 Days</option>
+                                        <option value="30" selected>Last 30 Days</option>
+                                        <option value="all">All Time</option>
+                                    </select>
+                                    <button class="action-btn" onclick="loadPerfAnalytics()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+                                </div>
+                            </div>
+                            <div style="padding:16px;">
+                                <!-- KPI Row 1: Playback -->
+                                <div class="perf-kpi-row">
+                                    <div class="perf-kpi-card">
+                                        <div class="perf-kpi-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6;"><i class="fas fa-play-circle"></i></div>
+                                        <div class="perf-kpi-value" id="perfTotalPlays">0</div>
+                                        <div class="perf-kpi-label">Total Songs Played</div>
+                                    </div>
+                                    <div class="perf-kpi-card">
+                                        <div class="perf-kpi-icon" style="background:rgba(59,130,246,0.15);color:#3b82f6;"><i class="fas fa-clock"></i></div>
+                                        <div class="perf-kpi-value" id="perfTotalListenTime">0h</div>
+                                        <div class="perf-kpi-label">Total Listening Time</div>
+                                    </div>
+                                    <div class="perf-kpi-card">
+                                        <div class="perf-kpi-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b;"><i class="fas fa-forward"></i></div>
+                                        <div class="perf-kpi-value" id="perfTotalSkips">0</div>
+                                        <div class="perf-kpi-label">Most Skipped</div>
+                                    </div>
+                                    <div class="perf-kpi-card">
+                                        <div class="perf-kpi-icon" style="background:rgba(16,185,129,0.15);color:#10b981;"><i class="fas fa-bolt"></i></div>
+                                        <div class="perf-kpi-value" id="perfAvgSession">0m</div>
+                                        <div class="perf-kpi-label">Avg Session</div>
+                                    </div>
+                                </div>
+                                <!-- KPI Row 2: Resources -->
+                                <div class="perf-kpi-row">
+                                    <div class="perf-kpi-card">
+                                        <div class="perf-kpi-icon" style="background:rgba(239,68,68,0.15);color:#ef4444;"><i class="fas fa-battery-three-quarters"></i></div>
+                                        <div class="perf-kpi-value" id="perfBattery">--%</div>
+                                        <div class="perf-kpi-label">Battery Level</div>
+                                    </div>
+                                    <div class="perf-kpi-card">
+                                        <div class="perf-kpi-icon" style="background:rgba(236,72,153,0.15);color:#ec4899;"><i class="fas fa-wifi"></i></div>
+                                        <div class="perf-kpi-value" id="perfNetwork">--</div>
+                                        <div class="perf-kpi-label">Network Speed</div>
+                                    </div>
+                                    <div class="perf-kpi-card">
+                                        <div class="perf-kpi-icon" style="background:rgba(168,85,247,0.15);color:#a855f7;"><i class="fas fa-memory"></i></div>
+                                        <div class="perf-kpi-value" id="perfMemory">--</div>
+                                        <div class="perf-kpi-label">Heap Memory</div>
+                                    </div>
+                                    <div class="perf-kpi-card">
+                                        <div class="perf-kpi-icon" style="background:rgba(20,184,166,0.15);color:#14b8a6;"><i class="fas fa-exchange-alt"></i></div>
+                                        <div class="perf-kpi-value" id="perfApiRequests">0</div>
+                                        <div class="perf-kpi-label">API Requests</div>
+                                    </div>
+                                </div>
+                                <!-- KPI Row 3: Errors & Platform -->
+                                <div class="perf-kpi-row">
+                                    <div class="perf-kpi-card">
+                                        <div class="perf-kpi-icon" style="background:rgba(239,68,68,0.15);color:#ef4444;"><i class="fas fa-exclamation-triangle"></i></div>
+                                        <div class="perf-kpi-value" id="perfErrors">0</div>
+                                        <div class="perf-kpi-label">Playback Errors</div>
+                                    </div>
+                                    <div class="perf-kpi-card">
+                                        <div class="perf-kpi-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b;"><i class="fas fa-spinner"></i></div>
+                                        <div class="perf-kpi-value" id="perfBuffering">0s</div>
+                                        <div class="perf-kpi-label">Total Buffering</div>
+                                    </div>
+                                    <div class="perf-kpi-card">
+                                        <div class="perf-kpi-icon" style="background:rgba(59,130,246,0.15);color:#3b82f6;"><i class="fas fa-globe"></i></div>
+                                        <div class="perf-kpi-value" id="perfPlatform">--</div>
+                                        <div class="perf-kpi-label">Web vs PWA</div>
+                                    </div>
+                                    <div class="perf-kpi-card">
+                                        <div class="perf-kpi-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6;"><i class="fas fa-redo"></i></div>
+                                        <div class="perf-kpi-value" id="perfRepeated">0</div>
+                                        <div class="perf-kpi-label">Repeated Requests</div>
+                                    </div>
+                                </div>
+
+                                <!-- Charts Row -->
+                                <div class="dashboard-charts-row" style="margin-top:16px;">
+                                    <div class="content-card" style="flex:1;min-width:300px;">
+                                        <div class="content-card-header"><h2 class="content-card-title" style="font-size:13px;">Daily Sessions</h2></div>
+                                        <div style="padding:12px;height:200px;"><canvas id="perfSessionsChart"></canvas></div>
+                                    </div>
+                                    <div class="content-card" style="flex:1;min-width:300px;">
+                                        <div class="content-card-header"><h2 class="content-card-title" style="font-size:13px;">Device Breakdown</h2></div>
+                                        <div style="padding:12px;height:200px;"><canvas id="perfDeviceChart"></canvas></div>
+                                    </div>
+                                </div>
+                                <div class="dashboard-charts-row">
+                                    <div class="content-card" style="flex:1;min-width:300px;">
+                                        <div class="content-card-header"><h2 class="content-card-title" style="font-size:13px;">Battery History</h2></div>
+                                        <div style="padding:12px;height:200px;"><canvas id="perfBatteryChart"></canvas></div>
+                                    </div>
+                                    <div class="content-card" style="flex:1;min-width:300px;">
+                                        <div class="content-card-header"><h2 class="content-card-title" style="font-size:13px;">Browser Breakdown</h2></div>
+                                        <div style="padding:12px;height:200px;"><canvas id="perfBrowserChart"></canvas></div>
+                                    </div>
+                                </div>
+
+                                <!-- Most Played Songs Table -->
+                                <div class="content-card" style="margin-top:16px;">
+                                    <div class="content-card-header"><h2 class="content-card-title" style="font-size:13px;">Most Played Songs</h2></div>
+                                    <div style="padding:8px 16px;max-height:300px;overflow-y:auto;">
+                                        <table class="perf-table" id="perfTopSongsTable">
+                                            <thead><tr><th>#</th><th>Song</th><th>Plays</th><th>Listen Time</th><th>Skips</th><th>Errors</th><th>Buffering</th></tr></thead>
+                                            <tbody><tr><td colspan="7" class="dashboard-list-empty">No data yet</td></tr></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Most Skipped Songs -->
+                                <div class="content-card" style="margin-top:16px;">
+                                    <div class="content-card-header"><h2 class="content-card-title" style="font-size:13px;">Most Skipped Songs</h2></div>
+                                    <div style="padding:8px 16px;max-height:250px;overflow-y:auto;">
+                                        <table class="perf-table" id="perfSkippedTable">
+                                            <thead><tr><th>#</th><th>Song</th><th>Skips</th><th>Plays</th><th>Skip Rate</th></tr></thead>
+                                            <tbody><tr><td colspan="5" class="dashboard-list-empty">No data yet</td></tr></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- API Requests & Top Endpoints -->
+                                <div class="content-card" style="margin-top:16px;">
+                                    <div class="content-card-header"><h2 class="content-card-title" style="font-size:13px;">API Requests & Endpoints</h2></div>
+                                    <div style="padding:8px 16px;max-height:250px;overflow-y:auto;">
+                                        <table class="perf-table" id="perfApiTable">
+                                            <thead><tr><th>#</th><th>Endpoint</th><th>Method</th><th>Count</th><th>Last Seen</th></tr></thead>
+                                            <tbody><tr><td colspan="5" class="dashboard-list-empty">No data yet</td></tr></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Recent Errors -->
+                                <div class="content-card" style="margin-top:16px;">
+                                    <div class="content-card-header"><h2 class="content-card-title" style="font-size:13px;">Recent Playback Errors</h2></div>
+                                    <div style="padding:8px 16px;max-height:200px;overflow-y:auto;">
+                                        <table class="perf-table" id="perfErrorsTable">
+                                            <thead><tr><th>Time</th><th>Song</th><th>Error Code</th></tr></thead>
+                                            <tbody><tr><td colspan="3" class="dashboard-list-empty">No errors</td></tr></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Builder Tools -->
                         <div class="content-card">
                             <div class="content-card-header">
@@ -3635,6 +3787,7 @@
     <script src="ai-publish-check.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="analytics.js"></script>
+    <script src="perf-analytics.js"></script>
     <script src="builder.js"></script>
     <script src="builder-ads.js"></script>
     <script src="builder-360.js"></script>
