@@ -2661,7 +2661,7 @@ function _applyVEOverridesFromRaw(raw) {
 
         // Apply section visibility and order
         if (data.sectionStates && data.sectionStates.length) {
-            const mainContent = document.querySelector('main') || document.querySelector('#mainContent') || document.body;
+            const mainContent = document.querySelector('.ai-home') || document.querySelector('main') || document.querySelector('#mainContent') || document.body;
             const allSections = mainContent.querySelectorAll('[data-section], header, nav, footer, section');
 
             // First: apply visibility
