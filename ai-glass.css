@@ -6467,3 +6467,95 @@ body.up-fullscreen-open {
         filter: none !important;
     }
 }
+
+/* Voice Agent Controller */
+.va-commands-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+}
+.va-command-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: #e0e0e0;
+    font-size: 0.85rem;
+}
+.va-command-item i {
+    width: 20px;
+    text-align: center;
+    color: #7c8db5;
+    font-size: 0.9rem;
+}
+.va-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+}
+.va-status-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+}
+.va-status-label {
+    color: #999;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+.va-status-value {
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+.range-value {
+    display: inline-block;
+    min-width: 36px;
+    text-align: center;
+    font-weight: 600;
+    color: #5b8def;
+    font-size: 0.85rem;
+    margin-left: 8px;
+}
+.form-range {
+    width: 100%;
+    accent-color: #5b8def;
+}
+.toggle-switch-wrap {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+}
+.toggle-switch-wrap .toggle-input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-switch-wrap .toggle-label {
+    width: 44px;
+    height: 24px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+}
+.toggle-switch-wrap .toggle-label::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+.toggle-switch-wrap .toggle-input:checked + .toggle-label {
+    background: #5b8def;
+}
+.toggle-switch-wrap .toggle-input:checked + .toggle-label::after {
+    transform: translateX(20px);
+}

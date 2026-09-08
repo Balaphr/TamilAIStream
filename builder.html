@@ -319,6 +319,9 @@
                             <button class="builder-sidebar-item" data-page="site360">
                                 <i class="fas fa-circle-nodes"></i> Site 360
                             </button>
+                            <button class="builder-sidebar-item" data-page="voiceagent">
+                                <i class="fas fa-microphone"></i> Voice Agent
+                            </button>
                         </div>
                     </div>
                     <div class="builder-sidebar-section">
@@ -3401,6 +3404,153 @@
     </div>
     <!-- ========== END AI WEBFLOW ========== -->
 
+    <!-- ========== VOICE AGENT CONTROLLER ========== -->
+    <div class="builder-page" id="voiceagentPage" style="display:none;">
+        <div class="builder-page-header">
+            <h1 class="builder-page-title"><i class="fas fa-microphone"></i> Voice Agent Controller</h1>
+            <p class="builder-page-subtitle">Configure the AI Voice Agent that responds to voice commands while music plays</p>
+        </div>
+
+        <div class="builder-content-card">
+            <div class="builder-card-header"><h3>General Settings</h3></div>
+            <div class="builder-card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Enable Voice Agent</label>
+                        <div class="toggle-switch-wrap">
+                            <input type="checkbox" id="vaEnabled" class="toggle-input" checked>
+                            <label for="vaEnabled" class="toggle-label"></label>
+                        </div>
+                        <small class="form-hint">Turn on/off the voice agent entirely. When off, no microphone is used.</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Auto-Arm During Playback</label>
+                        <div class="toggle-switch-wrap">
+                            <input type="checkbox" id="vaAutoArm" class="toggle-input" checked>
+                            <label for="vaAutoArm" class="toggle-label"></label>
+                        </div>
+                        <small class="form-hint">Automatically start listening when a song starts playing.</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Voice Responses (TTS)</label>
+                        <div class="toggle-switch-wrap">
+                            <input type="checkbox" id="vaTtsEnabled" class="toggle-input" checked>
+                            <label for="vaTtsEnabled" class="toggle-label"></label>
+                        </div>
+                        <small class="form-hint">Speak responses aloud when commands are recognized.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="builder-content-card">
+            <div class="builder-card-header"><h3>Voice Recognition</h3></div>
+            <div class="builder-card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Wake Word</label>
+                        <select id="vaWakeWord" class="form-select">
+                            <option value="hello" selected>Hello</option>
+                            <option value="hey">Hey</option>
+                            <option value="hai">Hai</option>
+                            <option value="வணக்கம்">வணக்கம் (Vanakkam)</option>
+                            <option value="ஹலோ">ஹலோ (Hello Tamil)</option>
+                        </select>
+                        <small class="form-hint">The word that activates the voice agent.</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Language</label>
+                        <select id="vaLanguage" class="form-select">
+                            <option value="en-IN" selected>English (India)</option>
+                            <option value="en-US">English (US)</option>
+                            <option value="ta-IN">Tamil</option>
+                        </select>
+                        <small class="form-hint">Primary language for voice recognition.</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Sensitivity</label>
+                        <select id="vaSensitivity" class="form-select">
+                            <option value="low">Low — Fewer false triggers</option>
+                            <option value="medium" selected>Medium — Balanced</option>
+                            <option value="high">High — More responsive</option>
+                        </select>
+                        <small class="form-hint">How sensitive the wake word detection is.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="builder-content-card">
+            <div class="builder-card-header"><h3>Timeouts</h3></div>
+            <div class="builder-card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Wake Word Timeout (seconds)</label>
+                        <input type="range" id="vaWakeTimeout" min="5" max="30" value="15" class="form-range" oninput="document.getElementById('vaWakeTimeoutVal').textContent=this.value+'s'">
+                        <span id="vaWakeTimeoutVal" class="range-value">15s</span>
+                        <small class="form-hint">How long to listen for the wake word before stopping.</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Command Timeout (seconds)</label>
+                        <input type="range" id="vaCommandTimeout" min="3" max="20" value="10" class="form-range" oninput="document.getElementById('vaCommandTimeoutVal').textContent=this.value+'s'">
+                        <span id="vaCommandTimeoutVal" class="range-value">10s</span>
+                        <small class="form-hint">How long to listen for a command after wake word.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="builder-content-card">
+            <div class="builder-card-header"><h3>Supported Commands</h3></div>
+            <div class="builder-card-body">
+                <div class="va-commands-grid">
+                    <div class="va-command-item"><i class="fas fa-forward"></i><span>Next / Next song / அடுத்த பாடல்</span></div>
+                    <div class="va-command-item"><i class="fas fa-backward"></i><span>Previous / முன்னாடி</span></div>
+                    <div class="va-command-item"><i class="fas fa-pause"></i><span>Pause / Stop / நிறுத்து</span></div>
+                    <div class="va-command-item"><i class="fas fa-play"></i><span>Play / Resume / Continue</span></div>
+                    <div class="va-command-item"><i class="fas fa-volume-up"></i><span>Volume up / Louder</span></div>
+                    <div class="va-command-item"><i class="fas fa-volume-down"></i><span>Volume down / Quieter</span></div>
+                    <div class="va-command-item"><i class="fas fa-volume-mute"></i><span>Mute / Silence</span></div>
+                    <div class="va-command-item"><i class="fas fa-radio"></i><span>Play FM / Radio</span></div>
+                    <div class="va-command-item"><i class="fas fa-shuffle"></i><span>Shuffle / Mix</span></div>
+                    <div class="va-command-item"><i class="fas fa-repeat"></i><span>Repeat / Loop</span></div>
+                    <div class="va-command-item"><i class="fas fa-music"></i><span>Play [artist/song/mood]</span></div>
+                </div>
+                <small class="form-hint">Commands work in English, Tamil, and Tanglish. Say "Hello" first, then your command.</small>
+            </div>
+        </div>
+
+        <div class="builder-content-card">
+            <div class="builder-card-header"><h3>Status</h3></div>
+            <div class="builder-card-body">
+                <div class="va-status-grid">
+                    <div class="va-status-item">
+                        <span class="va-status-label">Microphone:</span>
+                        <span class="va-status-value" id="vaStatusMic">Checking...</span>
+                    </div>
+                    <div class="va-status-item">
+                        <span class="va-status-label">Speech Recognition:</span>
+                        <span class="va-status-value" id="vaStatusSR">Checking...</span>
+                    </div>
+                    <div class="va-status-item">
+                        <span class="va-status-label">Agent State:</span>
+                        <span class="va-status-value" id="vaStatusState">Idle</span>
+                    </div>
+                    <div class="va-status-item">
+                        <span class="va-status-label">Current Settings:</span>
+                        <span class="va-status-value" id="vaStatusSettings">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="padding:16px;text-align:right;">
+            <button class="builder-btn" onclick="VoiceAgentCtrl.resetDefaults()"><i class="fas fa-undo"></i> Reset Defaults</button>
+            <button class="builder-btn primary" onclick="VoiceAgentCtrl.save()"><i class="fas fa-save"></i> Save Settings</button>
+        </div>
+    </div>
+    <!-- ========== END VOICE AGENT CONTROLLER ========== -->
+
                     <!-- ========== APPLICATION PAGE ========== -->
                     <div class="builder-page" id="applicationPage" style="display:none;">
                         <div class="builder-page-header">
@@ -3792,6 +3942,7 @@
     <script src="builder-ads.js"></script>
     <script src="builder-360.js"></script>
     <script src="ai-webflow.js"></script>
+    <script src="voice-ai-bot.js"></script>
     <script src="brand-config.js"></script>
 </body>
 </html>

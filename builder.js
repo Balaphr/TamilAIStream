@@ -808,7 +808,8 @@ function navigateTo(page, opts = {}) {
         'application': 'applicationPage',
         'songsCollections': 'songsCollectionsPage',
         'newalbums': 'newAlbumsPage',
-        'changes': 'changesPage'
+        'changes': 'changesPage',
+        'voiceagent': 'voiceagentPage'
     };
 
     const pageId = pageMap[page];
@@ -866,6 +867,7 @@ function _loadPageData(page) {
     if (page === 'preview') updatePreview();
     if (page === 'analytics') { loadAnalyticsData(); initAnalyticsTabs(); }
     if (page === 'site360' && typeof Site360 !== 'undefined') Site360.init();
+    if (page === 'voiceagent' && typeof VoiceAgentCtrl !== 'undefined') VoiceAgentCtrl.init();
     if (page === 'aiwebflow' && typeof AIWebflow !== 'undefined') AIWebflow.activate();
     if (page === 'application') AppBuilder.loadApplicationSettings();
     if (page === 'trash') loadTrashPage();
@@ -3348,7 +3350,8 @@ function initBuilder() {
         'application': 'applicationPage', 'trash': 'trashPage',
         'visualeditor': 'visualeditorPage', 'aiwebflow': 'aiwebflowPage',
         'preview': 'previewPage', 'analytics': 'analyticsPage', 'site360': 'site360Page',
-        'ads': 'adsPage', 'upcomingReleases': 'upcomingReleasesPage'
+        'ads': 'adsPage', 'upcomingReleases': 'upcomingReleasesPage',
+        'voiceagent': 'voiceagentPage'
     };
     if (savedBuilderPage && _pageIdMap[savedBuilderPage] && document.getElementById(_pageIdMap[savedBuilderPage])) {
         navigateTo(savedBuilderPage, { _fromRefresh: true });
@@ -12029,3 +12032,114 @@ local.properties
 })();
 
 if (typeof window !== 'undefined') window.AppBuilder = AppBuilder;
+
+// Voice Agent Controller
+const VoiceAgentCtrl = (() => {
+    const _storageKey = 'va_agent_settings';
+    const _defaults = {
+        enabled: true,
+        wakeWord: 'hello',
+        wakeTimeout: 15,
+        commandTimeout: 10,
+        language: 'en-IN',
+        sensitivity: 'medium',
+        ttsEnabled: true,
+        autoArm: true,
+        supportedCommands: ['next', 'previous', 'pause', 'play', 'volume up', 'volume down', 'mute', 'fm', 'shuffle', 'repeat', 'play song']
+    };
+
+    function _getSettings() {
+        try {
+            const raw = localStorage.getItem(_storageKey);
+            return raw ? { ..._defaults, ...JSON.parse(raw) } : { ..._defaults };
+        } catch { return { ..._defaults }; }
+    }
+
+    function _applyToForm(settings) {
+        const el = (id) => document.getElementById(id);
+        if (el('vaEnabled')) el('vaEnabled').checked = settings.enabled;
+        if (el('vaAutoArm')) el('vaAutoArm').checked = settings.autoArm;
+        if (el('vaTtsEnabled')) el('vaTtsEnabled').checked = settings.ttsEnabled;
+        if (el('vaWakeWord')) el('vaWakeWord').value = settings.wakeWord;
+        if (el('vaLanguage')) el('vaLanguage').value = settings.language;
+        if (el('vaSensitivity')) el('vaSensitivity').value = settings.sensitivity;
+        if (el('vaWakeTimeout')) {
+            el('vaWakeTimeout').value = settings.wakeTimeout;
+            const valEl = document.getElementById('vaWakeTimeoutVal');
+            if (valEl) valEl.textContent = settings.wakeTimeout + 's';
+        }
+        if (el('vaCommandTimeout')) {
+            el('vaCommandTimeout').value = settings.commandTimeout;
+            const valEl = document.getElementById('vaCommandTimeoutVal');
+            if (valEl) valEl.textContent = settings.commandTimeout + 's';
+        }
+    }
+
+    function _readFromForm() {
+        const el = (id) => document.getElementById(id);
+        return {
+            enabled: el('vaEnabled')?.checked ?? true,
+            autoArm: el('vaAutoArm')?.checked ?? true,
+            ttsEnabled: el('vaTtsEnabled')?.checked ?? true,
+            wakeWord: el('vaWakeWord')?.value || 'hello',
+            language: el('vaLanguage')?.value || 'en-IN',
+            sensitivity: el('vaSensitivity')?.value || 'medium',
+            wakeTimeout: parseInt(el('vaWakeTimeout')?.value) || 15,
+            commandTimeout: parseInt(el('vaCommandTimeout')?.value) || 10,
+            supportedCommands: _defaults.supportedCommands
+        };
+    }
+
+    function _updateStatus() {
+        const el = (id) => document.getElementById(id);
+        if (el('vaStatusMic')) {
+            navigator.mediaDevices?.getUserMedia({ audio: true })
+                .then(() => { el('vaStatusMic').textContent = 'Available'; el('vaStatusMic').style.color = '#4caf50'; })
+                .catch(() => { el('vaStatusMic').textContent = 'Denied/Unavailable'; el('vaStatusMic').style.color = '#f44336'; });
+        }
+        if (el('vaStatusSR')) {
+            const sr = window.SpeechRecognition || window.webkitSpeechRecognition;
+            el('vaStatusSR').textContent = sr ? 'Supported' : 'Not Supported';
+            el('vaStatusSR').style.color = sr ? '#4caf50' : '#f44336';
+        }
+        if (el('vaStatusState')) {
+            if (typeof VoiceAIBot !== 'undefined') {
+                el('vaStatusState').textContent = VoiceAIBot.isActive() ? 'Active (Listening)' : (VoiceAIBot.isDisabled() ? 'Disabled' : 'Idle');
+                el('vaStatusState').style.color = VoiceAIBot.isActive() ? '#4caf50' : (VoiceAIBot.isDisabled() ? '#f44336' : '#ff9800');
+            } else {
+                el('vaStatusState').textContent = 'Module Not Loaded';
+                el('vaStatusState').style.color = '#9e9e9e';
+            }
+        }
+        if (el('vaStatusSettings')) {
+            const s = _getSettings();
+            el('vaStatusSettings').textContent = `Wake: "${s.wakeWord}" | Lang: ${s.language} | Sensitivity: ${s.sensitivity}`;
+        }
+    }
+
+    function init() {
+        const settings = _getSettings();
+        _applyToForm(settings);
+        _updateStatus();
+    }
+
+    function save() {
+        const settings = _readFromForm();
+        localStorage.setItem(_storageKey, JSON.stringify(settings));
+        if (typeof VoiceAIBot !== 'undefined') VoiceAIBot.updateSettings(settings);
+        _updateStatus();
+        showToast('Voice Agent settings saved', 'success');
+    }
+
+    function resetDefaults() {
+        localStorage.removeItem(_storageKey);
+        _applyToForm(_defaults);
+        if (typeof VoiceAIBot !== 'undefined') VoiceAIBot.updateSettings(_defaults);
+        _updateStatus();
+        showToast('Voice Agent settings reset to defaults', 'info');
+    }
+
+    return { init, save, resetDefaults };
+})();
+
+if (typeof window !== 'undefined') window.VoiceAgentCtrl = VoiceAgentCtrl;

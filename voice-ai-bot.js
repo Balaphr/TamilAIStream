@@ -1,19 +1,36 @@
 ﻿'use strict';
 
+/**
+ * Voice AI Agent — Upgraded
+ * - Works while music is playing
+ * - Auto-arms when playback starts, disarms when paused/stopped
+ * - Settings: enable/disable, wake word, timeout, language, sensitivity, TTS
+ * - Tamil, English, Tanglish command support
+ * - No background recording when disabled
+ * - Stops mic immediately after command or timeout
+ */
 (() => {
     if (window.__VA_INSTALLED__) return;
     window.__VA_INSTALLED__ = true;
 
+    // ─── Settings Keys ───
+    const SETTINGS_KEY = 'va_agent_settings';
     const VOICE_TTS_KEY = 'va_tts_enabled';
-    const VOICE_CONSENT_KEY = 'va_consent_granted';
 
-    const CONFIG = {
-        WAKE_WINDOW_MS: 15000,
-        COMMAND_WINDOW_MS: 10000,
-        COOLDOWN_MS: 1400,
-        MIN_INTERIM_CHARS: 2,
+    // ─── Default Settings ───
+    const DEFAULTS = {
+        enabled: true,
+        wakeWord: 'hello',
+        wakeTimeout: 15000,
+        commandTimeout: 10000,
+        language: 'en-IN',
+        sensitivity: 'medium',
+        ttsEnabled: true,
+        autoArm: true,
+        supportedCommands: ['next', 'previous', 'pause', 'play', 'volume', 'mute', 'fm', 'shuffle', 'repeat']
     };
 
+    let _settings = { ...DEFAULTS };
     let _state = 'idle';
     let _activeStage = null;
     let _recognition = null;
@@ -29,8 +46,44 @@
     let _bubbleTitle = null;
     let _bubbleHint = null;
     let _wave = null;
+    let _autoArmListenerAttached = false;
+    let _wasPlayingBeforeHide = false;
 
-    try { _tts = localStorage.getItem(VOICE_TTS_KEY) !== '0'; } catch (e) {}
+    // ─── Settings Management ───
+    function loadSettings() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+            if (saved && typeof saved === 'object') {
+                _settings = { ...DEFAULTS, ...saved };
+            }
+        } catch (e) {}
+        _tts = _settings.ttsEnabled;
+        try { if (localStorage.getItem(VOICE_TTS_KEY) === '0') _tts = false; } catch (e) {}
+    }
+
+    function saveSettings() {
+        try {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(_settings));
+            localStorage.setItem(VOICE_TTS_KEY, _tts ? '1' : '0');
+        } catch (e) {}
+    }
+
+    function getSettings() {
+        return { ..._settings };
+    }
+
+    function updateSettings(patch) {
+        _settings = { ..._settings, ...patch };
+        _tts = _settings.ttsEnabled;
+        saveSettings();
+        // If disabled, deactivate immediately
+        if (!_settings.enabled && _state !== 'idle') {
+            deactivate();
+            hideTrigger();
+        } else if (_settings.enabled) {
+            showTrigger();
+        }
+    }
 
     const getSpeechRecognition = () => window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -54,13 +107,6 @@
 
     const hasPlayback = () => !!(window.currentPlaybackTrack || window.currentStation) || !!(window.audioPlayer && window.audioPlayer.src);
 
-    const activeKey = () => {
-        const t = window.currentPlaybackTrack;
-        if (t && (t.id || t.title)) return 's:' + (t.id || t.title);
-        if (window.currentStation) return 'fm:' + String(window.currentStation).toLowerCase();
-        return '';
-    };
-
     const feedback = (msg, type) => {
         if (typeof showToast === 'function') showToast(msg, type || 'info');
         if (_bubbleTitle) _bubbleTitle.textContent = msg;
@@ -74,7 +120,7 @@
             const safe = String(text || '').replace(/[^ a-zA-Z0-9.,]/g, ' ').slice(0, 90);
             if (!safe.trim()) return;
             const u = new SpeechSynthesisUtterance(safe);
-            u.lang = 'en-IN';
+            u.lang = _settings.language || 'en-IN';
             u.rate = 1.02;
             u.volume = 1;
             window.speechSynthesis.cancel();
@@ -83,6 +129,7 @@
     }
 
     const canUseVoice = () => {
+        if (!_settings.enabled) return false;
         if (!getSpeechRecognition()) return false;
         if (_denied) return false;
         return true;
@@ -107,6 +154,7 @@
 
     function startListener(lang, stage, onFinal, onEnd) {
         stopRecognition();
+        if (!_settings.enabled) return false;
         const SR = getSpeechRecognition();
         if (!SR) {
             setState('error', 'Voice AI is not supported on this browser.');
@@ -126,19 +174,19 @@
         rec.interimResults = true;
         rec.maxAlternatives = 3;
 
-        let withTimedWindow = true;
+        const timeoutMs = stage === 'wake' ? _settings.wakeTimeout : _settings.commandTimeout;
         _stageTimer = setTimeout(() => {
             if (_activeStage === stage) {
                 stopRecognition();
                 if (stage === 'wake') {
                     setState('idle');
-                    feedback('Time up. Tap the mic and say "Hello" when you are ready.', 'info');
+                    // Silent timeout for wake word — no annoying message
                 } else if (!_handled) {
                     setState('idle');
-                    feedback('Time up. Try "Next song" or "Play Dhanush hits".', 'info');
+                    feedback('Try "Next song" or "Play Dhanush hits".', 'info');
                 }
             }
-        }, stage === 'wake' ? CONFIG.WAKE_WINDOW_MS : CONFIG.COMMAND_WINDOW_MS);
+        }, timeoutMs);
 
         let interimBuffer = '';
         rec.onresult = (e) => {
@@ -159,20 +207,10 @@
             if (gotFinal) {
                 setBusyFeedback(stage);
                 onFinal(_accum);
-            } else if ((_accum + ' ' + interimBuffer).trim().length >= CONFIG.MIN_INTERIM_CHARS) {
+            } else if ((_accum + ' ' + interimBuffer).trim().length >= 2) {
                 if (stage === 'command') setState('command-active');
                 else setState('wake-active');
             }
-        };
-
-        const rearm = () => {
-            try {
-                const rr = _recognition;
-                rec.onend = null;
-                if (rr) { try { rr.stop(); } catch (e) {} }
-                rec.onend = onEndHandler;
-                rec.start();
-            } catch (e) {}
         };
 
         const onEndHandler = () => {
@@ -202,7 +240,6 @@
                     _handled = true;
                     stopRecognition();
                     setState('idle');
-                    feedback('I did not catch that. Try "Next song" or "Play Dhanush hits".', 'info');
                 }
                 return;
             }
@@ -210,13 +247,12 @@
                 _denied = true;
                 stopRecognition();
                 setState('denied');
-                feedback('Microphone permission is blocked. Enable it in browser settings and tap Voice AI again.', 'error');
+                feedback('Microphone permission is blocked. Enable it in browser settings.', 'error');
                 return;
             }
             if (err === 'network') {
                 stopRecognition();
                 setState('idle');
-                feedback('Voice recognition network error. Check your connection and try again.', 'error');
                 return;
             }
             if (err === 'aborted') {
@@ -229,7 +265,7 @@
             if (err === 'audio-capture') {
                 stopRecognition();
                 setState('idle');
-                feedback('No microphone detected. Plug in a mic or headphones and try again.', 'error');
+                feedback('No microphone detected.', 'error');
                 return;
             }
             stopRecognition();
@@ -250,22 +286,27 @@
         else setState('wake-active');
     }
 
-    const WAKE_TOKENS = ['hello', 'halo', 'hallo', 'hellow', 'hey', 'hai', 'hi', 'halo', 'ஹலோ', 'ஹெலோ', 'ஹல்லோ', 'வணக்கம்'];
+    // ─── Wake Word Detection ───
+    const WAKE_TOKENS = ['hello', 'halo', 'hallo', 'hellow', 'hey', 'hai', 'hi', 'ஹலோ', 'ஹெலோ', 'ஹல்லோ', 'வணக்கம்'];
 
     function findWake(n) {
+        const customWake = (_settings.wakeWord || 'hello').toLowerCase().split(',').map(s => s.trim());
+        const allTokens = [...new Set([...WAKE_TOKENS, ...customWake])];
         const words = n.split(' ');
         for (const w of words) {
-            if (WAKE_TOKENS.indexOf(w) !== -1) return true;
+            if (allTokens.indexOf(w) !== -1) return true;
         }
         return false;
     }
 
     function textAfterWake(text, n) {
+        const customWake = (_settings.wakeWord || 'hello').toLowerCase().split(',').map(s => s.trim());
+        const allTokens = [...new Set([...WAKE_TOKENS, ...customWake])];
         const words = n.split(' ');
         const rawWords = String(text || '').replace(/\s+/g, ' ').trim().split(' ');
         let idx = -1;
         for (let i = 0; i < words.length; i++) {
-            if (WAKE_TOKENS.indexOf(words[i]) !== -1) { idx = i; break; }
+            if (allTokens.indexOf(words[i]) !== -1) { idx = i; break; }
         }
         if (idx === -1) return '';
         return rawWords.slice(idx + 1).join(' ');
@@ -273,12 +314,13 @@
 
     function arm() {
         if (!canUseVoice()) {
+            if (!_settings.enabled) return false;
             if (!getSpeechRecognition()) {
                 setState('error', 'Voice AI is not supported on this browser.');
                 return false;
             }
             if (_denied) {
-                feedback('Microphone permission is blocked. Enable it in browser settings.', 'error');
+                feedback('Microphone permission is blocked.', 'error');
                 return false;
             }
             return false;
@@ -292,20 +334,21 @@
     }
 
     function startWakeListening() {
+        if (!_settings.enabled) return;
         stopRecognition();
         setState('wake');
-        startListener('en-IN', 'wake', (text) => {
+        startListener(_settings.language || 'en-IN', 'wake', (text) => {
             const n = norm(text);
             if (findWake(n)) {
                 const rest = textAfterWake(text, n);
                 const restNorm = norm(rest).replace(/\s+/g, '').replace(/^[.!?]+/, '');
-                if (restNorm.length >= CONFIG.MIN_INTERIM_CHARS) {
+                if (restNorm.length >= 2) {
                     executeCommand(rest);
                 } else {
                     startCommandListening();
                 }
             } else {
-                feedback('I did not hear "Hello". Say "Hello" to activate me.', 'info');
+                // Silent — don't show error for non-wake words during auto-arm
                 setState('idle');
             }
         }, () => {
@@ -314,354 +357,36 @@
     }
 
     function startCommandListening() {
+        if (!_settings.enabled) return;
         stopRecognition();
         setState('command');
-        startListener('ta-IN', 'command', (text) => {
+        const lang = _settings.language === 'ta-IN' ? 'ta-IN' : (_settings.language || 'en-IN');
+        startListener(lang, 'command', (text) => {
             _handled = true;
             stopRecognition();
             executeCommand(text);
         }, () => {
             setState('idle');
-            feedback('I did not catch that. Try "Next song" or "Play Dhanush hits".', 'info');
         });
     }
 
-    const FM_WORDS = ['fm', 'radio', 'station', 'radio', 'radiyo', 'reydiyo', 'ridio', 'rally', 'रडियो', 'ரேடியோ', 'ரேடியோவ'];
-
-    const FREQ_RE = /\b(\d{2}(?:\.\d)?)\s*(?:fm|radio)?\b/;
-
-    function resolveStation(wanted) {
-        const wk = String(wanted || '').toLowerCase();
-        const stations = window.DataStore && typeof window.DataStore.getStations === 'function' ? window.DataStore.getStations() : [];
-        const list = stations.filter((s) => s && (s.streamUrl || s.url));
-        if (!list.length) return null;
-        const freqMatch = wk.match(FREQ_RE);
-        if (freqMatch) {
-            const target = parseFloat(freqMatch[1]);
-            let best = null;
-            let bestDiff = Infinity;
-            for (const s of list) {
-                const v = parseFloat(String(s.frequency || s.freq || '').replace(/[^0-9.]/g, ''));
-                if (!isNaN(v)) {
-                    const d = Math.abs(v - target);
-                    if (d < bestDiff) { bestDiff = d; best = s; }
-                }
-            }
-            if (best) return best;
-            for (const s of list) {
-                const v = parseFloat(String(s.frequency || s.freq || '').replace(/[^0-9.]/g, ''));
-                if (!isNaN(v) && String(s.frequency || s.freq || '').indexOf(freqMatch[1]) !== -1) return s;
-            }
-        }
-        let best = null;
-        let bestScore = 0;
-        for (const s of list) {
-            const hay = norm((s.name || '') + ' ' + (s.category || '') + ' ' + (s.city || '') + ' ' + (s.language || '') + ' ' + (s.genre || ''));
-            const words = wk.split(' ').filter((w) => w.length > 1);
-            let score = 0;
-            for (const w of words) {
-                if (hay.indexOf(w) !== -1) score += w.length;
-            }
-            if (score > bestScore) { bestScore = score; best = s; }
-        }
-        if (best && bestScore > 0) return best;
-        return null;
-    }
-
-    function playFm(wanted) {
-        const pending = resolveStation(wanted);
-        let text;
-        if (!pending) {
-            const stations = window.DataStore && typeof window.DataStore.getStations === 'function' ? window.DataStore.getStations() : [];
-            const first = stations.find((s) => s && (s.streamUrl || s.url));
-            if (!first) {
-                feedback('No FM stations available to play right now.', 'error');
-                setState('idle');
-                return;
-            }
-            text = 'FM station not found, starting ' + (first.name || 'FM') + ' instead.';
-            setState('thinking');
-            window.playStation(first.name, first.id);
-        } else {
-            text = 'Playing ' + (pending.name || 'FM') + '.';
-            setState('thinking');
-            window.playStation(pending.name, pending.id);
-        }
-        feedback(text, 'success');
-        setState('idle');
-    }
-
-    const PLAY_WORDS = [
-        'play', 'podu', 'poadu', 'podunga', 'podhu', 'poot', 'poddu', 'pla', 'poru', 'podu',
-        'boattu', 'potru', 'potu', 'vai', 'podungo', 'poadunga', 'podunga', 'play pannu', 'play podu',
-        'play the', 'please play', 'i want', 'want to hear', 'let me hear', 'play some', 'play song',
-        'play songs', 'music podu', 'songs podu', 'pattu podu', 'patta podu', 'pattugal', 'pattugal podu',
-        'padaal', 'padaal podu', 'padaalu', 'pattugal', 'pattal', 'geet', 'gaane', 'song', 'songs',
-        'songu', 'music', 'hits', 'hit', 'hit songs', 'pattu', 'patta', 'pathu', 'paatu', 'padam',
-        'kele', 'kelo', 'kaka', 'vaanga', 'vaa', 'veer', 'tha', 'sense', 'panni', 'pannu',
-    ];
-
-    const STRIP_WORDS = ['play', 'songs', 'song', 'music', 'podunga', 'podu', 'poadu', 'podhu', 'poddu',
-        'pattugal', 'hits', 'hit', 'please', 'the', 'some', 'for', 'kaka', 'kaetu', 'gimme', 'give',
-        'me', 'a', 'an', 'vaanga', 'panni', 'pannu', 'pannunga', 'podu da', 'podu ma', 'boattu',
-        'vecha', 'vai', 'poru', 'poadunga', 'podunga'];
-
-    function stripTarget(text) {
-        const raw = String(text || '');
-        const n = norm(raw);
-        let out = n;
-        for (const w of STRIP_WORDS) {
-            out = out.replace(new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g'), ' ');
-        }
-        out = out.replace(/\blove songs?\b/g, ' love ');
-        out = out.replace(/\bmelody songs?\b/g, ' melody ');
-        out = out.replace(/\bdevotional songs?\b/g, ' devotional ');
-        out = out.replace(/\bsad songs?\b/g, ' sad ');
-        out = out.replace(/\bhappy songs?\b/g, ' happy ');
-        out = out.replace(/\bparty songs?\b/g, ' party ');
-        out = out.replace(/\bchill songs?\b/g, ' chill ');
-        out = out.replace(/\bworkout songs?\b/g, ' workout ');
-        out = out.replace(/\bclassical songs?\b/g, ' classical ');
-        out = out.replace(/\bfolk songs?\b/g, ' folk ');
-        out = out.replace(/\brock songs?\b/g, ' rock ');
-        out = out.replace(/\bevergreen songs?\b/g, ' evergreen ');
-        out = out.replace(/\b90s songs?\b/g, ' 90s ');
-        out = out.replace(/\b80s songs?\b/g, ' 80s ');
-        out = out.replace(/\b2k songs?\b/g, ' 2k ');
-        return out.replace(/\s+/g, ' ').replace(/'s/g, ' s').trim();
-    }
-
-    function findArtist(wanted, songs) {
-        const wk = norm(wanted);
-        const list = songs && songs.length ? songs : (window.DataStore && typeof window.DataStore.getSongs === 'function' ? window.DataStore.getSongs() : []);
-        const ranked = [];
-        for (const s of list) {
-            const artist = String(s.artist || '').toLowerCase();
-            const movie = String(s.movie || '').toLowerCase();
-            const title = String(s.title || '').toLowerCase();
-            const tokens = wk.split(' ');
-            let score = 0;
-            for (const t of tokens) {
-                if (t.length < 2) continue;
-                if (artist.indexOf(t) !== -1) score += t.length * 2;
-                if (movie.indexOf(t) !== -1 && t.length > 3) score += t.length;
-                if (title.indexOf(t) !== -1 && t.length > 3) score += Math.floor(t.length / 2);
-            }
-            if (score > 0) {
-                ranked.push({ s: s, score: score });
-            }
-        }
-        ranked.sort((a, b) => b.score - a.score);
-        const artistSet = {};
-        const ordered = [];
-        for (const r of ranked) {
-            const key = String(r.s.artist || 'unknown').toLowerCase();
-            if (!artistSet[key]) {
-                artistSet[key] = true;
-                ordered.push(r.s.artist || 'unknown');
-            }
-            if (ordered.length >= 12) break;
-        }
-        return { ranked: ranked, artists: ordered };
-    }
-
-    function playArtistSongs(artistName, ranked) {
-        const gathered = ranked.map((r) => r.s);
-        if (!gathered.length) return false;
-        setState('thinking');
-        feedback('Playing ' + artistName + ' hit songs.', 'success');
-        window.playSong(gathered[0], gathered);
-        setState('idle');
-        return true;
-    }
-
-    const MOOD_PATTERNS = {
-        love: [/\blove\b/, /\bkadhal\b/, /\bkadhala\b/, /\bkadal\b/, /\bromance\b/, /\bromantic\b/, /\bromantic songs\b/, /\bகாதல்\b/, /\bகாதலா\b/],
-        melody: [/\bmelody\b/, /\bmelodies\b/, /\bsoft\b/, /\bcalm\b/, /\bsoothing\b/, /\bமெலடி\b/, /\bமெல்ல\b/],
-        devotional: [/\bdevotional\b/, /\bbhakti\b/, /\bspiritual\b/, /\bdevotion\b/, /\bgods\b/, /\bgod\b/, /\bganesha\b/, /\bshiva\b/, /\bvishnu\b/, /\bamma\b/, /\banjaneya\b/, /\bmaria\b/, /\bambal\b/, /\bபக்தி\b/, /\bதெய்வம்\b/],
-        sad: [/\bsad\b/, /\bsorrow\b/, /\bcry\b/, /\bweep\b/, /\bheartbreak\b/, /\bmiss\b/, /\bsob\b/, /\bdukkha\b/, /\bvivaham\b/, /\bமனசு\b/],
-        happy: [/\bhappy\b/, /\bcheer\b/, /\bjoy\b/, /\bjoyful\b/, /\bfun\b/, /\buplift\b/, /\bsantosham\b/, /\bsantosh\b/],
-        party: [/\bparty\b/, /\bcelebrations?\b/, /\bcelebration\b/, /\bkuthu\b/, /\bmass\b/, /\bbeat\b/, /\bdisco\b/, /\bdance\b/, /\bpunda\b/, /\bமாஸ்\b/, /\bகுத்து\b/],
-        chill: [/\bchill\b/, /\bchill out\b/, /\brelax\b/, /\bpeaceful\b/, /\blower\b/, /\bcalm\b/, /\bsoft\b/],
-        workout: [/\bworkout\b/, /\bexercise\b/, /\bgym\b/, /\bitrain\b/, /\bpump\b/, /\bcardio\b/],
-        classical: [/\bclassical\b/, /\bcarnatic\b/, /\bbharatham\b/, /\btraditional\b/, /\bமெட்ராஸ்\b/, /\bபாரம்பரிய\b/, /\bசென்னை\b/],
-        folk: [/\bfolk\b/, /\bsueli\b/, /\brural\b/, /\bgrama\b/, /\bgena\b/, /\bநாட்டுப்புற\b/],
-        rock: [/\brock\b/, /\bmetal\b/, /\bloud\b/, /\bthunder\b/, /\bred\b/],
-        evergreen: [/\bevergreen\b/, /\bold\b/, /\bretro\b/, /\bvintage\b/, /\bclassic\b/, /\bnostalgia\b/, /\bமறை\b/],
-    };
-
-    const DECADE_PATTERNS = {
-        '90s': [/\b90s\b/, /\b90 s\b/, /\b90\b/, /\bnineties\b/, /\b1990\b/, /\b1995\b/, /\b1999\b/, /\bஐந்து\b/],
-        '80s': [/\b80s\b/, /\b80 s\b/, /\beighties\b/, /\b1980\b/, /\b1985\b/, /\b1989\b/],
-        '2k': [/\b2000s\b/, /\b2k\b/, /\b2 k\b/, /\btwo thousand\b/, /\b2000 2010\b/, /\b2ks\b/],
-    };
-
-    function songMatches(s, moodKey) {
-        const year = String(s.year || '');
-        const decade = String(s.decade || '');
-        const movie = String(s.movie || '');
-        const album = String(s.album || '');
-        const title = String(s.title || '');
-        const artist = String(s.artist || '');
-        if (moodKey === '90s') {
-            return decade === '90s' || /^199\d$/.test(year) || /\b(199[0-9])\b/.test(movie) || /\b(199[0-9])\b/.test(album) || /\b(199[0-9])\b/.test(title);
-        }
-        if (moodKey === '80s') {
-            return decade === '80s' || /^198\d$/.test(year) || /\b(198[0-9])\b/.test(movie) || /\b(198[0-9])\b/.test(album);
-        }
-        if (moodKey === '2k') {
-            return decade === '2000s' || decade === '2k' || /^200\d$/.test(year) || /^201\d$/.test(year) || /\b(200[0-9])\b/.test(movie) || /\b(201[0-9])\b/.test(movie) || /\b(200[0-9])\b/.test(album) || /\b(201[0-9])\b/.test(album);
-        }
-        const hay = title + ' ' + movie + ' ' + artist + ' ' + (s.genre || '') + ' ' + (s.mood || '');
-        const lk = hay.toLowerCase();
-        return matchAny(lk, MOOD_PATTERNS[moodKey] || []);
-    }
-
-    function findMoodOrDecade(wanted, songs) {
-        const wk = norm(wanted);
-        const list = songs && songs.length ? songs : (window.DataStore && typeof window.DataStore.getSongs === 'function' ? window.DataStore.getSongs() : []);
-        for (const key of Object.keys(DECADE_PATTERNS)) {
-            if (matchAny(wk, DECADE_PATTERNS[key])) {
-                const out = list.filter((s) => songMatches(s, key) && (s.audioUrl || s.streamUrl));
-                if (out.length >= 3) return { type: 'decade', key: key, songs: out };
-            }
-        }
-        let bestKey = null;
-        let bestScore = 0;
-        for (const key of Object.keys(MOOD_PATTERNS)) {
-            const pats = MOOD_PATTERNS[key];
-            let score = 0;
-            for (const p of pats) {
-                const m = wk.match(p);
-                if (m) score += m[0].length + 4;
-            }
-            if (score > bestScore) { bestScore = score; bestKey = key; }
-        }
-        if (bestKey) {
-            const out = list.filter((s) => songMatches(s, bestKey) && (s.audioUrl || s.streamUrl));
-            if (out.length >= 3) return { type: 'mood', key: bestKey, songs: out };
-        }
-        return null;
-    }
-
-    function findPlaylist(wanted) {
-        let playlists = [];
-        try {
-            if (window.DataStore && typeof window.DataStore.getPlaylists === 'function') {
-                playlists = window.DataStore.getPlaylists() || [];
-            }
-            const custom = JSON.parse(localStorage.getItem('pm_custom_playlists') || '[]') || [];
-            const ai = JSON.parse(localStorage.getItem('pm_ai_playlists') || '[]') || [];
-            playlists = playlists.concat(custom).concat(ai);
-        } catch (e) {}
-        const wk = norm(wanted);
-        let best = null;
-        let bestScore = 0;
-        for (const pl of playlists) {
-            const name = String(pl.name || pl.title || '').toLowerCase();
-            const pts = wk.split(' ').filter((w) => w.length > 1);
-            let score = 0;
-            for (const t of pts) {
-                if (name === t) score += 6;
-                else if (name.indexOf(t) !== -1) score += t.length * 2;
-            }
-            if (wk && name.indexOf(wk) !== -1) score += 5;
-            if (score > bestScore) { bestScore = score; best = pl; }
-        }
-        if (best && bestScore > 0) {
-            const songs = (best.songs && best.songs.length) ? best.songs : [];
-            if (songs.length) return { type: 'playlist', key: best.name || best.title, songs: songs };
-        }
-        return null;
-    }
-
-    function findTitle(wanted, songs) {
-        const wk = norm(wanted);
-        const list = songs && songs.length ? songs : (window.DataStore && typeof window.DataStore.getSongs === 'function' ? window.DataStore.getSongs() : []);
-        const words = wk.split(' ').filter((w) => w.length > 1);
-        let best = null;
-        let bestScore = 0;
-        for (const s of list) {
-            const title = String(s.title || '').toLowerCase();
-            if (!title) continue;
-            let score = 0;
-            for (const w of words) {
-                if (title.indexOf(w) !== -1) score += w.length;
-            }
-            if (wk && title === wk) score += 8;
-            if (score > bestScore) { bestScore = score; best = s; }
-        }
-        if (best && bestScore > 3) return { type: 'title', key: best.title, songs: [best] };
-        return null;
-    }
-
-    function findCollection(wanted) {
-        const wk = norm(wanted);
-        const ds = window.DataStore;
-        if (!ds) return null;
-        const groups = [];
-        if (typeof ds.getMusicCollections === 'function') groups.push({ label: 'music', items: ds.getMusicCollections() || [] });
-        if (typeof ds.getMoviesCollections === 'function') groups.push({ label: 'movies', items: ds.getMoviesCollections() || [] });
-        if (typeof ds.getYearlyCollections === 'function') groups.push({ label: 'yearly', items: ds.getYearlyCollections() || [] });
-        if (typeof ds.getLatestCollections === 'function') groups.push({ label: 'latest', items: ds.getLatestCollections() || [] });
-
-        let best = null;
-        let bestInfo = null;
-        for (const g of groups) {
-            for (const col of g.items) {
-                const name = String(col.name || col.title || '').toLowerCase();
-                let score = 0;
-                const words = wk.split(' ').filter((w) => w.length > 1);
-                for (const w of words) {
-                    if (name === w) score += 5;
-                    else if (name.indexOf(w) !== -1) score += w.length;
-                }
-                if (wk && (name === wk || name.indexOf(wk) !== -1)) score += 6;
-                if (score > 0 && score > (bestInfo ? bestInfo.score : 0)) {
-                    bestInfo = { score: score, label: g.label };
-                    best = col;
-                }
-            }
-        }
-        if (best) {
-            let songs = best.songs || best.tracks || best.items || [];
-            if (best.id && Array.isArray(best.songIds)) {
-                const all = ds.getSongs ? ds.getSongs() : [];
-                songs = best.songIds.map((id) => all.find((s) => String(s.id) === String(id) || s.title === id || s.audioUrl === id)).filter(Boolean);
-            }
-            if (best.year) {
-                const all = ds.getSongs ? ds.getSongs() : [];
-                const yrArr = String(best.year).split('-').map((v) => v.trim());
-                songs = all.filter((s) => yrArr.some((y) => (s.year || '') === y || (s.decade || '') === y));
-            }
-            const playable = songs.filter((s) => s && (s.audioUrl || s.streamUrl));
-            if (playable.length) return { type: 'collection', key: best.name || best.title, songs: playable };
-        }
-        return null;
-    }
-
-    function playSongList(songList) {
-        if (!songList || !songList.length) return false;
-        setState('thinking');
-        window.playSong(songList[0], songList);
-        setState('idle');
-        return true;
-    }
-
+    // ─── Intent Patterns ───
     const INTENT_PATTERNS = {
-        next: [/\bnext\b/, /\bnextsong\b/, /\badutha\b/, /\baduthu\b/, /\baduttha\b/, /\bskip\b/, /\bforward\b/, /\bscaleup\b/, /\bஅடுத்த\b/],
+        next: [/\bnext\b/, /\bnextsong\b/, /\badutha\b/, /\baduthu\b/, /\baduttha\b/, /\bskip\b/, /\bforward\b/, /\bஅடுத்த\b/, /\bஅடுத்த\s*பாடல்\b/, /\bஅடுத்த\s*song\b/],
         prev: [/\bprevious\b/, /\bprev\b/, /\bmunnadi\b/, /\bmunal\b/, /\bmunnaal\b/, /\bback\b/, /\breverse\b/, /\bgo previous\b/, /\bமுந்தைய\b/, /\bமுன்னாடி\b/],
         pause: [/\bpause\b/, /\bpause pannu\b/, /\bstop\b/, /\bstop the music\b/, /\bstop music\b/, /\bniruthu\b/, /\bniruthi\b/, /\bநிறுத்து\b/, /\bநிறுத்தி\b/],
-        resume: [/\bresume\b/, /\bcontinue\b/, /\bcontinue the song\b/, /\bplay pannu\b/, /\bstart pannu\b/, /\bpodhu\b/, /\bமீண்டும்\b/, /\bதொடரு\b/],
-        volUp: [/\b(volume|sound|oli|ஒலி)\s+(up|high|increase|max|louder|keep)\b/, /\blouder\b/, /\bkeechu\b/, /\bvolume bhaiya\b/, /\bsound high\b/, /\barakku\b/, /\buhh\b/],
-        volDown: [/\b(volume|sound|oli|ஒலி)\s+(down|low|decrease|reduce|lower)\b/, /\bquieter\b/, /\blower/i, /\bkammi\b/],
-        mute: [/\bmute\b/, /\bam samai\b/, /\bsound off\b/, /\soon samay\b/, /\bsilence\b/, /\bchauch\b/],
-        fm: [/\bfm\b/, /\bradio\b/, /\broadcast\b/, /\bstation\b/, /\bரேடியோ\b/, /\bfm podu\b/, /\bradio podu\b/, /\bplay fm\b/, /\bplay radio\b/, /\b\d{2}(?:\.\d)?\s*fm\b/],
+        resume: [/\bresume\b/, /\bcontinue\b/, /\bplay pannu\b/, /\bstart pannu\b/, /\bpodhu\b/, /\bமீண்டும்\b/, /\bதொடரு\b/, /\bplay\b/],
+        volUp: [/\b(volume|sound|oli|ஒலி)\s+(up|high|increase|max|louder)\b/, /\blouder\b/, /\bkeechu\b/, /\bsound high\b/, /\barakku\b/],
+        volDown: [/\b(volume|sound|oli|ஒலி)\s+(down|low|decrease|reduce|lower)\b/, /\bquieter\b/, /\bkammi\b/],
+        mute: [/\bmute\b/, /\bam samai\b/, /\bsound off\b/, /\bsilence\b/],
+        fm: [/\bfm\b/, /\bradio\b/, /\bstation\b/, /\bரேடியோ\b/, /\bfm podu\b/, /\bradio podu\b/, /\bplay fm\b/, /\bplay radio\b/, /\b\d{2}(?:\.\d)?\s*fm\b/],
+        shuffle: [/\bshuffle\b/, /\bmix\b/, /\bcshuffle\b/],
+        repeat: [/\brepeat\b/, /\bloop\b/, /\bமீண்டும்\b/],
     };
 
     function executeCommand(text) {
         const now = Date.now();
-        if (now - _lastCmdAt < CONFIG.COOLDOWN_MS) return;
+        if (now - _lastCmdAt < 1400) return;
         _lastCmdAt = now;
         const raw = String(text || '');
         const n = norm(raw);
@@ -688,7 +413,6 @@
                 feedback('Music paused.', 'success');
             } else {
                 feedback('Nothing is playing right now.', 'info');
-                setState('idle');
             }
             return;
         }
@@ -700,7 +424,6 @@
                 feedback('Resuming music.', 'success');
             } else {
                 feedback('Already playing.', 'info');
-                setState('idle');
             }
             return;
         }
@@ -725,11 +448,26 @@
             playFm(fmWanted);
             return;
         }
+        if (matchAny(n, INTENT_PATTERNS.shuffle)) {
+            setState('thinking');
+            if (typeof window.toggleShuffle === 'function') window.toggleShuffle();
+            setState('idle');
+            feedback('Shuffle toggled.', 'success');
+            return;
+        }
+        if (matchAny(n, INTENT_PATTERNS.repeat)) {
+            setState('thinking');
+            if (typeof window.toggleRepeat === 'function') window.toggleRepeat();
+            setState('idle');
+            feedback('Repeat toggled.', 'success');
+            return;
+        }
+        // Bare "play" with playback active = toggle play/pause
         if (hasPlayback() && matchAny(n, [/\bplay\b/]) && n.replace(/\bplay\b/g, '').trim().length === 0) {
             setState('thinking');
             window.togglePlayPause();
             setState('idle');
-            feedback('Resuming music.', 'success');
+            feedback(isPlaying() ? 'Playing.' : 'Paused.', 'success');
             return;
         }
         requestTarget(raw);
@@ -741,95 +479,213 @@
         const next = up ? Math.min(1, cur + 0.15) : Math.max(0, cur - 0.15);
         if (typeof window.setPlaybackVolume === 'function') window.setPlaybackVolume(next);
         else if (ap) { try { ap.volume = next; } catch (e) {} }
-        feedback(up ? 'Volume up a bit.' : 'Volume down a bit.', 'success');
+        feedback(up ? 'Volume up.' : 'Volume down.', 'success');
     }
 
     function toggleMute() {
         const ap = window.audioPlayer;
-        if (!ap) {
-            feedback('No player is active right now.', 'info');
-            setState('idle');
-            return;
-        }
-        try {
-            ap.muted = !ap.muted;
-            feedback(ap.muted ? 'Muted.' : 'Unmuted.', 'success');
-        } catch (e) {}
+        if (!ap) { feedback('No player active.', 'info'); return; }
+        try { ap.muted = !ap.muted; feedback(ap.muted ? 'Muted.' : 'Unmuted.', 'success'); } catch (e) {}
         setState('idle');
     }
 
     function extractFmTarget(raw) {
-        const n = raw.replace(/\bfm\b/gi, '');
-        return n.replace(/\b(play|radio|podhu|podu|podunga|song|station)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+        return raw.replace(/\bfm\b/gi, '').replace(/\b(play|radio|podu|podunga|station)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    // ─── Song Matching ───
+    const PLAY_WORDS = ['play', 'podu', 'poadu', 'podunga', 'podhu', 'poot', 'pla', 'poru', 'boattu', 'potru', 'potu', 'vai', 'podungo', 'poadunga', 'play pannu', 'play podu', 'song', 'songs', 'music', 'hits', 'hit', 'pattu', 'patta', 'paatu', 'padam', 'kele', 'kelo', 'vaanga', 'vaa'];
+    const STRIP_WORDS = ['play', 'songs', 'song', 'music', 'podunga', 'podu', 'poadu', 'podhu', 'poddu', 'pattugal', 'hits', 'hit', 'please', 'the', 'some', 'for', 'kaka', 'gimme', 'give', 'me', 'a', 'an', 'vaanga', 'panni', 'pannu', 'podu da', 'podu ma', 'boattu', 'vecha', 'vai', 'poru', 'poadunga', 'podunga'];
+
+    function stripTarget(text) {
+        const n = norm(text);
+        let out = n;
+        for (const w of STRIP_WORDS) {
+            out = out.replace(new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g'), ' ');
+        }
+        return out.replace(/\s+/g, ' ').trim();
+    }
+
+    function findArtist(wanted, songs) {
+        const wk = norm(wanted);
+        const list = songs && songs.length ? songs : (window.DataStore && typeof window.DataStore.getSongs === 'function' ? window.DataStore.getSongs() : []);
+        const ranked = [];
+        for (const s of list) {
+            const artist = String(s.artist || '').toLowerCase();
+            const movie = String(s.movie || '').toLowerCase();
+            const title = String(s.title || '').toLowerCase();
+            const tokens = wk.split(' ');
+            let score = 0;
+            for (const t of tokens) {
+                if (t.length < 2) continue;
+                if (artist.indexOf(t) !== -1) score += t.length * 2;
+                if (movie.indexOf(t) !== -1 && t.length > 3) score += t.length;
+                if (title.indexOf(t) !== -1 && t.length > 3) score += Math.floor(t.length / 2);
+            }
+            if (score > 0) ranked.push({ s, score });
+        }
+        ranked.sort((a, b) => b.score - a.score);
+        const artistSet = {};
+        const ordered = [];
+        for (const r of ranked) {
+            const key = String(r.s.artist || 'unknown').toLowerCase();
+            if (!artistSet[key]) { artistSet[key] = true; ordered.push(r.s.artist || 'unknown'); }
+            if (ordered.length >= 12) break;
+        }
+        return { ranked, artists: ordered };
+    }
+
+    function playArtistSongs(artistName, ranked) {
+        const gathered = ranked.map(r => r.s);
+        if (gathered.length) {
+            feedback('Playing ' + artistName + ' songs.', 'success');
+            playSongList(gathered);
+        }
+    }
+
+    function findMoodOrDecade(target, songs) {
+        const moods = ['love', 'romantic', 'sad', 'happy', 'party', 'chill', 'workout', 'devotional', 'classical', 'folk', 'rock', 'melody', 'evergreen', 'energetic', 'peaceful', 'romance', 'kuthu', 'karakattam'];
+        const decades = ['80s', '90s', '2000s', '2k', '80', '90', '2000', '70s', '60s'];
+        const list = songs && songs.length ? songs : (window.DataStore && typeof window.DataStore.getSongs === 'function' ? window.DataStore.getSongs() : []);
+        for (const m of moods) {
+            if (target.indexOf(m) !== -1) {
+                const matched = list.filter(s => {
+                    const txt = ((s.title || '') + ' ' + (s.artist || '') + ' ' + (s.genre || '') + ' ' + (s.mood || '') + ' ' + (s.tags || '') + ' ' + (s.movie || '')).toLowerCase();
+                    return txt.indexOf(m) !== -1 && (s.audioUrl || s.streamUrl);
+                });
+                if (matched.length >= 2) return { type: 'mood', key: m, songs: matched };
+            }
+        }
+        for (const d of decades) {
+            if (target.indexOf(d) !== -1) {
+                const decadeNum = parseInt(d);
+                const matched = list.filter(s => {
+                    const yr = parseInt(String(s.year || s.releaseYear || ''));
+                    if (isNaN(yr)) return false;
+                    return yr >= decadeNum && yr < decadeNum + 10 && (s.audioUrl || s.streamUrl);
+                });
+                if (matched.length >= 2) return { type: 'decade', key: d, songs: matched };
+            }
+        }
+        return null;
+    }
+
+    function findPlaylist(target) {
+        if (window.DataStore && typeof window.DataStore.getStations === 'function') {
+            const stations = window.DataStore.getStations();
+            for (const s of stations) {
+                const name = norm(s.name || '');
+                const words = target.split(' ');
+                let score = 0;
+                for (const w of words) { if (w.length > 1 && name.indexOf(w) !== -1) score += w.length; }
+                if (score >= 3) return { key: s.name, songs: [{ ...s, audioUrl: s.streamUrl || s.url }] };
+            }
+        }
+        return null;
+    }
+
+    function findCollection(target) {
+        const collections = window.DataStore && typeof window.DataStore.getSongsCollections === 'function' ? window.DataStore.getSongsCollections() : [];
+        for (const c of collections) {
+            const name = norm(c.name || c.title || '');
+            const words = target.split(' ');
+            let score = 0;
+            for (const w of words) { if (w.length > 1 && name.indexOf(w) !== -1) score += w.length; }
+            if (score >= 3 && c.songs && c.songs.length) return { key: c.name || c.title, songs: c.songs };
+        }
+        return null;
+    }
+
+    function findTitle(target, songs) {
+        const list = songs && songs.length ? songs : (window.DataStore && typeof window.DataStore.getSongs === 'function' ? window.DataStore.getSongs() : []);
+        const words = target.split(' ').filter(w => w.length > 2);
+        const scored = [];
+        for (const s of list) {
+            const title = norm(s.title || '');
+            let score = 0;
+            for (const w of words) { if (title.indexOf(w) !== -1) score += w.length; }
+            if (score >= 3) scored.push({ s, score, key: s.title });
+        }
+        scored.sort((a, b) => b.score - a.score);
+        return scored.length ? scored[0] : null;
+    }
+
+    function playSongList(songList) {
+        if (!songList || !songList.length) return false;
+        setState('thinking');
+        window.playSong(songList[0], songList);
+        setState('idle');
+        return true;
+    }
+
+    function resolveStation(wanted) {
+        const wk = String(wanted || '').toLowerCase();
+        const stations = window.DataStore && typeof window.DataStore.getStations === 'function' ? window.DataStore.getStations() : [];
+        const list = stations.filter(s => s && (s.streamUrl || s.url));
+        if (!list.length) return null;
+        let best = null;
+        let bestScore = 0;
+        for (const s of list) {
+            const hay = norm((s.name || '') + ' ' + (s.category || '') + ' ' + (s.city || '') + ' ' + (s.language || '') + ' ' + (s.genre || ''));
+            const words = wk.split(' ').filter(w => w.length > 1);
+            let score = 0;
+            for (const w of words) { if (hay.indexOf(w) !== -1) score += w.length; }
+            if (score > bestScore) { bestScore = score; best = s; }
+        }
+        return best && bestScore > 0 ? best : null;
+    }
+
+    function playFm(wanted) {
+        const pending = resolveStation(wanted);
+        let text;
+        if (!pending) {
+            const stations = window.DataStore && typeof window.DataStore.getStations === 'function' ? window.DataStore.getStations() : [];
+            const first = stations.find(s => s && (s.streamUrl || s.url));
+            if (!first) { feedback('No FM stations available.', 'error'); setState('idle'); return; }
+            text = 'Starting ' + (first.name || 'FM') + '.';
+            setState('thinking');
+            window.playStation(first.name, first.id);
+        } else {
+            text = 'Playing ' + (pending.name || 'FM') + '.';
+            setState('thinking');
+            window.playStation(pending.name, pending.id);
+        }
+        feedback(text, 'success');
+        setState('idle');
     }
 
     function requestTarget(raw) {
-        const text = String(raw || '');
-        const target = stripTarget(text);
+        const target = stripTarget(raw);
         if (!target) {
-            feedback('Say "Next song", "Play Dhanush hits" or "Play love songs".', 'info');
+            feedback('Say "Next song" or "Play Dhanush hits".', 'info');
             setState('idle');
             return;
         }
         const songs = window.DataStore && typeof window.DataStore.getSongs === 'function' ? window.DataStore.getSongs() : [];
 
         const asPlaylist = findPlaylist(target);
-        if (asPlaylist) {
-            setState('thinking');
-            feedback('Found playlist ' + asPlaylist.key + '.', 'success');
-            playSongList(asPlaylist.songs);
-            setState('idle');
-            return;
-        }
+        if (asPlaylist) { setState('thinking'); feedback('Found ' + asPlaylist.key + '.', 'success'); playSongList(asPlaylist.songs); setState('idle'); return; }
 
         const moodHit = findMoodOrDecade(target, songs);
-        if (moodHit) {
-            setState('thinking');
-            feedback((moodHit.type === 'decade' ? moodHit.key + ' songs' : moodHit.key + ' songs') + ' coming up.', 'success');
-            playSongList(moodHit.songs);
-            setState('idle');
-            return;
-        }
+        if (moodHit) { setState('thinking'); feedback(moodHit.key + ' songs coming up.', 'success'); playSongList(moodHit.songs); setState('idle'); return; }
 
         const artistRes = findArtist(target, songs);
-        if (artistRes && artistRes.ranked.length >= 2) {
-            setState('thinking');
-            playArtistSongs(artistRes.artists[0], artistRes.ranked);
-            setState('idle');
-            return;
-        }
+        if (artistRes && artistRes.ranked.length >= 2) { setState('thinking'); playArtistSongs(artistRes.artists[0], artistRes.ranked); setState('idle'); return; }
 
         const coll = findCollection(target);
-        if (coll) {
-            setState('thinking');
-            feedback('Playing ' + coll.key + '.', 'success');
-            playSongList(coll.songs);
-            setState('idle');
-            return;
-        }
+        if (coll) { setState('thinking'); feedback('Playing ' + coll.key + '.', 'success'); playSongList(coll.songs); setState('idle'); return; }
 
         const titleHit = findTitle(target, songs);
-        if (titleHit) {
-            setState('thinking');
-            feedback('Playing ' + titleHit.key + '.', 'success');
-            playSongList(titleHit.songs);
-            setState('idle');
-            return;
-        }
+        if (titleHit) { setState('thinking'); feedback('Playing ' + titleHit.key + '.', 'success'); playSongList([titleHit.s]); setState('idle'); return; }
 
-        const anyList = songs.filter((s) => s && (s.audioUrl || s.streamUrl));
-        if (anyList.length) {
-            setState('thinking');
-            feedback('No exact match for "' + target + '". Playing top songs instead.', 'info');
-            playSongList(anyList);
-            setState('idle');
-            return;
-        }
+        const anyList = songs.filter(s => s && (s.audioUrl || s.streamUrl));
+        if (anyList.length) { setState('thinking'); feedback('Playing top songs.', 'info'); playSongList(anyList.slice(0, 10)); setState('idle'); return; }
 
         setState('idle');
-        feedback('Sorry, I could not find "' + target + '". Try "Play Dhanush hits" or "Play love songs".', 'error');
+        feedback('No match for "' + target + '".', 'error');
     }
 
+    // ─── State & UI ───
     function setState(state, msg) {
         _state = state;
         if (!_root) return;
@@ -855,15 +711,15 @@
             _bubbleTitle.textContent = 'Voice AI';
         } else if (_state === 'wake' || _state === 'wake-active') {
             _bubble.classList.add('va-show');
-            _bubbleTitle.textContent = 'Listening for wake word';
-            _bubbleHint.textContent = 'Say "Hello" to activate me';
+            _bubbleTitle.textContent = 'Listening...';
+            _bubbleHint.textContent = 'Say "' + (_settings.wakeWord || 'Hello') + '" to activate';
         } else if (_state === 'command' || _state === 'command-active') {
             _bubble.classList.add('va-show');
-            _bubbleTitle.textContent = 'Listening';
-            _bubbleHint.textContent = 'Say: "Next song" • "Play Dhanush hits" • "Play love songs" • "Play FM"';
+            _bubbleTitle.textContent = 'Listening for command';
+            _bubbleHint.textContent = 'Say: Next • Previous • Pause • Play • Volume';
         } else if (_state === 'thinking') {
             _bubble.classList.add('va-show');
-            _bubbleTitle.textContent = 'Working';
+            _bubbleTitle.textContent = 'Working...';
             _bubbleHint.textContent = '';
         } else if (_state === 'error' || _state === 'denied') {
             _bubble.classList.add('va-show');
@@ -884,10 +740,7 @@
         if (!_root) return;
         const bar = document.querySelector('.up-bottom-bar.visible');
         const full = document.body.classList.contains('up-fullscreen-open');
-        if (full) {
-            _root.style.display = 'none';
-            return;
-        }
+        if (full) { _root.style.display = 'none'; return; }
         _root.style.display = '';
         let pad = 72;
         if (bar) {
@@ -895,6 +748,16 @@
             if (r.top > 0) pad = window.innerHeight - r.top + 12;
         }
         _root.style.bottom = pad + 'px';
+    }
+
+    function showTrigger() {
+        if (_trigger) _trigger.style.display = '';
+        if (_root) _root.style.display = '';
+    }
+
+    function hideTrigger() {
+        if (_trigger) _trigger.style.display = 'none';
+        if (_bubble) _bubble.classList.remove('va-show');
     }
 
     function ensureDom() {
@@ -947,11 +810,69 @@
         _trigger.addEventListener('click', onTriggerTap);
         window.addEventListener('resize', reposition);
         window.addEventListener('scroll', reposition);
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) abortAll();
-        });
+        document.addEventListener('visibilitychange', onVisibilityChange);
         window.addEventListener('pagehide', abortAll);
         reposition();
+
+        // Show/hide based on settings
+        if (!_settings.enabled) hideTrigger();
+    }
+
+    // ─── Auto-Arm During Playback ───
+    function setupAutoArm() {
+        if (_autoArmListenerAttached) return;
+        _autoArmListenerAttached = true;
+
+        // Listen for playback state changes
+        const checkPlaybackState = () => {
+            if (!_settings.enabled || !_settings.autoArm) return;
+            if (isPlaying() && _state === 'idle') {
+                arm();
+            } else if (!isPlaying() && (_state === 'wake' || _state === 'wake-active')) {
+                // Music stopped/paused — disarm gracefully
+                abortAll();
+            }
+        };
+
+        // Poll playback state (lightweight — only checks audioPlayer.paused)
+        setInterval(checkPlaybackState, 2000);
+
+        // Also hook into audio events for immediate response
+        const hookAudio = () => {
+            const ap = window.audioPlayer;
+            if (ap && !ap._vaHooked) {
+                ap._vaHooked = true;
+                ap.addEventListener('play', () => {
+                    if (_settings.enabled && _settings.autoArm && _state === 'idle') {
+                        setTimeout(arm, 500);
+                    }
+                });
+                ap.addEventListener('pause', () => {
+                    if (_state === 'wake' || _state === 'wake-active') {
+                        abortAll();
+                    }
+                });
+                ap.addEventListener('ended', () => {
+                    if (_state === 'wake' || _state === 'wake-active') {
+                        abortAll();
+                    }
+                });
+            }
+        };
+        hookAudio();
+        setInterval(hookAudio, 3000);
+    }
+
+    function onVisibilityChange() {
+        if (document.hidden) {
+            _wasPlayingBeforeHide = isPlaying();
+            if (_state !== 'idle') abortAll();
+        } else {
+            // Page visible again — re-arm if was playing
+            if (_wasPlayingBeforeHide && _settings.enabled && _settings.autoArm) {
+                setTimeout(arm, 1000);
+            }
+        }
     }
 
     function injectCss() {
@@ -985,20 +906,24 @@
 
     function init() {
         if (window.__BUILDER_PREVIEW__) return;
+        loadSettings();
         injectCss();
         ensureDom();
+        setupAutoArm();
     }
 
+    // ─── Global API ───
     window.VoiceAIBot = {
-        init: init,
-        arm: arm,
-        deactivate: deactivate,
+        init,
+        arm,
+        deactivate,
         isActive: () => _state !== 'idle',
-        setTts: (on) => {
-            _tts = !!on;
-            try { localStorage.setItem(VOICE_TTS_KEY, _tts ? '1' : '0'); } catch (e) {}
-        },
+        isDisabled: () => !_settings.enabled,
+        setTts: (on) => { _tts = !!on; _settings.ttsEnabled = _tts; saveSettings(); },
         getState: () => _state,
+        getSettings,
+        updateSettings,
+        getSettingsRaw: () => ({ ..._settings }),
     };
 
     if (document.readyState === 'loading') {
