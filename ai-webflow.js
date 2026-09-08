@@ -2,7 +2,7 @@
 /* AI Webflow Builder - Visual Website Builder for Tamil AI Stream */
 const AIWebflow = (function () {
     let active = false, selectedEl = null, hoveredEl = null, currentDevice = 'desktop';
-    let currentZoom = 100, undoStack = [], redoStack = [], maxUndo = 60;
+    let currentZoom = 100, undoStack = [], redoStack = [], maxUndo = 15;
     let clipboard = null, dragData = null, elementMap = new Map();
     let aiPanelOpen = false, aiMessages = [], leftTab = 'navigator', rightTab = 'style';
 
@@ -155,11 +155,16 @@ const AIWebflow = (function () {
         return el.tagName.toLowerCase();
     }
 
+    let _canvasEventsBound = false;
     function bindCanvasEvents() {
+        if (_canvasEventsBound) return;
+        _canvasEventsBound = true;
         var f = $('awFrame'); if (!f) return;
         f.addEventListener('load', function() {
             try {
                 var doc = f.contentDocument; if (!doc) return;
+                if (doc._awEventsAttached) return;
+                doc._awEventsAttached = true;
                 doc.addEventListener('click', function(e) {
                     e.preventDefault(); e.stopPropagation();
                     var t = e.target;
@@ -512,9 +517,12 @@ const AIWebflow = (function () {
     }
 
     /* ===== CONTEXT MENU ===== */
+    let _ctxBound = false;
     function bindContextMenu() {
+        if (_ctxBound) return;
+        _ctxBound = true;
         var f=$('awFrame'); if(!f) return;
-        f.addEventListener('load',function(){ try{var doc=f.contentDocument; doc.addEventListener('contextmenu',function(e){e.preventDefault();var t=e.target;while(t&&t!==doc.body&&!t.getAttribute('data-aw-id'))t=t.parentElement;if(t&&t.getAttribute('data-aw-id')){selectElement(t.getAttribute('data-aw-id'));showCtx(e.clientX,e.clientY);}}); }catch(e){} });
+        f.addEventListener('load',function(){ try{var doc=f.contentDocument; if(!doc._awCtxAttached){doc._awCtxAttached=true; doc.addEventListener('contextmenu',function(e){e.preventDefault();var t=e.target;while(t&&t!==doc.body&&!t.getAttribute('data-aw-id'))t=t.parentElement;if(t&&t.getAttribute('data-aw-id')){selectElement(t.getAttribute('data-aw-id'));showCtx(e.clientX,e.clientY);}}); } }catch(e){} });
         document.addEventListener('click',hideCtx);
     }
     function showCtx(x,y) { var m=$('awContextMenu'); if(!m)return; m.style.left=x+'px'; m.style.top=y+'px'; m.classList.add('visible'); }

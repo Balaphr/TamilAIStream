@@ -76,12 +76,14 @@
         _settings = { ..._settings, ...patch };
         _tts = _settings.ttsEnabled;
         saveSettings();
-        // If disabled, deactivate immediately
-        if (!_settings.enabled && _state !== 'idle') {
-            deactivate();
+        if (!_settings.enabled) {
+            if (_state !== 'idle') deactivate();
             hideTrigger();
-        } else if (_settings.enabled) {
+            if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
+            if (_hookInterval) { clearInterval(_hookInterval); _hookInterval = null; }
+        } else {
             showTrigger();
+            setupAutoArm();
         }
     }
 
@@ -819,25 +821,25 @@
     }
 
     // ─── Auto-Arm During Playback ───
+    let _pollInterval = null;
+    let _hookInterval = null;
+
     function setupAutoArm() {
         if (_autoArmListenerAttached) return;
         _autoArmListenerAttached = true;
 
-        // Listen for playback state changes
         const checkPlaybackState = () => {
             if (!_settings.enabled || !_settings.autoArm) return;
             if (isPlaying() && _state === 'idle') {
                 arm();
             } else if (!isPlaying() && (_state === 'wake' || _state === 'wake-active')) {
-                // Music stopped/paused — disarm gracefully
                 abortAll();
             }
         };
 
-        // Poll playback state (lightweight — only checks audioPlayer.paused)
-        setInterval(checkPlaybackState, 2000);
+        if (_pollInterval) clearInterval(_pollInterval);
+        _pollInterval = setInterval(checkPlaybackState, 2000);
 
-        // Also hook into audio events for immediate response
         const hookAudio = () => {
             const ap = window.audioPlayer;
             if (ap && !ap._vaHooked) {
@@ -860,7 +862,8 @@
             }
         };
         hookAudio();
-        setInterval(hookAudio, 3000);
+        if (_hookInterval) clearInterval(_hookInterval);
+        _hookInterval = setInterval(hookAudio, 3000);
     }
 
     function onVisibilityChange() {

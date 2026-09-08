@@ -11,6 +11,7 @@ const Site360 = (function () {
     let undoStack = [];
     let redoStack = [];
     let _saveTimeout = null;
+    let _s360KeyHandlerAttached = false;
 
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
@@ -1834,17 +1835,19 @@ const Site360 = (function () {
     }
 
     /* ============================================================
-       UNDO / REDO
+       UNDO / REDO (capped at 20 to limit memory)
        ============================================================ */
+    const _undoMax = 20;
     function pushUndo() {
         undoStack.push(JSON.stringify(canvasElements));
-        if (undoStack.length > 50) undoStack.shift();
+        if (undoStack.length > _undoMax) undoStack.shift();
         redoStack = [];
     }
 
     function undo() {
         if (!undoStack.length) return;
         redoStack.push(JSON.stringify(canvasElements));
+        if (redoStack.length > _undoMax) redoStack.shift();
         const prev = JSON.parse(undoStack.pop());
         canvasElements = prev;
         renderCanvas();
@@ -1854,6 +1857,7 @@ const Site360 = (function () {
     function redo() {
         if (!redoStack.length) return;
         undoStack.push(JSON.stringify(canvasElements));
+        if (undoStack.length > _undoMax) undoStack.shift();
         const next = JSON.parse(redoStack.pop());
         canvasElements = next;
         renderCanvas();
@@ -1918,6 +1922,8 @@ const Site360 = (function () {
         renderSettingsPanel();
         Object.keys(FEATURE_REGISTRY).forEach(fid => agentTakeSnapshot(fid));
         agentLog('system', 'init', 'Builder initialized with ' + Object.keys(FEATURE_REGISTRY).length + ' registered features', 'done');
+        if (!_s360KeyHandlerAttached) {
+        _s360KeyHandlerAttached = true;
         document.addEventListener('keydown', (e) => {
             if (!$('site360Page') || $('site360Page').style.display === 'none') return;
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
@@ -1936,6 +1942,7 @@ const Site360 = (function () {
                 renderSettingsPanel();
             }
         });
+        }
     }
 
     return {

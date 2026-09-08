@@ -159,51 +159,54 @@ const PerfAnalytics = (() => {
     }
 
     function _hookAudio() {
-        const findAudio = () => {
-            const audio = document.querySelector('audio');
-            if (audio && audio !== window._perfAudioEl) {
-                window._perfAudioEl = audio;
-                audio.addEventListener('playing', () => {
-                    _buffering = false;
-                });
-                audio.addEventListener('waiting', () => {
-                    if (!_buffering) { _buffering = true; _bufferStartTs = Date.now(); }
-                });
-                audio.addEventListener('error', () => {
-                    if (_currentSong) {
-                        const sid = _currentSong.id || _currentSong.title || 'unknown';
-                        const code = audio?.error?.code || 0;
-                        _track('perf_error', { songId: sid, code });
-                    }
-                });
-                audio.addEventListener('ended', () => {
-                    if (_currentSong && _songStartTs) {
-                        const dur = Date.now() - _songStartTs;
+        const attachListeners = (audio) => {
+            if (!audio || audio._perfHooked) return;
+            audio._perfHooked = true;
+            audio.addEventListener('playing', () => {
+                _buffering = false;
+            }, { once: false });
+            audio.addEventListener('waiting', () => {
+                if (!_buffering) { _buffering = true; _bufferStartTs = Date.now(); }
+            }, { once: false });
+            audio.addEventListener('error', () => {
+                if (_currentSong) {
+                    const sid = _currentSong.id || _currentSong.title || 'unknown';
+                    const code = audio?.error?.code || 0;
+                    _track('perf_error', { songId: sid, code });
+                }
+            }, { once: false });
+            audio.addEventListener('ended', () => {
+                if (_currentSong && _songStartTs) {
+                    const dur = Date.now() - _songStartTs;
+                    _track('perf_song_stats', {
+                        songId: _currentSong.id || _currentSong.title || 'unknown',
+                        title: _currentSong.title || '',
+                        plays: 0, duration: dur, skips: 0, errors: 0, buffering: 0
+                    });
+                    _songStartTs = 0;
+                }
+            }, { once: false });
+            audio.addEventListener('pause', () => {
+                if (_currentSong && _songStartTs) {
+                    const dur = Date.now() - _songStartTs;
+                    if (dur > 3000 && dur < 10000) {
                         _track('perf_song_stats', {
                             songId: _currentSong.id || _currentSong.title || 'unknown',
                             title: _currentSong.title || '',
-                            plays: 0, duration: dur, skips: 0, errors: 0, buffering: 0
+                            plays: 0, duration: 0, skips: 1, errors: 0, buffering: 0
                         });
-                        _songStartTs = 0;
                     }
-                });
-                audio.addEventListener('pause', () => {
-                    if (_currentSong && _songStartTs) {
-                        const dur = Date.now() - _songStartTs;
-                        if (dur > 3000 && dur < 10000) {
-                            _track('perf_song_stats', {
-                                songId: _currentSong.id || _currentSong.title || 'unknown',
-                                title: _currentSong.title || '',
-                                plays: 0, duration: 0, skips: 1, errors: 0, buffering: 0
-                            });
-                        }
-                        _songStartTs = 0;
-                    }
-                });
-            }
+                    _songStartTs = 0;
+                }
+            }, { once: false });
         };
-        findAudio();
-        setInterval(findAudio, 3000);
+        const audio = document.querySelector('audio');
+        if (audio) {
+            attachListeners(audio);
+        }
+        document.addEventListener('play', (e) => {
+            if (e.target && e.target.tagName === 'AUDIO') attachListeners(e.target);
+        }, true);
     }
 
     function _trackSessionStart() {

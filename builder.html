@@ -2050,6 +2050,79 @@
                                 </form>
                             </div>
                         </div>
+
+                        <!-- Audio Settings -->
+                        <div class="builder-content-card">
+                            <div class="builder-card-header"><h3><i class="fas fa-headphones" style="margin-right:8px;color:#10b981;"></i>Audio Enhancement</h3></div>
+                            <div class="builder-card-body">
+                                <p style="color:#888;font-size:13px;margin:0 0 14px;line-height:1.6;">Enhance audio quality with bass/treble controls, volume normalization, spatial sound, and Dolby-style effects. Only active while a song plays. Releases resources when paused.</p>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Enable Audio Enhancement</label>
+                                        <select class="form-input" id="audioEnhEnabled">
+                                            <option value="false">Disabled</option>
+                                            <option value="true">Enabled</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Bass Level (-12 to +12)</label>
+                                        <input type="range" id="audioBass" min="-12" max="12" value="0" class="form-input" style="accent-color:#10b981;">
+                                        <span id="audioBassVal" style="color:#10b981;font-weight:600;font-size:12px;">0</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Treble Level (-12 to +12)</label>
+                                        <input type="range" id="audioTreble" min="-12" max="12" value="0" class="form-input" style="accent-color:#10b981;">
+                                        <span id="audioTrebleVal" style="color:#10b981;font-weight:600;font-size:12px;">0</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Volume Normalization</label>
+                                        <select class="form-input" id="audioNorm">
+                                            <option value="false">Disabled</option>
+                                            <option value="true">Enabled (Auto-level volume)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Spatial / Stereo Enhancement</label>
+                                        <select class="form-input" id="audioSpatial">
+                                            <option value="false">Disabled</option>
+                                            <option value="true">Enabled (Wider soundstage)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">7.1 Surround Effect</label>
+                                        <select class="form-input" id="audioSurround">
+                                            <option value="false">Disabled</option>
+                                            <option value="true">Enabled (Simulated surround)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Dolby-style Enhancement</label>
+                                        <select class="form-input" id="audioDolby">
+                                            <option value="false">Disabled</option>
+                                            <option value="true">Enabled</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Dolby Enhancement Level</label>
+                                        <input type="range" id="audioDolbyLevel" min="0" max="100" value="70" class="form-input" style="accent-color:#10b981;">
+                                        <span id="audioDolbyLevelVal" style="color:#10b981;font-weight:600;font-size:12px;">70%</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Audio Quality Preference</label>
+                                        <select class="form-input" id="audioQuality">
+                                            <option value="auto">Auto (Best available)</option>
+                                            <option value="high">High (320kbps)</option>
+                                            <option value="medium">Medium (192kbps)</option>
+                                            <option value="low">Low (128kbps)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-actions" style="margin-top:14px;">
+                                    <button type="button" class="builder-btn" onclick="AudioSettingsBuilder.reset()"><i class="fas fa-undo"></i> Reset Defaults</button>
+                                    <button type="button" class="builder-btn primary" onclick="AudioSettingsBuilder.save()"><i class="fas fa-save"></i> Save Audio Settings</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Navigation Settings Page -->
@@ -3943,6 +4016,7 @@
     <script src="builder-360.js"></script>
     <script src="ai-webflow.js"></script>
     <script src="voice-ai-bot.js"></script>
+    <script src="audio-settings.js"></script>
     <script src="brand-config.js"></script>
 </body>
 </html>

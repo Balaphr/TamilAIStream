@@ -45,6 +45,7 @@ const UnifiedPlayer = (() => {
   let analyser = null;
   let sourceNode = null;
   let eqBands = new Float32Array(10).fill(0);
+  let _audioCleanupTimer = null;
 
   /* ─── Animation ─── */
   let rafId = null;
@@ -64,15 +65,12 @@ const UnifiedPlayer = (() => {
   function init() {
     if (_initialized) return;
     _initialized = true;
-    _createAudio();
     _bindDOM();
     _bindGestures();
     _bindKeyboard();
     _restoreState();
-    _adoptExternalEngine();
-    _startProgressLoop();
-    _setupServiceWorker();
     _installShims();
+    _setupServiceWorker();
   }
 
   /* ═══════════════════════════════════════════
@@ -83,6 +81,7 @@ const UnifiedPlayer = (() => {
     if (state.externalEngine && window.audioPlayer && (window.audioPlayer.src || window.audioPlayer.getAttribute && window.audioPlayer.getAttribute('src'))) {
       return window.audioPlayer;
     }
+    if (!audio) _createAudio();
     return audio;
   }
 
@@ -95,13 +94,12 @@ const UnifiedPlayer = (() => {
       track = window.currentPlaybackTrack || window.currentStation || null;
     } catch (e) { /* ignore */ }
     if (!track) {
-      // Even without globals, a real loaded source means script.js owns playback.
       const src = (window.audioPlayer.src || (window.audioPlayer.getAttribute && window.audioPlayer.getAttribute('src'))) || '';
       if (!src || !state.track) return;
       state.externalEngine = true;
-      return;
+    } else {
+      state.externalEngine = true;
     }
-    state.externalEngine = true;
     if (els.bottomTitle && els.bottomTitle.textContent !== 'Nothing playing') return;
     state.track = track;
     state.mode = (window.currentStation && !window.currentPlaybackTrack) ? 'fm' : 'songs';
@@ -112,6 +110,7 @@ const UnifiedPlayer = (() => {
     _updateTrackUI();
     _updateFavUI();
     _updatePlayUI();
+    _startProgressLoop();
   }
 
   /* ─── Create audio element ─── */
@@ -415,12 +414,39 @@ const UnifiedPlayer = (() => {
   }
 
   function stop() {
-    audio.pause();
-    audio.currentTime = 0;
+    const live = _liveAudio();
+    if (live) {
+      live.pause();
+      live.currentTime = 0;
+    }
     state.isPlaying = false;
     state.currentTime = 0;
+    _stopProgressLoop();
+    _stopAIAnimation();
     _updatePlayUI();
     _updateProgressUI();
+    _scheduleAudioCleanup();
+  }
+
+  /** Release the local Audio element after being idle for 30 seconds. */
+  function _scheduleAudioCleanup() {
+    if (_audioCleanupTimer) clearTimeout(_audioCleanupTimer);
+    if (state.externalEngine) return;
+    _audioCleanupTimer = setTimeout(() => {
+      if (state.isPlaying) return;
+      if (audio) {
+        audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
+        audio = null;
+      }
+      if (audioCtx && audioCtx.state !== 'closed') {
+        try { audioCtx.close(); } catch (e) {}
+        audioCtx = null;
+        analyser = null;
+        sourceNode = null;
+      }
+    }, 30000);
   }
 
   function next() {
@@ -992,12 +1018,17 @@ const UnifiedPlayer = (() => {
     _progressLoopRunning = true;
     function tick() {
       if (!_progressLoopRunning) return;
+
+      const live = _liveAudio();
+      if (!live || live.paused) {
+        _progressLoopRunning = false;
+        _updatePlayUI();
+        return;
+      }
+
       rafId = requestAnimationFrame(tick);
 
       _adoptExternalEngine();
-
-      const live = _liveAudio();
-      if (!live) { _updatePlayUI(); return; }
 
       const playing = !live.paused;
       const prevPlaying = state.isPlaying;
@@ -1016,6 +1047,14 @@ const UnifiedPlayer = (() => {
       _updateProgressUI();
     }
     tick();
+  }
+
+  function _stopProgressLoop() {
+    _progressLoopRunning = false;
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
   }
 
   /* ═══════════════════════════════════════════

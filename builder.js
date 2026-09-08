@@ -856,7 +856,7 @@ function _loadPageData(page) {
     if (page === 'airadio') loadAIRadio();
     if (page === 'notifications') loadNotifications();
     if (page === 'splash') loadSplashSettings();
-    if (page === 'player') loadPlayerPrefs();
+    if (page === 'player') { loadPlayerPrefs(); if (typeof AudioSettingsBuilder !== 'undefined') AudioSettingsBuilder.load(); }
     if (page === 'navigation') loadNavigation();
     if (page === 'sections') loadSectionsOrder();
     if (page === 'homecontrol') loadHomeControl();
@@ -1934,7 +1934,10 @@ async function previewSong(songId) {
     }
 }
 
+let _previewPlayerSetup = false;
 function setupPreviewPlayer() {
+    if (_previewPlayerSetup) return;
+    _previewPlayerSetup = true;
     const audio = document.getElementById('previewAudio');
     const playBtn = document.getElementById('previewPlayPause');
     const prevBtn = document.getElementById('previewPrev');
@@ -1962,31 +1965,26 @@ function setupPreviewPlayer() {
         }
     };
 
-    if (playBtn) {
-        playBtn.onclick = window.togglePreviewPlayPause;
-    }
-
-    prevBtn?.addEventListener('click', async () => {
+    if (playBtn) playBtn.onclick = window.togglePreviewPlayPause;
+    if (prevBtn) prevBtn.onclick = async () => {
         if (previewSongList.length === 0) return;
         previewCurrentIdx = (previewCurrentIdx - 1 + previewSongList.length) % previewSongList.length;
         await previewSong(previewSongList[previewCurrentIdx].id);
-    });
-
-    nextBtn?.addEventListener('click', async () => {
+    };
+    if (nextBtn) nextBtn.onclick = async () => {
         if (previewSongList.length === 0) return;
         previewCurrentIdx = (previewCurrentIdx + 1) % previewSongList.length;
         await previewSong(previewSongList[previewCurrentIdx].id);
-    });
-
-    closeBtn?.addEventListener('click', () => {
+    };
+    if (closeBtn) closeBtn.onclick = () => {
         audio.pause();
         audio.removeAttribute('src');
         audio.load();
         previewPlaying = false;
         document.getElementById('previewPlayer').style.display = 'none';
-    });
+    };
 
-    audio?.addEventListener('timeupdate', () => {
+    if (audio) audio.addEventListener('timeupdate', () => {
         if (audio.duration) {
             progressBar.value = (audio.currentTime / audio.duration) * 100;
             document.getElementById('previewCurrentTime').textContent = formatTime(audio.currentTime);
@@ -1994,15 +1992,15 @@ function setupPreviewPlayer() {
         }
     });
 
-    progressBar?.addEventListener('input', () => {
+    if (progressBar) progressBar.addEventListener('input', () => {
         if (audio.duration) {
             audio.currentTime = (progressBar.value / 100) * audio.duration;
         }
     });
 
-    audio?.addEventListener('ended', async () => {
+    if (audio) audio.addEventListener('ended', async () => {
         previewPlaying = false;
-        playBtn.innerHTML = '<i class="fas fa-play"></i>';
+        if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
         if (previewSongList.length > 0) {
             previewCurrentIdx = (previewCurrentIdx + 1) % previewSongList.length;
             await previewSong(previewSongList[previewCurrentIdx].id);
@@ -2449,16 +2447,23 @@ async function _syncToLiveWebsiteActual() {
             try { localStorage.setItem(key, localStorage.getItem(key) || 'null'); } catch (e) {}
         });
 
-        const syncEvent = new CustomEvent('storage-sync', { detail: { keys: keysToSync } });
-        window.dispatchEvent(syncEvent);
+        _notifyLiveTabs();
 
-        try {
-            const channel = new BroadcastChannel('tamilAIStream_sync');
-            channel.postMessage({ type: 'content-updated', timestamp: Date.now() });
-            setTimeout(() => channel.close(), 100);
-        } catch (e) {}
-
-        window.dispatchEvent(new CustomEvent('premium-sections-sync', { detail: { timestamp: Date.now() } }));
+let _syncBroadcastChannel = null;
+function _getSyncChannel() {
+    if (!_syncBroadcastChannel) {
+        try { _syncBroadcastChannel = new BroadcastChannel('tamilAIStream_sync'); } catch (e) {}
+    }
+    return _syncBroadcastChannel;
+}
+function _notifyLiveTabs() {
+    try {
+        const ch = _getSyncChannel();
+        if (ch) ch.postMessage({ type: 'content-updated', timestamp: Date.now() });
+    } catch (e) {}
+    window.dispatchEvent(new CustomEvent('storage-sync', { detail: { timestamp: Date.now() } }));
+    window.dispatchEvent(new CustomEvent('premium-sections-sync', { detail: { timestamp: Date.now() } }));
+}
 
         if (typeof applySavedSettingsToWebsite === 'function') applySavedSettingsToWebsite();
 
@@ -2588,13 +2593,7 @@ async function publishChanges() {
         }
 
         setProgress(75, 'Notifying live tabs...');
-        try {
-            const channel = new BroadcastChannel('tamilAIStream_sync');
-            channel.postMessage({ type: 'content-updated', timestamp: Date.now() });
-            setTimeout(() => channel.close(), 100);
-        } catch (e) {}
-        window.dispatchEvent(new CustomEvent('storage-sync', { detail: { keys: keysToSync } }));
-        window.dispatchEvent(new CustomEvent('premium-sections-sync', { detail: { timestamp: Date.now() } }));
+        _notifyLiveTabs();
 
         setProgress(85, 'Verifying deployment...');
         try {
@@ -2785,11 +2784,23 @@ function addActivity(title, description) {
     }
 }
 
+let _toastContainer = null;
+const _toastMaxVisible = 3;
 function showToast(message, type = 'info') {
+    if (!_toastContainer) {
+        _toastContainer = document.createElement('div');
+        _toastContainer.id = 'builderToastContainer';
+        _toastContainer.style.cssText = 'position:fixed;top:16px;right:16px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+        document.body.appendChild(_toastContainer);
+    }
+    while (_toastContainer.children.length >= _toastMaxVisible) {
+        _toastContainer.firstChild.remove();
+    }
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
+    toast.style.cssText = 'pointer-events:auto;';
     toast.textContent = message;
-    document.body.appendChild(toast);
+    _toastContainer.appendChild(toast);
     setTimeout(() => {
         toast.style.animation = 'slideUp 0.3s ease-out reverse';
         setTimeout(() => toast.remove(), 300);
@@ -12143,3 +12154,54 @@ const VoiceAgentCtrl = (() => {
 })();
 
 if (typeof window !== 'undefined') window.VoiceAgentCtrl = VoiceAgentCtrl;
+
+// Audio Settings Builder Controller
+const AudioSettingsBuilder = (() => {
+    function load() {
+        if (typeof AudioSettings === 'undefined') return;
+        const s = AudioSettings.getSettings();
+        const el = (id) => document.getElementById(id);
+        if (el('audioEnhEnabled')) el('audioEnhEnabled').value = String(s.enabled);
+        if (el('audioBass')) { el('audioBass').value = s.bass; const v = document.getElementById('audioBassVal'); if (v) v.textContent = s.bass; }
+        if (el('audioTreble')) { el('audioTreble').value = s.treble; const v = document.getElementById('audioTrebleVal'); if (v) v.textContent = s.treble; }
+        if (el('audioNorm')) el('audioNorm').value = String(s.normalization);
+        if (el('audioSpatial')) el('audioSpatial').value = String(s.spatial);
+        if (el('audioSurround')) el('audioSurround').value = String(s.surround71);
+        if (el('audioDolby')) el('audioDolby').value = String(s.dolbyEnhance);
+        if (el('audioDolbyLevel')) { el('audioDolbyLevel').value = Math.round(s.dolbyLevel * 100); const v = document.getElementById('audioDolbyLevelVal'); if (v) v.textContent = Math.round(s.dolbyLevel * 100) + '%'; }
+        if (el('audioQuality')) el('audioQuality').value = s.quality;
+
+        // Live update sliders
+        if (el('audioBass')) el('audioBass').oninput = function() { document.getElementById('audioBassVal').textContent = this.value; };
+        if (el('audioTreble')) el('audioTreble').oninput = function() { document.getElementById('audioTrebleVal').textContent = this.value; };
+        if (el('audioDolbyLevel')) el('audioDolbyLevel').oninput = function() { document.getElementById('audioDolbyLevelVal').textContent = this.value + '%'; };
+    }
+
+    function save() {
+        if (typeof AudioSettings === 'undefined') { showToast('Audio module not loaded', 'error'); return; }
+        const el = (id) => document.getElementById(id);
+        AudioSettings.apply({
+            enabled: el('audioEnhEnabled')?.value === 'true',
+            bass: parseInt(el('audioBass')?.value) || 0,
+            treble: parseInt(el('audioTreble')?.value) || 0,
+            normalization: el('audioNorm')?.value === 'true',
+            spatial: el('audioSpatial')?.value === 'true',
+            surround71: el('audioSurround')?.value === 'true',
+            dolbyEnhance: el('audioDolby')?.value === 'true',
+            dolbyLevel: (parseInt(el('audioDolbyLevel')?.value) || 70) / 100,
+            quality: el('audioQuality')?.value || 'auto',
+        });
+        showToast('Audio settings saved', 'success');
+    }
+
+    function reset() {
+        if (typeof AudioSettings === 'undefined') return;
+        AudioSettings.reset();
+        load();
+        showToast('Audio settings reset to defaults', 'info');
+    }
+
+    return { load, save, reset };
+})();
+
+if (typeof window !== 'undefined') window.AudioSettingsBuilder = AudioSettingsBuilder;

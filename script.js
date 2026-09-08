@@ -5236,6 +5236,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     initAudioPlayer();
     restorePlaybackState();
     
+    // Initialize audio settings (bass/treble/normalization/spatial)
+    if (typeof AudioSettings !== 'undefined') AudioSettings.init();
+    
     // Initialize 30-second playback login prompt for public/guest users
     if (typeof window._PlaybackLoginPrompt !== 'undefined') {
         window._PlaybackLoginPrompt.init();
