@@ -59,19 +59,53 @@ const YTMusic = {
         }
         this.renderQueueList();
         document.body.classList.add('home-active');
-        // Restore deep-linked page from hash on load (state preservation).
+
+        // Restore deep-linked page from hash or saved position on load
         try {
             const hash = (location.hash || '').replace('#', '');
             if (hash && document.getElementById('page-' + hash) && hash !== 'home') {
                 this.navigateTo(hash, { _fromPop: true });
+            } else {
+                // Restore saved page position from sessionStorage (survives refresh)
+                const saved = sessionStorage.getItem('tamilAI_navPosition');
+                if (saved) {
+                    const pos = JSON.parse(saved);
+                    if (pos.page && pos.page !== 'home' && document.getElementById('page-' + pos.page)) {
+                        this.navigateTo(pos.page, { _fromPop: true });
+                        // Restore scroll position after page renders
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                window.scrollTo(0, pos.scroll || 0);
+                            });
+                        });
+                    }
+                }
             }
         } catch (e) {}
+
+        // Save position on page unload (survives refresh)
+        window.addEventListener('beforeunload', () => {
+            try {
+                sessionStorage.setItem('tamilAI_navPosition', JSON.stringify({
+                    page: this.currentPage || 'home',
+                    scroll: window.scrollY || 0
+                }));
+            } catch (e) {}
+        });
+
         console.log('YTMusic initialized');
     },
 
     // Load data from localStorage
     loadData() {
         try {
+            // Switch DataStore history to current user
+            if (typeof DataStore !== 'undefined' && DataStore.switchHistoryUser) {
+                if (typeof Auth !== 'undefined' && Auth.currentUser) {
+                    const user = Auth.currentUser();
+                    if (user) DataStore.switchHistoryUser(user.uid || user.email || null);
+                }
+            }
             if (typeof DataStore !== 'undefined') {
                 this.likedSongs = DataStore.getLikedSongs();
                 this.playlists = DataStore.getPlaylists();
@@ -106,9 +140,17 @@ const YTMusic = {
                 DataStore.setQueue(this.queue);
                 DataStore.setYTSettings(this.settings);
             } else {
+                // Fallback with user-scoped history key
+                let historyKey = 'ytm_history';
+                try {
+                    if (typeof Auth !== 'undefined' && Auth.currentUser) {
+                        const user = Auth.currentUser();
+                        if (user) historyKey = 'ytm_history_' + (user.uid || user.email || 'guest').replace(/[^a-zA-Z0-9._@-]/g, '_');
+                    }
+                } catch (e) {}
                 localStorage.setItem('ytm_likedSongs', JSON.stringify(this.likedSongs));
                 localStorage.setItem('ytm_playlists', JSON.stringify(this.playlists));
-                localStorage.setItem('ytm_history', JSON.stringify(this.history));
+                localStorage.setItem(historyKey, JSON.stringify(this.history));
                 localStorage.setItem('ytm_settings', JSON.stringify(this.settings));
                 localStorage.setItem('ytm_queue', JSON.stringify(this.queue));
             }

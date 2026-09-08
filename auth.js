@@ -127,6 +127,17 @@ window.Auth = (function () {
             }
         }
 
+        // ─── Switch listening history to this user ───
+        if (typeof ListeningHistory !== 'undefined' && ListeningHistory.switchUser) {
+            ListeningHistory.switchUser(userData.uid || userData.email || null);
+        }
+        if (typeof PlaylistManager !== 'undefined' && PlaylistManager.switchUser) {
+            PlaylistManager.switchUser(userData.uid || userData.email || null);
+        }
+        if (typeof DataStore !== 'undefined' && DataStore.switchHistoryUser) {
+            DataStore.switchHistoryUser(userData.uid || userData.email || null);
+        }
+
         return sessionUser;
     }
 
@@ -247,6 +258,16 @@ window.Auth = (function () {
             ssRemove(keys[i]);
         }
         clearAuthCookies();
+        // Switch listening history to guest (don't clear - history persists for user)
+        if (typeof ListeningHistory !== 'undefined' && ListeningHistory.switchUser) {
+            ListeningHistory.switchUser(null);
+        }
+        if (typeof PlaylistManager !== 'undefined' && PlaylistManager.switchUser) {
+            PlaylistManager.switchUser(null);
+        }
+        if (typeof DataStore !== 'undefined' && DataStore.switchHistoryUser) {
+            DataStore.switchHistoryUser(null);
+        }
     }
 
     // --- Firebase sign-out (non-blocking, best-effort) ---

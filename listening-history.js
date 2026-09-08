@@ -3,27 +3,66 @@
 /* ============================================
    Listening History - Continue Listening Panel
    Tracks playback history with saved positions
+   Each user has their own isolated history
    ============================================ */
 
 const ListeningHistory = (() => {
-    const STORAGE_KEY = 'lh_playback_history';
+    const BASE_STORAGE_KEY = 'lh_playback_history';
     const MAX_ITEMS = 50;
     let panel = null;
     let fab = null;
     let isOpen = false;
+    let _currentUserId = null;
+
+    /* ============================================
+       User-scoped storage key
+       ============================================ */
+    function _getStorageKey() {
+        // Get current user ID from Auth module
+        let userId = _currentUserId;
+        if (!userId && typeof Auth !== 'undefined' && Auth.currentUser) {
+            const user = Auth.currentUser();
+            if (user) {
+                userId = user.uid || user.email || 'guest';
+            }
+        }
+        if (!userId) userId = 'guest';
+        // Sanitize for use as localStorage key
+        return BASE_STORAGE_KEY + '_' + userId.replace(/[^a-zA-Z0-9._@-]/g, '_');
+    }
 
     /* ============================================
        Storage
        ============================================ */
     function getHistory() {
         try {
-            return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            const key = _getStorageKey();
+            return JSON.parse(localStorage.getItem(key) || '[]');
         } catch (e) { return []; }
     }
 
     function saveHistory(items) {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS)));
+            const key = _getStorageKey();
+            localStorage.setItem(key, JSON.stringify(items.slice(0, MAX_ITEMS)));
+        } catch (e) {}
+    }
+
+    /**
+     * Switch to a different user's history context.
+     * Call this on login/logout to ensure proper isolation.
+     */
+    function switchUser(userId) {
+        _currentUserId = userId || null;
+    }
+
+    /**
+     * Clear current user's history (for logout or account deletion).
+     */
+    function clearHistory() {
+        try {
+            const key = _getStorageKey();
+            localStorage.removeItem(key);
         } catch (e) {}
     }
 
@@ -396,6 +435,14 @@ const ListeningHistory = (() => {
             if (e.key === 'Escape' && isOpen) closePanel();
         });
 
+        // Switch to current user's history on init
+        if (typeof Auth !== 'undefined' && Auth.currentUser) {
+            const user = Auth.currentUser();
+            if (user) {
+                switchUser(user.uid || user.email || null);
+            }
+        }
+
         // Hook into audio events when audioPlayer becomes available
         function hookAudioPlayer() {
             if (typeof audioPlayer !== 'undefined' && audioPlayer && !audioPlayer._lhHooked) {
@@ -436,7 +483,9 @@ const ListeningHistory = (() => {
         playItem,
         playSongFromStore,
         removeItem,
-        getHistory
+        getHistory,
+        switchUser,
+        clearHistory
     };
 })();
 

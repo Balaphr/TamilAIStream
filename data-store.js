@@ -175,9 +175,20 @@ const DataStore = {
     
     getPlaylists() { return this.get(this.KEYS.PLAYLISTS) || []; },
     setPlaylists(playlists) { this.set(this.KEYS.PLAYLISTS, playlists); },
-    
-    getHistory() { return this.get(this.KEYS.HISTORY) || []; },
-    setHistory(history) { this.set(this.KEYS.HISTORY, history); },
+
+    // ─── User-scoped history ───
+    _historyUserId: null,
+    _getHistoryKey() {
+        const userId = this._historyUserId || 'guest';
+        return 'ytm_history_' + userId.replace(/[^a-zA-Z0-9._@-]/g, '_');
+    },
+    switchHistoryUser(userId) {
+        this._historyUserId = userId || null;
+        // Clear cache for old history key
+        delete this._cache[this.KEYS.HISTORY];
+    },
+    getHistory() { return this.get(this._getHistoryKey()) || []; },
+    setHistory(history) { this.set(this._getHistoryKey(), history); },
     
     getQueue() { return this.get(this.KEYS.QUEUE) || []; },
     setQueue(queue) { this.set(this.KEYS.QUEUE, queue); },

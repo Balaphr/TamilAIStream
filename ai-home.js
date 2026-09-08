@@ -1291,7 +1291,17 @@ window.AIHome = (() => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const page = btn.dataset.page;
-                    if (page && typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {
+                    if (page === 'history') {
+                        // Open Listening History panel (FAB hidden, so trigger directly)
+                        if (typeof ListeningHistory !== 'undefined' && ListeningHistory.togglePanel) {
+                            ListeningHistory.togglePanel();
+                        }
+                    } else if (page === 'ai-assistant') {
+                        // Open AI Assistant panel (FAB hidden, so trigger directly)
+                        if (typeof YTMusic !== 'undefined' && YTMusic.toggleAssistant) {
+                            YTMusic.toggleAssistant();
+                        }
+                    } else if (page && typeof YTMusic !== 'undefined' && YTMusic.navigateTo) {
                         YTMusic.navigateTo(page);
                     }
                     moreChip.classList.remove('open');

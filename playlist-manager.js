@@ -3,10 +3,11 @@
 /* ============================================
    PlaylistManager - Full Playlist System
    Favorites, History, Custom, AI, Downloads
+   Each user has their own isolated data
    ============================================ */
 
 const PlaylistManager = (() => {
-    const STORAGE_KEYS = {
+    const BASE_STORAGE_KEYS = {
         favorites: 'pm_favorites',
         recentlyPlayed: 'pm_recently_played',
         mostPlayed: 'pm_most_played',
@@ -14,6 +15,9 @@ const PlaylistManager = (() => {
         offlineDownloads: 'pm_offline_downloads',
         aiPlaylists: 'pm_ai_playlists'
     };
+
+    let _currentUserId = null;
+    let STORAGE_KEYS = { ...BASE_STORAGE_KEYS };
 
     let data = {
         favorites: [],
@@ -34,6 +38,19 @@ const PlaylistManager = (() => {
         if (!listeners[event]) listeners[event] = [];
         listeners[event].push(fn);
         return () => { listeners[event] = listeners[event].filter(f => f !== fn); };
+    }
+
+    /**
+     * Switch to a different user's storage context.
+     */
+    function switchUser(userId) {
+        _currentUserId = userId || null;
+        const suffix = _currentUserId ? ('_' + _currentUserId.replace(/[^a-zA-Z0-9._@-]/g, '_')) : '';
+        Object.entries(BASE_STORAGE_KEYS).forEach(([key, base]) => {
+            STORAGE_KEYS[key] = base + suffix;
+        });
+        // Reload data for new user
+        load();
     }
 
     function save() {
@@ -278,7 +295,7 @@ const PlaylistManager = (() => {
     }
 
     return {
-        init, on,
+        init, on, switchUser,
         addFavorite, removeFavorite, toggleFavorite, isFavorite, getFavorites,
         addRecentlyPlayed, getRecentlyPlayed, clearRecentlyPlayed,
         incrementPlayCount, getMostPlayed,

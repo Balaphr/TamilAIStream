@@ -753,8 +753,8 @@ function isRightPanelPage(page) {
     return _rightPanelPages.includes(page);
 }
 
-function navigateTo(page) {
-    if (_currentPage === page) return;
+function navigateTo(page, opts = {}) {
+    if (_currentPage === page && !opts._fromRefresh) return;
     _currentPage = page;
 
     document.querySelectorAll('.builder-page').forEach(p => p.style.display = 'none');
@@ -821,10 +821,12 @@ function navigateTo(page) {
         }
     }
 
-    // Scroll the center content area to the top
-    const mainEl = document.querySelector('.builder-main');
-    if (mainEl) mainEl.scrollTop = 0;
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    // Scroll the center content area to the top (skip when restoring from refresh)
+    if (!opts._fromRefresh) {
+        const mainEl = document.querySelector('.builder-main');
+        if (mainEl) mainEl.scrollTop = 0;
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    }
 
     // Update active states
     document.querySelectorAll(`[data-page="${page}"]`).forEach(el => el.classList.add('active'));
@@ -3332,8 +3334,48 @@ function initBuilder() {
     // Initialize Application Builder
     if (typeof AppBuilder !== 'undefined') AppBuilder.init();
 
-    // Load dashboard by default
-    navigateTo('dashboard');
+    // Restore saved page position or default to dashboard
+    const savedBuilderPage = localStorage.getItem('builder currentPage');
+    const _pageIdMap = {
+        'dashboard': 'dashboardPage', 'songs': 'songsPage', 'stations': 'stationsPage',
+        'content': 'contentPage', 'images': 'imagesPage', 'settings': 'settingsPage',
+        'musiccollections': 'musicCollectionsPage', 'newalbums': 'newAlbumsPage',
+        'songsCollections': 'songsCollectionsPage', 'changes': 'changesPage',
+        'homecontrol': 'homecontrolPage', 'sections': 'sectionsPage',
+        'navigation': 'navigationPage', 'moods': 'moodsPage', 'decades': 'decadesPage',
+        'airadio': 'airadioPage', 'notifications': 'notificationsPage',
+        'splash': 'splashPage', 'player': 'playerPage', 'miniplayersettings': 'miniplayersettingsPage',
+        'application': 'applicationPage', 'trash': 'trashPage',
+        'visualeditor': 'visualeditorPage', 'aiwebflow': 'aiwebflowPage',
+        'preview': 'previewPage', 'analytics': 'analyticsPage', 'site360': 'site360Page',
+        'ads': 'adsPage', 'upcomingReleases': 'upcomingReleasesPage'
+    };
+    if (savedBuilderPage && _pageIdMap[savedBuilderPage] && document.getElementById(_pageIdMap[savedBuilderPage])) {
+        navigateTo(savedBuilderPage, { _fromRefresh: true });
+    } else {
+        navigateTo('dashboard');
+    }
+
+    // Save page on unload for refresh restoration
+    window.addEventListener('beforeunload', () => {
+        try {
+            if (_currentPage) localStorage.setItem('builder currentPage', _currentPage);
+            // Save scroll position of the main content area
+            const mainEl = document.querySelector('.builder-main');
+            if (mainEl) localStorage.setItem('builder scrollPosition', String(mainEl.scrollTop));
+        } catch (e) {}
+    });
+
+    // Restore scroll position after page renders
+    setTimeout(() => {
+        try {
+            const savedScroll = localStorage.getItem('builder scrollPosition');
+            if (savedScroll) {
+                const mainEl = document.querySelector('.builder-main');
+                if (mainEl) mainEl.scrollTop = parseInt(savedScroll, 10) || 0;
+            }
+        } catch (e) {}
+    }, 100);
 
     console.log('%cðŸŽ™ï¸ Tamil AI Stream Admin Panel', 'font-size:20px;font-weight:bold;color:#34d399;');
     console.log('%cAdmin Ready - Logged in as: ' + (currentUser?.displayName || currentUser?.email || 'Admin'), 'font-size:12px;color:#6ee7b7;');
