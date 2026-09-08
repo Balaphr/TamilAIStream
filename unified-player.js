@@ -309,6 +309,11 @@ const UnifiedPlayer = (() => {
      ═══════════════════════════════════════════ */
   function playSong(track, queue, index) {
     if (!track) return;
+    // ─── Access Control: check trial/subscription before playback ───
+    if (typeof window.AccessControl !== 'undefined') {
+      var audioEl = state.externalEngine ? (window.audioPlayer || audio) : audio;
+      if (!AccessControl.guardPlayback(audioEl)) return;
+    }
     state.mode = 'songs';
     state.isLive = !!(track.streamUrl && !track.audioUrl);
     state.track = track;
@@ -324,6 +329,11 @@ const UnifiedPlayer = (() => {
 
   function playFM(station) {
     if (!station) return;
+    // ─── Access Control: check trial/subscription before playback ───
+    if (typeof window.AccessControl !== 'undefined') {
+      var audioEl = state.externalEngine ? (window.audioPlayer || audio) : audio;
+      if (!AccessControl.guardPlayback(audioEl)) return;
+    }
     state.mode = 'fm';
     state.isLive = true;
     state.track = station;
@@ -343,6 +353,11 @@ const UnifiedPlayer = (() => {
   }
 
   function play() {
+    // ─── Access Control: check before playing ───
+    if (typeof window.AccessControl !== 'undefined') {
+      var audioEl = state.externalEngine ? (window.audioPlayer || audio) : audio;
+      if (!AccessControl.guardPlayback(audioEl)) return;
+    }
     if (state.externalEngine) {
       if (typeof window.resumePlayback === 'function') { window.resumePlayback(); return; }
       const live = _liveAudio();

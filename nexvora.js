@@ -452,44 +452,12 @@ window.NexvoraAI = (function () {
         showApp(); showToast('Continuing as Guest', 'info');
     }
 
-    var ADMIN_EMAIL = 'admin@tamilaistream.com';
-    var ADMIN_PASSWORD = 'Admin@123';
+    // Admin credentials are server-side only — 2FA required via admin-login.html
     var ADMIN_NAME = 'Admin User';
 
     function handleAdminLogin() {
-        var btn = $('#nexvoraAdminLogin');
-        if (!btn) return;
-        btn.classList.add('loading');
-        btn.disabled = true;
-        var originalHTML = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Logging in...';
-        try {
-            var users = JSON.parse(localStorage.getItem('tamilAIStream_users') || '[]');
-            var user = null;
-            for (var i = 0; i < users.length; i++) {
-                if (users[i].email === ADMIN_EMAIL && users[i].password === ADMIN_PASSWORD) { user = users[i]; break; }
-            }
-            if (!user) {
-                user = { uid: 'admin-nexvora', email: ADMIN_EMAIL, name: ADMIN_NAME, password: ADMIN_PASSWORD };
-                users.push(user);
-                localStorage.setItem('tamilAIStream_users', JSON.stringify(users));
-            }
-            Auth.createSession({ email: user.email, name: user.name, avatar: user.avatar || '' }, true);
-            localStorage.setItem('adminSession', JSON.stringify({
-                username: ADMIN_EMAIL, email: ADMIN_EMAIL, displayName: ADMIN_NAME,
-                loginTime: Date.now(), expiry: Date.now() + (24 * 60 * 60 * 1000)
-            }));
-            btn.innerHTML = originalHTML;
-            btn.classList.remove('loading');
-            btn.disabled = false;
-            showApp();
-            showToast('Welcome Admin!', 'success');
-        } catch (e) {
-            btn.innerHTML = originalHTML;
-            btn.classList.remove('loading');
-            btn.disabled = false;
-            showToast('Admin login failed', 'error');
-        }
+        // Redirect to admin-login.html for 2FA verification
+        window.location.href = 'admin-login.html';
     }
 
     function handleAdminDashboard() {
@@ -500,21 +468,19 @@ window.NexvoraAI = (function () {
         var originalHTML = btn.innerHTML;
         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Opening...';
         try {
-            var users = JSON.parse(localStorage.getItem('tamilAIStream_users') || '[]');
-            var user = null;
-            for (var i = 0; i < users.length; i++) {
-                if (users[i].email === ADMIN_EMAIL && users[i].password === ADMIN_PASSWORD) { user = users[i]; break; }
+            // Check for verified admin session
+            var isAdmin = false;
+            try {
+                var s = JSON.parse(localStorage.getItem('adminSession') || 'null');
+                if (s && s.verified && s.token && s.expiry && s.expiry > Date.now()) isAdmin = true;
+            } catch (e) {}
+            
+            if (isAdmin) {
+                Auth.createSession({ email: 'admin@tamilaistream.com', name: 'Admin' }, true);
+            } else {
+                window.location.href = 'admin-login.html';
+                return;
             }
-            if (!user) {
-                user = { uid: 'admin-nexvora', email: ADMIN_EMAIL, name: ADMIN_NAME, password: ADMIN_PASSWORD };
-                users.push(user);
-                localStorage.setItem('tamilAIStream_users', JSON.stringify(users));
-            }
-            Auth.createSession({ email: user.email, name: user.name, avatar: user.avatar || '' }, true);
-            localStorage.setItem('adminSession', JSON.stringify({
-                username: ADMIN_EMAIL, email: ADMIN_EMAIL, displayName: ADMIN_NAME,
-                loginTime: Date.now(), expiry: Date.now() + (24 * 60 * 60 * 1000)
-            }));
             showToast('Opening Admin Dashboard...', 'success');
             setTimeout(function () { window.location.href = 'dashboard.html'; }, 600);
         } catch (e) {

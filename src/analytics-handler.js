@@ -23,7 +23,8 @@ function buildEmptyAgg() {
         searches: { keywords: {}, noResults: 0, total: 0, clicks: {} },
         players: { miniOpen: 0, miniClose: 0, miniMinimize: 0, seek: 0, lyricsOpen: 0, lyricsSeek: 0, queueOpen: 0, volumeChange: 0, playPause: 0, prev: 0, next: 0 },
         users: { login: 0, logout: 0, register: 0, loginFail: 0, guest: 0, sessions: {} },
-        flow: {}, sections: {}
+        flow: {}, sections: {},
+        perf: { battery: [], network: [], memory: [], sessions: {}, byBrowser: {}, byPlatform: {}, errors: [], buffering: [], apiReqs: { total: 0, repeated: 0, endpoints: {} }, dataPerSong: {} }
     };
 }
 
@@ -100,6 +101,96 @@ function updateAgg(agg, ev) {
         const key = (ev.prev || 'start') + ' -> ' + ev.page;
         agg.flow[key] = (agg.flow[key] || 0) + 1;
     }
+
+    // Platform tracking
+    if (ev.platform) {
+        agg.perf.byPlatform[ev.platform] = (agg.perf.byPlatform[ev.platform] || 0) + 1;
+    }
+
+    // Browser tracking
+    if (ev.browser) {
+        agg.perf.byBrowser[ev.browser] = (agg.perf.byBrowser[ev.browser] || 0) + 1;
+    }
+
+    // Perf sample: battery level readings
+    if (ev.event === 'perf_battery' && ev.level != null) {
+        agg.perf.battery.push({ level: ev.level, charging: ev.charging || false, ts: ev.ts });
+        if (agg.perf.battery.length > 200) agg.perf.battery = agg.perf.battery.slice(-200);
+    }
+
+    // Perf sample: network speed readings
+    if (ev.event === 'perf_network') {
+        agg.perf.network.push({ downlink: ev.downlink || 0, effectiveType: ev.effectiveType || 'unknown', ts: ev.ts });
+        if (agg.perf.network.length > 200) agg.perf.network = agg.perf.network.slice(-200);
+    }
+
+    // Perf sample: memory readings
+    if (ev.event === 'perf_memory' && ev.heapUsed != null) {
+        agg.perf.memory.push({ heapUsed: ev.heapUsed, heapTotal: ev.heapTotal || 0, ts: ev.ts });
+        if (agg.perf.memory.length > 200) agg.perf.memory = agg.perf.memory.slice(-200);
+    }
+
+    // Session tracking with duration
+    if (ev.event === 'session_end' && ev.sid) {
+        const sessKey = ev.sid;
+        agg.perf.sessions[sessKey] = {
+            duration: ev.duration || 0,
+            platform: ev.platform || 'web',
+            device: ev.device || 'desktop',
+            browser: ev.browser || 'Other',
+            end: ev.ts
+        };
+    }
+    if (ev.event === 'session_start' && ev.sid) {
+        if (!agg.perf.sessions[ev.sid]) {
+            agg.perf.sessions[ev.sid] = { start: ev.ts, platform: ev.platform || 'web', device: ev.device || 'desktop', browser: ev.browser || 'Other', duration: 0 };
+        } else {
+            agg.perf.sessions[ev.sid].start = ev.ts;
+        }
+    }
+
+    // Playback error tracking
+    if (ev.event === 'perf_error') {
+        agg.perf.errors.push({ songId: ev.songId || '', code: ev.code || 0, ts: ev.ts });
+        if (agg.perf.errors.length > 500) agg.perf.errors = agg.perf.errors.slice(-500);
+    }
+
+    // Buffering event tracking
+    if (ev.event === 'perf_buffer') {
+        agg.perf.buffering.push({ songId: ev.songId || '', duration: ev.duration || 0, ts: ev.ts });
+        if (agg.perf.buffering.length > 500) agg.perf.buffering = agg.perf.buffering.slice(-500);
+    }
+
+    // Per-song performance data
+    if (ev.event === 'perf_song_stats' && ev.songId) {
+        if (!agg.perf.dataPerSong[ev.songId]) {
+            agg.perf.dataPerSong[ev.songId] = { title: ev.title || '', plays: 0, duration: 0, skips: 0, errors: 0, buffering: 0 };
+        }
+        const ps = agg.perf.dataPerSong[ev.songId];
+        ps.plays += ev.plays || 0;
+        ps.duration += ev.duration || 0;
+        ps.skips += ev.skips || 0;
+        ps.errors += ev.errors || 0;
+        ps.buffering += ev.buffering || 0;
+        if (ev.title) ps.title = ev.title;
+    }
+
+    // API request tracking
+    if (ev.event === 'perf_api') {
+        agg.perf.apiReqs.total += ev.total || 0;
+        agg.perf.apiReqs.repeated += ev.repeated || 0;
+        if (ev.endpoints && typeof ev.endpoints === 'object') {
+            for (const [url, info] of Object.entries(ev.endpoints)) {
+                if (!agg.perf.apiReqs.endpoints[url]) {
+                    agg.perf.apiReqs.endpoints[url] = { count: 0, method: info.method || 'GET', lastSeen: 0 };
+                }
+                agg.perf.apiReqs.endpoints[url].count += info.count || 0;
+                if (info.lastSeen > agg.perf.apiReqs.endpoints[url].lastSeen) {
+                    agg.perf.apiReqs.endpoints[url].lastSeen = info.lastSeen;
+                }
+            }
+        }
+    }
 }
 
 function updateRealtime(rt, events) {
@@ -137,6 +228,21 @@ function serializeAgg(agg) {
     for (const sk of Object.keys(s.sections || {})) {
         s.sections[sk] = { views: s.sections[sk].views, users: setSize(s.sections[sk].users), time: s.sections[sk].time };
     }
+    // Serialize perf data
+    s.perf = s.perf || {};
+    s.perf.byBrowser = s.perf.byBrowser || {};
+    s.perf.byPlatform = s.perf.byPlatform || {};
+    s.perf.battery = (s.perf.battery || []).slice(-60);
+    s.perf.network = (s.perf.network || []).slice(-60);
+    s.perf.memory = (s.perf.memory || []).slice(-60);
+    s.perf.errors = (s.perf.errors || []).slice(-50);
+    s.perf.buffering = (s.perf.buffering || []).slice(-50);
+    s.perf.sessions = s.perf.sessions || {};
+    s.perf.apiReqs = s.perf.apiReqs || { total: 0, repeated: 0, endpoints: {} };
+    s.perf.dataPerSong = s.perf.dataPerSong || {};
+    // Limit top endpoints to 30
+    const epEntries = Object.entries(s.perf.apiReqs.endpoints).sort((a, b) => b[1].count - a[1].count);
+    s.perf.apiReqs.endpoints = Object.fromEntries(epEntries.slice(0, 30));
     return s;
 }
 
@@ -158,6 +264,19 @@ function ensureAgg(agg) {
     for (const sk of Object.keys(agg.songs)) { agg.songs[sk].listeners = ensureObj(agg.songs[sk].listeners); }
     for (const fk of Object.keys(agg.fms)) { agg.fms[fk].listeners = ensureObj(agg.fms[fk].listeners); }
     for (const sk of Object.keys(agg.sections)) { agg.sections[sk].users = ensureObj(agg.sections[sk].users); }
+    // Ensure perf structure
+    agg.perf = ensureObj(agg.perf);
+    agg.perf.battery = agg.perf.battery || [];
+    agg.perf.network = agg.perf.network || [];
+    agg.perf.memory = agg.perf.memory || [];
+    agg.perf.sessions = ensureObj(agg.perf.sessions);
+    agg.perf.byBrowser = ensureObj(agg.perf.byBrowser);
+    agg.perf.byPlatform = ensureObj(agg.perf.byPlatform);
+    agg.perf.errors = agg.perf.errors || [];
+    agg.perf.buffering = agg.perf.buffering || [];
+    agg.perf.apiReqs = ensureObj(agg.perf.apiReqs);
+    agg.perf.apiReqs.endpoints = ensureObj(agg.perf.apiReqs.endpoints);
+    agg.perf.dataPerSong = ensureObj(agg.perf.dataPerSong);
     return agg;
 }
 

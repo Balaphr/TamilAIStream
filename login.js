@@ -463,27 +463,19 @@ DOM.loginForm?.addEventListener('submit', async function(e) {
         const userData = { name: user.name, email: user.email, photoURL: user.photoURL || '', uid: user.uid };
         Auth.createSession(userData, rememberMe, false);
         
-        const isAdmin = (email === DEMO_EMAIL && password === DEMO_PASSWORD);
-        if (isAdmin) {
-            localStorage.setItem('adminSession', JSON.stringify({
-                username: DEMO_EMAIL,
-                email: DEMO_EMAIL,
-                displayName: user.name,
-                loginTime: Date.now(),
-                expiry: Date.now() + (24 * 60 * 60 * 1000)
-            }));
-        }
+        // Admin users must use admin-login.html for 2FA verification
+        // No longer auto-creating admin sessions from regular login
         
         DOM.loginBtn.classList.remove('loading');
         DOM.loginBtn.disabled = false;
         
-        DOM.successTitle.textContent = isAdmin ? 'Welcome Admin!' : 'Welcome back!';
-        DOM.successMessage.textContent = isAdmin ? 'Loading your Command Center...' : 'Redirecting to your dashboard...';
+        DOM.successTitle.textContent = 'Welcome back!';
+        DOM.successMessage.textContent = 'Redirecting to your dashboard...';
         DOM.successOverlay.classList.add('visible');
         
-        showToast(isAdmin ? 'Admin login successful! Opening Command Center.' : 'Login successful! Welcome back.', 'success');
+        showToast('Login successful! Welcome back.', 'success');
         
-        setTimeout(() => isAdmin ? (window.location.href = 'dashboard.html') : redirectToHome(), 1500);
+        setTimeout(() => redirectToHome(), 1500);
         
     } catch (error) {
         DOM.loginBtn.classList.remove('loading');
@@ -818,22 +810,16 @@ document.head.appendChild(shakeStyle);
 // ============================================
 // Demo Account
 // ============================================
-const DEMO_EMAIL = 'admin@tamilaistream.com';
-const DEMO_PASSWORD = 'Admin@123';
-const DEMO_NAME = 'Admin User';
+// Admin credentials are server-side only (src/index.js)
+// Admin users must use admin-login.html for 2FA verification
 
 /**
  * Seed demo account on page load (localStorage-based).
  */
 function seedDemoAccount() {
-    const existing = findUserByEmail(DEMO_EMAIL);
-    if (!existing) {
-        createUser(DEMO_EMAIL, DEMO_PASSWORD, DEMO_NAME);
-        console.log('Demo account created successfully');
-        showToast('Demo account ready! Use the credentials below to log in.', 'success');
-    } else {
-        console.log('Demo account already exists');
-    }
+    // No longer seeding admin account on client side
+    // Admin must use admin-login.html for 2FA verification
+    console.log('Admin login requires 2FA verification via admin-login.html');
 }
 
 /**
@@ -841,71 +827,11 @@ function seedDemoAccount() {
  * Respects the "Remember Me" checkbox.
  */
 async function quickDemoLogin() {
-    const demoBtn = document.getElementById('demoLoginBtn');
-    if (!demoBtn) return;
-    
-    demoBtn.classList.add('loading');
-    demoBtn.disabled = true;
-    const originalHTML = demoBtn.innerHTML;
-    demoBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Logging in...';
-    
-    try {
-        const rememberMe = DOM.rememberMe ? DOM.rememberMe.checked : true;
-        await applyPersistence(rememberMe);
-
-        let user = validateCredentials(DEMO_EMAIL, DEMO_PASSWORD);
-        if (!user) {
-            user = createUser(DEMO_EMAIL, DEMO_PASSWORD, DEMO_NAME);
-        }
-        
-        if (!user) {
-            throw new Error('Failed to create demo account');
-        }
-
-        const userData = { name: user.name, email: user.email, photoURL: user.photoURL || '', uid: user.uid };
-        Auth.createSession(userData, rememberMe, false);
-        
-        showToast('Demo login successful! Welcome Admin.', 'success');
-        
-        // Also set adminSession so builder.html recognizes the admin login
-        // (Auth.createSession above also sets main website session, but we also set adminSession explicitly)
-        localStorage.setItem('adminSession', JSON.stringify({
-            username: DEMO_EMAIL,
-            email: DEMO_EMAIL,
-            displayName: user.name,
-            loginTime: Date.now(),
-            expiry: Date.now() + (24 * 60 * 60 * 1000)
-        }));
-        
-        // Also set main website session so builder auth fallback works
-        // (Ensures checkWebsiteAuth() in builder.js can authenticate even if adminSession check fails)
-        try {
-            localStorage.setItem('tamilAIStream_user', JSON.stringify({
-                uid: user.uid || 'admin-local',
-                name: user.name || 'Admin',
-                email: user.email,
-                loginTime: Date.now(),
-                photoURL: user.photoURL || ''
-            }));
-            localStorage.setItem('tamilAIStream_loggedIn', 'true');
-        } catch (e) {
-            console.warn('Unable to sync website session:', e);
-        }
-        
-        DOM.successTitle.textContent = 'Welcome Admin!';
-        DOM.successMessage.textContent = 'Loading your Command Center...';
-        DOM.successOverlay.classList.add('visible');
-        
-        setTimeout(() => {
-            window.location.href = 'dashboard.html';
-        }, 1500);
-        
-    } catch (error) {
-        demoBtn.innerHTML = originalHTML;
-        demoBtn.classList.remove('loading');
-        demoBtn.disabled = false;
-        showToast(error.message || 'Demo login failed', 'error');
-    }
+    // Admin login now requires 2FA verification via admin-login.html
+    showToast('Redirecting to admin login...', 'info');
+    setTimeout(() => {
+        window.location.href = 'admin-login.html';
+    }, 500);
 }
 
 /**
@@ -926,44 +852,11 @@ async function openBuilderFromLogin() {
         const rememberMe = DOM.rememberMe ? DOM.rememberMe.checked : true;
         await applyPersistence(rememberMe);
 
-        let user = validateCredentials(DEMO_EMAIL, DEMO_PASSWORD);
-        if (!user) {
-            user = createUser(DEMO_EMAIL, DEMO_PASSWORD, DEMO_NAME);
-        }
-        if (!user) {
-            throw new Error('Failed to prepare admin session');
-        }
-
-        Auth.createSession({ name: user.name, email: user.email, photoURL: user.photoURL || '', uid: user.uid }, rememberMe, false);
-
-        // Set adminSession so builder.html recognizes the admin login
-        localStorage.setItem('adminSession', JSON.stringify({
-            username: DEMO_EMAIL,
-            email: DEMO_EMAIL,
-            displayName: user.name,
-            loginTime: Date.now(),
-            expiry: Date.now() + (24 * 60 * 60 * 1000)
-        }));
-
-        // Also set main website session so builder auth fallback works
-        // (Ensures checkWebsiteAuth() in builder.js can authenticate even if adminSession check fails)
-        try {
-            localStorage.setItem('tamilAIStream_user', JSON.stringify({
-                uid: user.uid || 'admin-local',
-                name: user.name || 'Admin',
-                email: user.email,
-                loginTime: Date.now(),
-                photoURL: user.photoURL || ''
-            }));
-            localStorage.setItem('tamilAIStream_loggedIn', 'true');
-        } catch (e) {
-            console.warn('Unable to sync website session:', e);
-        }
-
-        showToast('Opening Builder...', 'success');
-
+        // Admin session now requires server-side 2FA verification
+        // Redirect to admin-login.html for proper verification flow
+        showToast('Please complete admin verification', 'info');
         setTimeout(() => {
-            window.location.href = 'builder.html?auto=1';
+            window.location.href = 'admin-login.html';
         }, 600);
     } catch (error) {
         btn.innerHTML = originalHTML;
@@ -977,60 +870,11 @@ async function openBuilderFromLogin() {
  * Open Nexvora AI — ensures the admin account exists and navigates to /Nexvora.
  */
 async function openNexvoraFromLogin() {
-    const btn = document.getElementById('openNexvoraBtn');
-    if (!btn) return;
-
-    btn.classList.add('loading');
-    btn.disabled = true;
-    const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Opening Nexvora...';
-
-    try {
-        const rememberMe = DOM.rememberMe ? DOM.rememberMe.checked : true;
-        await applyPersistence(rememberMe);
-
-        let user = validateCredentials(DEMO_EMAIL, DEMO_PASSWORD);
-        if (!user) {
-            user = createUser(DEMO_EMAIL, DEMO_PASSWORD, DEMO_NAME);
-        }
-        if (!user) {
-            throw new Error('Failed to prepare admin session');
-        }
-
-        Auth.createSession({ name: user.name, email: user.email, photoURL: user.photoURL || '', uid: user.uid }, rememberMe, false);
-
-        localStorage.setItem('adminSession', JSON.stringify({
-            username: DEMO_EMAIL,
-            email: DEMO_EMAIL,
-            displayName: user.name,
-            loginTime: Date.now(),
-            expiry: Date.now() + (24 * 60 * 60 * 1000)
-        }));
-
-        try {
-            localStorage.setItem('tamilAIStream_user', JSON.stringify({
-                uid: user.uid || 'admin-local',
-                name: user.name || 'Admin',
-                email: user.email,
-                loginTime: Date.now(),
-                photoURL: user.photoURL || ''
-            }));
-            localStorage.setItem('tamilAIStream_loggedIn', 'true');
-        } catch (e) {
-            console.warn('Unable to sync website session:', e);
-        }
-
-        showToast('Opening Nexvora AI...', 'success');
-
-        setTimeout(() => {
-            window.location.href = 'Nexvora';
-        }, 600);
-    } catch (error) {
-        btn.innerHTML = originalHTML;
-        btn.classList.remove('loading');
-        btn.disabled = false;
-        showToast(error.message || 'Failed to open Nexvora AI', 'error');
-    }
+    // Nexvora AI access requires admin verification
+    showToast('Redirecting to admin login...', 'info');
+    setTimeout(() => {
+        window.location.href = 'admin-login.html';
+    }, 500);
 }
 
 // Demo Copy Button

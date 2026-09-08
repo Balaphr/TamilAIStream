@@ -1310,7 +1310,14 @@
         });
         const builderBtn = $('ccOpenBuilder');
         if (builderBtn) builderBtn.addEventListener('click', () => {
-            window.location.href = 'builder.html?auto=1';
+            // Require verified admin to access builder
+            let isAdmin = false;
+            try {
+                const s = JSON.parse(localStorage.getItem('adminSession') || 'null');
+                if (s && s.verified && s.token && s.expiry && s.expiry > Date.now()) isAdmin = true;
+            } catch (e) {}
+            if (isAdmin) window.location.href = 'builder.html?auto=1';
+            else window.location.href = 'admin-login.html';
         });
         const fullBtn = $('ccFullPlayer');
         if (fullBtn) fullBtn.addEventListener('click', () => { window.location.href = 'index.html'; });

@@ -1305,8 +1305,12 @@ window.AIHome = (() => {
                 else if (action === 'settings') { if (typeof YTMusic !== 'undefined' && YTMusic.toggleSettingsPanel) YTMusic.toggleSettingsPanel(); }
                 else if (action === 'dashboard') { if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) YTMusic.navigateTo('dashboard'); }
                 else if (action === 'builder') {
-                    const sess = (typeof Auth !== 'undefined' && Auth.currentUser) ? Auth.currentUser() : null;
-                    const isAdmin = !!sess || (localStorage.getItem('adminSession') ? true : false);
+                    // Hardened admin check: requires verified + token + not expired
+                    let isAdmin = false;
+                    try {
+                        const s = JSON.parse(localStorage.getItem('adminSession') || 'null');
+                        if (s && s.verified && s.token && s.expiry && s.expiry > Date.now()) isAdmin = true;
+                    } catch (e) {}
                     if (isAdmin) window.location.href = 'builder.html';
                     else window.location.href = 'admin-login.html';
                 }
@@ -1328,7 +1332,22 @@ window.AIHome = (() => {
         if (nameEl) nameEl.textContent = 'Hi, ' + name.split(' ')[0];
         if (planEl) {
             const premium = !!(user && (user.premium || user.plan === 'premium'));
-            planEl.innerHTML = (premium ? '<i class="fa-solid fa-crown"></i> Premium' : '<i class="fa-solid fa-crown" style="color:rgba(255,255,255,0.4);"></i> Free');
+            const isSubscribed = (typeof AccessControl !== 'undefined' && AccessControl.isSubscribed());
+            const isTrialActive = (typeof AccessControl !== 'undefined' && AccessControl.isTrialActive());
+            let planText, planStyle;
+            if (premium || isSubscribed) {
+                planText = '<i class="fa-solid fa-crown"></i> Premium';
+                planStyle = '';
+            } else if (isTrialActive) {
+                const days = AccessControl.getTrialDaysRemaining();
+                planText = '<i class="fa-solid fa-clock"></i> Trial (' + days + 'd)';
+                planStyle = 'color:#a78bfa;';
+            } else {
+                planText = '<i class="fa-solid fa-crown" style="color:rgba(255,255,255,0.4);"></i> Free';
+                planStyle = '';
+            }
+            planEl.innerHTML = planText;
+            if (planStyle) planEl.querySelector('i').style.cssText = planStyle;
         }
         if (avatarEl) {
             const photo = (user && user.photoURL) || '';
@@ -1352,7 +1371,16 @@ window.AIHome = (() => {
         }
         if (sidebarPlan) {
             const premium = !!(user && (user.premium || user.plan === 'premium'));
-            sidebarPlan.innerHTML = (premium ? '<i class="fa-solid fa-crown"></i> Premium' : '<i class="fa-solid fa-crown" style="color:#fbbf24;"></i> Free');
+            const isSubscribed = (typeof AccessControl !== 'undefined' && AccessControl.isSubscribed());
+            const isTrialActive = (typeof AccessControl !== 'undefined' && AccessControl.isTrialActive());
+            if (premium || isSubscribed) {
+                sidebarPlan.innerHTML = '<i class="fa-solid fa-crown"></i> Premium';
+            } else if (isTrialActive) {
+                const days = AccessControl.getTrialDaysRemaining();
+                sidebarPlan.innerHTML = '<i class="fa-solid fa-clock"></i> Trial (' + days + 'd)';
+            } else {
+                sidebarPlan.innerHTML = '<i class="fa-solid fa-crown" style="color:#fbbf24;"></i> Free';
+            }
         }
         // Sync mobile menu profile section
         const mobileName = $('mobileMenuUserName');
@@ -1366,7 +1394,16 @@ window.AIHome = (() => {
         }
         if (mobilePlan) {
             const premium = !!(user && (user.premium || user.plan === 'premium'));
-            mobilePlan.innerHTML = (premium ? '<i class="fa-solid fa-crown"></i> Premium' : '<i class="fa-solid fa-crown" style="color:#fbbf24;"></i> Free');
+            const isSubscribed = (typeof AccessControl !== 'undefined' && AccessControl.isSubscribed());
+            const isTrialActive = (typeof AccessControl !== 'undefined' && AccessControl.isTrialActive());
+            if (premium || isSubscribed) {
+                mobilePlan.innerHTML = '<i class="fa-solid fa-crown"></i> Premium';
+            } else if (isTrialActive) {
+                const days = AccessControl.getTrialDaysRemaining();
+                mobilePlan.innerHTML = '<i class="fa-solid fa-clock"></i> Trial (' + days + 'd)';
+            } else {
+                mobilePlan.innerHTML = '<i class="fa-solid fa-crown" style="color:#fbbf24;"></i> Free';
+            }
         }
     }
 
@@ -2095,6 +2132,17 @@ window.AIHome = (() => {
         // then only updates greeting/date/quote text in place.
         if (typeof renderGreetingSection === 'function') renderGreetingSection();
         renderForYouTrending();
+        /* Wire up For You upgrade button */
+        var foryouUpgradeBtn = document.getElementById('foryouUpgradeBtn');
+        if (foryouUpgradeBtn) {
+            foryouUpgradeBtn.onclick = function () {
+                if (typeof UpgradePopup !== 'undefined') {
+                    UpgradePopup.showUpgradeFlow();
+                } else if (typeof YTMusic !== 'undefined') {
+                    YTMusic.navigateTo('premium');
+                }
+            };
+        }
         renderUpcomingNew();
         renderUpcomingReleasesAuto();
         renderNewAlbums();

@@ -34,10 +34,8 @@ let uploadedAudioUrl = null;
 // ============================================
 // Admin Authentication
 // ============================================
-const ADMIN_CREDENTIALS = {
-    username: 'admin@tamilaistream.com',
-    password: 'Admin@123'
-};
+// Admin credentials are server-side only (src/index.js)
+// Client-side admin access requires 2FA verification via admin-login.html
 
 function checkAdminAuth() {
     // Primary check via centralized Auth module (validates session + admin status)
@@ -47,14 +45,18 @@ function checkAdminAuth() {
             return true;
         }
     }
-    // Fallback: local adminSession check
+    // Fallback: local adminSession check (requires verified + token + not expired)
     const session = localStorage.getItem('adminSession');
     if (session) {
-        const sessionData = JSON.parse(session);
-        if (sessionData.expiry > Date.now()) {
-            currentUser = sessionData;
-            return true;
-        } else {
+        try {
+            const sessionData = JSON.parse(session);
+            if (sessionData.verified && sessionData.token && sessionData.expiry && sessionData.expiry > Date.now()) {
+                currentUser = sessionData;
+                return true;
+            } else {
+                localStorage.removeItem('adminSession');
+            }
+        } catch (e) {
             localStorage.removeItem('adminSession');
         }
     }
@@ -62,12 +64,10 @@ function checkAdminAuth() {
 }
 
 function setAdminSession() {
-    const sessionData = {
-        username: ADMIN_CREDENTIALS.username,
-        expiry: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
-    };
-    localStorage.setItem('adminSession', JSON.stringify(sessionData));
-    currentUser = sessionData;
+    // Admin session must be created through the server-side 2FA verification flow
+    // This function is deprecated — use admin-login.html instead
+    console.warn('setAdminSession() is deprecated. Use admin-login.html for 2FA verification.');
+    window.location.href = 'admin-login.html';
 }
 
 function logout() {

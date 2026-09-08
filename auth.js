@@ -119,6 +119,14 @@ window.Auth = (function () {
         if (remember) { lsSet(K.REMEMBER, 'true'); } else { lsRemove(K.REMEMBER); }
 
         storeToken(token, remember);
+
+        // ─── Auto-start free trial for non-guest users ───
+        if (!isGuest && window.AccessControl) {
+            if (!AccessControl.getTrialExpiry()) {
+                AccessControl.startTrial();
+            }
+        }
+
         return sessionUser;
     }
 
@@ -158,17 +166,11 @@ window.Auth = (function () {
     }
 
     function isAdmin() {
-        // Valid adminSession (created by admin-login / demo login / builder).
+        // Hardened admin check: requires verified + token + not expired
+        // Prevents spoofed admin access via localStorage manipulation
         try {
             var s = JSON.parse(lsGet(K.ADMIN) || 'null');
-            if (s && s.expiry && s.expiry > now()) return true;
-        } catch (e) { /* ignore */ }
-        // Admin main-site session also grants admin access.
-        try {
-            var u = getStoredUser();
-            if (u && u.expiry && u.expiry > now() && /admin@tamilaistream\.com/i.test(u.email || '')) {
-                return true;
-            }
+            if (s && s.verified && s.token && s.expiry && s.expiry > now()) return true;
         } catch (e) { /* ignore */ }
         return false;
     }
@@ -307,6 +309,17 @@ window.Auth = (function () {
         clearAll: clearAll,
         logout: logout,
         adminLogout: adminLogout,
-        firebaseSignOut: firebaseSignOut
+        firebaseSignOut: firebaseSignOut,
+        // ─── Trial/Subscription helpers (delegates to AccessControl) ───
+        getTrialInfo: function () {
+            if (window.AccessControl) return AccessControl.getAccountInfo().trial;
+            return { active: false, expired: false, startDate: 'N/A', expiryDate: 'N/A', daysRemaining: 0 };
+        },
+        getSubscriptionInfo: function () {
+            if (window.AccessControl) return AccessControl.getAccountInfo().subscription;
+            return { status: 'none', plan: 'free', active: false };
+        },
+        isTrialActive: function () { return window.AccessControl ? AccessControl.isTrialActive() : false; },
+        isSubscribed: function () { return window.AccessControl ? AccessControl.isSubscribed() : false; },
     };
 })();

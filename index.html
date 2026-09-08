@@ -891,16 +891,45 @@
                             </div>
                         </div>
 
-                        <!-- Premium -->
+                        <!-- Premium / Subscription -->
                         <div class="settings-card settings-card-premium">
                             <div class="settings-card-header">
                                 <i class="fas fa-crown"></i>
-                                <h3>Premium</h3>
+                                <h3>Subscription</h3>
                             </div>
                             <div class="settings-card-body">
                                 <div class="settings-premium-status" id="settingsPremiumStatus">
-                                    <div class="settings-premium-badge free"><i class="fas fa-crown"></i> Free Plan</div>
-                                    <p>Upgrade to Premium for ad-free listening, exclusive content, and offline downloads.</p>
+                                    <div class="settings-premium-badge free" id="settingsPlanBadge"><i class="fas fa-crown"></i> Free Plan</div>
+                                </div>
+                                <!-- Trial Status -->
+                                <div class="settings-trial-info" id="settingsTrialInfo" style="display:none;">
+                                    <div class="settings-trial-row">
+                                        <span class="settings-trial-label">Free Trial</span>
+                                        <span class="settings-trial-value" id="settingsTrialStatus">Active</span>
+                                    </div>
+                                    <div class="settings-trial-row">
+                                        <span class="settings-trial-label">Started</span>
+                                        <span class="settings-trial-value" id="settingsTrialStart">—</span>
+                                    </div>
+                                    <div class="settings-trial-row">
+                                        <span class="settings-trial-label">Expires</span>
+                                        <span class="settings-trial-value" id="settingsTrialExpiry">—</span>
+                                    </div>
+                                    <div class="settings-trial-row">
+                                        <span class="settings-trial-label">Days Remaining</span>
+                                        <span class="settings-trial-value settings-trial-days" id="settingsTrialDays">—</span>
+                                    </div>
+                                </div>
+                                <!-- Subscription Status -->
+                                <div class="settings-sub-info" id="settingsSubInfo" style="display:none;">
+                                    <div class="settings-trial-row">
+                                        <span class="settings-trial-label">Plan</span>
+                                        <span class="settings-trial-value" id="settingsSubPlan">—</span>
+                                    </div>
+                                    <div class="settings-trial-row">
+                                        <span class="settings-trial-label">Status</span>
+                                        <span class="settings-trial-value" id="settingsSubStatus">—</span>
+                                    </div>
                                 </div>
                                 <div class="settings-premium-features">
                                     <div class="settings-premium-feature"><i class="fas fa-check"></i> Ad-free experience</div>
@@ -1456,6 +1485,8 @@
     <script defer src="firebase-config.js"></script>
     <script defer src="firebase-init.js"></script>
     <script defer src="data-store.js"></script>
+    <script defer src="access-control.js"></script>
+    <script defer src="upgrade-popup.js"></script>
     <script defer src="r2-config.js"></script>
     <script defer src="r2-upload.js"></script>
     <script defer src="r2-content-sync.js"></script>
@@ -1476,6 +1507,7 @@
     <script defer src="ai-home.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            if (typeof AccessControl !== 'undefined') AccessControl.init();
             Equalizer.loadEqSettings();
             PlaylistManager.init();
             SearchEngine.init();

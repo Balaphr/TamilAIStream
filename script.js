@@ -498,6 +498,22 @@ function restorePlaybackState() {
         const wasPlaying = !!saved.isStreamPlaying;
 
         if (currentPlaybackTrack && wasPlaying) {
+            // ─── Access Control: check before restoring playback ───
+            if (typeof window.AccessControl !== 'undefined') {
+                var access = AccessControl.checkAccess();
+                if (access === 'trial_expired') {
+                    // Don't restore — show upgrade popup
+                    isStreamPlaying = false;
+                    userPaused = true;
+                    updatePlayPauseButton(false);
+                    updateNowPlayingBar(currentPlaybackTrack.title || currentPlaybackTrack.name || '', currentStation || '', false);
+                    setTimeout(function () { AccessControl.showAccessPopup('trial_expired'); }, 500);
+                    return saved;
+                } else if (access === 'guest_limit') {
+                    // Guest: allow but start timer
+                    AccessControl.onTrackStart(audioPlayer);
+                }
+            }
             // Resume playback from saved position
             isStreamPlaying = false;
             userPaused = false;
@@ -1200,6 +1216,10 @@ function isSameActivePlayback(trackOrStation) {
  */
 function resumeActivePlaybackSession() {
     if (window.__BUILDER_PREVIEW__) return;
+    // ─── Access Control: check before resuming ───
+    if (typeof window.AccessControl !== 'undefined') {
+        if (!AccessControl.guardPlayback(audioPlayer)) return false;
+    }
     if (!audioPlayer || !audioPlayer.src) return false;
     // Preserve the current playback position — do NOT reset currentTime to 0.
     // DO NOT call audioPlayer.load() as it resets currentTime to 0 per HTML spec.
@@ -1220,6 +1240,10 @@ function toggleStationFromCard(btn, stationName, stationId) {
 
 function playStation(stationName, stationId) {
     if (window.__BUILDER_PREVIEW__) return;
+    // ─── Access Control: check trial/subscription before playback ───
+    if (typeof window.AccessControl !== 'undefined') {
+        if (!AccessControl.guardPlayback(audioPlayer)) return;
+    }
     // CRITICAL FIX: If the user clicks/touches the station that is ALREADY the
     // active playback source, do NOT stop, restart, or reset it. Preserve the
     // current currentTime, play/pause state, volume and selected station.
@@ -1361,6 +1385,10 @@ function playStation(stationName, stationId) {
 
 async function playSong(song, playlist = []) {
     if (window.__BUILDER_PREVIEW__) return;
+    // ─── Access Control: check trial/subscription before playback ───
+    if (typeof window.AccessControl !== 'undefined') {
+        if (!AccessControl.guardPlayback(audioPlayer)) return;
+    }
     // CRITICAL FIX: If the user clicks/touches the song that is ALREADY the
     // active playback source, do NOT stop, restart, or reset it. Preserve the
     // current currentTime, play/pause state, volume and selected track/station.
@@ -1481,6 +1509,10 @@ async function playSong(song, playlist = []) {
 
 function playTrackFromYTMusic(track, meta = {}) {
     if (!track) return;
+    // ─── Access Control: check trial/subscription before playback ───
+    if (typeof window.AccessControl !== 'undefined') {
+        if (!AccessControl.guardPlayback(audioPlayer)) return;
+    }
     // CRITICAL FIX: If the user clicks/touches the track that is ALREADY the
     // active playback source, do NOT stop, restart, or reset it. Preserve the
     // current currentTime, play/pause state, volume and selected track/station.
@@ -1534,6 +1566,10 @@ function pausePlayback() {
 
 function resumePlayback() {
     if (!audioPlayer) return;
+    // ─── Access Control: check before resuming ───
+    if (typeof window.AccessControl !== 'undefined') {
+        if (!AccessControl.guardPlayback(audioPlayer)) return;
+    }
     if (audioPlayer.paused) {
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         audioPlayer.play().then(() => {
@@ -1771,9 +1807,18 @@ function pauseStation() {
 
 function togglePlayPause() {
     if (window.__BUILDER_PREVIEW__) return;
+    // ─── Access Control: check trial/subscription before resuming playback ───
+    if (typeof window.AccessControl !== 'undefined' && !audioPlayer.paused) {
+        // Only check access when trying to RESUME (not pause)
+        // Actually we check when resuming from paused state
+    }
     if (isStreamPlaying) {
         pausePlayback();
     } else if (currentStation || currentPlaybackTrack) {
+        // ─── Access Control: check before resuming ───
+        if (typeof window.AccessControl !== 'undefined') {
+            if (!AccessControl.guardPlayback(audioPlayer)) return;
+        }
         userPaused = false;
         if (currentStation && (!audioPlayer.src || audioPlayer.src === '' || audioPlayer.src === 'about:blank')) {
             playStation(currentStation);
@@ -3011,28 +3056,16 @@ function checkAdminAndShowBuilder() {
     const isGuest = localStorage.getItem('tamilAIStream_guest');
     if (isGuest === 'true') return;
     
-    // Check for admin session (logged in via builder page)
+    // Hardened admin check: requires verified session with valid token + not expired
     const adminSession = localStorage.getItem('adminSession');
     if (adminSession) {
         try {
             const sessionData = JSON.parse(adminSession);
-            if (sessionData.username === 'admin@tamilaistream.com' && sessionData.expiry > Date.now()) {
+            if (sessionData.verified && sessionData.token && sessionData.email &&
+                sessionData.expiry && sessionData.expiry > Date.now()) {
                 isAdmin = true;
             }
         } catch (e) { /* Invalid session, continue checking */ }
-    }
-    
-    // Check for admin logged in via main login page
-    if (!isAdmin) {
-        const storedUser = localStorage.getItem('tamilAIStream_user');
-        if (storedUser) {
-            try {
-                const userData = JSON.parse(storedUser);
-                if (userData.email === 'admin@tamilaistream.com') {
-                    isAdmin = true;
-                }
-            } catch (e) { /* Invalid user data */ }
-        }
     }
     
     // Show/hide builder elements based on admin status

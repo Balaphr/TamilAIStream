@@ -151,7 +151,14 @@ const YTMusic = {
                 } else if (action === 'profile') {
                     window.location.href = 'profile.html';
                 } else if (action === 'builder') {
-                    window.location.href = 'builder.html';
+                    // Require verified admin to access builder
+                    let isAdmin = false;
+                    try {
+                        const s = JSON.parse(localStorage.getItem('adminSession') || 'null');
+                        if (s && s.verified && s.token && s.expiry && s.expiry > Date.now()) isAdmin = true;
+                    } catch (e) {}
+                    if (isAdmin) window.location.href = 'builder.html';
+                    else window.location.href = 'admin-login.html';
                 }
                 this.toggleMobileMenu(false);
             });
@@ -1697,15 +1704,85 @@ const YTMusic = {
             const premStatus = document.getElementById('settingsPremiumStatus');
             if (premStatus) {
                 const isPremium = user.premium || user.plan === 'premium';
-                premStatus.innerHTML = isPremium
-                    ? '<div class="settings-premium-badge premium"><i class="fas fa-crown"></i> Premium Active</div><p>You have access to all premium features including ad-free listening, offline downloads, and exclusive content.</p>'
-                    : '<div class="settings-premium-badge free"><i class="fas fa-crown"></i> Free Plan</div><p>Upgrade to Premium for ad-free listening, exclusive content, and offline downloads.</p>';
+                const isSubscribed = (typeof AccessControl !== 'undefined' && AccessControl.isSubscribed());
+                const isTrialActive = (typeof AccessControl !== 'undefined' && AccessControl.isTrialActive());
+                const isTrialExpired = (typeof AccessControl !== 'undefined' && AccessControl.isTrialExpired());
+
+                let badgeClass = 'free';
+                let badgeText = '<i class="fas fa-crown"></i> Free Plan';
+                if (isSubscribed || isPremium) {
+                    badgeClass = 'active';
+                    badgeText = '<i class="fas fa-crown"></i> Premium Active';
+                } else if (isTrialActive) {
+                    badgeClass = 'trial';
+                    badgeText = '<i class="fas fa-clock"></i> Free Trial Active';
+                } else if (isTrialExpired) {
+                    badgeClass = 'expired';
+                    badgeText = '<i class="fas fa-clock-rotate-left"></i> Trial Expired';
+                }
+                const badge = premStatus.querySelector('.settings-premium-badge') || premStatus;
+                if (badge) {
+                    badge.className = 'settings-premium-badge ' + badgeClass;
+                    badge.innerHTML = badgeText;
+                }
+            }
+
+            // Trial info
+            const trialInfo = document.getElementById('settingsTrialInfo');
+            if (trialInfo && typeof AccessControl !== 'undefined') {
+                const isLoggedIn = AccessControl.isLoggedIn();
+                if (isLoggedIn) {
+                    trialInfo.style.display = '';
+                    const days = AccessControl.getTrialDaysRemaining();
+                    const expiry = AccessControl.getTrialExpiry();
+                    const start = AccessControl.getTrialStart();
+                    const isActive = AccessControl.isTrialActive();
+                    const isExpired = AccessControl.isTrialExpired();
+
+                    const statusEl = document.getElementById('settingsTrialStatus');
+                    const startEl = document.getElementById('settingsTrialStart');
+                    const expiryEl = document.getElementById('settingsTrialExpiry');
+                    const daysEl = document.getElementById('settingsTrialDays');
+
+                    if (statusEl) statusEl.textContent = isExpired ? 'Expired' : (isActive ? 'Active' : 'Not Started');
+                    if (startEl) startEl.textContent = start ? new Date(start).toLocaleDateString() : '—';
+                    if (expiryEl) expiryEl.textContent = expiry ? new Date(expiry).toLocaleDateString() : '—';
+                    if (daysEl) {
+                        daysEl.textContent = days > 0 ? days + ' day' + (days !== 1 ? 's' : '') : 'Expired';
+                        daysEl.className = 'settings-trial-value settings-trial-days' + (days <= 0 ? ' expired' : '');
+                    }
+                } else {
+                    trialInfo.style.display = 'none';
+                }
+            }
+
+            // Subscription info
+            const subInfo = document.getElementById('settingsSubInfo');
+            if (subInfo && typeof AccessControl !== 'undefined') {
+                const subStatus = AccessControl.getSubscriptionStatus();
+                const subPlan = AccessControl.getSubscriptionPlan();
+                const isSubscribed = AccessControl.isSubscribed();
+                if (subStatus !== 'none' || isSubscribed) {
+                    subInfo.style.display = '';
+                    const planEl = document.getElementById('settingsSubPlan');
+                    const statusEl = document.getElementById('settingsSubStatus');
+                    if (planEl) planEl.textContent = subPlan === 'premium' ? 'Premium' : (subPlan === 'family' ? 'Family' : subPlan);
+                    if (statusEl) statusEl.textContent = isSubscribed ? 'Active' : subStatus.charAt(0).toUpperCase() + subStatus.slice(1);
+                } else {
+                    subInfo.style.display = 'none';
+                }
             }
         }
         const logoutBtn = document.getElementById('settingsLogoutBtn');
         if (logoutBtn) logoutBtn.onclick = () => { if (typeof Auth !== 'undefined') Auth.logout(); else window.location.href = 'login.html'; };
         const upgradeBtn = document.getElementById('settingsUpgradeBtn');
-        if (upgradeBtn) upgradeBtn.onclick = () => YTMusic.navigateTo('premium');
+        if (upgradeBtn) upgradeBtn.onclick = () => {
+            if (typeof UpgradePopup !== 'undefined') {
+                UpgradePopup.showUpgradeFlow();
+            } else {
+                YTMusic.navigateTo('premium');
+            }
+        };
     },
 
     renderAccountPage() {
@@ -1720,9 +1797,16 @@ const YTMusic = {
             const badge = document.getElementById('accountPlanBadge');
             if (badge) {
                 const isPremium = user.premium || user.plan === 'premium';
-                badge.innerHTML = isPremium
-                    ? '<i class="fas fa-crown" style="color:#f59e0b;"></i> Premium'
-                    : '<i class="fas fa-crown" style="color:rgba(255,255,255,0.4);"></i> Free';
+                const isSubscribed = (typeof AccessControl !== 'undefined' && AccessControl.isSubscribed());
+                const isTrialActive = (typeof AccessControl !== 'undefined' && AccessControl.isTrialActive());
+                if (isPremium || isSubscribed) {
+                    badge.innerHTML = '<i class="fas fa-crown" style="color:#f59e0b;"></i> Premium';
+                } else if (isTrialActive) {
+                    const days = AccessControl.getTrialDaysRemaining();
+                    badge.innerHTML = '<i class="fas fa-clock" style="color:#a78bfa;"></i> Trial (' + days + 'd)';
+                } else {
+                    badge.innerHTML = '<i class="fas fa-crown" style="color:rgba(255,255,255,0.4);"></i> Free';
+                }
             }
         }
         try {

@@ -476,9 +476,18 @@
             const timer = setTimeout(() => controller.abort(), 20000);
             let response;
             try {
+                const adminToken = (function() {
+                    try {
+                        const s = localStorage.getItem('adminSession');
+                        if (s) { const d = JSON.parse(s); if (d.token && d.verified && d.expiry > Date.now()) return d.token; }
+                    } catch(e) {}
+                    return null;
+                })();
+                const headers = { 'Content-Type': 'application/json' };
+                if (adminToken) headers['Authorization'] = 'Bearer ' + adminToken;
                 response = await fetch('/api/manifest', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers,
                     body: JSON.stringify(payload),
                     signal: controller.signal
                 });
@@ -508,9 +517,18 @@
             const timer = setTimeout(() => controller.abort(), 20000);
             let response;
             try {
+                const adminToken = (function() {
+                    try {
+                        const s = localStorage.getItem('adminSession');
+                        if (s) { const d = JSON.parse(s); if (d.token && d.verified && d.expiry > Date.now()) return d.token; }
+                    } catch(e) {}
+                    return null;
+                })();
+                const headers = { 'Content-Type': 'application/json' };
+                if (adminToken) headers['Authorization'] = 'Bearer ' + adminToken;
                 response = await fetch('/api/staging', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers,
                     body: JSON.stringify(payload),
                     signal: controller.signal
                 });

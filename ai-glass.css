@@ -3639,6 +3639,55 @@ body.ai-playlist-detail-open { overflow: hidden; }
 /* Premium Card variant */
 .settings-card-premium { border-color: rgba(245,158,11,0.15); }
 
+/* ─── Trial & Subscription Status ─── */
+.settings-trial-info, .settings-sub-info {
+    margin: 0 18px 12px;
+    padding: 12px 16px;
+    background: rgba(52, 211, 153, 0.06);
+    border: 1px solid rgba(52, 211, 153, 0.12);
+    border-radius: 12px;
+}
+.settings-sub-info {
+    background: rgba(245, 158, 11, 0.06);
+    border-color: rgba(245, 158, 11, 0.12);
+}
+.settings-trial-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+}
+.settings-trial-row + .settings-trial-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+.settings-trial-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+.settings-trial-value {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+}
+.settings-trial-days {
+    color: #34d399;
+}
+.settings-trial-days.expired {
+    color: #ef4444;
+}
+.settings-premium-badge.active {
+    background: linear-gradient(135deg, #34d399, #059669);
+    color: #fff;
+}
+.settings-premium-badge.trial {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: #fff;
+}
+.settings-premium-badge.expired {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
 /* ============================================
    Account Page
    ============================================ */

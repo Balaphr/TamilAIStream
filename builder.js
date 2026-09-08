@@ -38,10 +38,8 @@ function scheduleSync() {
 // ============================================
 // Authentication System
 // ============================================
-const ADMIN_CREDENTIALS = {
-    username: 'admin@tamilaistream.com',
-    password: 'Admin@123'
-};
+// Admin credentials are server-side only (src/index.js)
+// Client-side admin access requires 2FA verification via admin-login.html
 
 const BUILDER_USERS_KEY = 'tamilAIStream_builderUsers';
 
@@ -72,10 +70,8 @@ function checkAuth() {
         if (session) {
             try {
                 const data = JSON.parse(session);
-                // Validate admin email â€” non-admin sessions are rejected
-                const email = (data.email || data.username || '').toLowerCase();
-                const isAdmin = email === 'admin@tamilaistream.com' || email.startsWith('admin');
-                if (data.expiry > Date.now() && isAdmin) {
+                // Hardened check: require verified + token + not expired
+                if (data.verified && data.token && data.expiry && data.expiry > Date.now()) {
                     if (!isAutoLoginRequest()) {
                         showAccessGate(data);
                     }
@@ -95,41 +91,9 @@ function checkAuth() {
 }
 
 function checkWebsiteAuth(resolve) {
-    // Also check for admin login from the main website login page
-    const storedUser = localStorage.getItem('tamilAIStream_user');
-    const loggedIn = localStorage.getItem('tamilAIStream_loggedIn');
-    
-    if (loggedIn === 'true' && storedUser) {
-        try {
-            const userData = JSON.parse(storedUser);
-            const isAdmin = userData.email === ADMIN_CREDENTIALS.username ||
-                           userData.email === 'admin@tamilaistream.com';
-            
-            if (isAdmin) {
-                // Auto-create adminSession for builder access
-                const sessionData = {
-                    username: userData.email,
-                    email: userData.email,
-                    displayName: userData.name || 'Admin',
-                    role: 'admin',
-                    loginTime: Date.now(),
-                    expiry: Date.now() + (24 * 60 * 60 * 1000)
-                };
-                localStorage.setItem('adminSession', JSON.stringify(sessionData));
-                // Show access gate (skipped for ?auto=1 coming from the login page)
-                if (!isAutoLoginRequest()) {
-                    showAccessGate(sessionData);
-                }
-                resolve(sessionData);
-            } else {
-                resolve(null);
-            }
-        } catch (e) {
-            resolve(null);
-        }
-    } else {
-        resolve(null);
-    }
+    // Website login no longer auto-creates admin sessions
+    // Admin must use admin-login.html for 2FA verification
+    resolve(null);
 }
 
 
@@ -204,31 +168,17 @@ async function signInWithEmail(email, password) {
         const user = users.find(u => u.email === email && u.password === password);
         
         if (!user) {
-            // Check if it's the admin demo credentials
-            if (email === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-                const demoUser = {
-                    username: ADMIN_CREDENTIALS.username,
-                    email: ADMIN_CREDENTIALS.username,
-                    displayName: 'Admin',
-                    role: 'admin',
-                    password: ADMIN_CREDENTIALS.password
-                };
-                localStorage.setItem('adminSession', JSON.stringify({
-                    username: ADMIN_CREDENTIALS.username,
-                    email: ADMIN_CREDENTIALS.username,
-                    displayName: 'Admin',
-                    role: 'admin',
-                    loginTime: Date.now(),
-                    expiry: Date.now() + (24 * 60 * 60 * 1000)
-                }));
-                showToast('Welcome Admin!', 'success');
-                showAccessGate(demoUser);
+            // Admin login now requires server-side 2FA verification
+            if (email.startsWith('admin')) {
+                showToast('Admin login requires verification. Use admin-login.html', 'info');
+                setTimeout(() => { window.location.href = 'admin-login.html'; }, 1000);
                 return;
             }
             showToast('Invalid email or password', 'error');
             return;
         }
         
+        // Regular user login (not admin) — no adminSession created
         localStorage.setItem('adminSession', JSON.stringify({
             username: user.email,
             email: user.email,
@@ -307,7 +257,7 @@ async function signInWithGoogle() {
         }
 
         const email = user.email.toLowerCase();
-        if (email !== ADMIN_CREDENTIALS.username && !email.startsWith('admin')) {
+        if (!email.startsWith('admin')) {
             firebase.auth().signOut();
             showToast('Access denied. Admins only.', 'error');
             if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
@@ -356,58 +306,6 @@ async function signInAsGuest() {
     showToast('Guest access is disabled. Please login or register.', 'error');
 }
 
-// One-click admin login on the Builder login screen.
-// Signs in with the built-in admin credentials, persists both sessions
-// (adminSession + main website session) and enters the dashboard directly.
-function quickAdminLogin() {
-    const btn = document.getElementById('builderQuickLogin');
-    if (!btn) return;
-
-    const originalHTML = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Signing in...';
-
-    setTimeout(() => {
-        const adminUser = {
-            username: ADMIN_CREDENTIALS.username,
-            email: ADMIN_CREDENTIALS.username,
-            displayName: 'Admin',
-            role: 'admin',
-            password: ADMIN_CREDENTIALS.password
-        };
-
-        // Sync the main website session so the admin is also logged in site-wide
-        try {
-            if (typeof Auth !== 'undefined' && Auth.createSession) {
-                Auth.createSession({ name: 'Admin', email: ADMIN_CREDENTIALS.username, uid: 'admin-local', photoURL: '' }, true, false);
-            } else {
-                localStorage.setItem('tamilAIStream_user', JSON.stringify({
-                    uid: 'admin-local',
-                    name: 'Admin',
-                    email: ADMIN_CREDENTIALS.username,
-                    loginTime: Date.now()
-                }));
-                localStorage.setItem('tamilAIStream_loggedIn', 'true');
-            }
-        } catch (e) {
-            console.warn('Unable to sync website session:', e);
-        }
-
-        localStorage.setItem('adminSession', JSON.stringify({
-            username: ADMIN_CREDENTIALS.username,
-            email: ADMIN_CREDENTIALS.username,
-            displayName: 'Admin',
-            role: 'admin',
-            loginTime: Date.now(),
-            expiry: Date.now() + (24 * 60 * 60 * 1000)
-        }));
-
-        showToast('Welcome Admin!', 'success');
-        // Enter the Builder immediately on this express path
-        showBuilderDashboard(adminUser);
-    }, 400);
-}
-
 // Sign Out
 async function signOut() {
     try {
@@ -430,6 +328,40 @@ async function signOut() {
 // Get user-friendly auth error messages
 function getAuthErrorMessage(code) {
     return 'Authentication failed. Please try again';
+}
+
+// ============================================
+// Admin Token Helper — for authenticated API calls
+// ============================================
+function getAdminToken() {
+    try {
+        const session = localStorage.getItem('adminSession');
+        if (session) {
+            const data = JSON.parse(session);
+            if (data.token && data.verified && data.expiry > Date.now()) {
+                return data.token;
+            }
+        }
+    } catch (e) {}
+    return null;
+}
+
+// Fetch wrapper that includes admin token for protected API calls
+async function adminFetch(url, options = {}) {
+    const token = getAdminToken();
+    if (token) {
+        options.headers = options.headers || {};
+        options.headers['Authorization'] = 'Bearer ' + token;
+    }
+    const response = await fetch(url, options);
+    if (response.status === 401) {
+        // Admin session expired — redirect to login
+        localStorage.removeItem('adminSession');
+        showToast('Admin session expired. Please login again.', 'error');
+        setTimeout(() => { window.location.href = 'admin-login.html'; }, 1500);
+        throw new Error('Admin session expired');
+    }
+    return response;
 }
 
 // ============================================
@@ -1183,143 +1115,225 @@ async function loadDashboardAnalytics() {
     } catch (e) { console.warn('Dashboard analytics load failed:', e); }
 }
 
-function loadPerfAnalytics() {
+async function loadPerfAnalytics() {
     try {
-        if (typeof PerfAnalytics === 'undefined') return;
-        const d = PerfAnalytics.getAggregated();
-        const s = d.summary;
-        const $ = id => document.getElementById(id);
+        const el = id => document.getElementById(id);
         const fmtDur = ms => {
             if (!ms) return '0m';
             const h = Math.floor(ms / 3600000);
             const m = Math.floor((ms % 3600000) / 60000);
             return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
         };
-        const fmtBytes = ms => {
-            if (!ms) return '0s';
-            const sec = Math.floor(ms / 1000);
+        const fmtSec = sec => {
+            if (!sec) return '0s';
             const m = Math.floor(sec / 60);
             return m > 0 ? m + 'm ' + (sec % 60) + 's' : sec + 's';
         };
-        if ($('perfTotalPlays')) $('perfTotalPlays').textContent = s.totalPlays || 0;
-        if ($('perfTotalListenTime')) $('perfTotalListenTime').textContent = fmtDur(s.totalListenTime);
-        if ($('perfTotalSkips')) $('perfTotalSkips').textContent = s.totalSkips || 0;
-        if ($('perfAvgSession')) $('perfAvgSession').textContent = fmtDur(s.avgSession);
-        if ($('perfBattery')) $('perfBattery').textContent = s.batteryLevel != null ? s.batteryLevel + '%' : '--%';
-        if ($('perfNetwork')) $('perfNetwork').textContent = s.networkSpeed ? s.networkSpeed + ' Mbps' : '--';
-        if ($('perfMemory')) $('perfMemory').textContent = s.memoryUsed ? s.memoryUsed + ' MB' : '--';
-        if ($('perfApiRequests')) $('perfApiRequests').textContent = s.apiRequests || 0;
-        if ($('perfErrors')) $('perfErrors').textContent = s.totalErrors || 0;
-        if ($('perfBuffering')) $('perfBuffering').textContent = fmtBytes(s.totalBuffering);
-        if ($('perfPlatform')) {
-            const pw = d.platformCounts.pwa || 0;
-            const wb = d.platformCounts.web || 0;
-            $('perfPlatform').textContent = pw + ' / ' + wb;
-        }
-        if ($('perfRepeated')) $('perfRepeated').textContent = s.repeatedRequests || 0;
+        const resp = await fetch('/api/analytics/aggregate', { cache: 'no-store' });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const perf = data.perf || {};
+        const sessions = perf.sessions || {};
+        const sessList = Object.values(sessions);
+        const now = Date.now();
+        const DAY = 86400000;
 
+        // Sessions in last 30 days
+        const sessions30d = sessList.filter(s => {
+            const t = s.end || s.start || 0;
+            return t > now - 30 * DAY;
+        });
+        const totalDuration = sessions30d.reduce((a, s) => a + (s.duration || 0), 0);
+        const avgSession = sessions30d.length ? Math.round(totalDuration / sessions30d.length) : 0;
+
+        // Song stats from perf.dataPerSong
+        const songs = Object.entries(perf.dataPerSong || {}).map(([id, v]) => ({
+            id, title: v.title || id, plays: v.plays || 0, duration: v.duration || 0,
+            skips: v.skips || 0, errors: v.errors || 0, buffering: v.buffering || 0
+        })).sort((a, b) => b.plays - a.plays);
+        const totalPlays = songs.reduce((a, s) => a + s.plays, 0);
+        const totalListenTime = songs.reduce((a, s) => a + s.duration, 0);
+        const totalSkips = songs.reduce((a, s) => a + s.skips, 0);
+        const totalErrors = (perf.errors || []).length;
+        const totalBuffering = (perf.buffering || []).reduce((a, b) => a + (b.duration || 0), 0);
+
+        // Battery
+        const batHistory = (perf.battery || []).slice(-30);
+        const latestBat = batHistory.length ? batHistory[batHistory.length - 1] : null;
+        const batDrain = batHistory.length >= 2 ? Math.max(0, batHistory[0].level - latestBat.level) : 0;
+
+        // Network
+        const netHistory = (perf.network || []).slice(-30);
+        const latestNet = netHistory.length ? netHistory[netHistory.length - 1] : null;
+
+        // Memory
+        const memHistory = (perf.memory || []).slice(-30);
+        const latestMem = memHistory.length ? memHistory[memHistory.length - 1] : null;
+
+        // Platform + browser
+        const byPlatform = perf.byPlatform || {};
+        const byBrowser = perf.byBrowser || {};
+
+        // Daily sessions from session data
+        const dailySessions = {};
+        sessList.forEach(s => {
+            const end = s.end || s.start;
+            if (!end || end < now - 30 * DAY) return;
+            const day = new Date(end).toLocaleDateString();
+            if (!dailySessions[day]) dailySessions[day] = { sessions: 0, duration: 0 };
+            dailySessions[day].sessions++;
+            dailySessions[day].duration += s.duration || 0;
+        });
+
+        // API stats
+        const apiReqs = perf.apiReqs || { total: 0, repeated: 0, endpoints: {} };
+        const topEndpoints = Object.entries(apiReqs.endpoints)
+            .sort((a, b) => b[1].count - a[1].count).slice(0, 20);
+
+        // Error history
+        const errHistory = (perf.errors || []).slice(-20).reverse();
+
+        // Update KPIs
+        if (el('perfTotalPlays')) el('perfTotalPlays').textContent = totalPlays || data.byEvent?.song_play || 0;
+        if (el('perfTotalListenTime')) el('perfTotalListenTime').textContent = fmtDur(totalListenTime);
+        if (el('perfTotalSkips')) el('perfTotalSkips').textContent = totalSkips || data.byEvent?.song_skip || 0;
+        if (el('perfAvgSession')) el('perfAvgSession').textContent = fmtDur(avgSession);
+        if (el('perfBattery')) el('perfBattery').textContent = latestBat ? latestBat.level + '%' : '--%';
+        if (el('perfNetwork')) el('perfNetwork').textContent = latestNet ? latestNet.downlink + ' Mbps' : '--';
+        if (el('perfMemory')) el('perfMemory').textContent = latestMem ? latestMem.heapUsed + ' MB' : '--';
+        if (el('perfApiRequests')) el('perfApiRequests').textContent = apiReqs.total || 0;
+        if (el('perfErrors')) el('perfErrors').textContent = totalErrors;
+        if (el('perfBuffering')) el('perfBuffering').textContent = fmtSec(Math.round(totalBuffering / 1000));
+        if (el('perfPlatform')) {
+            const pw = byPlatform.pwa || 0;
+            const wb = byPlatform.web || 0;
+            el('perfPlatform').textContent = wb + ' / ' + pw;
+        }
+        if (el('perfRepeated')) el('perfRepeated').textContent = apiReqs.repeated || 0;
+
+        // Charts
         if (typeof Chart !== 'undefined') {
-            // Sessions chart
-            const sessCtx = $('perfSessionsChart');
+            // Daily Sessions chart
+            const sessCtx = el('perfSessionsChart');
             if (sessCtx) {
-                const days = Object.keys(d.dailySessions).sort();
+                const days = Object.keys(dailySessions).sort();
                 const existing = Chart.getChart(sessCtx);
                 if (existing) existing.destroy();
-                new Chart(sessCtx, {
-                    type: 'line',
-                    data: { labels: days.map(d => d.split('/').slice(0, 2).join('/')), datasets: [
-                        { label: 'Sessions', data: days.map(k => d.dailySessions[k].sessions), borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.1)', fill: true, tension: 0.4 },
-                        { label: 'Duration (min)', data: days.map(k => Math.round(d.dailySessions[k].duration / 60000)), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4 }
-                    ]},
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { boxWidth: 10, font: { size: 10 } } } }, scales: { y: { beginAtZero: true } } }
-                });
+                if (days.length) {
+                    new Chart(sessCtx, {
+                        type: 'line',
+                        data: { labels: days.map(d => d.split('/').slice(0, 2).join('/')), datasets: [
+                            { label: 'Sessions', data: days.map(k => dailySessions[k].sessions), borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.1)', fill: true, tension: 0.4, pointRadius: 3 },
+                            { label: 'Duration (min)', data: days.map(k => Math.round(dailySessions[k].duration / 60000)), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4, pointRadius: 3 }
+                        ]},
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { boxWidth: 10, font: { size: 10 } } } }, scales: { y: { beginAtZero: true } } }
+                    });
+                } else {
+                    new Chart(sessCtx, { type: 'line', data: { labels: ['No data'], datasets: [{ label: 'Sessions', data: [0], borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.1)', fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+                }
             }
             // Device chart
-            const devCtx = $('perfDeviceChart');
+            const devCtx = el('perfDeviceChart');
             if (devCtx) {
                 const existing = Chart.getChart(devCtx);
                 if (existing) existing.destroy();
-                const labels = Object.keys(d.deviceCounts);
+                const devData = data.byDevice || {};
+                const labels = Object.keys(devData).length ? Object.keys(devData) : ['No data'];
+                const values = labels.map(k => devData[k] || 0);
                 new Chart(devCtx, {
                     type: 'doughnut',
-                    data: { labels, datasets: [{ data: labels.map(k => d.deviceCounts[k]), backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981'] }] },
+                    data: { labels, datasets: [{ data: values.length ? values : [1], backgroundColor: labels.length ? ['#8b5cf6', '#3b82f6', '#10b981'] : ['#333'] }] },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
                 });
             }
             // Battery chart
-            const batCtx = $('perfBatteryChart');
+            const batCtx = el('perfBatteryChart');
             if (batCtx) {
                 const existing = Chart.getChart(batCtx);
                 if (existing) existing.destroy();
-                const pts = d.batteryHistory;
-                new Chart(batCtx, {
-                    type: 'line',
-                    data: { labels: pts.map(p => new Date(p.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })), datasets: [
-                        { label: 'Battery %', data: pts.map(p => p.level), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.3 }
-                    ]},
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100 } } }
-                });
+                if (batHistory.length) {
+                    new Chart(batCtx, {
+                        type: 'line',
+                        data: { labels: batHistory.map(p => new Date(p.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })), datasets: [
+                            { label: 'Battery %', data: batHistory.map(p => p.level), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.3, pointRadius: 2 }
+                        ]},
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100 } } }
+                    });
+                } else {
+                    new Chart(batCtx, { type: 'line', data: { labels: ['No data'], datasets: [{ label: 'Battery', data: [0], borderColor: '#10b981' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+                }
             }
             // Browser chart
-            const brCtx = $('perfBrowserChart');
+            const brCtx = el('perfBrowserChart');
             if (brCtx) {
                 const existing = Chart.getChart(brCtx);
                 if (existing) existing.destroy();
-                const labels = Object.keys(d.browserCounts);
+                const labels = Object.keys(byBrowser).length ? Object.keys(byBrowser) : ['No data'];
+                const values = labels.map(k => byBrowser[k] || 0);
                 new Chart(brCtx, {
                     type: 'doughnut',
-                    data: { labels, datasets: [{ data: labels.map(k => d.browserCounts[k]), backgroundColor: ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'] }] },
+                    data: { labels, datasets: [{ data: values.length ? values : [1], backgroundColor: labels.length ? ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'] : ['#333'] }] },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
                 });
             }
         }
 
         // Top songs table
-        const songsTbody = $('perfTopSongsTable')?.querySelector('tbody');
-        if (songsTbody && d.songs.length) {
-            songsTbody.innerHTML = d.songs.slice(0, 20).map((s, i) => {
-                const skipRate = s.plays > 0 ? Math.round(s.skips / s.plays * 100) : 0;
-                return '<tr><td>' + (i + 1) + '</td><td>' + (s.title || 'Unknown') + '</td><td>' + s.plays + '</td><td>' + fmtDur(s.duration) + '</td><td>' + s.skips + '</td><td>' + s.errors + '</td><td>' + fmtBytes(s.buffering) + '</td></tr>';
-            }).join('');
-        } else if (songsTbody) {
-            songsTbody.innerHTML = '<tr><td colspan="7" class="dashboard-list-empty">No data yet</td></tr>';
+        const songsTbody = el('perfTopSongsTable')?.querySelector('tbody');
+        if (songsTbody) {
+            // Merge server songs data with perf data
+            const serverSongs = data.songs || {};
+            const mergedSongs = songs.length ? songs : Object.entries(serverSongs).map(([id, v]) => ({
+                id, title: v.title || id, plays: v.plays || 0, duration: v.totalDuration || 0,
+                skips: v.skips || 0, errors: 0, buffering: 0
+            })).sort((a, b) => b.plays - a.plays);
+            if (mergedSongs.length) {
+                songsTbody.innerHTML = mergedSongs.slice(0, 20).map((s, i) =>
+                    '<tr><td>' + (i + 1) + '</td><td>' + (s.title || 'Unknown') + '</td><td>' + s.plays + '</td><td>' + fmtDur(s.duration) + '</td><td>' + s.skips + '</td><td>' + s.errors + '</td><td>' + fmtSec(Math.round(s.buffering / 1000)) + '</td></tr>'
+                ).join('');
+            } else {
+                songsTbody.innerHTML = '<tr><td colspan="7" class="dashboard-list-empty">No data yet — play some songs on the website to see analytics</td></tr>';
+            }
         }
 
         // Most skipped table
-        const skipTbody = $('perfSkippedTable')?.querySelector('tbody');
+        const skipTbody = el('perfSkippedTable')?.querySelector('tbody');
         if (skipTbody) {
-            const skipped = d.songs.filter(s => s.skips > 0).sort((a, b) => b.skips - a.skips);
+            const skipped = songs.filter(s => s.skips > 0).sort((a, b) => b.skips - a.skips);
             if (skipped.length) {
                 skipTbody.innerHTML = skipped.slice(0, 15).map((s, i) => {
                     const rate = s.plays > 0 ? Math.round(s.skips / s.plays * 100) + '%' : '0%';
                     return '<tr><td>' + (i + 1) + '</td><td>' + (s.title || 'Unknown') + '</td><td>' + s.skips + '</td><td>' + s.plays + '</td><td>' + rate + '</td></tr>';
                 }).join('');
             } else {
-                skipTbody.innerHTML = '<tr><td colspan="5" class="dashboard-list-empty">No skips recorded</td></tr>';
+                skipTbody.innerHTML = '<tr><td colspan="5" class="dashboard-list-empty">No skips recorded yet</td></tr>';
             }
         }
 
         // API endpoints table
-        const apiTbody = $('perfApiTable')?.querySelector('tbody');
-        if (apiTbody && d.topEndpoints.length) {
-            apiTbody.innerHTML = d.topEndpoints.map(([url, info], i) => {
-                const age = info.lastSeen ? Math.round((Date.now() - info.lastSeen) / 60000) : '?';
-                return '<tr><td>' + (i + 1) + '</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + url + '</td><td>' + info.method + '</td><td>' + info.count + '</td><td>' + age + 'm ago</td></tr>';
-            }).join('');
-        } else if (apiTbody) {
-            apiTbody.innerHTML = '<tr><td colspan="5" class="dashboard-list-empty">No API data yet</td></tr>';
+        const apiTbody = el('perfApiTable')?.querySelector('tbody');
+        if (apiTbody) {
+            if (topEndpoints.length) {
+                apiTbody.innerHTML = topEndpoints.map(([url, info], i) => {
+                    const age = info.lastSeen ? Math.round((Date.now() - info.lastSeen) / 60000) : '?';
+                    return '<tr><td>' + (i + 1) + '</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + url + '">' + url + '</td><td>' + info.method + '</td><td>' + info.count + '</td><td>' + (typeof age === 'number' ? age + 'm ago' : 'N/A') + '</td></tr>';
+                }).join('');
+            } else {
+                apiTbody.innerHTML = '<tr><td colspan="5" class="dashboard-list-empty">No API data yet — visit the website to start tracking</td></tr>';
+            }
         }
 
         // Recent errors table
-        const errTbody = $('perfErrorsTable')?.querySelector('tbody');
-        if (errTbody && d.recentErrors.length) {
-            errTbody.innerHTML = d.recentErrors.reverse().map(e => {
-                const t = new Date(e.ts).toLocaleTimeString();
+        const errTbody = el('perfErrorsTable')?.querySelector('tbody');
+        if (errTbody) {
+            if (errHistory.length) {
                 const codeMap = { 1: 'ABORTED', 2: 'NETWORK', 3: 'DECODE', 4: 'SRC_NOT_SUPPORTED' };
-                return '<tr><td>' + t + '</td><td>' + (e.songId || 'Unknown') + '</td><td>' + (codeMap[e.code] || e.code || 'UNKNOWN') + '</td></tr>';
-            }).join('');
-        } else if (errTbody) {
-            errTbody.innerHTML = '<tr><td colspan="3" class="dashboard-list-empty">No errors</td></tr>';
+                errTbody.innerHTML = errHistory.map(e =>
+                    '<tr><td>' + new Date(e.ts).toLocaleTimeString() + '</td><td>' + (e.songId || 'Unknown') + '</td><td>' + (codeMap[e.code] || e.code || 'UNKNOWN') + '</td></tr>'
+                ).join('');
+            } else {
+                errTbody.innerHTML = '<tr><td colspan="3" class="dashboard-list-empty">No errors recorded</td></tr>';
+            }
         }
     } catch (e) { console.warn('Perf analytics load failed:', e); }
 }

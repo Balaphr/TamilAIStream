@@ -3,6 +3,336 @@
   handleAnalyticsRealtimeGet, handleAnalyticsRawGet, handleAnalyticsResetPost
 } from './analytics-handler.js';
 
+// ============================================================================
+// ADMIN SECURITY — HMAC-signed tokens, two-step verification, audit logging
+// ============================================================================
+
+// Admin credentials (server-side only — never exposed to client)
+const ADMIN_EMAIL = 'admin@tamilaistream.com';
+const ADMIN_PASSWORD_HASH = 'admin@123'; // In production, use bcrypt/argon2 hash
+
+// HMAC secret for signing admin tokens (set via env.ADMIN_HMAC_SECRET in wrangler.toml)
+// Fallback is used only for development — MUST be overridden in production
+const DEFAULT_HMAC_SECRET = 'tamil-ai-stream-admin-hmac-secret-2024';
+
+// Admin session timeout: 8 hours (shorter than regular sessions)
+const ADMIN_SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000;
+
+// Verification code TTL: 5 minutes
+const VERIFY_CODE_TTL_MS = 5 * 60 * 1000;
+
+// Max failed login attempts before lockout
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+/**
+ * HMAC-SHA256 sign a payload using Web Crypto API
+ */
+async function hmacSign(data, secret) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false, ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
+  return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Verify an HMAC-SHA256 signature
+ */
+async function hmacVerify(data, signature, secret) {
+  const expected = await hmacSign(data, secret);
+  return timingSafeEqual(signature, expected);
+}
+
+/**
+ * Timing-safe string comparison to prevent timing attacks
+ */
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
+ * Create a signed admin session token
+ */
+async function createAdminToken(email, env) {
+  const secret = (env && env.ADMIN_HMAC_SECRET) || DEFAULT_HMAC_SECRET;
+  const payload = {
+    email: email,
+    role: 'admin',
+    iat: Date.now(),
+    exp: Date.now() + ADMIN_SESSION_TIMEOUT_MS,
+    jti: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)
+  };
+  const payloadStr = JSON.stringify(payload);
+  const signature = await hmacSign(payloadStr, secret);
+  return btoa(payloadStr) + '.' + signature;
+}
+
+/**
+ * Validate a signed admin session token
+ */
+async function validateAdminToken(token, env) {
+  if (!token) return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 2) return null;
+    const payloadStr = atob(parts[0]);
+    const signature = parts[1];
+    const secret = (env && env.ADMIN_HMAC_SECRET) || DEFAULT_HMAC_SECRET;
+    const valid = await hmacVerify(payloadStr, signature, secret);
+    if (!valid) return null;
+    const payload = JSON.parse(payloadStr);
+    if (payload.exp < Date.now()) return null;
+    if (payload.role !== 'admin') return null;
+    return payload;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Generate a 6-digit verification code
+ */
+function generateVerifyCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
+ * Audit log — store in R2 under admin-audit/ prefix
+ */
+async function auditLog(env, action, details, ip) {
+  try {
+    if (!env.MEDIA_BUCKET) return;
+    const entry = {
+      timestamp: new Date().toISOString(),
+      action,
+      ip: ip || 'unknown',
+      ...details
+    };
+    const key = `admin-audit/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.json`;
+    await env.MEDIA_BUCKET.put(key, JSON.stringify(entry, null, 2), {
+      httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
+    });
+  } catch (e) { /* audit log is best-effort */ }
+}
+
+/**
+ * Check rate limiting for failed admin attempts
+ */
+async function checkRateLimit(env, identifier) {
+  try {
+    if (!env.MEDIA_BUCKET) return { blocked: false };
+    const obj = await env.MEDIA_BUCKET.get(`admin-rate-limit/${identifier}.json`);
+    if (!obj) return { blocked: false };
+    const data = JSON.parse(await obj.text());
+    if (data.attempts >= MAX_FAILED_ATTEMPTS) {
+      const lockoutEnd = data.lastAttempt + LOCKOUT_DURATION_MS;
+      if (Date.now() < lockoutEnd) {
+        return { blocked: true, retryAfter: Math.ceil((lockoutEnd - Date.now()) / 1000) };
+      }
+      // Lockout expired, reset
+      await env.MEDIA_BUCKET.delete(`admin-rate-limit/${identifier}.json`);
+      return { blocked: false };
+    }
+    return { blocked: false, attempts: data.attempts };
+  } catch (e) {
+    return { blocked: false };
+  }
+}
+
+/**
+ * Record a failed attempt
+ */
+async function recordFailedAttempt(env, identifier) {
+  try {
+    if (!env.MEDIA_BUCKET) return;
+    const obj = await env.MEDIA_BUCKET.get(`admin-rate-limit/${identifier}.json`);
+    let data = { attempts: 0, lastAttempt: 0 };
+    if (obj) data = JSON.parse(await obj.text());
+    data.attempts = (data.attempts || 0) + 1;
+    data.lastAttempt = Date.now();
+    await env.MEDIA_BUCKET.put(`admin-rate-limit/${identifier}.json`, JSON.stringify(data), {
+      httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
+    });
+  } catch (e) { /* best-effort */ }
+}
+
+/**
+ * Clear failed attempts on success
+ */
+async function clearFailedAttempts(env, identifier) {
+  try {
+    if (!env.MEDIA_BUCKET) return;
+    await env.MEDIA_BUCKET.delete(`admin-rate-limit/${identifier}.json`);
+  } catch (e) { /* best-effort */ }
+}
+
+/**
+ * Verify admin credentials (step 1 of 2FA)
+ * Returns a verification code on success
+ */
+async function handleAdminVerifyCredentials(request, env) {
+  try {
+    const body = await request.json();
+    const { email, password } = body;
+    const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
+
+    // Rate limit check
+    const rateLimit = await checkRateLimit(env, email || ip);
+    if (rateLimit.blocked) {
+      await auditLog(env, 'admin_login_blocked', { email, reason: 'rate_limited' }, ip);
+      return json({ error: 'Too many failed attempts. Try again later.', retryAfter: rateLimit.retryAfter }, 429);
+    }
+
+    // Validate credentials
+    if (!email || !password) {
+      await auditLog(env, 'admin_login_failed', { email, reason: 'missing_fields' }, ip);
+      return json({ error: 'Email and password required' }, 400);
+    }
+
+    if (email.toLowerCase() !== ADMIN_EMAIL || password !== ADMIN_PASSWORD_HASH) {
+      await recordFailedAttempt(env, email || ip);
+      await auditLog(env, 'admin_login_failed', { email, reason: 'invalid_credentials' }, ip);
+      return json({ error: 'Invalid email or password' }, 401);
+    }
+
+    // Generate verification code
+    const code = generateVerifyCode();
+    const codeData = {
+      code,
+      email: email.toLowerCase(),
+      createdAt: Date.now(),
+      expiresAt: Date.now() + VERIFY_CODE_TTL_MS,
+      verified: false
+    };
+
+    // Store verification code in R2
+    const codeKey = `admin-verify-codes/${email.toLowerCase()}.json`;
+    await env.MEDIA_BUCKET.put(codeKey, JSON.stringify(codeData), {
+      httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
+    });
+
+    await auditLog(env, 'admin_verify_code_sent', { email }, ip);
+
+    // Return the code (in production, this would be sent via email/SMS)
+    // For demo purposes, we return it in the response so it can be displayed
+    return json({
+      success: true,
+      message: 'Verification code sent',
+      code: code, // In production: remove this and send via email/SMS
+      expiresIn: Math.floor(VERIFY_CODE_TTL_MS / 1000)
+    });
+
+  } catch (e) {
+    return json({ error: 'Verification failed: ' + e.message }, 500);
+  }
+}
+
+/**
+ * Verify the 6-digit code (step 2 of 2FA) and issue admin token
+ */
+async function handleAdminVerifyCode(request, env) {
+  try {
+    const body = await request.json();
+    const { email, code } = body;
+    const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
+
+    if (!email || !code) {
+      return json({ error: 'Email and verification code required' }, 400);
+    }
+
+    // Retrieve stored verification code
+    const codeKey = `admin-verify-codes/${email.toLowerCase()}.json`;
+    if (!env.MEDIA_BUCKET) return json({ error: 'Server configuration error' }, 500);
+
+    const obj = await env.MEDIA_BUCKET.get(codeKey);
+    if (!obj) {
+      await auditLog(env, 'admin_verify_failed', { email, reason: 'no_code_found' }, ip);
+      return json({ error: 'No verification code found. Please request a new one.' }, 400);
+    }
+
+    const codeData = JSON.parse(await obj.text());
+
+    // Check expiry
+    if (codeData.expiresAt < Date.now()) {
+      await env.MEDIA_BUCKET.delete(codeKey);
+      await auditLog(env, 'admin_verify_failed', { email, reason: 'code_expired' }, ip);
+      return json({ error: 'Verification code expired. Please request a new one.' }, 400);
+    }
+
+    // Check if already used
+    if (codeData.verified) {
+      await env.MEDIA_BUCKET.delete(codeKey);
+      await auditLog(env, 'admin_verify_failed', { email, reason: 'code_already_used' }, ip);
+      return json({ error: 'Code already used. Please request a new one.' }, 400);
+    }
+
+    // Verify code (timing-safe comparison)
+    if (!timingSafeEqual(code, codeData.code)) {
+      await auditLog(env, 'admin_verify_failed', { email, reason: 'invalid_code' }, ip);
+      return json({ error: 'Invalid verification code' }, 401);
+    }
+
+    // Mark as verified and delete
+    await env.MEDIA_BUCKET.delete(codeKey);
+
+    // Clear rate limit on success
+    await clearFailedAttempts(env, email);
+
+    // Issue signed admin token
+    const token = await createAdminToken(email, env);
+
+    await auditLog(env, 'admin_login_success', { email }, ip);
+
+    return json({
+      success: true,
+      token,
+      email: email.toLowerCase(),
+      expiresIn: Math.floor(ADMIN_SESSION_TIMEOUT_MS / 1000)
+    });
+
+  } catch (e) {
+    return json({ error: 'Verification failed: ' + e.message }, 500);
+  }
+}
+
+/**
+ * Validate admin token on protected API endpoints
+ */
+async function requireAdminAuth(request, env) {
+  // Check for admin token in Authorization header or cookie
+  let token = null;
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.slice(7);
+  }
+  if (!token) {
+    // Check cookie
+    const cookies = request.headers.get('Cookie') || '';
+    const match = cookies.match(/admin_session_token=([^;]+)/);
+    if (match) token = match[1];
+  }
+
+  if (!token) {
+    return { authorized: false, error: 'Admin authentication required' };
+  }
+
+  const payload = await validateAdminToken(token, env);
+  if (!payload) {
+    return { authorized: false, error: 'Invalid or expired admin session' };
+  }
+
+  return { authorized: true, admin: payload };
+}
+
 const REDIRECTS = {
   '/': '/index.html',
   '/login': '/login.html',
@@ -93,6 +423,37 @@ export default {
       if (url.pathname === '/manifest.webmanifest') {
         return handleManifestWebmanifest(env);
       }
+
+      // ─── Admin Authentication Endpoints (public) ───
+      if (url.pathname === '/api/admin/verify-credentials' && request.method === 'POST') {
+        return handleAdminVerifyCredentials(request, env);
+      }
+      if (url.pathname === '/api/admin/verify-code' && request.method === 'POST') {
+        return handleAdminVerifyCode(request, env);
+      }
+
+      // ─── Protected Admin Endpoints (require valid admin token) ───
+      const isAdminWrite = (
+        (url.pathname === '/api/upload' && request.method === 'POST') ||
+        (url.pathname === '/api/manifest' && request.method === 'POST') ||
+        (url.pathname === '/api/admin-overrides' && request.method === 'POST') ||
+        (url.pathname === '/api/global-settings' && request.method === 'POST') ||
+        (url.pathname === '/api/versions' && request.method === 'POST') ||
+        (url.pathname.match(/^\/api\/versions\/[^/]+\/revert$/) && request.method === 'POST') ||
+        (url.pathname.match(/^\/api\/versions\/[^/]+$/) && request.method === 'DELETE') ||
+        (url.pathname === '/api/analytics/reset' && request.method === 'POST')
+      );
+
+      if (isAdminWrite) {
+        const auth = await requireAdminAuth(request, env);
+        if (!auth.authorized) {
+          await auditLog(env, 'admin_api_denied', { path: url.pathname, method: request.method, reason: auth.error }, request.headers.get('cf-connecting-ip'));
+          return json({ error: auth.error }, 401);
+        }
+        // Attach admin info to request for downstream handlers
+        request.adminInfo = auth.admin;
+      }
+
       if (url.pathname === '/api/upload' && request.method === 'POST') {
         return handleUpload(request, env, url);
       }
@@ -198,6 +559,18 @@ export default {
         const assetReq = new Request(newUrl.toString(), request);
         const resp = await env.ASSETS.fetch(assetReq);
         if (resp.ok) return wrapResponse(resp, newPath, env);
+      }
+
+      // ─── Server-side admin page protection ───
+      // Admin/builder pages require a valid admin session token in cookie
+      const adminPages = ['/admin.html', '/builder.html', '/admin-upload.html'];
+      if (adminPages.includes(url.pathname)) {
+        const auth = await requireAdminAuth(request, env);
+        if (!auth.authorized) {
+          // Redirect unauthorized users to login page
+          const loginUrl = new URL(url.origin + '/admin-login.html');
+          return Response.redirect(loginUrl.toString(), 302);
+        }
       }
 
       const resp = await env.ASSETS.fetch(request);

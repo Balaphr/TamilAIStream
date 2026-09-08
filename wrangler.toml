@@ -16,5 +16,10 @@ not_found_handling = "none"
 binding = "MEDIA_BUCKET"
 bucket_name = "tamil-ai-stream-media"
 
+# Admin HMAC secret — set via: wrangler secret put ADMIN_HMAC_SECRET
+# Use a strong random string (32+ chars). Example: openssl rand -hex 32
+# [vars]
+# ADMIN_HMAC_SECRET = "set-via-wrangler-secret-put"
+
 [triggers]
 crons = ["*/10 * * * *"]

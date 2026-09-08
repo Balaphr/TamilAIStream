@@ -46,7 +46,14 @@ const DataStore = {
         TRASH: 'tamilAIStream_trash',
         DELETED_IDS: 'tamilAIStream_deletedIds',
         APPLICATION: 'tamilAIStream_application',
-        SONGS_COLLECTIONS: 'tamilAIStream_songsCollections'
+        SONGS_COLLECTIONS: 'tamilAIStream_songsCollections',
+        // ─── Trial & Subscription keys ───
+        TRIAL_START: 'tamilAIStream_trialStart',
+        TRIAL_EXPIRY: 'tamilAIStream_trialExpiry',
+        SUBSCRIPTION_STATUS: 'tamilAIStream_subscriptionStatus',
+        SUBSCRIPTION_PLAN: 'tamilAIStream_subscriptionPlan',
+        SUBSCRIPTION_START: 'tamilAIStream_subscriptionStart',
+        SUBSCRIPTION_EXPIRY: 'tamilAIStream_subscriptionExpiry',
     },
 
     /* ---- In-memory cache to avoid repeated JSON.parse on localStorage ---- */
@@ -249,6 +256,20 @@ const DataStore = {
 
     getApplication() { return this.get(this.KEYS.APPLICATION) || {}; },
     setApplication(data) { this.set(this.KEYS.APPLICATION, data); },
+
+    // ─── Trial & Subscription helpers ───
+    getTrialStart() { return parseInt(this.get(this.KEYS.TRIAL_START) || '0', 10); },
+    setTrialStart(ts) { this.set(this.KEYS.TRIAL_START, String(ts)); },
+    getTrialExpiry() { return parseInt(this.get(this.KEYS.TRIAL_EXPIRY) || '0', 10); },
+    setTrialExpiry(ts) { this.set(this.KEYS.TRIAL_EXPIRY, String(ts)); },
+    getSubscriptionStatus() { return this.get(this.KEYS.SUBSCRIPTION_STATUS) || 'none'; },
+    setSubscriptionStatus(s) { this.set(this.KEYS.SUBSCRIPTION_STATUS, s); },
+    getSubscriptionPlan() { return this.get(this.KEYS.SUBSCRIPTION_PLAN) || 'free'; },
+    setSubscriptionPlan(p) { this.set(this.KEYS.SUBSCRIPTION_PLAN, p); },
+    getSubscriptionStart() { return parseInt(this.get(this.KEYS.SUBSCRIPTION_START) || '0', 10); },
+    setSubscriptionStart(ts) { this.set(this.KEYS.SUBSCRIPTION_START, String(ts)); },
+    getSubscriptionExpiry() { return parseInt(this.get(this.KEYS.SUBSCRIPTION_EXPIRY) || '0', 10); },
+    setSubscriptionExpiry(ts) { this.set(this.KEYS.SUBSCRIPTION_EXPIRY, String(ts)); },
 
     // Move an item to Trash instead of permanently deleting it
     moveToTrash(item, type) {
