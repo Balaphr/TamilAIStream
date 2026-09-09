@@ -3730,5 +3730,56 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 .logo-tilt { animation: logoTilt var(--anim-speed, 3s) ease-in-out infinite; transform-style: preserve-3d; }
 .logo-breathe { animation: logoBreathe var(--anim-speed, 3s) ease-in-out infinite; }
 
+/* 3-Dot Menu in Builder Nav */
+.builder-nav-dots { position: relative; }
+.builder-dots-btn {
+    background: none; border: none; color: var(--text-secondary, rgba(255,255,255,0.7));
+    font-size: 16px; cursor: pointer; padding: 6px 8px; border-radius: 6px;
+    transition: all 0.2s;
+}
+.builder-dots-btn:hover { color: var(--text-primary, #fff); background: rgba(255,255,255,0.08); }
+.builder-dots-dropdown {
+    display: none; position: absolute; top: calc(100% + 6px); right: 0; min-width: 180px;
+    background: var(--bg-secondary, #1a1a2e); border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+    border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); z-index: 1000;
+    padding: 6px 0; animation: gbSlideIn 0.15s ease;
+}
+.builder-dots-dropdown.show { display: block; }
+.builder-dots-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+    font-size: 13px; color: var(--text-primary, rgba(255,255,255,0.9)); cursor: pointer;
+    transition: background 0.15s;
+}
+.builder-dots-item:hover { background: rgba(255,255,255,0.06); }
+.builder-dots-item i { width: 16px; text-align: center; opacity: 0.7; font-size: 12px; }
+.builder-dots-divider { height: 1px; background: var(--border-color, rgba(255,255,255,0.08)); margin: 4px 0; }
+
+/* PWA Update Notification (Builder-side) */
+.pwa-update-toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+    background: linear-gradient(135deg, #10b981, #059669); color: #fff;
+    padding: 16px 24px; border-radius: 14px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 8px 32px rgba(16,185,129,0.4); font-size: 13px; font-weight: 600;
+    animation: pwaBuilderSlideUp 0.4s ease; max-width: 360px;
+}
+.pwa-update-toast button {
+    background: #fff; color: #059669; border: none; padding: 7px 16px;
+    border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 12px; white-space: nowrap;
+}
+@keyframes pwaBuilderSlideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes pwaSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* PWA Logo Preview Panel Enhancements */
+.pwa-preview-stage {
+    width: 100%; aspect-ratio: 9/16; max-height: 400px; border-radius: 16px; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; transition: all 0.3s;
+}
+.pwa-preview-logo-wrap {
+    display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+}
+.pwa-preview-logo-wrap img {
+    width: 100%; height: 100%; object-fit: contain; transition: all 0.3s;
+}
 
 

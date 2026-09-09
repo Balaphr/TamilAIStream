@@ -168,6 +168,9 @@
         if (t === 'content-updated' || t === 'publish' || t === 'version-published') {
           pollVersion();
         }
+        if (t === 'pwa-settings-updated') {
+          showBanner('PWA ' + (e.data.setting || 'settings') + ' updated');
+        }
       });
     } catch (_) { /* BroadcastChannel not supported */ }
   }
@@ -383,6 +386,7 @@
   window.addEventListener('beforeinstallprompt', function(e) {
     e.preventDefault();
     _deferredPrompt = e;
+    window.__pwaDeferredPrompt = e;
     if (isMobile() && !isStandalone() && !isDismissed() && !isAlreadyInstalled()) {
       setTimeout(createInstallBanner, 2500);
     }
@@ -390,6 +394,7 @@
 
   window.addEventListener('appinstalled', function() {
     _deferredPrompt = null;
+    window.__pwaDeferredPrompt = null;
     markInstalled();
     var existing = document.querySelector('.pwa-install-banner');
     if (existing) hideBanner(existing);
@@ -398,6 +403,23 @@
   if (isStandalone()) {
     markInstalled();
   }
+
+  /* ============================================================
+     Public API — for Builder integration
+     ============================================================ */
+  window.PWAHelper = {
+    triggerUpdate: function() {
+      if (registration) {
+        try { registration.update(); } catch (_) {}
+      }
+      pollVersion();
+    },
+    installPrompt: function() {
+      return window.__pwaDeferredPrompt || null;
+    },
+    isStandalone: isStandalone,
+    showUpdateBanner: function(msg) { showBanner(msg || 'PWA Updated — Reload to apply'); }
+  };
 
   /* ============================================================
      Boot

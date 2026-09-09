@@ -12242,6 +12242,14 @@ const PWALogo = (function() {
         showSplash: 'true',
         showPwa: 'true',
         showFavicon: 'true',
+        logoWidth: 100,
+        logoHeight: 100,
+        logoPosition: 'center',
+        logoBgType: 'gradient',
+        logoBgColor: '#080c1c',
+        logoBgGradient: 'linear-gradient(135deg, #080c1c, #1a1a2e)',
+        logoBorderRadius: 50,
+        logoShadow: 'none',
     };
 
     let _logoDataUrl = '';
@@ -12261,6 +12269,14 @@ const PWALogo = (function() {
             if (el('pwaShowSplash')) el('pwaShowSplash').value = cfg.showSplash || 'true';
             if (el('pwaShowPwa')) el('pwaShowPwa').value = cfg.showPwa || 'true';
             if (el('pwaShowFavicon')) el('pwaShowFavicon').value = cfg.showFavicon || 'true';
+            if (el('pwaLogoWidth')) { el('pwaLogoWidth').value = cfg.logoWidth || 100; el('pwaLogoWidthVal').textContent = (cfg.logoWidth || 100) + 'px'; }
+            if (el('pwaLogoHeight')) { el('pwaLogoHeight').value = cfg.logoHeight || 100; el('pwaLogoHeightVal').textContent = (cfg.logoHeight || 100) + 'px'; }
+            if (el('pwaLogoPosition')) el('pwaLogoPosition').value = cfg.logoPosition || 'center';
+            if (el('pwaLogoBgType')) el('pwaLogoBgType').value = cfg.logoBgType || 'gradient';
+            if (el('pwaLogoBgColor')) el('pwaLogoBgColor').value = cfg.logoBgColor || '#080c1c';
+            if (el('pwaLogoBgGradient')) el('pwaLogoBgGradient').value = cfg.logoBgGradient || 'linear-gradient(135deg, #080c1c, #1a1a2e)';
+            if (el('pwaLogoRadius')) { el('pwaLogoRadius').value = cfg.logoBorderRadius || 50; el('pwaLogoRadiusVal').textContent = (cfg.logoBorderRadius || 50) + '%'; }
+            if (el('pwaLogoShadow')) el('pwaLogoShadow').value = cfg.logoShadow || 'none';
             _logoDataUrl = cfg.logoDataUrl || '';
             _splashDataUrl = cfg.splashDataUrl || '';
             _faviconDataUrl = cfg.faviconDataUrl || '';
@@ -12278,6 +12294,14 @@ const PWALogo = (function() {
             showSplash: el('pwaShowSplash')?.value || 'true',
             showPwa: el('pwaShowPwa')?.value || 'true',
             showFavicon: el('pwaShowFavicon')?.value || 'true',
+            logoWidth: parseInt(el('pwaLogoWidth')?.value) || 100,
+            logoHeight: parseInt(el('pwaLogoHeight')?.value) || 100,
+            logoPosition: el('pwaLogoPosition')?.value || 'center',
+            logoBgType: el('pwaLogoBgType')?.value || 'gradient',
+            logoBgColor: el('pwaLogoBgColor')?.value || '#080c1c',
+            logoBgGradient: el('pwaLogoBgGradient')?.value || 'linear-gradient(135deg, #080c1c, #1a1a2e)',
+            logoBorderRadius: parseInt(el('pwaLogoRadius')?.value) || 50,
+            logoShadow: el('pwaLogoShadow')?.value || 'none',
             logoDataUrl: _logoDataUrl,
             splashDataUrl: _splashDataUrl,
             faviconDataUrl: _faviconDataUrl,
@@ -12314,8 +12338,12 @@ const PWALogo = (function() {
         }
 
         const statusEl = el('pwaPreviewStatus');
-        if (statusEl) { statusEl.textContent = 'Saved! Changes will appear on next page load.'; setTimeout(() => { statusEl.textContent = ''; }, 3000); }
-        if (typeof showToast !== 'undefined') showToast('PWA Logo settings saved', 'success');
+        if (statusEl) { statusEl.textContent = 'Saved! PWA update available.'; setTimeout(() => { statusEl.textContent = ''; }, 3000); }
+        if (typeof showToast !== 'undefined') showToast('PWA Logo saved', 'success');
+
+        if (typeof PWAUpdateNotifier !== 'undefined') {
+            setTimeout(function() { PWAUpdateNotifier.notifySettingsChanged('logo'); }, 500);
+        }
     }
 
     function reset() {
@@ -12331,29 +12359,56 @@ const PWALogo = (function() {
         const logoSrc = _logoDataUrl || cfg.logoUrl || '';
         const headerEl = el('pwaPreviewHeader');
         const splashLogoEl = el('pwaPreviewSplashLogo');
+        const splashEl = el('pwaPreviewSplash');
         const faviconEl = el('pwaPreviewFavicon');
+        const logoW = cfg.logoWidth || 100;
+        const logoH = cfg.logoHeight || 100;
+        const radius = cfg.logoBorderRadius != null ? cfg.logoBorderRadius : 50;
+        const shadow = cfg.logoShadow || 'none';
+        const bgType = cfg.logoBgType || 'gradient';
+        const bgColor = cfg.logoBgColor || '#080c1c';
+        const bgGradient = cfg.logoBgGradient || 'linear-gradient(135deg, #080c1c, #1a1a2e)';
+        const position = cfg.logoPosition || 'center';
+
         if (headerEl) {
+            headerEl.style.width = Math.min(logoW, 120) + 'px';
+            headerEl.style.height = Math.min(logoH, 120) + 'px';
+            headerEl.style.borderRadius = radius + '%';
+            headerEl.style.boxShadow = shadow === 'glow' ? '0 0 20px rgba(34,211,238,0.5)' : shadow === 'soft' ? '0 4px 20px rgba(0,0,0,0.3)' : 'none';
             if (logoSrc) {
-                headerEl.innerHTML = '<img src="' + logoSrc + '" style="width:100%;height:100%;object-fit:cover;">';
+                headerEl.innerHTML = '<img src="' + logoSrc + '" style="width:100%;height:100%;object-fit:contain;border-radius:inherit;">';
             } else {
                 headerEl.innerHTML = '<i class="fas fa-icons" style="font-size:2rem;color:var(--text-muted);"></i>';
             }
-            headerEl.style.setProperty('--anim-speed', cfg.animSpeed + 's');
+            headerEl.style.setProperty('--anim-speed', (cfg.animSpeed || 3) + 's');
+            headerEl.classList.remove('logo-float', 'logo-rotate', 'logo-pulse', 'logo-glow', 'logo-tilt', 'logo-breathe');
             if (cfg.anim3d === 'true') {
-                headerEl.classList.remove('logo-float', 'logo-rotate', 'logo-pulse', 'logo-glow', 'logo-tilt', 'logo-breathe');
-                headerEl.classList.add('logo-' + cfg.animStyle);
-            } else {
-                headerEl.classList.remove('logo-float', 'logo-rotate', 'logo-pulse', 'logo-glow', 'logo-tilt', 'logo-breathe');
+                headerEl.classList.add('logo-' + (cfg.animStyle || 'float'));
             }
         }
+
+        if (splashEl) {
+            let bgVal = bgColor;
+            if (bgType === 'gradient') bgVal = bgGradient;
+            else if (bgType === 'none') bgVal = 'var(--bg-primary, #060e1a)';
+            splashEl.style.background = bgVal;
+            const posMap = { center: 'center', top: 'center 20%', bottom: 'center 80%' };
+            splashEl.style.backgroundPosition = posMap[position] || 'center';
+        }
+
         const splashSrc = _splashDataUrl || logoSrc;
         if (splashLogoEl) {
+            splashLogoEl.style.width = Math.min(logoW, 100) + 'px';
+            splashLogoEl.style.height = Math.min(logoH, 100) + 'px';
+            splashLogoEl.style.borderRadius = radius + '%';
+            splashLogoEl.style.boxShadow = shadow === 'glow' ? '0 0 24px rgba(34,211,238,0.6)' : shadow === 'soft' ? '0 4px 24px rgba(0,0,0,0.4)' : 'none';
             if (splashSrc) {
-                splashLogoEl.innerHTML = '<img src="' + splashSrc + '" style="width:100%;height:100%;object-fit:cover;">';
+                splashLogoEl.innerHTML = '<img src="' + splashSrc + '" style="width:100%;height:100%;object-fit:contain;border-radius:inherit;">';
             } else {
-                splashLogoEl.innerHTML = '<i class="fas fa-icons" style="font-size:2rem;color:var(--text-muted);margin:16px;"></i>';
+                splashLogoEl.innerHTML = '<i class="fas fa-icons" style="font-size:2rem;color:var(--text-muted);"></i>';
             }
         }
+
         if (faviconEl) {
             if (_faviconDataUrl || logoSrc) {
                 faviconEl.innerHTML = '<img src="' + (_faviconDataUrl || logoSrc) + '" style="width:100%;height:100%;object-fit:cover;">';
@@ -12432,10 +12487,52 @@ const PWALogo = (function() {
         }
         if (el('pwaLogoUrl')) {
             el('pwaLogoUrl').onchange = function() {
-                _updatePreviews({ logoUrl: this.value, anim3d: el('pwaAnim3d')?.value || 'false', animStyle: el('pwaAnimStyle')?.value || 'float', animSpeed: parseFloat(el('pwaAnimSpeed')?.value) || 3 });
+                _gatherAndUpdate();
             };
         }
         _updateAnimVisibility({ anim3d: el('pwaAnim3d')?.value || 'false' });
+        _setupSlider('pwaLogoWidth', 'pwaLogoWidthVal', 'px');
+        _setupSlider('pwaLogoHeight', 'pwaLogoHeightVal', 'px');
+        _setupSlider('pwaLogoRadius', 'pwaLogoRadiusVal', '%');
+        if (el('pwaLogoPosition')) el('pwaLogoPosition').onchange = function() { _gatherAndUpdate(); };
+        if (el('pwaLogoBgType')) el('pwaLogoBgType').onchange = function() { _gatherAndUpdate(); };
+        if (el('pwaLogoBgColor')) el('pwaLogoBgColor').oninput = function() { _gatherAndUpdate(); };
+        if (el('pwaLogoBgGradient')) el('pwaLogoBgGradient').onchange = function() { _gatherAndUpdate(); };
+        if (el('pwaLogoShadow')) el('pwaLogoShadow').onchange = function() { _gatherAndUpdate(); };
+        _updateBgVisibility(el('pwaLogoBgType')?.value || 'gradient');
+        if (el('pwaLogoBgType')) el('pwaLogoBgType').onchange = function() { _updateBgVisibility(this.value); _gatherAndUpdate(); };
+    }
+
+    function _updateBgVisibility(type) {
+        const colorGroup = el('pwaBgColorGroup');
+        const gradGroup = el('pwaBgGradientGroup');
+        if (colorGroup) colorGroup.style.display = (type === 'solid') ? '' : 'none';
+        if (gradGroup) gradGroup.style.display = (type === 'gradient') ? '' : 'none';
+    }
+
+    function _setupSlider(sliderId, labelId, suffix) {
+        const slider = el(sliderId);
+        const label = el(labelId);
+        if (slider && label) {
+            slider.oninput = function() { label.textContent = this.value + suffix; _gatherAndUpdate(); };
+        }
+    }
+
+    function _gatherAndUpdate() {
+        _updatePreviews({
+            logoUrl: el('pwaLogoUrl')?.value || '',
+            anim3d: el('pwaAnim3d')?.value || 'false',
+            animStyle: el('pwaAnimStyle')?.value || 'float',
+            animSpeed: parseFloat(el('pwaAnimSpeed')?.value) || 3,
+            logoWidth: parseInt(el('pwaLogoWidth')?.value) || 100,
+            logoHeight: parseInt(el('pwaLogoHeight')?.value) || 100,
+            logoPosition: el('pwaLogoPosition')?.value || 'center',
+            logoBgType: el('pwaLogoBgType')?.value || 'gradient',
+            logoBgColor: el('pwaLogoBgColor')?.value || '#080c1c',
+            logoBgGradient: el('pwaLogoBgGradient')?.value || 'linear-gradient(135deg, #080c1c, #1a1a2e)',
+            logoBorderRadius: parseInt(el('pwaLogoRadius')?.value) || 50,
+            logoShadow: el('pwaLogoShadow')?.value || 'none',
+        });
     }
 
     if (document.readyState === 'loading') {
@@ -12448,3 +12545,115 @@ const PWALogo = (function() {
 })();
 
 if (typeof window !== 'undefined') window.PWALogo = PWALogo;
+
+// ============================================
+// Builder 3-Dot Menu & PWA Download/Update
+// ============================================
+const BuilderPWADownload = (function() {
+    function _toggleDropdown() {
+        const dd = document.getElementById('builderDotsDropdown');
+        if (dd) dd.classList.toggle('show');
+    }
+
+    function _closeDropdown() {
+        const dd = document.getElementById('builderDotsDropdown');
+        if (dd) dd.classList.remove('show');
+    }
+
+    function init() {
+        const btn = document.getElementById('builderDotsBtn');
+        if (btn) btn.addEventListener('click', function(e) { e.stopPropagation(); _toggleDropdown(); });
+        document.addEventListener('click', function(e) {
+            const dd = document.getElementById('builderDotsDropdown');
+            if (dd && !dd.contains(e.target)) dd.classList.remove('show');
+        });
+    }
+
+    function downloadPWA() {
+        _closeDropdown();
+        if (typeof PWAHelper !== 'undefined' && PWAHelper.installPrompt()) {
+            PWAHelper.installPrompt().prompt();
+            PWAHelper.installPrompt().userChoice.then(function(choice) {
+                if (choice.outcome === 'accepted') {
+                    if (typeof showToast !== 'undefined') showToast('PWA installed successfully!', 'success');
+                }
+                window.__pwaDeferredPrompt = null;
+            });
+        } else {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isAndroid = /Android/.test(navigator.userAgent);
+            let msg = 'To install: ';
+            if (isIOS) msg += 'Tap the Share button, then "Add to Home Screen".';
+            else if (isAndroid) msg += 'Tap the menu (3 dots), then "Add to Home Screen" or "Install App".';
+            else msg += 'Use your browser\'s "Install App" or "Add to Home Screen" option.';
+            if (typeof showToast !== 'undefined') showToast(msg, 'info', 6000);
+        }
+    }
+
+    function checkUpdates() {
+        _closeDropdown();
+        if (typeof PWAHelper !== 'undefined') {
+            PWAHelper.triggerUpdate();
+            if (typeof showToast !== 'undefined') showToast('Checking for updates...', 'info');
+        } else {
+            if (typeof showToast !== 'undefined') showToast('PWA system not loaded', 'error');
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    return { downloadPWA, checkUpdates };
+})();
+
+if (typeof window !== 'undefined') window.BuilderPWADownload = BuilderPWADownload;
+
+// ============================================
+// PWA Settings Update Notification
+// ============================================
+const PWAUpdateNotifier = (function() {
+    const CHANNEL_NAME = 'tamilAIStream_sync';
+
+    function notifySettingsChanged(settingType) {
+        try {
+            const bc = new BroadcastChannel(CHANNEL_NAME);
+            bc.postMessage({ type: 'pwa-settings-updated', setting: settingType || 'logo', timestamp: Date.now() });
+            setTimeout(function() { bc.close(); }, 2000);
+        } catch (_) {}
+        if (typeof PWAHelper !== 'undefined') {
+            PWAHelper.triggerUpdate();
+        }
+        _showUpdatePrompt(settingType);
+    }
+
+    function _showUpdatePrompt(settingType) {
+        const existing = document.querySelector('.pwa-update-toast');
+        if (existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'pwa-update-toast';
+        const label = settingType === 'logo' ? 'PWA Logo' : 'PWA Settings';
+        toast.innerHTML =
+            '<i class="fas fa-sync-alt" style="font-size:16px;animation:pwaSpin 1.5s linear infinite"></i>' +
+            '<span style="flex:1">' + label + ' updated. Apply in PWA?</span>' +
+            '<button onclick="PWAUpdateNotifier.applyUpdate(this.parentElement)">Update</button>' +
+            '<button style="background:transparent;color:rgba(255,255,255,.6);padding:4px 8px;" onclick="this.parentElement.remove()">&times;</button>';
+        document.body.appendChild(toast);
+        setTimeout(function() { if (toast.parentElement) toast.remove(); }, 15000);
+    }
+
+    function applyUpdate(toastEl) {
+        if (toastEl) toastEl.remove();
+        if (typeof PWAHelper !== 'undefined') {
+            PWAHelper.showUpdateBanner('PWA Updated — Reload to apply');
+            PWAHelper.triggerUpdate();
+        }
+        if (typeof showToast !== 'undefined') showToast('PWA update triggered. Users will see the update banner.', 'success');
+    }
+
+    return { notifySettingsChanged, applyUpdate };
+})();
+
+if (typeof window !== 'undefined') window.PWAUpdateNotifier = PWAUpdateNotifier;

@@ -188,6 +188,19 @@
                     <button class="builder-btn ai-assistant-toggle" onclick="AICommandBot.toggleBot()" title="AI Assistant">
                         <i class="fas fa-robot"></i> <span class="ai-toggle-text">AI</span>
                     </button>
+                    <div class="builder-nav-dots">
+                        <button class="builder-dots-btn" id="builderDotsBtn" title="Menu">
+                            <i class="fas fa-ellipsis-vertical"></i>
+                        </button>
+                        <div class="builder-dots-dropdown" id="builderDotsDropdown">
+                            <div class="builder-dots-item" onclick="BuilderPWADownload.downloadPWA()">
+                                <i class="fas fa-arrow-down"></i> Download PWA
+                            </div>
+                            <div class="builder-dots-item" onclick="BuilderPWADownload.checkUpdates()">
+                                <i class="fas fa-sync-alt"></i> Check for Updates
+                            </div>
+                        </div>
+                    </div>
                     <div class="builder-user-info">
                         <div class="builder-user-avatar" id="builderUserAvatar">U</div>
                         <span class="builder-user-name" id="builderUserName">User</span>
@@ -3937,6 +3950,64 @@
                                     </div>
                                 </div>
 
+                                <!-- Logo Display -->
+                                <div class="builder-content-card" style="margin-top:16px;">
+                                    <div class="builder-card-header"><h3><i class="fas fa-expand"></i> Logo Display</h3></div>
+                                    <div class="builder-card-body">
+                                        <div class="form-group">
+                                            <label class="form-label">Logo Width: <span id="pwaLogoWidthVal">100</span>px</label>
+                                            <input type="range" class="form-input" id="pwaLogoWidth" min="20" max="200" step="5" value="100" style="padding:0;">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Logo Height: <span id="pwaLogoHeightVal">100</span>px</label>
+                                            <input type="range" class="form-input" id="pwaLogoHeight" min="20" max="200" step="5" value="100" style="padding:0;">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Position</label>
+                                            <select class="form-input" id="pwaLogoPosition">
+                                                <option value="center">Center</option>
+                                                <option value="top">Top</option>
+                                                <option value="bottom">Bottom</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Corner Radius: <span id="pwaLogoRadiusVal">50</span>%</label>
+                                            <input type="range" class="form-input" id="pwaLogoRadius" min="0" max="50" step="1" value="50" style="padding:0;">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Shadow</label>
+                                            <select class="form-input" id="pwaLogoShadow">
+                                                <option value="none">None</option>
+                                                <option value="glow">Glow (Cyan)</option>
+                                                <option value="soft">Soft Shadow</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Background</label>
+                                            <select class="form-input" id="pwaLogoBgType">
+                                                <option value="gradient">Gradient</option>
+                                                <option value="solid">Solid Color</option>
+                                                <option value="none">None (Transparent)</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" id="pwaBgColorGroup">
+                                            <label class="form-label">Background Color</label>
+                                            <input type="color" class="form-input" id="pwaLogoBgColor" value="#080c1c">
+                                        </div>
+                                        <div class="form-group" id="pwaBgGradientGroup">
+                                            <label class="form-label">Background Gradient</label>
+                                            <select class="form-input" id="pwaLogoBgGradient">
+                                                <option value="linear-gradient(135deg, #080c1c, #1a1a2e)">Dark Blue → Navy</option>
+                                                <option value="linear-gradient(135deg, #0f172a, #1e293b)">Slate Dark</option>
+                                                <option value="linear-gradient(135deg, #000000, #1a1a2e)">Black → Navy</option>
+                                                <option value="linear-gradient(135deg, #080c1c, #0d9488)">Dark → Teal</option>
+                                                <option value="linear-gradient(135deg, #080c1c, #7c3aed)">Dark → Purple</option>
+                                                <option value="radial-gradient(circle, #1a1a2e, #080c1c)">Radial Dark</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Visibility -->
                                 <div class="builder-content-card" style="margin-top:16px;">
                                     <div class="builder-card-header"><h3><i class="fas fa-eye"></i> Visibility</h3></div>
@@ -3956,9 +4027,10 @@
                                     </div>
                                 </div>
 
-                                <!-- Save / Reset -->
-                                <div style="display:flex;gap:10px;margin-top:16px;">
+                                <!-- Save / Reset / Update -->
+                                <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
                                     <button class="builder-btn primary" onclick="PWALogo.save()"><i class="fas fa-save"></i> Save PWA Logo</button>
+                                    <button class="builder-btn" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;" onclick="PWALogo.save();setTimeout(function(){PWAUpdateNotifier.notifySettingsChanged('logo');},600);"><i class="fas fa-sync-alt"></i> Save &amp; Update PWA</button>
                                     <button class="builder-btn" onclick="PWALogo.reset()"><i class="fas fa-rotate-left"></i> Reset</button>
                                 </div>
                             </div>
