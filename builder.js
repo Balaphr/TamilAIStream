@@ -70,22 +70,24 @@ function checkAuth() {
         if (session) {
             try {
                 const data = JSON.parse(session);
-                // Hardened check: require verified + token + not expired
-                if (data.verified && data.token && data.expiry && data.expiry > Date.now()) {
+                // Accept session if it has email + expiry and hasn't expired.
+                // Supports both 2FA sessions (with verified+token) and
+                // direct Builder login sessions (email+password only).
+                if (data.email && data.expiry && data.expiry > Date.now()) {
                     if (!isAutoLoginRequest()) {
                         showAccessGate(data);
                     }
                     resolve(data);
                 } else {
                     localStorage.removeItem('adminSession');
-                    checkWebsiteAuth(resolve);
+                    resolve(null);
                 }
             } catch (e) {
                 localStorage.removeItem('adminSession');
-                checkWebsiteAuth(resolve);
+                resolve(null);
             }
         } else {
-            checkWebsiteAuth(resolve);
+            resolve(null);
         }
     });
 }
@@ -164,32 +166,51 @@ document.addEventListener('DOMContentLoaded', () => {
 // Sign In
 async function signInWithEmail(email, password) {
     try {
-        // Admin login requires server-side 2FA verification
-        if (email && email.toLowerCase().startsWith('admin')) {
-            showToast('Admin login requires verification. Redirecting...', 'info');
-            setTimeout(() => { window.location.href = 'admin-login.html'; }, 800);
-            return;
-        }
-
         const users = getBuilderUsers();
         const user = users.find(u => u.email === email && u.password === password);
         
-        if (!user) {
-            showToast('Invalid email or password', 'error');
+        if (user) {
+            // Regular builder user — create session and enter
+            localStorage.setItem('adminSession', JSON.stringify({
+                username: user.email,
+                email: user.email,
+                displayName: user.displayName,
+                role: user.role,
+                loginTime: Date.now(),
+                expiry: Date.now() + (24 * 60 * 60 * 1000)
+            }));
+            showToast(`Welcome ${user.displayName}!`, 'success');
+            showAccessGate(user);
             return;
         }
-        
-        // Regular user login (not admin) — no adminSession created
-        localStorage.setItem('adminSession', JSON.stringify({
-            username: user.email,
-            email: user.email,
-            displayName: user.displayName,
-            role: user.role,
-            loginTime: Date.now(),
-            expiry: Date.now() + (24 * 60 * 60 * 1000)
-        }));
-        showToast(`Welcome ${user.displayName}!`, 'success');
-        showAccessGate(user);
+
+        // Not in builder users — check server for admin credentials (no 2FA needed)
+        if (email) {
+            try {
+                const resp = await fetch('/api/admin/verify-credentials', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                if (resp.ok) {
+                    // Credentials valid — create Builder session directly
+                    const sessionData = {
+                        username: email,
+                        email: email,
+                        displayName: 'Admin',
+                        role: 'admin',
+                        loginTime: Date.now(),
+                        expiry: Date.now() + (24 * 60 * 60 * 1000)
+                    };
+                    localStorage.setItem('adminSession', JSON.stringify(sessionData));
+                    showToast('Welcome Admin!', 'success');
+                    showAccessGate(sessionData);
+                    return;
+                }
+            } catch (e) { /* server unavailable — fall through to error */ }
+        }
+
+        showToast('Invalid email or password', 'error');
     } catch (error) {
         console.error('Sign in error:', error);
         showToast('Authentication failed. Please try again', 'error');
