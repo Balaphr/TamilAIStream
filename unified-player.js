@@ -200,6 +200,10 @@ const UnifiedPlayer = (() => {
       queueClose: document.getElementById('upQueueClose'),
       queueClear: document.getElementById('upQueueClear'),
 
+      upNextContainer: document.getElementById('upFsUpNext'),
+      upNextList: document.getElementById('upFsUpNextList'),
+      upNextCount: document.getElementById('upFsUpNextCount'),
+
       fmContainer: document.getElementById('upFmContainer'),
       fmLogo: document.getElementById('upFmLogo'),
       fmName: document.getElementById('upFmName'),
@@ -743,6 +747,7 @@ const UnifiedPlayer = (() => {
       if (els.fmProgram) els.fmProgram.textContent = t.program || t.artist || 'Live Now';
       if (els.fmLive) els.fmLive.classList.add('visible');
     }
+    _renderUpNext();
   }
 
   function _updatePlayUI() {
@@ -861,6 +866,41 @@ const UnifiedPlayer = (() => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         removeFromQueue(parseInt(btn.dataset.rmIndex));
+      });
+    });
+  }
+
+  function _renderUpNext() {
+    if (!els.upNextList) return;
+    const upcoming = state.queue.slice(state.queueIndex + 1);
+    if (els.upNextCount) els.upNextCount.textContent = upcoming.length ? upcoming.length + ' songs' : '';
+    if (!upcoming.length) {
+      els.upNextList.innerHTML = '<div style="text-align:center;padding:16px;color:rgba(255,255,255,0.25);font-size:0.75rem;">No more songs in queue</div>';
+      return;
+    }
+    els.upNextList.innerHTML = upcoming.map((track, i) => {
+      const idx = state.queueIndex + 1 + i;
+      const title = track.title || track.name || 'Unknown';
+      const artist = track.artist || track.album || '';
+      const art = track.art || track.thumbnail || track.thumbnailUrl || '';
+      return `<div class="up-fs-upnext-item" data-index="${idx}">
+        <div class="upf-un-num">${i + 1}</div>
+        <div class="upf-un-art">${art ? `<img src="${_escHTML(art)}" alt="">` : `<i class="fas fa-music"></i>`}</div>
+        <div class="upf-un-info">
+          <div class="upf-un-title">${_escHTML(title)}</div>
+          <div class="upf-un-artist">${_escHTML(artist)}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    els.upNextList.querySelectorAll('.up-fs-upnext-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const idx = parseInt(item.dataset.index);
+        state.queueIndex = idx;
+        _loadAndPlay(state.queue[idx]);
+        _updateTrackUI();
+        _renderUpNext();
+        _saveState();
       });
     });
   }

@@ -290,7 +290,8 @@
   }
 
   function createInstallBanner() {
-    if (_bannerShown || !isMobile() || isStandalone() || isDismissed() || isAlreadyInstalled()) return;
+    if (_bannerShown || isStandalone() || isDismissed() || isAlreadyInstalled()) return;
+    if (!_deferredPrompt) return;
     _bannerShown = true;
 
     var banner = document.createElement('div');
@@ -387,8 +388,9 @@
     e.preventDefault();
     _deferredPrompt = e;
     window.__pwaDeferredPrompt = e;
-    if (isMobile() && !isStandalone() && !isDismissed() && !isAlreadyInstalled()) {
-      setTimeout(createInstallBanner, 2500);
+    if (!isStandalone() && !isDismissed() && !isAlreadyInstalled()) {
+      var delay = isMobile() ? 2500 : 8000;
+      setTimeout(createInstallBanner, delay);
     }
   });
 
