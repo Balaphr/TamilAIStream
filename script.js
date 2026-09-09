@@ -50,6 +50,7 @@ function showToast(message, type = 'info') {
 // Playback notification — slides in from left with AI recommendation
 // Autoplay-policy safety net: if the browser blocks play() (no user gesture),
 // retry once on the very next tap anywhere instead of silently failing.
+// CRITICAL: Clean up all listeners to prevent ghost playback.
 function safePlay(el) {
     if (!el) return Promise.resolve();
     const p = el.play();
@@ -57,10 +58,13 @@ function safePlay(el) {
         p.catch((err) => {
             if (err && err.name === 'NotAllowedError') {
                 showToast('Tap anywhere to start audio', 'info');
-                const kick = () => {
+                const kick = (evt) => {
                     document.removeEventListener('touchend', kick, true);
                     document.removeEventListener('click', kick, true);
-                    el.play().catch(() => {});
+                    // Only play if this is still the active audio element
+                    if (el === window.audioPlayer && el.paused) {
+                        el.play().catch(() => {});
+                    }
                 };
                 document.addEventListener('touchend', kick, true);
                 document.addEventListener('click', kick, true);
@@ -1140,15 +1144,13 @@ function stopCurrentStream() {
     stopFMBufferMonitor();
     if (audioPlayer) {
         audioPlayer.pause();
-        // Only remove src for song-to-song transitions. For FM, removing src
-        // forces a full CDN reconnection which is expensive on mobile networks.
-        if (currentPlaybackMode === 'station') {
-            // For station switches, just pause — the new playStation call
-            // will set a new src and the browser will reuse the connection pool.
-            // Don't remove src or call load() — that kills the CDN connection.
-        } else {
+        // For ALL playback types: remove src and call load() to fully stop
+        // the browser from buffering/processing the old stream.
+        // This prevents duplicate audio when switching songs/stations.
+        try {
             audioPlayer.removeAttribute('src');
-        }
+            audioPlayer.load();
+        } catch (e) { /* ignore */ }
         isStreamPlaying = false;
         streamConnecting = false;
         playbackHasLoaded = false;

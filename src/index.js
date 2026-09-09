@@ -198,7 +198,7 @@ async function handleAdminVerifyCredentials(request, env) {
       return json({ error: 'Email and password required' }, 400);
     }
 
-    if (email.toLowerCase() !== ADMIN_EMAIL || password !== ADMIN_PASSWORD_HASH) {
+    if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase() || password !== ADMIN_PASSWORD_HASH) {
       await recordFailedAttempt(env, email || ip);
       await auditLog(env, 'admin_login_failed', { email, reason: 'invalid_credentials' }, ip);
       return json({ error: 'Invalid email or password' }, 401);

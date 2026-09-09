@@ -928,11 +928,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadRememberedEmail();
     
     setupDemoCopyButtons();
-    document.getElementById('demoLoginBtn')?.addEventListener('click', quickDemoLogin);
-    document.getElementById('openBuilderBtn')?.addEventListener('click', openBuilderFromLogin);
-    document.getElementById('openNexvoraBtn')?.addEventListener('click', openNexvoraFromLogin);
-    
-    seedDemoAccount();
     
     if (Auth.isAuthenticated()) {
         window.location.href = Auth.getRedirect();

@@ -79,7 +79,6 @@
         if (!_settings.enabled) {
             if (_state !== 'idle') deactivate();
             hideTrigger();
-            if (_hookInterval) { clearInterval(_hookInterval); _hookInterval = null; }
         } else {
             showTrigger();
             setupAutoArm();
@@ -820,31 +819,27 @@
     }
 
     // ─── Audio Hooks (disarm mic on pause/stop only — NO auto-arm on play) ───
-    let _hookInterval = null;
 
     function setupAutoArm() {
         if (_autoArmListenerAttached) return;
         _autoArmListenerAttached = true;
 
-        const hookAudio = () => {
-            const ap = window.audioPlayer;
-            if (ap && !ap._vaHooked) {
-                ap._vaHooked = true;
-                ap.addEventListener('pause', () => {
-                    if (_state === 'wake' || _state === 'wake-active' || _state === 'command' || _state === 'command-active') {
-                        abortAll();
-                    }
-                });
-                ap.addEventListener('ended', () => {
-                    if (_state === 'wake' || _state === 'wake-active' || _state === 'command' || _state === 'command-active') {
-                        abortAll();
-                    }
-                });
+        // Use event delegation on document to catch play/pause/ended on ANY audio element
+        // This avoids polling and handles audio element replacements
+        document.addEventListener('pause', (e) => {
+            if (e.target && e.target.tagName === 'AUDIO') {
+                if (_state === 'wake' || _state === 'wake-active' || _state === 'command' || _state === 'command-active') {
+                    abortAll();
+                }
             }
-        };
-        hookAudio();
-        if (_hookInterval) clearInterval(_hookInterval);
-        _hookInterval = setInterval(hookAudio, 3000);
+        }, true);
+        document.addEventListener('ended', (e) => {
+            if (e.target && e.target.tagName === 'AUDIO') {
+                if (_state === 'wake' || _state === 'wake-active' || _state === 'command' || _state === 'command-active') {
+                    abortAll();
+                }
+            }
+        }, true);
     }
 
     function onVisibilityChange() {

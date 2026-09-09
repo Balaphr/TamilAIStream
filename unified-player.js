@@ -319,6 +319,16 @@ const UnifiedPlayer = (() => {
     state.queue = queue || [track];
     state.queueIndex = (index !== undefined && index >= 0) ? index : 0;
     _updateShuffleOrder();
+    // CRITICAL: Delegate to script.js's playSong when in externalEngine mode
+    // to prevent duplicate audio streams
+    if (state.externalEngine && typeof window.playSong === 'function') {
+      window.playSong(track, queue || [track], state.queueIndex);
+      _showBottomBar();
+      _updateTrackUI();
+      _saveState();
+      _emitEvent('trackChange', track);
+      return;
+    }
     _loadAndPlay(track);
     _showBottomBar();
     _updateTrackUI();
@@ -338,6 +348,16 @@ const UnifiedPlayer = (() => {
     state.track = station;
     state.queue = [station];
     state.queueIndex = 0;
+    // CRITICAL: Delegate to script.js's playStation when in externalEngine mode
+    if (state.externalEngine && typeof window.playStation === 'function') {
+      window.playStation(station.name, station.id);
+      _showBottomBar();
+      _showFMPlayer();
+      _updateTrackUI();
+      _saveState();
+      _emitEvent('trackChange', station);
+      return;
+    }
     const src = station.streamUrl || station.audioUrl;
     if (src) {
       audio.src = src;
@@ -884,21 +904,13 @@ const UnifiedPlayer = (() => {
 
   /* ═══════════════════════════════════════════
      KEYBOARD SHORTCUTS
+     script.js handles Space (togglePlayPause) and Ctrl+Arrow (next/prev).
+     UnifiedPlayer only handles volume (Up/Down) to avoid double-firing.
      ═══════════════════════════════════════════ */
   function _bindKeyboard() {
     document.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       switch (e.code) {
-        case 'Space':
-          e.preventDefault();
-          togglePlay();
-          break;
-        case 'ArrowRight':
-          if (e.ctrlKey || e.metaKey) { e.preventDefault(); next(); }
-          break;
-        case 'ArrowLeft':
-          if (e.ctrlKey || e.metaKey) { e.preventDefault(); previous(); }
-          break;
         case 'ArrowUp':
           if (e.ctrlKey || e.metaKey) { e.preventDefault(); setVolume(state.volume + 0.05); }
           break;
@@ -911,9 +923,13 @@ const UnifiedPlayer = (() => {
 
   /* ═══════════════════════════════════════════
      AI AUDIO-REACTIVE ANIMATION
+     Only initialize when UnifiedPlayer owns its own audio element.
+     When externalEngine=true, script.js controls playback — do NOT
+     create a second AudioContext or MediaElementSource.
      ═══════════════════════════════════════════ */
   function _initAudioContext() {
     if (audioCtx) return;
+    if (state.externalEngine) return; // Don't route script.js's audio through Web Audio
     try {
       const Ctx = window.AudioContext || window.webkitAudioContext;
       audioCtx = new Ctx();

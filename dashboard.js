@@ -108,6 +108,11 @@
        AUDIO SETUP (all existing player contract preserved)
        ============================================================ */
     function initAudioPlayer() {
+        // CRITICAL: Reuse existing global audio element — never create a second one
+        if (window.audioPlayer) {
+            audioPlayer = window.audioPlayer;
+            return;
+        }
         if (audioPlayer) return;
         audioPlayer = new Audio();
         window.audioPlayer = audioPlayer;

@@ -164,16 +164,17 @@ document.addEventListener('DOMContentLoaded', () => {
 // Sign In
 async function signInWithEmail(email, password) {
     try {
+        // Admin login requires server-side 2FA verification
+        if (email && email.toLowerCase().startsWith('admin')) {
+            showToast('Admin login requires verification. Redirecting...', 'info');
+            setTimeout(() => { window.location.href = 'admin-login.html'; }, 800);
+            return;
+        }
+
         const users = getBuilderUsers();
         const user = users.find(u => u.email === email && u.password === password);
         
         if (!user) {
-            // Admin login now requires server-side 2FA verification
-            if (email.startsWith('admin')) {
-                showToast('Admin login requires verification. Use admin-login.html', 'info');
-                setTimeout(() => { window.location.href = 'admin-login.html'; }, 1000);
-                return;
-            }
             showToast('Invalid email or password', 'error');
             return;
         }
@@ -419,9 +420,6 @@ function setupLoginScreen() {
     // Guest Sign In - Disabled
     document.getElementById('guestSignIn')?.addEventListener('click', signInAsGuest);
 
-    // Admin Quick Login (one-click)
-    document.getElementById('builderQuickLogin')?.addEventListener('click', quickAdminLogin);
-    
     // Switch to sign up tab
     document.getElementById('signupTab')?.addEventListener('click', (e) => {
         e.preventDefault();
