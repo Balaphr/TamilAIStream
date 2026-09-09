@@ -495,6 +495,7 @@ const _gbPageTitles = {
     site360: ['fa-globe', 'Site 360'],
     aiwebflow: ['fa-wand-magic-sparkles', 'AI Webflow'],
     application: ['fa-mobile-screen', 'Application'],
+    pwalogo: ['fa-icons', 'PWA Logo'],
     songsCollections: ['fa-layer-group', 'Songs Collections'],
     newalbums: ['fa-compact-disc', 'New Albums'],
     changes: ['fa-clock-rotate-left', 'Recent Changes'],
@@ -825,6 +826,7 @@ function navigateTo(page, opts = {}) {
         'site360': 'site360Page',
         'aiwebflow': 'aiwebflowPage',
         'application': 'applicationPage',
+        'pwalogo': 'pwalogoPage',
         'songsCollections': 'songsCollectionsPage',
         'newalbums': 'newAlbumsPage',
         'changes': 'changesPage',
@@ -12224,3 +12226,225 @@ const AudioSettingsBuilder = (() => {
 })();
 
 if (typeof window !== 'undefined') window.AudioSettingsBuilder = AudioSettingsBuilder;
+
+// ============================================
+// PWA Logo Builder Module
+// ============================================
+const PWALogo = (function() {
+    const STORAGE_KEY = 'tamilAIStream_pwaLogo';
+    const DEFAULTS = {
+        logoUrl: '',
+        splashLogoUrl: '',
+        faviconUrl: '',
+        anim3d: 'false',
+        animStyle: 'float',
+        animSpeed: 3,
+        showSplash: 'true',
+        showPwa: 'true',
+        showFavicon: 'true',
+    };
+
+    let _logoDataUrl = '';
+    let _splashDataUrl = '';
+    let _faviconDataUrl = '';
+
+    function el(id) { return document.getElementById(id); }
+
+    function load() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            const cfg = Object.assign({}, DEFAULTS, saved);
+            if (el('pwaLogoUrl')) el('pwaLogoUrl').value = cfg.logoUrl || '';
+            if (el('pwaAnim3d')) el('pwaAnim3d').value = cfg.anim3d || 'false';
+            if (el('pwaAnimStyle')) el('pwaAnimStyle').value = cfg.animStyle || 'float';
+            if (el('pwaAnimSpeed')) { el('pwaAnimSpeed').value = cfg.animSpeed || 3; el('pwaAnimSpeedVal').textContent = cfg.animSpeed || 3; }
+            if (el('pwaShowSplash')) el('pwaShowSplash').value = cfg.showSplash || 'true';
+            if (el('pwaShowPwa')) el('pwaShowPwa').value = cfg.showPwa || 'true';
+            if (el('pwaShowFavicon')) el('pwaShowFavicon').value = cfg.showFavicon || 'true';
+            _logoDataUrl = cfg.logoDataUrl || '';
+            _splashDataUrl = cfg.splashDataUrl || '';
+            _faviconDataUrl = cfg.faviconDataUrl || '';
+            _updatePreviews(cfg);
+            _updateAnimVisibility(cfg);
+        } catch(e) { console.warn('PWALogo load error', e); }
+    }
+
+    function save() {
+        const cfg = {
+            logoUrl: el('pwaLogoUrl')?.value || '',
+            anim3d: el('pwaAnim3d')?.value || 'false',
+            animStyle: el('pwaAnimStyle')?.value || 'float',
+            animSpeed: parseFloat(el('pwaAnimSpeed')?.value) || 3,
+            showSplash: el('pwaShowSplash')?.value || 'true',
+            showPwa: el('pwaShowPwa')?.value || 'true',
+            showFavicon: el('pwaShowFavicon')?.value || 'true',
+            logoDataUrl: _logoDataUrl,
+            splashDataUrl: _splashDataUrl,
+            faviconDataUrl: _faviconDataUrl,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+
+        if (typeof DataStore !== 'undefined' && DataStore.setLogoSettings) {
+            DataStore.setLogoSettings({
+                url: cfg.logoUrl || _logoDataUrl,
+                logo3d: cfg.anim3d === 'true',
+                logo3dStyle: cfg.animStyle,
+                logo3dSpeed: cfg.animSpeed,
+            });
+        }
+
+        if (cfg.logoUrl || _logoDataUrl) {
+            const logoSrc = _logoDataUrl || cfg.logoUrl;
+            const logoSettings = {
+                url: logoSrc,
+                logo3d: cfg.anim3d === 'true',
+                logo3dStyle: cfg.animStyle,
+                logo3dSpeed: cfg.animSpeed,
+            };
+            if (typeof BrandConfig !== 'undefined' && BrandConfig.applyLogoToDOM) {
+                BrandConfig.applyLogoToDOM(logoSettings);
+            }
+            document.querySelectorAll('.header-logo img, .nav-logo img, .app-logo img, .footer-logo img').forEach(img => { img.src = logoSrc; });
+        }
+
+        if (cfg.showFavicon === 'true' && (_faviconDataUrl || cfg.logoUrl)) {
+            let link = document.querySelector("link[rel~='icon']");
+            if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+            link.href = _faviconDataUrl || cfg.logoUrl;
+        }
+
+        const statusEl = el('pwaPreviewStatus');
+        if (statusEl) { statusEl.textContent = 'Saved! Changes will appear on next page load.'; setTimeout(() => { statusEl.textContent = ''; }, 3000); }
+        if (typeof showToast !== 'undefined') showToast('PWA Logo settings saved', 'success');
+    }
+
+    function reset() {
+        localStorage.removeItem(STORAGE_KEY);
+        _logoDataUrl = '';
+        _splashDataUrl = '';
+        _faviconDataUrl = '';
+        load();
+        if (typeof showToast !== 'undefined') showToast('PWA Logo reset to defaults', 'info');
+    }
+
+    function _updatePreviews(cfg) {
+        const logoSrc = _logoDataUrl || cfg.logoUrl || '';
+        const headerEl = el('pwaPreviewHeader');
+        const splashLogoEl = el('pwaPreviewSplashLogo');
+        const faviconEl = el('pwaPreviewFavicon');
+        if (headerEl) {
+            if (logoSrc) {
+                headerEl.innerHTML = '<img src="' + logoSrc + '" style="width:100%;height:100%;object-fit:cover;">';
+            } else {
+                headerEl.innerHTML = '<i class="fas fa-icons" style="font-size:2rem;color:var(--text-muted);"></i>';
+            }
+            headerEl.style.setProperty('--anim-speed', cfg.animSpeed + 's');
+            if (cfg.anim3d === 'true') {
+                headerEl.classList.remove('logo-float', 'logo-rotate', 'logo-pulse', 'logo-glow', 'logo-tilt', 'logo-breathe');
+                headerEl.classList.add('logo-' + cfg.animStyle);
+            } else {
+                headerEl.classList.remove('logo-float', 'logo-rotate', 'logo-pulse', 'logo-glow', 'logo-tilt', 'logo-breathe');
+            }
+        }
+        const splashSrc = _splashDataUrl || logoSrc;
+        if (splashLogoEl) {
+            if (splashSrc) {
+                splashLogoEl.innerHTML = '<img src="' + splashSrc + '" style="width:100%;height:100%;object-fit:cover;">';
+            } else {
+                splashLogoEl.innerHTML = '<i class="fas fa-icons" style="font-size:2rem;color:var(--text-muted);margin:16px;"></i>';
+            }
+        }
+        if (faviconEl) {
+            if (_faviconDataUrl || logoSrc) {
+                faviconEl.innerHTML = '<img src="' + (_faviconDataUrl || logoSrc) + '" style="width:100%;height:100%;object-fit:cover;">';
+            } else {
+                faviconEl.innerHTML = '<i class="fas fa-star" style="font-size:8px;color:var(--text-muted);"></i>';
+            }
+        }
+    }
+
+    function _updateAnimVisibility(cfg) {
+        const enabled = cfg.anim3d === 'true';
+        const styleGroup = el('pwaAnimStyleGroup');
+        const speedGroup = el('pwaAnimSpeedGroup');
+        if (styleGroup) styleGroup.style.display = enabled ? '' : 'none';
+        if (speedGroup) speedGroup.style.display = enabled ? '' : 'none';
+    }
+
+    function _fileToDataUrl(file, maxBytes) {
+        return new Promise((resolve, reject) => {
+            if (file.size > maxBytes) { reject(new Error('File too large (' + Math.round(file.size/1024/1024) + 'MB). Max ' + Math.round(maxBytes/1024/1024) + 'MB.')); return; }
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function init() {
+        load();
+        if (el('pwaAnim3d')) {
+            el('pwaAnim3d').onchange = function() {
+                _updateAnimVisibility({ anim3d: this.value, animStyle: el('pwaAnimStyle')?.value || 'float' });
+                _updatePreviews({ logoUrl: el('pwaLogoUrl')?.value || '', anim3d: this.value, animStyle: el('pwaAnimStyle')?.value || 'float', animSpeed: parseFloat(el('pwaAnimSpeed')?.value) || 3 });
+            };
+        }
+        if (el('pwaAnimStyle')) {
+            el('pwaAnimStyle').onchange = function() {
+                _updatePreviews({ logoUrl: el('pwaLogoUrl')?.value || '', anim3d: el('pwaAnim3d')?.value || 'false', animStyle: this.value, animSpeed: parseFloat(el('pwaAnimSpeed')?.value) || 3 });
+            };
+        }
+        if (el('pwaAnimSpeed')) {
+            el('pwaAnimSpeed').oninput = function() {
+                el('pwaAnimSpeedVal').textContent = this.value;
+                _updatePreviews({ logoUrl: el('pwaLogoUrl')?.value || '', anim3d: el('pwaAnim3d')?.value || 'false', animStyle: el('pwaAnimStyle')?.value || 'float', animSpeed: parseFloat(this.value) });
+            };
+        }
+        if (el('pwaLogoFile')) {
+            el('pwaLogoFile').onchange = async function() {
+                const file = this.files?.[0]; if (!file) return;
+                try {
+                    _logoDataUrl = await _fileToDataUrl(file, 2 * 1024 * 1024);
+                    el('pwaLogoFileName').textContent = file.name;
+                    _updatePreviews({ logoUrl: '', anim3d: el('pwaAnim3d')?.value || 'false', animStyle: el('pwaAnimStyle')?.value || 'float', animSpeed: parseFloat(el('pwaAnimSpeed')?.value) || 3 });
+                } catch(e) { if (typeof showToast !== 'undefined') showToast(e.message, 'error'); }
+            };
+        }
+        if (el('pwaSplashFile')) {
+            el('pwaSplashFile').onchange = async function() {
+                const file = this.files?.[0]; if (!file) return;
+                try {
+                    _splashDataUrl = await _fileToDataUrl(file, 2 * 1024 * 1024);
+                    el('pwaSplashFileName').textContent = file.name;
+                    _updatePreviews({ logoUrl: el('pwaLogoUrl')?.value || '', anim3d: el('pwaAnim3d')?.value || 'false', animStyle: el('pwaAnimStyle')?.value || 'float', animSpeed: parseFloat(el('pwaAnimSpeed')?.value) || 3 });
+                } catch(e) { if (typeof showToast !== 'undefined') showToast(e.message, 'error'); }
+            };
+        }
+        if (el('pwaFaviconFile')) {
+            el('pwaFaviconFile').onchange = async function() {
+                const file = this.files?.[0]; if (!file) return;
+                try {
+                    _faviconDataUrl = await _fileToDataUrl(file, 512 * 1024);
+                    el('pwaFaviconFileName').textContent = file.name;
+                    _updatePreviews({ logoUrl: el('pwaLogoUrl')?.value || '', anim3d: el('pwaAnim3d')?.value || 'false', animStyle: el('pwaAnimStyle')?.value || 'float', animSpeed: parseFloat(el('pwaAnimSpeed')?.value) || 3 });
+                } catch(e) { if (typeof showToast !== 'undefined') showToast(e.message, 'error'); }
+            };
+        }
+        if (el('pwaLogoUrl')) {
+            el('pwaLogoUrl').onchange = function() {
+                _updatePreviews({ logoUrl: this.value, anim3d: el('pwaAnim3d')?.value || 'false', animStyle: el('pwaAnimStyle')?.value || 'float', animSpeed: parseFloat(el('pwaAnimSpeed')?.value) || 3 });
+            };
+        }
+        _updateAnimVisibility({ anim3d: el('pwaAnim3d')?.value || 'false' });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    return { load, save, reset, init };
+})();
+
+if (typeof window !== 'undefined') window.PWALogo = PWALogo;

@@ -283,6 +283,9 @@
                             <button class="builder-sidebar-item" data-page="application">
                                 <i class="fas fa-mobile-screen-button"></i> Application
                             </button>
+                            <button class="builder-sidebar-item" data-page="pwalogo">
+                                <i class="fas fa-icons"></i> PWA Logo
+                            </button>
                         </div>
                     </div>
                     <div class="builder-sidebar-section">
@@ -3858,6 +3861,144 @@
                         </div>
                     </div>
                     <!-- END APPLICATION PAGE -->
+                    <!-- ========== PWA LOGO PAGE ========== -->
+                    <div class="builder-page" id="pwalogoPage" style="display:none;">
+                        <div class="builder-page-header">
+                            <h1 class="builder-page-title"><i class="fas fa-icons"></i> PWA Logo</h1>
+                            <p class="builder-page-subtitle">Configure your PWA logo with 3D animations, favicon, and splash screen branding</p>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:1200px;">
+
+                            <!-- LEFT: Settings -->
+                            <div>
+                                <!-- Logo Upload -->
+                                <div class="builder-content-card">
+                                    <div class="builder-card-header"><h3><i class="fas fa-upload"></i> Logo Image</h3></div>
+                                    <div class="builder-card-body">
+                                        <div class="form-group">
+                                            <label class="form-label">Logo URL</label>
+                                            <input type="url" class="form-input" id="pwaLogoUrl" placeholder="https://example.com/logo.png">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Upload Logo</label>
+                                            <div style="display:flex;gap:8px;align-items:center;">
+                                                <input type="file" id="pwaLogoFile" accept="image/*" style="display:none;">
+                                                <button type="button" class="builder-btn" onclick="document.getElementById('pwaLogoFile').click()"><i class="fas fa-cloud-arrow-up"></i> Choose File</button>
+                                                <span id="pwaLogoFileName" style="font-size:0.8rem;color:var(--text-muted);">No file chosen</span>
+                                            </div>
+                                            <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">Recommended: 512x512 PNG with transparent background. Max 2MB.</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Splash Screen Logo</label>
+                                            <div style="display:flex;gap:8px;align-items:center;">
+                                                <input type="file" id="pwaSplashFile" accept="image/*" style="display:none;">
+                                                <button type="button" class="builder-btn" onclick="document.getElementById('pwaSplashFile').click()"><i class="fas fa-cloud-arrow-up"></i> Choose File</button>
+                                                <span id="pwaSplashFileName" style="font-size:0.8rem;color:var(--text-muted);">No file chosen</span>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Favicon</label>
+                                            <div style="display:flex;gap:8px;align-items:center;">
+                                                <input type="file" id="pwaFaviconFile" accept="image/png,image/svg+xml" style="display:none;">
+                                                <button type="button" class="builder-btn" onclick="document.getElementById('pwaFaviconFile').click()"><i class="fas fa-cloud-arrow-up"></i> Choose File</button>
+                                                <span id="pwaFaviconFileName" style="font-size:0.8rem;color:var(--text-muted);">No file chosen</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 3D Animation -->
+                                <div class="builder-content-card" style="margin-top:16px;">
+                                    <div class="builder-card-header"><h3><i class="fas fa-wand-magic-sparkles"></i> 3D Animation</h3></div>
+                                    <div class="builder-card-body">
+                                        <div class="form-group">
+                                            <label class="form-label">Enable 3D Animation</label>
+                                            <select class="form-input" id="pwaAnim3d">
+                                                <option value="false">Disabled</option>
+                                                <option value="true">Enabled</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" id="pwaAnimStyleGroup">
+                                            <label class="form-label">Animation Style</label>
+                                            <select class="form-input" id="pwaAnimStyle">
+                                                <option value="float">Float (Gentle Bob)</option>
+                                                <option value="rotate">Rotate (360 Spin)</option>
+                                                <option value="pulse">Pulse (Scale + Glow)</option>
+                                                <option value="glow">Glow (Halo Pulse)</option>
+                                                <option value="tilt">Tilt (Perspective Tilt)</option>
+                                                <option value="breathe">Breathe (Scale In/Out)</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" id="pwaAnimSpeedGroup">
+                                            <label class="form-label">Animation Speed: <span id="pwaAnimSpeedVal">3</span>s</label>
+                                            <input type="range" class="form-input" id="pwaAnimSpeed" min="0.5" max="10" step="0.5" value="3" style="padding:0;">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Visibility -->
+                                <div class="builder-content-card" style="margin-top:16px;">
+                                    <div class="builder-card-header"><h3><i class="fas fa-eye"></i> Visibility</h3></div>
+                                    <div class="builder-card-body">
+                                        <div class="form-group">
+                                            <label class="form-label">Show in Splash Screen</label>
+                                            <select class="form-input" id="pwaShowSplash"><option value="true">Yes</option><option value="false">No</option></select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Generate PWA Icons</label>
+                                            <select class="form-input" id="pwaShowPwa"><option value="true">Yes</option><option value="false">No</option></select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Update Favicon</label>
+                                            <select class="form-input" id="pwaShowFavicon"><option value="true">Yes</option><option value="false">No</option></select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Save / Reset -->
+                                <div style="display:flex;gap:10px;margin-top:16px;">
+                                    <button class="builder-btn primary" onclick="PWALogo.save()"><i class="fas fa-save"></i> Save PWA Logo</button>
+                                    <button class="builder-btn" onclick="PWALogo.reset()"><i class="fas fa-rotate-left"></i> Reset</button>
+                                </div>
+                            </div>
+
+                            <!-- RIGHT: Live Preview -->
+                            <div>
+                                <div class="builder-content-card" style="position:sticky;top:20px;">
+                                    <div class="builder-card-header"><h3><i class="fas fa-eye"></i> Live Preview</h3></div>
+                                    <div class="builder-card-body" style="display:flex;flex-direction:column;align-items:center;gap:20px;padding:30px;">
+                                        <div style="text-align:center;">
+                                            <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;">Header Logo</p>
+                                            <div id="pwaPreviewHeader" style="width:80px;height:80px;border-radius:50%;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;overflow:hidden;border:2px solid var(--border-color);">
+                                                <i class="fas fa-icons" style="font-size:2rem;color:var(--text-muted);"></i>
+                                            </div>
+                                        </div>
+                                        <div style="text-align:center;">
+                                            <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;">Splash Screen</p>
+                                            <div id="pwaPreviewSplash" style="width:200px;height:350px;border-radius:16px;background:linear-gradient(135deg,#080c1c,#1a1a2e);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid var(--border-color);">
+                                                <div id="pwaPreviewSplashLogo" style="width:80px;height:80px;border-radius:50%;overflow:hidden;">
+                                                    <i class="fas fa-icons" style="font-size:2rem;color:var(--text-muted);margin:16px;"></i>
+                                                </div>
+                                                <span style="color:#fff;font-size:0.85rem;font-weight:600;">Tamil AI Stream</span>
+                                            </div>
+                                        </div>
+                                        <div style="text-align:center;">
+                                            <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;">Browser Tab (Favicon)</p>
+                                            <div style="display:flex;align-items:center;gap:8px;background:var(--bg-tertiary);padding:8px 14px;border-radius:8px;border:1px solid var(--border-color);">
+                                                <div id="pwaPreviewFavicon" style="width:16px;height:16px;border-radius:3px;overflow:hidden;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;">
+                                                    <i class="fas fa-star" style="font-size:8px;color:var(--text-muted);"></i>
+                                                </div>
+                                                <span style="font-size:0.8rem;color:var(--text-primary);">Tamil AI Stream</span>
+                                            </div>
+                                        </div>
+                                        <div id="pwaPreviewStatus" style="font-size:0.75rem;color:var(--accent);text-align:center;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ========== END PWA LOGO PAGE ========== -->
 
                     </div>
 
