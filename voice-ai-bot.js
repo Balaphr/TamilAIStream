@@ -26,7 +26,7 @@
         language: 'en-IN',
         sensitivity: 'medium',
         ttsEnabled: true,
-        autoArm: true,
+        autoArm: false,
         supportedCommands: ['next', 'previous', 'pause', 'play', 'volume', 'mute', 'fm', 'shuffle', 'repeat']
     };
 
@@ -79,7 +79,6 @@
         if (!_settings.enabled) {
             if (_state !== 'idle') deactivate();
             hideTrigger();
-            if (_pollInterval) { clearInterval(_pollInterval); _pollInterval = null; }
             if (_hookInterval) { clearInterval(_hookInterval); _hookInterval = null; }
         } else {
             showTrigger();
@@ -820,42 +819,24 @@
         if (!_settings.enabled) hideTrigger();
     }
 
-    // ─── Auto-Arm During Playback ───
-    let _pollInterval = null;
+    // ─── Audio Hooks (disarm mic on pause/stop only — NO auto-arm on play) ───
     let _hookInterval = null;
 
     function setupAutoArm() {
         if (_autoArmListenerAttached) return;
         _autoArmListenerAttached = true;
 
-        const checkPlaybackState = () => {
-            if (!_settings.enabled || !_settings.autoArm) return;
-            if (isPlaying() && _state === 'idle') {
-                arm();
-            } else if (!isPlaying() && (_state === 'wake' || _state === 'wake-active')) {
-                abortAll();
-            }
-        };
-
-        if (_pollInterval) clearInterval(_pollInterval);
-        _pollInterval = setInterval(checkPlaybackState, 2000);
-
         const hookAudio = () => {
             const ap = window.audioPlayer;
             if (ap && !ap._vaHooked) {
                 ap._vaHooked = true;
-                ap.addEventListener('play', () => {
-                    if (_settings.enabled && _settings.autoArm && _state === 'idle') {
-                        setTimeout(arm, 500);
-                    }
-                });
                 ap.addEventListener('pause', () => {
-                    if (_state === 'wake' || _state === 'wake-active') {
+                    if (_state === 'wake' || _state === 'wake-active' || _state === 'command' || _state === 'command-active') {
                         abortAll();
                     }
                 });
                 ap.addEventListener('ended', () => {
-                    if (_state === 'wake' || _state === 'wake-active') {
+                    if (_state === 'wake' || _state === 'wake-active' || _state === 'command' || _state === 'command-active') {
                         abortAll();
                     }
                 });
@@ -869,13 +850,10 @@
     function onVisibilityChange() {
         if (document.hidden) {
             _wasPlayingBeforeHide = isPlaying();
+            // Stop mic when page is hidden — do NOT auto-arm on return
             if (_state !== 'idle') abortAll();
-        } else {
-            // Page visible again — re-arm if was playing
-            if (_wasPlayingBeforeHide && _settings.enabled && _settings.autoArm) {
-                setTimeout(arm, 1000);
-            }
         }
+        // NO auto-arm on visibility return — mic must only be activated by explicit user action
     }
 
     function injectCss() {
@@ -922,11 +900,21 @@
         deactivate,
         isActive: () => _state !== 'idle',
         isDisabled: () => !_settings.enabled,
+        isListening: () => _state === 'wake' || _state === 'wake-active' || _state === 'command' || _state === 'command-active',
         setTts: (on) => { _tts = !!on; _settings.ttsEnabled = _tts; saveSettings(); },
         getState: () => _state,
         getSettings,
         updateSettings,
         getSettingsRaw: () => ({ ..._settings }),
+        // Explicit mic control — only activate via user action
+        micOn: () => {
+            if (!_settings.enabled) return false;
+            return arm();
+        },
+        micOff: () => {
+            abortAll();
+            return true;
+        },
     };
 
     if (document.readyState === 'loading') {

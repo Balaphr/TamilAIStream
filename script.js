@@ -514,47 +514,40 @@ function restorePlaybackState() {
                     AccessControl.onTrackStart(audioPlayer);
                 }
             }
-            // Resume playback from saved position
+            // CRITICAL FIX: NEVER auto-play on page load/refresh.
+            // Restore UI state only — user must explicitly press Play.
             isStreamPlaying = false;
-            userPaused = false;
+            userPaused = true;
+            updatePlayPauseButton(false);
             const trackUrl = currentPlaybackTrack.audioUrl || currentPlaybackTrack.streamUrl || '';
             if (trackUrl && audioPlayer) {
-                audioPlayer.src = trackUrl;
-                audioPlayer.volume = playbackVolume;
-                audioPlayer.currentTime = progress;
-                safePlay(audioPlayer).then(() => {
-                    isStreamPlaying = true;
-                    updatePlayPauseButton(true);
-                    updateNowPlayingBar(currentPlaybackTrack.title || currentPlaybackTrack.name || '', currentStation || '', true);
-                    if (typeof GlobalPlayer !== 'undefined') {
-                        GlobalPlayer.showMiniPlayer();
-                        GlobalPlayer.state.track = currentPlaybackTrack;
-                        GlobalPlayer.state.currentTime = progress;
-                        GlobalPlayer.state.isLive = !!(currentPlaybackTrack.streamUrl && !currentPlaybackTrack.audioUrl);
-                        GlobalPlayer.updateTrackUI();
-                        GlobalPlayer.updateLiveUI();
-                        GlobalPlayer.updatePlayUI(true);
-                    }
-                    if (typeof YTMusic !== 'undefined') {
-                        YTMusic.currentTrack = currentPlaybackTrack;
-                        YTMusic.isPlaying = true;
-                        YTMusic.progress = progress;
-                        YTMusic.updatePlayerUI();
-                        YTMusic.updateFullscreenPlayerUI();
-                        YTMusic.updateMiniPlayerUI();
-                    }
-                    document.body.classList.add('gp-active');
-                }).catch(() => {
-                    // Autoplay blocked — show paused state
-                    isStreamPlaying = false;
-                    userPaused = true;
-                    updatePlayPauseButton(false);
-                    updateNowPlayingBar(currentPlaybackTrack.title || currentPlaybackTrack.name || '', currentStation || '', false);
-                });
-            } else {
-                isStreamPlaying = false;
-                userPaused = true;
-                updatePlayPauseButton(false);
+                // Preload the source (no autoplay) so pressing Play resumes
+                // from the exact saved position instead of 00:00.
+                if (audioPlayer.src !== trackUrl) {
+                    audioPlayer.src = trackUrl;
+                    audioPlayer.volume = playbackVolume;
+                }
+                if (progress > 0) {
+                    audioPlayer.currentTime = progress;
+                }
+            }
+            updateNowPlayingBar(currentPlaybackTrack.title || currentPlaybackTrack.name || '', currentStation || '', false);
+            if (typeof GlobalPlayer !== 'undefined') {
+                GlobalPlayer.showMiniPlayer();
+                GlobalPlayer.state.track = currentPlaybackTrack;
+                GlobalPlayer.state.currentTime = progress;
+                GlobalPlayer.state.isLive = !!(currentPlaybackTrack.streamUrl && !currentPlaybackTrack.audioUrl);
+                GlobalPlayer.updateTrackUI();
+                GlobalPlayer.updateLiveUI();
+                GlobalPlayer.updatePlayUI(false);
+            }
+            if (typeof YTMusic !== 'undefined') {
+                YTMusic.currentTrack = currentPlaybackTrack;
+                YTMusic.isPlaying = false;
+                YTMusic.progress = progress;
+                YTMusic.updatePlayerUI();
+                YTMusic.updateFullscreenPlayerUI();
+                YTMusic.updateMiniPlayerUI();
             }
         } else {
             // No saved playback or was paused — show paused state
