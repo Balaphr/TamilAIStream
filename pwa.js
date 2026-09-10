@@ -389,8 +389,7 @@
     _deferredPrompt = e;
     window.__pwaDeferredPrompt = e;
     if (!isStandalone() && !isDismissed() && !isAlreadyInstalled()) {
-      var delay = isMobile() ? 2500 : 8000;
-      setTimeout(createInstallBanner, delay);
+      setTimeout(createInstallBanner, 100);
     }
   });
 
