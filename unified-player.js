@@ -78,7 +78,10 @@ const UnifiedPlayer = (() => {
      UnifiedPlayer is a UI layer when script.js owns playback.
      ═══════════════════════════════════════════ */
   function _liveAudio() {
-    if (state.externalEngine && window.audioPlayer && (window.audioPlayer.src || window.audioPlayer.getAttribute && window.audioPlayer.getAttribute('src'))) {
+    // Always prefer window.audioPlayer (script.js) as the single source of truth.
+    // This prevents any code from accidentally reading from the local audio element
+    // when script.js owns playback.
+    if (window.audioPlayer && (window.audioPlayer.src || (window.audioPlayer.getAttribute && window.audioPlayer.getAttribute('src')))) {
       return window.audioPlayer;
     }
     if (!audio) _createAudio();
@@ -89,36 +92,37 @@ const UnifiedPlayer = (() => {
   function _adoptExternalEngine() {
     if (state.externalEngine) return;
     if (!window.audioPlayer) return;
+    // script.js owns the audio element — switch UnifiedPlayer to UI-only mode
+    state.externalEngine = true;
+    // Sync current playback state from script.js
     let track = null;
     try {
       track = window.currentPlaybackTrack || window.currentStation || null;
     } catch (e) { /* ignore */ }
-    if (!track) {
-      const src = (window.audioPlayer.src || (window.audioPlayer.getAttribute && window.audioPlayer.getAttribute('src'))) || '';
-      if (!src || !state.track) return;
-      state.externalEngine = true;
-    } else {
-      state.externalEngine = true;
+    if (track && els.bottomTitle && els.bottomTitle.textContent === 'Nothing playing') {
+      state.track = track;
+      state.mode = (window.currentStation && !window.currentPlaybackTrack) ? 'fm' : 'songs';
+      state.isLive = !!(track.streamUrl && !track.audioUrl);
+      state.currentTime = window.audioPlayer.currentTime || 0;
+      state.duration = window.audioPlayer.duration || 0;
+      _showBottomBar();
+      _updateTrackUI();
+      _updateFavUI();
+      _updatePlayUI();
     }
-    if (els.bottomTitle && els.bottomTitle.textContent !== 'Nothing playing') return;
-    state.track = track;
-    state.mode = (window.currentStation && !window.currentPlaybackTrack) ? 'fm' : 'songs';
-    state.isLive = !!(track.streamUrl && !track.audioUrl);
-    state.currentTime = window.audioPlayer.currentTime || 0;
-    state.duration = window.audioPlayer.duration || 0;
-    _showBottomBar();
-    _updateTrackUI();
-    _updateFavUI();
-    _updatePlayUI();
     _startProgressLoop();
   }
 
-  /* ─── Create audio element ─── */
+  /* ─── Create audio element (only used as fallback when script.js is absent) ─── */
+  let _localAudioListenersAttached = false;
   function _createAudio() {
+    if (audio) return;
     audio = new Audio();
     audio.crossOrigin = 'anonymous';
     audio.preload = 'auto';
     audio.volume = state.volume;
+    if (_localAudioListenersAttached) return;
+    _localAudioListenersAttached = true;
 
     audio.addEventListener('loadedmetadata', () => {
       state.duration = audio.duration || 0;
@@ -323,13 +327,16 @@ const UnifiedPlayer = (() => {
     state.queue = queue || [track];
     state.queueIndex = (index !== undefined && index >= 0) ? index : 0;
     _updateShuffleOrder();
-    // CRITICAL: Delegate to script.js's playSong when in externalEngine mode
-    // to prevent duplicate audio streams
-    if (state.externalEngine && typeof window.playSong === 'function') {
+    // CRITICAL: Always delegate to script.js's playSong when available.
+    // This prevents duplicate audio streams by ensuring only ONE audio
+    // element is ever used for playback (window.audioPlayer).
+    if (typeof window.playSong === 'function' && window.audioPlayer) {
+      state.externalEngine = true;
       window.playSong(track, queue || [track], state.queueIndex);
       _showBottomBar();
       _updateTrackUI();
       _saveState();
+      _startProgressLoop();
       _emitEvent('trackChange', track);
       return;
     }
@@ -352,13 +359,15 @@ const UnifiedPlayer = (() => {
     state.track = station;
     state.queue = [station];
     state.queueIndex = 0;
-    // CRITICAL: Delegate to script.js's playStation when in externalEngine mode
-    if (state.externalEngine && typeof window.playStation === 'function') {
+    // CRITICAL: Always delegate to script.js's playStation when available
+    if (typeof window.playStation === 'function' && window.audioPlayer) {
+      state.externalEngine = true;
       window.playStation(station.name, station.id);
       _showBottomBar();
       _showFMPlayer();
       _updateTrackUI();
       _saveState();
+      _startProgressLoop();
       _emitEvent('trackChange', station);
       return;
     }
@@ -381,10 +390,10 @@ const UnifiedPlayer = (() => {
       var audioEl = state.externalEngine ? (window.audioPlayer || audio) : audio;
       if (!AccessControl.guardPlayback(audioEl)) return;
     }
-    if (state.externalEngine) {
-      if (typeof window.resumePlayback === 'function') { window.resumePlayback(); return; }
-      const live = _liveAudio();
-      if (live && live.src) live.play().catch(() => {});
+    // Always delegate to script.js when available
+    if (typeof window.resumePlayback === 'function' && window.audioPlayer) {
+      state.externalEngine = true;
+      window.resumePlayback();
       return;
     }
     if (!audio.src && state.track) {
@@ -398,21 +407,19 @@ const UnifiedPlayer = (() => {
   }
 
   function pause() {
-    if (state.externalEngine) {
-      if (typeof window.pausePlayback === 'function') { window.pausePlayback(); return; }
-      const live = _liveAudio();
-      if (live) live.pause();
+    // Always delegate to script.js when available
+    if (typeof window.pausePlayback === 'function' && window.audioPlayer) {
+      window.pausePlayback();
       return;
     }
-    audio.pause();
+    if (audio) audio.pause();
   }
 
   function togglePlay() {
-    if (state.externalEngine) {
-      if (typeof window.togglePlayPause === 'function') { window.togglePlayPause(); return; }
-      const live = _liveAudio();
-      if (live && !live.paused && (live.currentTime > 0 || audioPlayerCurrentSrc(live))) pause();
-      else play();
+    // Always delegate to script.js when available
+    if (typeof window.togglePlayPause === 'function' && window.audioPlayer) {
+      state.externalEngine = true;
+      window.togglePlayPause();
       return;
     }
     if (state.isPlaying) pause();
@@ -425,7 +432,8 @@ const UnifiedPlayer = (() => {
 
   function _seekToPercent(pct) {
     pct = Math.max(0, Math.min(1, pct));
-    if (state.externalEngine && typeof window.seekPlaybackToPercent === 'function') {
+    // Always delegate to script.js when available
+    if (typeof window.seekPlaybackToPercent === 'function' && window.audioPlayer) {
       window.seekPlaybackToPercent(pct);
       return;
     }
@@ -474,13 +482,9 @@ const UnifiedPlayer = (() => {
   }
 
   function next() {
-    if (state.externalEngine) {
-      if (typeof window.playNextTrack === 'function') { window.playNextTrack(); return; }
-      const live = _liveAudio();
-      if (live && live.src) {
-        live.currentTime = live.duration || 0;
-        live.pause();
-      }
+    // Always delegate to script.js when available
+    if (typeof window.playNextTrack === 'function' && window.audioPlayer) {
+      window.playNextTrack();
       return;
     }
     if (state.queue.length === 0) return;
@@ -496,14 +500,13 @@ const UnifiedPlayer = (() => {
   }
 
   function previous() {
-    if (state.externalEngine) {
-      if (typeof window.playPreviousTrack === 'function') { window.playPreviousTrack(); return; }
-      const live = _liveAudio();
-      if (live) live.currentTime = 0;
+    // Always delegate to script.js when available
+    if (typeof window.playPreviousTrack === 'function' && window.audioPlayer) {
+      window.playPreviousTrack();
       return;
     }
     if (state.queue.length === 0) return;
-    if (audio.currentTime > 3) {
+    if (audio && audio.currentTime > 3) {
       audio.currentTime = 0;
       return;
     }
@@ -519,20 +522,21 @@ const UnifiedPlayer = (() => {
   }
 
   function seek(time) {
-    if (state.externalEngine && state.duration > 0) {
+    if (state.duration > 0) {
       _seekToPercent(time / state.duration);
       return;
     }
-    if (audio.duration) {
-      audio.currentTime = Math.max(0, Math.min(time, audio.duration));
+    const live = _liveAudio();
+    if (live && live.duration) {
+      live.currentTime = Math.max(0, Math.min(time, live.duration));
     }
   }
 
   function setVolume(v) {
     state.volume = Math.max(0, Math.min(1, v));
-    audio.volume = state.volume;
+    if (audio) audio.volume = state.volume;
     state.muted = state.volume === 0;
-    audio.muted = state.muted;
+    if (audio) audio.muted = state.muted;
     if (window.audioPlayer) {
       window.audioPlayer.volume = state.volume;
       window.audioPlayer.muted = state.muted;
@@ -544,15 +548,15 @@ const UnifiedPlayer = (() => {
   function toggleMute() {
     if (state.muted) {
       state.muted = false;
-      audio.muted = false;
+      if (audio) audio.muted = false;
       if (window.audioPlayer) window.audioPlayer.muted = false;
       if (state.volume === 0) state.volume = state.previousVolume || 0.5;
-      audio.volume = state.volume;
+      if (audio) audio.volume = state.volume;
       if (window.audioPlayer) window.audioPlayer.volume = state.volume;
     } else {
       state.previousVolume = state.volume;
       state.muted = true;
-      audio.muted = true;
+      if (audio) audio.muted = true;
       if (window.audioPlayer) window.audioPlayer.muted = true;
     }
     _updateVolumeUI();
@@ -690,6 +694,7 @@ const UnifiedPlayer = (() => {
   function _loadAndPlay(track) {
     const src = track.audioUrl || track.streamUrl;
     if (!src) return;
+    _createAudio();
     audio.src = src;
     audio.load();
     audio.play().catch(() => {});
@@ -697,6 +702,7 @@ const UnifiedPlayer = (() => {
     _updatePlayUI();
     _updateTrackUI();
     _startAIAnimation();
+    _startProgressLoop();
   }
 
   function _updateTrackUI() {
@@ -856,9 +862,7 @@ const UnifiedPlayer = (() => {
         if (e.target.closest('.up-queue-remove')) return;
         const idx = parseInt(item.dataset.index);
         state.queueIndex = idx;
-        _loadAndPlay(state.queue[idx]);
-        _updateTrackUI();
-        _saveState();
+        playSong(state.queue[idx], state.queue, idx);
       });
     });
 
@@ -897,10 +901,8 @@ const UnifiedPlayer = (() => {
       item.addEventListener('click', () => {
         const idx = parseInt(item.dataset.index);
         state.queueIndex = idx;
-        _loadAndPlay(state.queue[idx]);
-        _updateTrackUI();
+        playSong(state.queue[idx], state.queue, idx);
         _renderUpNext();
-        _saveState();
       });
     });
   }
@@ -1076,9 +1078,8 @@ const UnifiedPlayer = (() => {
       if (!_progressLoopRunning) return;
 
       const live = _liveAudio();
-      if (!live || live.paused) {
+      if (!live) {
         _progressLoopRunning = false;
-        _updatePlayUI();
         return;
       }
 
@@ -1094,13 +1095,13 @@ const UnifiedPlayer = (() => {
         if (playing) _startAIAnimation(); else _stopAIAnimation();
       }
 
-      if (!draggingSeek) {
+      // Only update progress when actually playing and not dragging seek
+      if (playing && !draggingSeek) {
         state.currentTime = live.currentTime || 0;
         if (isFinite(live.duration) && live.duration > 0) state.duration = live.duration;
         else if (state.isLive) state.duration = 0;
+        _updateProgressUI();
       }
-
-      _updateProgressUI();
     }
     tick();
   }
@@ -1135,6 +1136,7 @@ const UnifiedPlayer = (() => {
      ═══════════════════════════════════════════ */
   function _saveState() {
     try {
+      const activeAudio = state.externalEngine ? window.audioPlayer : audio;
       const data = {
         mode: state.mode,
         track: state.track,
@@ -1144,7 +1146,7 @@ const UnifiedPlayer = (() => {
         muted: state.muted,
         shuffle: state.shuffle,
         repeat: state.repeat,
-        currentTime: audio.currentTime || 0,
+        currentTime: (activeAudio && activeAudio.currentTime) || 0,
         favorites: Array.from(state.favorites),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -1162,11 +1164,11 @@ const UnifiedPlayer = (() => {
       if (data.favorites) state.favorites = new Set(data.favorites);
       if (data.volume !== undefined) {
         state.volume = data.volume;
-        audio.volume = state.volume;
+        if (audio) audio.volume = state.volume;
       }
       if (data.muted !== undefined) {
         state.muted = data.muted;
-        audio.muted = state.muted;
+        if (audio) audio.muted = state.muted;
       }
       if (data.shuffle !== undefined) state.shuffle = data.shuffle;
       if (data.repeat) state.repeat = data.repeat;
@@ -1181,7 +1183,15 @@ const UnifiedPlayer = (() => {
         _updateVolumeUI();
         _updateShuffleUI();
         _updateRepeatUI();
+        // If script.js owns audio, don't create a local audio element.
+        // The progress loop will sync state from window.audioPlayer.
+        if (window.audioPlayer) {
+          state.externalEngine = true;
+          _startProgressLoop();
+          return;
+        }
         if (data.currentTime > 0) {
+          _createAudio();
           const src = data.track.audioUrl || data.track.streamUrl;
           if (src) {
             audio.src = src;
@@ -1206,11 +1216,16 @@ const UnifiedPlayer = (() => {
       state.isLive = !!(track.streamUrl && !track.audioUrl);
       state.currentTime = typeof data.progress === 'number' ? data.progress : 0;
       state.duration = typeof data.duration === 'number' ? data.duration : 0;
-      state.externalEngine = true;
+      state.externalEngine = !!window.audioPlayer;
       _showBottomBar();
       _updateTrackUI();
       _updatePlayUI();
       _updateProgressUI();
+      // Start progress loop if script.js has an active audio element
+      if (window.audioPlayer && (window.audioPlayer.src || window.audioPlayer.getAttribute && window.audioPlayer.getAttribute('src'))) {
+        state.externalEngine = true;
+        _startProgressLoop();
+      }
     } catch (e) { /* ignore */ }
   }
 
