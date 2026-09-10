@@ -3900,7 +3900,7 @@ function renderPersonalizedMusic() {
     if (personalized.length < 5) {
         // Fallback: prioritize songs not yet played, then random
         let history = [];
-        try { history = JSON.parse(localStorage.getItem('ytm_history') || '[]'); } catch (e) {}
+        try { history = JSON.parse(_userGetItem('ytm_history') || '[]'); } catch (e) {}
         const playedIds = new Set(history.map(h => h && h.id).filter(Boolean));
         const unplayed = songs.filter(s => !playedIds.has(s.id));
         const pool = unplayed.length >= 5 ? unplayed : songs;

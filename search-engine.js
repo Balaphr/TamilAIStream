@@ -10,6 +10,21 @@ const SearchEngine = (() => {
     let lastQuery = '';
     let searchHistory = [];
 
+    // User-scoped key helper for search history
+    function _scopedKey(base) {
+        try {
+            if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) return UserDataSync.scopedKey(base);
+        } catch(e) {}
+        try {
+            const u = JSON.parse(localStorage.getItem('tamilAIStream_user') || 'null');
+            const uid = u?.uid || u?.email;
+            if (uid) return base + '_' + uid.replace(/[^a-zA-Z0-9._@-]/g, '_');
+        } catch(e) {}
+        return base + '_guest';
+    }
+    const SEARCH_HISTORY_KEY = 'search_history';
+    function _getHistoryKey() { return _scopedKey(SEARCH_HISTORY_KEY); }
+
     function buildIndex() {
         const songs = DataStore.getSongs ? DataStore.getSongs() : [];
         const stations = DataStore.getStations ? DataStore.getStations() : [];
@@ -310,7 +325,7 @@ const SearchEngine = (() => {
         searchHistory = searchHistory.filter(h => h !== query);
         searchHistory.unshift(query);
         if (searchHistory.length > 50) searchHistory = searchHistory.slice(0, 50);
-        try { localStorage.setItem('search_history', JSON.stringify(searchHistory)); } catch {}
+        try { localStorage.setItem(_getHistoryKey(), JSON.stringify(searchHistory)); } catch {}
     }
 
     function getSearchHistory() {
@@ -319,12 +334,12 @@ const SearchEngine = (() => {
 
     function clearSearchHistory() {
         searchHistory = [];
-        try { localStorage.setItem('search_history', '[]'); } catch {}
+        try { localStorage.setItem(_getHistoryKey(), '[]'); } catch {}
     }
 
     function init() {
         try {
-            searchHistory = JSON.parse(localStorage.getItem('search_history') || '[]');
+            searchHistory = JSON.parse(localStorage.getItem(_getHistoryKey()) || '[]');
         } catch { searchHistory = []; }
         buildIndex();
         if (DataStore.on) {

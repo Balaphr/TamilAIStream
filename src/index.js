@@ -219,10 +219,20 @@ async function handleAuthValidate(request, env) {
  *  - Authorization: Bearer <token> (admin token)
  * Returns null if not authenticated.
  */
+/**
+ * Validate and extract user ID from request header.
+ * Returns null if not authenticated or if the ID is invalid.
+ * SECURITY: Validates format to prevent injection and abuse.
+ */
 function extractUserId(request) {
   const userId = request.headers.get('x-user-id');
-  if (userId && userId.trim()) return userId.trim();
-  return null;
+  if (!userId || typeof userId !== 'string') return null;
+  const trimmed = userId.trim();
+  if (trimmed.length === 0 || trimmed.length > 254) return null;
+  // Must be a valid email or a reasonable UID string
+  // Allow: emails, Firebase UIDs (alphanumeric + dashes + underscores)
+  if (!/^[a-zA-Z0-9._@\-]+$/.test(trimmed)) return null;
+  return trimmed;
 }
 
 /**

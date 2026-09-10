@@ -54,13 +54,21 @@ window.AccessControl = (function () {
     }
 
     // ─── User-scoped key helper ───
+    // FAIL CLOSED: if UserDataSync is unavailable, use guest scope instead of
+    // falling back to the un-scoped base key. This prevents trial/subscription
+    // data from leaking between users on the same browser.
     function _scopedKey(baseKey) {
         try {
             if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) {
                 return UserDataSync.scopedKey(baseKey);
             }
         } catch (e) {}
-        return baseKey;
+        try {
+            const u = JSON.parse(localStorage.getItem('tamilAIStream_user') || 'null');
+            const uid = u?.uid || u?.email;
+            if (uid) return baseKey + '_' + uid.replace(/[^a-zA-Z0-9._@-]/g, '_');
+        } catch(e) {}
+        return baseKey + '_guest';
     }
     function _lsGetScoped(baseKey) { return lsGet(_scopedKey(baseKey)); }
     function _lsSetScoped(baseKey, val) { lsSet(_scopedKey(baseKey), val); }

@@ -94,9 +94,30 @@ window.Auth = (function () {
     // --------------------------------------------------------------------------
     // Session creation
     // --------------------------------------------------------------------------
-    function createSession(userData, remember, isGuest) {
+    async function createSession(userData, remember, isGuest) {
         remember = !!remember;
         isGuest = !!isGuest;
+
+        // ─── CRITICAL: Clear previous user's in-memory/session state ───
+        // This prevents User A's data from leaking into User B's session.
+        // Must happen BEFORE we write the new session to localStorage.
+        var prevUser = getStoredUser();
+        if (prevUser && prevUser.email) {
+            // Flush previous user's data to server
+            if (typeof UserDataSync !== 'undefined' && UserDataSync.onLogout) {
+                try { await UserDataSync.onLogout(); } catch(e) {}
+            }
+            // Clear in-memory caches
+            if (typeof ListeningHistory !== 'undefined' && ListeningHistory.switchUser) {
+                ListeningHistory.switchUser(null);
+            }
+            if (typeof PlaylistManager !== 'undefined' && PlaylistManager.switchUser) {
+                PlaylistManager.switchUser(null);
+            }
+            if (typeof DataStore !== 'undefined' && DataStore.switchHistoryUser) {
+                DataStore.switchHistoryUser(null);
+            }
+        }
 
         var token = genToken();
         var nowMs = now();
@@ -139,7 +160,7 @@ window.Auth = (function () {
         }
         // ─── Sync user data from server (cross-device) ───
         if (typeof UserDataSync !== 'undefined' && !isGuest) {
-            UserDataSync.onLogin();
+            try { await UserDataSync.onLogin(); } catch(e) {}
         }
 
         return sessionUser;
@@ -255,10 +276,12 @@ window.Auth = (function () {
     }
 
     /** Remove every auth key from localStorage, sessionStorage and cookies. */
-    function clearAll() {
+    async function clearAll() {
         // ─── Save user data to server before clearing ───
-        if (typeof UserDataSync !== 'undefined') {
-            UserDataSync.onLogout();
+        // Must complete BEFORE we wipe the session, otherwise UserDataSync
+        // won't know which user to flush data for.
+        if (typeof UserDataSync !== 'undefined' && UserDataSync.onLogout) {
+            try { await UserDataSync.onLogout(); } catch(e) {}
         }
         var keys = [K.LOGGED_IN, K.USER, K.GUEST, K.REMEMBER, K.REMEMBER_EMAIL, K.ADMIN, K.TOKEN];
         for (var i = 0; i < keys.length; i++) {

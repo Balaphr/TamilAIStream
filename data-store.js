@@ -177,15 +177,25 @@ const DataStore = {
         return 'ytm_history_' + userId.replace(/[^a-zA-Z0-9._@-]/g, '_');
     },
     switchHistoryUser(userId) {
+        // Clear the OLD user's scoped cache entries before switching.
+        // This prevents the new user from seeing stale cached data from the
+        // previous user when the cache key includes the userId suffix.
+        const oldUserId = this._historyUserId || 'guest';
+        const oldSuffix = '_' + oldUserId.replace(/[^a-zA-Z0-9._@-]/g, '_');
+        const scopedKeys = [
+            'ytm_history', 'ytm_likedSongs', 'ytm_playlists',
+            'ytm_queue', 'ytm_settings', 'tamilAIStream_favorites'
+        ];
+        scopedKeys.forEach(baseKey => {
+            delete this._cache[baseKey + oldSuffix];
+            delete this._cache[baseKey]; // also clear base key cache
+        });
+        // Also clear any unsuffixed cache entries
+        Object.keys(this._cache).forEach(key => {
+            if (scopedKeys.includes(key)) delete this._cache[key];
+        });
+
         this._historyUserId = userId || null;
-        // Clear cache for old history key
-        delete this._cache[this.KEYS.HISTORY];
-        // Also clear caches for other user-scoped keys
-        delete this._cache[this.KEYS.LIKED_SONGS];
-        delete this._cache[this.KEYS.PLAYLISTS];
-        delete this._cache[this.KEYS.FAVORITES];
-        delete this._cache[this.KEYS.QUEUE];
-        delete this._cache[this.KEYS.SETTINGS];
     },
     getHistory() { return this.get(this._getHistoryKey()) || []; },
     setHistory(history) { this.set(this._getHistoryKey(), history); },

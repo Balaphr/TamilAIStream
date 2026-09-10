@@ -7,6 +7,21 @@
    ============================================ */
 
 const Equalizer = (() => {
+    // User-scoped key helper for EQ settings
+    function _scopedKey(base) {
+        try {
+            if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) return UserDataSync.scopedKey(base);
+        } catch(e) {}
+        try {
+            const u = JSON.parse(localStorage.getItem('tamilAIStream_user') || 'null');
+            const uid = u?.uid || u?.email;
+            if (uid) return base + '_' + uid.replace(/[^a-zA-Z0-9._@-]/g, '_');
+        } catch(e) {}
+        return base + '_guest';
+    }
+    const EQ_SETTINGS_KEY = 'eq_settings';
+    function _getEqKey() { return _scopedKey(EQ_SETTINGS_KEY); }
+
     const BANDS = [
         { freq: 32, label: '32', type: 'lowshelf' },
         { freq: 64, label: '64', type: 'peaking' },
@@ -300,7 +315,7 @@ const Equalizer = (() => {
 
     function saveEqSettings() {
         try {
-            localStorage.setItem('eq_settings', JSON.stringify({
+            localStorage.setItem(_getEqKey(), JSON.stringify({
                 gains: currentGains,
                 preset: currentPreset,
                 enhancement: {
@@ -316,7 +331,7 @@ const Equalizer = (() => {
 
     function loadEqSettings() {
         try {
-            const saved = JSON.parse(localStorage.getItem('eq_settings') || '{}');
+            const saved = JSON.parse(localStorage.getItem(_getEqKey()) || '{}');
             if (saved.gains) {
                 currentGains = saved.gains;
                 saved.gains.forEach((gain, i) => setBand(i, gain));

@@ -56,8 +56,21 @@ const UnifiedPlayer = (() => {
   let draggingSeek = false;
   let _progressLoopRunning = false;
 
-  /* ─── Persistence key ─── */
-  const STORAGE_KEY = 'tamilai_unifiedPlayer';
+  /* ─── Persistence key (user-scoped) ─── */
+  const BASE_STORAGE_KEY = 'tamilai_unifiedPlayer';
+  function _scopedKey(base) {
+    try {
+      if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) return UserDataSync.scopedKey(base);
+    } catch(e) {}
+    try {
+      const u = JSON.parse(localStorage.getItem('tamilAIStream_user') || 'null');
+      const uid = u?.uid || u?.email;
+      if (uid) return base + '_' + uid;
+    } catch(e) {}
+    return base + '_guest';
+  }
+  function _getStorageKey() { return _scopedKey(BASE_STORAGE_KEY); }
+  function _getFavoritesKey() { return _scopedKey('tamilai_favorites'); }
 
   /* ═══════════════════════════════════════════
      INIT
@@ -1149,13 +1162,13 @@ const UnifiedPlayer = (() => {
         currentTime: (activeAudio && activeAudio.currentTime) || 0,
         favorites: Array.from(state.favorites),
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      localStorage.setItem(_getStorageKey(), JSON.stringify(data));
     } catch (e) {}
   }
 
   function _restoreState() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(_getStorageKey());
       if (!raw) {
         _restoreFromScriptState();
         return;
@@ -1231,7 +1244,7 @@ const UnifiedPlayer = (() => {
 
   function _persistFavorites() {
     try {
-      localStorage.setItem('tamilai_favorites', JSON.stringify(Array.from(state.favorites)));
+      localStorage.setItem(_getFavoritesKey(), JSON.stringify(Array.from(state.favorites)));
     } catch (e) {}
   }
 

@@ -252,6 +252,7 @@ window.UserDataSync = (function () {
             clearTimeout(_syncTimer);
             _syncTimer = null;
         }
+        const previousUserId = _currentUserId;
         await _flushToServer();
         // Stop periodic sync
         _stopPeriodicSync();
@@ -263,8 +264,15 @@ window.UserDataSync = (function () {
         for (const baseKey of Object.values(USER_SCOPED_KEYS)) {
             localStorage.removeItem(baseKey + '_guest');
         }
+        // Clear in-memory caches that hold the previous user's data
         _currentUserId = null;
         _loadedFromServer = false;
+        // Clear DataStore cache for previous user
+        try {
+            if (typeof DataStore !== 'undefined' && DataStore.invalidateAll) {
+                DataStore.invalidateAll();
+            }
+        } catch(e) {}
     }
 
     /**
