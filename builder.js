@@ -2441,6 +2441,11 @@ function applySavedSettingsToWebsite() {
 
 async function _syncToLiveWebsiteActual() {
     try {
+        // Persist VE overrides to localStorage before building the manifest
+        if (typeof saveVEOverridesForLive === 'function') {
+            try { saveVEOverridesForLive(); } catch(e) {}
+        }
+
         localStorage.setItem('tamilAIStream_lastSyncedAt', new Date().toISOString());
         localStorage.setItem('builderLastPublished', Date.now().toString());
 
@@ -2570,6 +2575,12 @@ async function publishChanges() {
     try {
         if (progressContainer) progressContainer.style.display = 'block';
         setProgress(5, 'Preparing content...');
+
+        // Always persist VE overrides to localStorage BEFORE building the manifest.
+        // This prevents the race condition where buildContentPayload() reads stale data.
+        if (typeof saveVEOverridesForLive === 'function') {
+            try { saveVEOverridesForLive(); } catch(e) {}
+        }
 
         await new Promise(r => setTimeout(r, 100));
         setProgress(15, 'Building content payload...');
@@ -10009,6 +10020,19 @@ function publishVEChanges() {
 
 function saveVEOverridesForLive() {
     if (!veIframeDoc) return;
+
+    // Read existing VE overrides from localStorage so we MERGE instead of
+    // overwriting. This preserves AdminEditor changes for sections that are
+    // not visible in the Builder's iframe.
+    let existingOverrides = {};
+    try {
+        const raw = localStorage.getItem('tamilAIStream_veOverrides');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.overrides) existingOverrides = parsed.overrides;
+        }
+    } catch(e) {}
+
     const sectionEls = veIframeDoc.querySelectorAll(
         'section, [data-section], header, nav, footer, main, [class*="section"], .home-section, .site-footer, .top-header'
     );
@@ -10016,7 +10040,6 @@ function saveVEOverridesForLive() {
     const sectionStates = meaningful.map(el => {
         const id = el.getAttribute('data-section') || el.id || '';
         const hidden = el.style.display === 'none' || el.hidden;
-        const computed = window.getComputedStyle(el);
         return {
             id,
             hidden,
@@ -10024,9 +10047,31 @@ function saveVEOverridesForLive() {
             order: Array.from(el.parentElement.children).indexOf(el)
         };
     });
+
+    // Merge: start with existing overrides, then layer Builder's overrides on top.
+    // Builder's veOverrides only contains selectors that were actively edited
+    // in this session, so existing AdminEditor overrides for other sections
+    // are preserved.
+    const mergedOverrides = { ...existingOverrides, ...veOverrides };
+
+    // Merge sectionStates: Builder's sections replace matching existing ones,
+    // but existing sections not in Builder's iframe are preserved.
+    let mergedSectionStates = sectionStates;
+    try {
+        const raw = localStorage.getItem('tamilAIStream_veOverrides');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.sectionStates && parsed.sectionStates.length) {
+                const builderIds = new Set(sectionStates.map(s => s.id));
+                const keptExisting = parsed.sectionStates.filter(s => s.id && !builderIds.has(s.id));
+                mergedSectionStates = [...sectionStates, ...keptExisting];
+            }
+        }
+    } catch(e) {}
+
     const payload = {
-        sectionStates,
-        overrides: veOverrides,
+        sectionStates: mergedSectionStates,
+        overrides: mergedOverrides,
         timestamp: Date.now()
     };
     localStorage.setItem('tamilAIStream_veOverrides', JSON.stringify(payload));

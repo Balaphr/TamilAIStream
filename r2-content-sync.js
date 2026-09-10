@@ -236,11 +236,27 @@
                 } else if (Array.isArray(localValue) && localValue.length > 0 && isWriter) {
                     mergedData[key] = localValue;
                 } else if (key === 'veOverrides') {
-                    // VE overrides: always keep the newer version by timestamp
-                    // to prevent stale R2 data from overwriting fresh local edits.
+                    // VE overrides: keep the freshest version.
+                    // On writer pages (Builder/Admin), local edits always win
+                    // because they represent the most recent authoring session.
                     const localTs = localValue?.timestamp || 0;
                     const remoteTs = remoteValue?.timestamp || 0;
-                    if (localTs >= remoteTs && localValue) {
+                    const localHasContent = localValue && (
+                        (localValue.sectionStates && localValue.sectionStates.length > 0) ||
+                        (localValue.overrides && Object.keys(localValue.overrides).length > 0)
+                    );
+                    const remoteHasContent = remoteValue && (
+                        (remoteValue.sectionStates && remoteValue.sectionStates.length > 0) ||
+                        (remoteValue.overrides && Object.keys(remoteValue.overrides).length > 0)
+                    );
+                    // Writer pages always keep their local VE edits (fresh authoring)
+                    if (isWriter && localHasContent) {
+                        mergedData[key] = localValue;
+                    } else if (localHasContent && !remoteHasContent) {
+                        mergedData[key] = localValue;
+                    } else if (remoteHasContent && !localHasContent) {
+                        mergedData[key] = remoteValue;
+                    } else if (localTs >= remoteTs && localValue) {
                         mergedData[key] = localValue;
                     } else if (remoteValue) {
                         mergedData[key] = remoteValue;

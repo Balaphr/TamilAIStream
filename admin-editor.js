@@ -175,6 +175,34 @@ const AdminEditor = (() => {
     let _isDirty = false;
     let _listeners = {};
 
+    // ── Persistent undo/redo ──
+    const UNDO_STORAGE_KEY = 'tamilAIStream_veUndoStack';
+    const REDO_STORAGE_KEY = 'tamilAIStream_veRedoStack';
+    const MAX_UNDO = 50;
+
+    function _loadUndoStacks() {
+        try {
+            const u = localStorage.getItem(UNDO_STORAGE_KEY);
+            if (u) _undoStack = JSON.parse(u);
+            const r = localStorage.getItem(REDO_STORAGE_KEY);
+            if (r) _redoStack = JSON.parse(r);
+        } catch(e) {}
+    }
+    function _saveUndoStacks() {
+        try {
+            localStorage.setItem(UNDO_STORAGE_KEY, JSON.stringify(_undoStack.slice(-MAX_UNDO)));
+            localStorage.setItem(REDO_STORAGE_KEY, JSON.stringify(_redoStack.slice(-MAX_UNDO)));
+        } catch(e) {}
+    }
+    function _clearUndoStacks() {
+        _undoStack = [];
+        _redoStack = [];
+        try {
+            localStorage.removeItem(UNDO_STORAGE_KEY);
+            localStorage.removeItem(REDO_STORAGE_KEY);
+        } catch(e) {}
+    }
+
     // ── Element-level editing ──
     let _elements = [];           // All detected editable elements
     let _selectedElementId = null;
@@ -189,6 +217,7 @@ const AdminEditor = (() => {
     // ── Init ──
     function init(iframe) {
         _frame = iframe;
+        _loadUndoStacks();
         _frame.addEventListener('load', _onFrameLoad);
         if (_frame.contentDocument && _frame.contentDocument.readyState === 'complete') {
             _onFrameLoad();
@@ -426,9 +455,20 @@ const AdminEditor = (() => {
 
     function applyAllOverrides() {
         if (!_frameDoc) return;
-        // Reset all section styles first
+        // Reset only styles previously set by the AdminEditor, not ALL styles.
+        // Using removeAttribute('style') was destructive — it wiped inline styles
+        // set by Builder VE, applySectionSettings, and other systems.
+        const aoProps = ['display', 'visibility', 'opacity', 'backgroundColor',
+            'background', 'padding', 'paddingTop', 'paddingBottom', 'margin',
+            'marginTop', 'marginBottom', 'borderRadius', 'border', 'width',
+            'maxWidth', 'height', 'minHeight', 'textAlign', 'fontSize',
+            'fontWeight', 'color', 'gap', 'flexDirection', 'justifyContent',
+            'alignItems', 'gridTemplateColumns'];
         _sections.forEach(sec => {
-            if (sec.element) sec.element.removeAttribute('style');
+            if (!sec.element) return;
+            aoProps.forEach(prop => {
+                sec.element.style.removeProperty(prop.replace(/([A-Z])/g, '-$1').toLowerCase());
+            });
         });
         // Apply overrides
         Object.keys(_overrides.sections).forEach(id => _applyOverride(id));
@@ -558,14 +598,16 @@ const AdminEditor = (() => {
     // ── Undo / Redo ──
     function _pushUndo() {
         _undoStack.push(JSON.parse(JSON.stringify(_overrides)));
-        if (_undoStack.length > 50) _undoStack.shift();
+        if (_undoStack.length > MAX_UNDO) _undoStack.shift();
         _redoStack = [];
+        _saveUndoStacks();
     }
 
     function undo() {
         if (_undoStack.length === 0) return;
         _redoStack.push(JSON.parse(JSON.stringify(_overrides)));
         _overrides = _undoStack.pop();
+        _saveUndoStacks();
         applyAllOverrides();
         _isDirty = true;
         _emit('undo', null);
@@ -575,6 +617,7 @@ const AdminEditor = (() => {
         if (_redoStack.length === 0) return;
         _undoStack.push(JSON.parse(JSON.stringify(_overrides)));
         _overrides = _redoStack.pop();
+        _saveUndoStacks();
         applyAllOverrides();
         _isDirty = true;
         _emit('redo', null);
@@ -617,7 +660,7 @@ const AdminEditor = (() => {
     }
 
     function isDirty() { return _isDirty; }
-    function markClean() { _isDirty = false; }
+    function markClean() { _isDirty = false; _clearUndoStacks(); }
 
     // ═══════════════════════════════════════════════════════
     //  ELEMENT-LEVEL EDITING — click any element to edit it

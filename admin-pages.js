@@ -579,6 +579,40 @@
         } catch(e) { console.warn('[Admin] Failed to write VE overrides to localStorage:', e); }
     }
 
+    // Convert Builder VE format {sectionStates, overrides} to AdminEditor format
+    // {sections, order, hidden}. Builder uses selector-based keys like
+    // "[data-section='hero']" while AdminEditor uses plain section IDs.
+    function _convertVEToAdminOverrides(ve) {
+        try {
+            const sections = {};
+            const order = [];
+            const hidden = {};
+
+            // Convert sectionStates to hidden/order
+            if (ve.sectionStates && Array.isArray(ve.sectionStates)) {
+                ve.sectionStates.forEach(s => {
+                    if (s.id) {
+                        hidden[s.id] = !!s.hidden;
+                        order.push(s.id);
+                    }
+                });
+            }
+
+            // Convert selector-based overrides to section ID-based
+            if (ve.overrides && typeof ve.overrides === 'object') {
+                Object.keys(ve.overrides).forEach(selector => {
+                    const match = selector.match(/\[data-section="([^"]+)"\]/);
+                    if (match) {
+                        const sectionId = match[1];
+                        sections[sectionId] = ve.overrides[selector];
+                    }
+                });
+            }
+
+            return { sections, order, hidden };
+        } catch(e) { return null; }
+    }
+
     /* ═══════════ SAVE / PUBLISH / TOPBAR ═══════════ */
     async function saveToStaging() {
         showProgress(20, 'Saving...');
@@ -599,6 +633,8 @@
             var gsRes = await fetch('/api/global-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings: gs, admin: 'Admin', publish: true }) });
             var gsData = await gsRes.json().catch(function() { return null; });
             if (!gsRes.ok || (gsData && !gsData.success)) { console.warn('[Admin] Global settings save warning:', gsData); }
+            // VE overrides already written to localStorage above via writeOverridesToLocalStorage().
+            // buildContentPayload() will now read the correct, up-to-date values.
             if (typeof ContentSync !== 'undefined') {
                 try {
                     const mPayload = ContentSync.buildContentPayload();
@@ -858,6 +894,42 @@
         AdminEditor.on('frame-loaded', async () => {
             try { const r = await fetch('/api/admin-overrides'); const d = await r.json(); if (d.overrides) AdminEditor.importOverrides(d.overrides); } catch (e) {}
             try { const r2 = await fetch('/api/global-settings'); const d2 = await r2.json(); if (d2.settings) AdminEditor.setGlobalSettings(d2.settings); } catch (e) {}
+            // Also load VE overrides from the manifest (Builder publishes here).
+            // Merge with admin-overrides: manifest's veOverrides uses selector-based
+            // format {sectionStates, overrides, timestamp}, convert to AdminEditor
+            // format {sections, order, hidden} before importing.
+            try {
+                const mRes = await fetch('/api/manifest');
+                const mData = await mRes.json();
+                if (mData?.data?.veOverrides) {
+                    const ve = mData.data.veOverrides;
+                    // Only import if manifest has fresher data than what admin-overrides has
+                    if (ve.overrides && Object.keys(ve.overrides).length > 0) {
+                        const converted = _convertVEToAdminOverrides(ve);
+                        if (converted && Object.keys(converted.sections || {}).length > 0) {
+                            // Merge with existing: manifest sections that don't exist in admin-overrides
+                            const current = AdminEditor.exportOverrides();
+                            Object.keys(converted.sections).forEach(id => {
+                                if (!current.sections[id]) {
+                                    current.sections[id] = converted.sections[id];
+                                }
+                            });
+                            // Merge hidden states
+                            if (converted.hidden) {
+                                if (!current.hidden) current.hidden = {};
+                                Object.assign(current.hidden, converted.hidden);
+                            }
+                            // Merge order: append any new IDs from manifest
+                            if (converted.order) {
+                                converted.order.forEach(id => {
+                                    if (!current.order.includes(id)) current.order.push(id);
+                                });
+                            }
+                            AdminEditor.importOverrides(current);
+                        }
+                    }
+                }
+            } catch(e) {}
             AdminEditor.detectSections(); AdminEditor.detectElements(); renderSectionList(); renderLayerList(); renderGlobalSettings(); refreshStatus();
         });
 
