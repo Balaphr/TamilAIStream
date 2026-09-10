@@ -137,6 +137,10 @@ window.Auth = (function () {
         if (typeof DataStore !== 'undefined' && DataStore.switchHistoryUser) {
             DataStore.switchHistoryUser(userData.uid || userData.email || null);
         }
+        // ─── Sync user data from server (cross-device) ───
+        if (typeof UserDataSync !== 'undefined' && !isGuest) {
+            UserDataSync.onLogin();
+        }
 
         return sessionUser;
     }
@@ -252,6 +256,10 @@ window.Auth = (function () {
 
     /** Remove every auth key from localStorage, sessionStorage and cookies. */
     function clearAll() {
+        // ─── Save user data to server before clearing ───
+        if (typeof UserDataSync !== 'undefined') {
+            UserDataSync.onLogout();
+        }
         var keys = [K.LOGGED_IN, K.USER, K.GUEST, K.REMEMBER, K.REMEMBER_EMAIL, K.ADMIN, K.TOKEN];
         for (var i = 0; i < keys.length; i++) {
             lsRemove(keys[i]);

@@ -169,12 +169,6 @@ const DataStore = {
     
     getSiteConfig() { return this.get(this.KEYS.SITE_CONFIG) || {}; },
     setSiteConfig(config) { this.set(this.KEYS.SITE_CONFIG, config); },
-    
-    getLikedSongs() { return this.get(this.KEYS.LIKED_SONGS) || []; },
-    setLikedSongs(songs) { this.set(this.KEYS.LIKED_SONGS, songs); },
-    
-    getPlaylists() { return this.get(this.KEYS.PLAYLISTS) || []; },
-    setPlaylists(playlists) { this.set(this.KEYS.PLAYLISTS, playlists); },
 
     // ─── User-scoped history ───
     _historyUserId: null,
@@ -186,15 +180,55 @@ const DataStore = {
         this._historyUserId = userId || null;
         // Clear cache for old history key
         delete this._cache[this.KEYS.HISTORY];
+        // Also clear caches for other user-scoped keys
+        delete this._cache[this.KEYS.LIKED_SONGS];
+        delete this._cache[this.KEYS.PLAYLISTS];
+        delete this._cache[this.KEYS.FAVORITES];
+        delete this._cache[this.KEYS.QUEUE];
+        delete this._cache[this.KEYS.SETTINGS];
     },
     getHistory() { return this.get(this._getHistoryKey()) || []; },
     setHistory(history) { this.set(this._getHistoryKey(), history); },
-    
-    getQueue() { return this.get(this.KEYS.QUEUE) || []; },
-    setQueue(queue) { this.set(this.KEYS.QUEUE, queue); },
 
-    getYTSettings() { return this.get(this.KEYS.SETTINGS) || {}; },
-    setYTSettings(settings) { this.set(this.KEYS.SETTINGS, settings); },
+    // ─── User-scoped liked songs ───
+    _getLikedSongsKey() {
+        const userId = this._historyUserId || 'guest';
+        return 'ytm_likedSongs_' + userId.replace(/[^a-zA-Z0-9._@-]/g, '_');
+    },
+    getLikedSongs() { return this.get(this._getLikedSongsKey()) || []; },
+    setLikedSongs(songs) { this.set(this._getLikedSongsKey(), songs); },
+
+    // ─── User-scoped playlists ───
+    _getPlaylistsKey() {
+        const userId = this._historyUserId || 'guest';
+        return 'ytm_playlists_' + userId.replace(/[^a-zA-Z0-9._@-]/g, '_');
+    },
+    getPlaylists() { return this.get(this._getPlaylistsKey()) || []; },
+    setPlaylists(playlists) { this.set(this._getPlaylistsKey(), playlists); },
+
+    // ─── User-scoped queue ───
+    _getQueueKey() {
+        const userId = this._historyUserId || 'guest';
+        return 'ytm_queue_' + userId.replace(/[^a-zA-Z0-9._@-]/g, '_');
+    },
+    getQueue() { return this.get(this._getQueueKey()) || []; },
+    setQueue(queue) { this.set(this._getQueueKey(), queue); },
+
+    // ─── User-scoped YT settings ───
+    _getSettingsKey() {
+        const userId = this._historyUserId || 'guest';
+        return 'ytm_settings_' + userId.replace(/[^a-zA-Z0-9._@-]/g, '_');
+    },
+    getYTSettings() { return this.get(this._getSettingsKey()) || {}; },
+    setYTSettings(settings) { this.set(this._getSettingsKey(), settings); },
+
+    // ─── User-scoped favorites (DataStore) ───
+    _getFavoritesKey() {
+        const userId = this._historyUserId || 'guest';
+        return 'tamilAIStream_favorites_' + userId.replace(/[^a-zA-Z0-9._@-]/g, '_');
+    },
+    getFavorites() { return this.get(this._getFavoritesKey()) || []; },
+    setFavorites(data) { this.set(this._getFavoritesKey(), data); },
 
     getNotifications() { return this._filterDeleted(this.get(this.KEYS.NOTIFICATIONS) || [], 'notifications'); },
     setNotifications(notifications) { this.set(this.KEYS.NOTIFICATIONS, notifications); },
@@ -255,9 +289,6 @@ const DataStore = {
 
     getNewAlbums() { return this._filterDeleted(this.get(this.KEYS.NEW_ALBUMS) || [], 'newAlbums'); },
     setNewAlbums(data) { this.set(this.KEYS.NEW_ALBUMS, data); },
-
-    getFavorites() { return this.get(this.KEYS.FAVORITES) || []; },
-    setFavorites(data) { this.set(this.KEYS.FAVORITES, data); },
 
     getTrash() { return this.get(this.KEYS.TRASH) || []; },
     setTrash(data) { this.set(this.KEYS.TRASH, data); },

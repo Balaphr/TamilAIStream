@@ -11,6 +11,24 @@ function escapeHtml(str) {
 }
 
 // ============================================
+// User-scoped localStorage helpers
+// ============================================
+function _userScopedKey(baseKey) {
+    try {
+        if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) {
+            return UserDataSync.scopedKey(baseKey);
+        }
+    } catch (e) {}
+    return baseKey;
+}
+function _userGetItem(baseKey) {
+    try { return localStorage.getItem(_userScopedKey(baseKey)); } catch (e) { return null; }
+}
+function _userSetItem(baseKey, value) {
+    try { localStorage.setItem(_userScopedKey(baseKey), value); } catch (e) {}
+}
+
+// ============================================
 // Premium Toast Notification System
 // ============================================
 function showToast(message, type = 'info') {
@@ -3866,11 +3884,11 @@ function renderPersonalizedMusic() {
 
     // Use liked songs + recently played for personalization
     let liked = [];
-    try { liked = JSON.parse(localStorage.getItem('ytm_likedSongs') || '[]'); } catch (e) {}
+    try { liked = (typeof DataStore !== 'undefined' && DataStore.getLikedSongs) ? DataStore.getLikedSongs() : []; } catch (e) {}
 
     // Also check the R2-synced key as a fallback
     if (!liked.length) {
-        try { liked = JSON.parse(localStorage.getItem('tamilAIStream_likedSongs') || '[]'); } catch (e) {}
+        try { liked = JSON.parse(_userGetItem('ytm_likedSongs') || '[]'); } catch (e) {}
     }
 
     let personalized = [];
@@ -4575,17 +4593,17 @@ function _heroStartUpdaters() {
 function _updateSmartQueue(currentSong, playlist) {
     if (!currentSong || !playlist || playlist.length < 2) return;
     try {
-        const prefs = JSON.parse(localStorage.getItem('tamilAI_preferences') || '[]');
+        const prefs = JSON.parse(_userGetItem('tamilAI_preferences') || '[]');
         const text = ((currentSong.artist||'')+' '+(currentSong.movie||'')+' '+(currentSong.genre||'')+' '+(currentSong.mood||'')).toLowerCase();
-        const artistPrefs = JSON.parse(localStorage.getItem('tamilAI_artistPrefs') || '{}');
+        const artistPrefs = JSON.parse(_userGetItem('tamilAI_artistPrefs') || '{}');
         if (currentSong.artist) {
             artistPrefs[currentSong.artist] = (artistPrefs[currentSong.artist] || 0) + 1;
-            localStorage.setItem('tamilAI_artistPrefs', JSON.stringify(artistPrefs));
+            _userSetItem('tamilAI_artistPrefs', JSON.stringify(artistPrefs));
         }
-        const moviePrefs = JSON.parse(localStorage.getItem('tamilAI_moviePrefs') || '{}');
+        const moviePrefs = JSON.parse(_userGetItem('tamilAI_moviePrefs') || '{}');
         if (currentSong.movie) {
             moviePrefs[currentSong.movie] = (moviePrefs[currentSong.movie] || 0) + 1;
-            localStorage.setItem('tamilAI_moviePrefs', JSON.stringify(moviePrefs));
+            _userSetItem('tamilAI_moviePrefs', JSON.stringify(moviePrefs));
         }
     } catch(e) {}
 }
@@ -4772,7 +4790,7 @@ function renderDailyMix() {
             songs = (DataStore.getSongs() || []).filter(s => s.status === 'published');
         }
         if (!songs.length) return;
-        const prefs = JSON.parse(localStorage.getItem('tamilAI_preferences') || '[]');
+        const prefs = JSON.parse(_userGetItem('tamilAI_preferences') || '[]');
         let mix = songs;
         if (prefs.length > 0) {
             const scored = songs.map(s => {
@@ -4800,9 +4818,9 @@ function renderDashboard() {
     try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch(e) {}
     let history = [];
     try { if (typeof ListeningHistory !== 'undefined' && ListeningHistory.getHistory) history = ListeningHistory.getHistory() || []; } catch(e) {}
-    const artistPrefs = JSON.parse(localStorage.getItem('tamilAI_artistPrefs') || '{}');
-    const moviePrefs = JSON.parse(localStorage.getItem('tamilAI_moviePrefs') || '{}');
-    const favs = JSON.parse(localStorage.getItem('tamilAI_favorites') || '[]');
+    const artistPrefs = JSON.parse(_userGetItem('tamilAI_artistPrefs') || '{}');
+    const moviePrefs = JSON.parse(_userGetItem('tamilAI_moviePrefs') || '{}');
+    const favs = JSON.parse(_userGetItem('tamilAI_favorites') || '[]');
 
     const totalSongs = songs.length;
     const totalListeningTime = history.reduce((sum, h) => sum + (h.duration || 0), 0);
@@ -5779,7 +5797,7 @@ function sendAICommand(text) {
     let response = '';
     if (lower.includes('favorite') || lower.includes('fav')) {
         try {
-            const favs = JSON.parse(localStorage.getItem('tamilAI_favorites') || '[]');
+            const favs = JSON.parse(_userGetItem('tamilAI_favorites') || '[]');
             matched = songs.filter(s => favs.includes(s.id));
         } catch(e) {}
         response = matched.length ? `Playing your ${matched.length} favorite songs!` : 'No favorites yet. Heart some songs first!';
@@ -5910,7 +5928,7 @@ function openPersonalFM() {
     let songs = [];
     try { songs = (DataStore.getSongs() || []).filter(s => s.status === 'published'); } catch(e) {}
     if (!songs.length) { if (typeof showToast === 'function') showToast('No songs available', 'error'); return; }
-    const prefs = JSON.parse(localStorage.getItem('tamilAI_preferences') || '[]');
+    const prefs = JSON.parse(_userGetItem('tamilAI_preferences') || '[]');
     let history = [];
     try { if (typeof ListeningHistory !== 'undefined' && ListeningHistory.getHistory) history = ListeningHistory.getHistory() || []; } catch(e) {}
     const playedIds = new Set(history.map(h => h && h.track && h.track.id).filter(Boolean));
@@ -6044,7 +6062,7 @@ function createAIPlaylist(description) {
 
 function showWhyThisSong(track) {
     if (!track) return;
-    const prefs = JSON.parse(localStorage.getItem('tamilAI_preferences') || '[]');
+    const prefs = JSON.parse(_userGetItem('tamilAI_preferences') || '[]');
     let reasons = [];
     const text = ((track.title||'')+' '+(track.artist||'')+' '+(track.movie||'')+' '+(track.genre||'')+' '+(track.mood||'')).toLowerCase();
     prefs.forEach(p => { if (text.includes(p.toLowerCase())) reasons.push('matches your ' + p + ' preference'); });

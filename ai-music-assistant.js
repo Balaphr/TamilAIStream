@@ -466,15 +466,30 @@ const AIMusicAssistant = (() => {
     }
 
     /* ---- Conversation History ---- */
+    function _getHistoryKey() {
+        let userId = 'guest';
+        try {
+            if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) {
+                return UserDataSync.scopedKey('ai_music_history');
+            }
+        } catch (e) {}
+        try {
+            if (typeof Auth !== 'undefined' && Auth.currentUser) {
+                const user = Auth.currentUser();
+                if (user) userId = (user.uid || user.email || 'guest').replace(/[^a-zA-Z0-9._@-]/g, '_');
+            }
+        } catch (e) {}
+        return 'ai_music_history_' + userId;
+    }
     function addToHistory(role, text) {
         conversationHistory.push({ role, text, time: Date.now() });
         if (conversationHistory.length > MAX_HISTORY) conversationHistory.shift();
-        try { localStorage.setItem('ai_music_history', JSON.stringify(conversationHistory)); } catch {}
+        try { localStorage.setItem(_getHistoryKey(), JSON.stringify(conversationHistory)); } catch {}
     }
 
     function loadHistory() {
         try {
-            const h = JSON.parse(localStorage.getItem('ai_music_history') || '[]');
+            const h = JSON.parse(localStorage.getItem(_getHistoryKey()) || '[]');
             conversationHistory = Array.isArray(h) ? h.slice(-MAX_HISTORY) : [];
         } catch { conversationHistory = []; }
     }

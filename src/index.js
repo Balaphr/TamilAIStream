@@ -211,6 +211,72 @@ async function handleAuthValidate(request, env) {
   }
 }
 
+// ─── User Data Sync (server-side storage via R2) ───
+
+/**
+ * Extract user ID from the request. Accepts:
+ *  - X-User-Id header (set by client after login)
+ *  - Authorization: Bearer <token> (admin token)
+ * Returns null if not authenticated.
+ */
+function extractUserId(request) {
+  const userId = request.headers.get('x-user-id');
+  if (userId && userId.trim()) return userId.trim();
+  return null;
+}
+
+/**
+ * Save user data to R2. Body: { data: { history, favorites, likedSongs, playlists, preferences, ... } }
+ * Key: user-data/{userId}.json
+ */
+async function handleUserDataSave(request, env) {
+  try {
+    if (!env.MEDIA_BUCKET) return json({ error: 'Storage not configured' }, 500);
+    const userId = extractUserId(request);
+    if (!userId) return json({ error: 'Authentication required' }, 401);
+
+    const body = await request.json();
+    if (!body || typeof body.data !== 'object') return json({ error: 'Invalid payload' }, 400);
+
+    const key = `user-data/${userId}.json`;
+    // Merge with existing data to allow partial updates
+    let existing = {};
+    try {
+      const obj = await env.MEDIA_BUCKET.get(key);
+      if (obj) existing = JSON.parse(await obj.text());
+    } catch (e) { /* fresh user */ }
+
+    const merged = { ...existing, ...body.data, _updatedAt: Date.now(), _userId: userId };
+    await env.MEDIA_BUCKET.put(key, JSON.stringify(merged), {
+      httpMetadata: { contentType: 'application/json', cacheControl: 'no-cache' },
+    });
+
+    return json({ success: true, userId, updatedAt: merged._updatedAt });
+  } catch (e) {
+    return json({ error: 'Save failed: ' + e.message }, 500);
+  }
+}
+
+/**
+ * Load user data from R2. Returns all stored personal data for the user.
+ */
+async function handleUserDataLoad(request, env) {
+  try {
+    if (!env.MEDIA_BUCKET) return json({ error: 'Storage not configured' }, 500);
+    const userId = extractUserId(request);
+    if (!userId) return json({ error: 'Authentication required' }, 401);
+
+    const key = `user-data/${userId}.json`;
+    const obj = await env.MEDIA_BUCKET.get(key);
+    if (!obj) return json({ success: true, data: {}, isNew: true });
+
+    const data = JSON.parse(await obj.text());
+    return json({ success: true, data, isNew: false });
+  } catch (e) {
+    return json({ error: 'Load failed: ' + e.message }, 500);
+  }
+}
+
 /**
  * Verify admin credentials (step 1 of 2FA)
  * Returns a verification code on success
@@ -471,6 +537,14 @@ export default {
       // ─── Cross-device login validation (same credentials as admin) ───
       if (url.pathname === '/api/auth/validate' && request.method === 'POST') {
         return handleAuthValidate(request, env);
+      }
+
+      // ─── User Data Sync Endpoints (require user token) ───
+      if (url.pathname === '/api/user/data' && request.method === 'POST') {
+        return handleUserDataSave(request, env);
+      }
+      if (url.pathname === '/api/user/data' && request.method === 'GET') {
+        return handleUserDataLoad(request, env);
       }
 
       // ─── Protected Admin Endpoints (require valid admin token) ───

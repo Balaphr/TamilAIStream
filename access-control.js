@@ -19,7 +19,7 @@
 window.AccessControl = (function () {
     'use strict';
 
-    // ─── Storage Keys ───
+    // ─── Storage Keys (base, will be suffixed with userId) ───
     var K = {
         TRIAL_START: 'tamilAIStream_trialStart',
         TRIAL_EXPIRY: 'tamilAIStream_trialExpiry',
@@ -53,6 +53,19 @@ window.AccessControl = (function () {
         try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
     }
 
+    // ─── User-scoped key helper ───
+    function _scopedKey(baseKey) {
+        try {
+            if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) {
+                return UserDataSync.scopedKey(baseKey);
+            }
+        } catch (e) {}
+        return baseKey;
+    }
+    function _lsGetScoped(baseKey) { return lsGet(_scopedKey(baseKey)); }
+    function _lsSetScoped(baseKey, val) { lsSet(_scopedKey(baseKey), val); }
+    function _lsRemoveScoped(baseKey) { lsRemove(_scopedKey(baseKey)); }
+
     // ─── Auth Check (delegates to window.Auth) ───
     function isLoggedIn() {
         try {
@@ -74,20 +87,20 @@ window.AccessControl = (function () {
 
     // ─── Trial Management ───
     function getTrialStart() {
-        var v = lsGet(K.TRIAL_START);
+        var v = _lsGetScoped(K.TRIAL_START);
         return v ? parseInt(v, 10) : 0;
     }
 
     function getTrialExpiry() {
-        var v = lsGet(K.TRIAL_EXPIRY);
+        var v = _lsGetScoped(K.TRIAL_EXPIRY);
         return v ? parseInt(v, 10) : 0;
     }
 
     function startTrial() {
         var now = Date.now();
         var expiry = now + TRIAL_DURATION_MS;
-        lsSet(K.TRIAL_START, now.toString());
-        lsSet(K.TRIAL_EXPIRY, expiry.toString());
+        _lsSetScoped(K.TRIAL_START, now.toString());
+        _lsSetScoped(K.TRIAL_EXPIRY, expiry.toString());
         return { start: now, expiry: expiry };
     }
 
@@ -119,17 +132,17 @@ window.AccessControl = (function () {
 
     // ─── Subscription Management ───
     function getSubscriptionStatus() {
-        return lsGet(K.SUBSCRIPTION_STATUS) || 'none'; // 'none' | 'active' | 'expired' | 'cancelled'
+        return _lsGetScoped(K.SUBSCRIPTION_STATUS) || 'none'; // 'none' | 'active' | 'expired' | 'cancelled'
     }
 
     function getSubscriptionPlan() {
-        return lsGet(K.SUBSCRIPTION_PLAN) || 'free';
+        return _lsGetScoped(K.SUBSCRIPTION_PLAN) || 'free';
     }
 
     function isSubscribed() {
         var status = getSubscriptionStatus();
         if (status !== 'active') return false;
-        var expiry = lsGet(K.SUBSCRIPTION_EXPIRY);
+        var expiry = _lsGetScoped(K.SUBSCRIPTION_EXPIRY);
         if (expiry) {
             return Date.now() < parseInt(expiry, 10);
         }
@@ -139,14 +152,14 @@ window.AccessControl = (function () {
     function setSubscription(plan, durationMs) {
         var now = Date.now();
         var expiry = durationMs ? now + durationMs : 0;
-        lsSet(K.SUBSCRIPTION_STATUS, 'active');
-        lsSet(K.SUBSCRIPTION_PLAN, plan || 'premium');
-        lsSet(K.SUBSCRIPTION_START, now.toString());
-        if (expiry) lsSet(K.SUBSCRIPTION_EXPIRY, expiry.toString());
+        _lsSetScoped(K.SUBSCRIPTION_STATUS, 'active');
+        _lsSetScoped(K.SUBSCRIPTION_PLAN, plan || 'premium');
+        _lsSetScoped(K.SUBSCRIPTION_START, now.toString());
+        if (expiry) _lsSetScoped(K.SUBSCRIPTION_EXPIRY, expiry.toString());
     }
 
     function cancelSubscription() {
-        lsSet(K.SUBSCRIPTION_STATUS, 'cancelled');
+        _lsSetScoped(K.SUBSCRIPTION_STATUS, 'cancelled');
     }
 
     // ─── Core Access Check ───

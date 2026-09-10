@@ -346,22 +346,22 @@ function updateProfileUI() {
  */
 async function loadUserStats() {
     try {
-        // Favorites count
-        const favorites = localStorage.getItem('tamilAIStream_favorites');
-        const favCount = favorites ? JSON.parse(favorites).length : 0;
+        // Favorites count — use DataStore for user-scoped access
+        const favCount = (typeof DataStore !== 'undefined' && DataStore.getFavorites) 
+            ? DataStore.getFavorites().length : 0;
         DOM.favoritesCount.textContent = favCount;
         
-        // Recently played count
-        const recent = localStorage.getItem('tamilAIStream_recent');
-        const recentCount = recent ? JSON.parse(recent).length : 0;
+        // Recently played count — use ListeningHistory for user-scoped access
+        const recentCount = (typeof ListeningHistory !== 'undefined' && ListeningHistory.getHistory)
+            ? ListeningHistory.getHistory().length : 0;
         DOM.recentCount.textContent = recentCount;
         
         // Listening time (mock data - would come from Firestore in production)
         DOM.listeningTime.textContent = '24h';
         
-        // Playlists count
-        const playlists = localStorage.getItem('tamilAIStream_playlists');
-        const playlistCount = playlists ? JSON.parse(playlists).length : 0;
+        // Playlists count — use PlaylistManager for user-scoped access
+        const playlistCount = (typeof PlaylistManager !== 'undefined' && PlaylistManager.getPlaylists)
+            ? PlaylistManager.getPlaylists().length : 0;
         DOM.playlistsCount.textContent = playlistCount;
         
     } catch (error) {
@@ -373,17 +373,23 @@ async function loadUserStats() {
  * Load user preferences
  */
 function loadUserPreferences() {
-    // Notifications
-    const notifications = localStorage.getItem('tamilAIStream_notifications');
+    // Notifications — use user-scoped key
+    const notifications = (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
+        ? localStorage.getItem(UserDataSync.scopedKey('tamilAIStream_notifications'))
+        : localStorage.getItem('tamilAIStream_notifications');
     DOM.notificationsToggle.checked = notifications !== 'false';
     
-    // Dark mode
-    const darkMode = localStorage.getItem('tamilAIStream_darkMode');
+    // Dark mode — use user-scoped key
+    const darkMode = (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
+        ? localStorage.getItem(UserDataSync.scopedKey('tamilAIStream_darkMode'))
+        : localStorage.getItem('tamilAIStream_darkMode');
     DOM.darkModeToggle.checked = darkMode !== 'false';
     
-    // Language
-    const language = localStorage.getItem('tamilAIStream_language') || 'en';
-    DOM.languageSelect.value = language;
+    // Language — use user-scoped key
+    const language = (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
+        ? localStorage.getItem(UserDataSync.scopedKey('tamilAIStream_language'))
+        : localStorage.getItem('tamilAIStream_language');
+    DOM.languageSelect.value = language || 'en';
 }
 
 // ============================================
@@ -727,18 +733,24 @@ DOM.backBtn?.addEventListener('click', () => {
 // Preferences
 // ============================================
 DOM.notificationsToggle?.addEventListener('change', (e) => {
-    localStorage.setItem('tamilAIStream_notifications', e.target.checked);
+    const key = (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
+        ? UserDataSync.scopedKey('tamilAIStream_notifications') : 'tamilAIStream_notifications';
+    localStorage.setItem(key, e.target.checked);
     showToast(e.target.checked ? 'Notifications enabled' : 'Notifications disabled', 'info');
 });
 
 DOM.darkModeToggle?.addEventListener('change', (e) => {
-    localStorage.setItem('tamilAIStream_darkMode', e.target.checked);
+    const key = (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
+        ? UserDataSync.scopedKey('tamilAIStream_darkMode') : 'tamilAIStream_darkMode';
+    localStorage.setItem(key, e.target.checked);
     showToast(e.target.checked ? 'Dark mode enabled' : 'Light mode enabled', 'info');
     // In production, toggle CSS class on body
 });
 
 DOM.languageSelect?.addEventListener('change', (e) => {
-    localStorage.setItem('tamilAIStream_language', e.target.value);
+    const key = (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
+        ? UserDataSync.scopedKey('tamilAIStream_language') : 'tamilAIStream_language';
+    localStorage.setItem(key, e.target.value);
     showToast(`Language changed to ${e.target.value === 'ta' ? 'Tamil' : 'English'}`, 'success');
     // In production, reload page with new language
 });

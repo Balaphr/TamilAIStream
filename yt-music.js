@@ -114,11 +114,19 @@ const YTMusic = {
                 const settings = DataStore.getYTSettings();
                 if (settings && Object.keys(settings).length) this.settings = { ...this.settings, ...settings };
             } else {
-                const liked = localStorage.getItem('ytm_likedSongs');
-                const playlists = localStorage.getItem('ytm_playlists');
-                const history = localStorage.getItem('ytm_history');
-                const settings = localStorage.getItem('ytm_settings');
-                const queue = localStorage.getItem('ytm_queue');
+                // Fallback: use user-scoped keys directly
+                let userId = 'guest';
+                try {
+                    if (typeof Auth !== 'undefined' && Auth.currentUser) {
+                        const user = Auth.currentUser();
+                        if (user) userId = (user.uid || user.email || 'guest').replace(/[^a-zA-Z0-9._@-]/g, '_');
+                    }
+                } catch (e) {}
+                const liked = localStorage.getItem('ytm_likedSongs_' + userId);
+                const playlists = localStorage.getItem('ytm_playlists_' + userId);
+                const history = localStorage.getItem('ytm_history_' + userId);
+                const settings = localStorage.getItem('ytm_settings_' + userId);
+                const queue = localStorage.getItem('ytm_queue_' + userId);
                 if (liked) this.likedSongs = JSON.parse(liked);
                 if (playlists) this.playlists = JSON.parse(playlists);
                 if (history) this.history = JSON.parse(history);
@@ -140,19 +148,19 @@ const YTMusic = {
                 DataStore.setQueue(this.queue);
                 DataStore.setYTSettings(this.settings);
             } else {
-                // Fallback with user-scoped history key
-                let historyKey = 'ytm_history';
+                // Fallback: use user-scoped keys
+                let userId = 'guest';
                 try {
                     if (typeof Auth !== 'undefined' && Auth.currentUser) {
                         const user = Auth.currentUser();
-                        if (user) historyKey = 'ytm_history_' + (user.uid || user.email || 'guest').replace(/[^a-zA-Z0-9._@-]/g, '_');
+                        if (user) userId = (user.uid || user.email || 'guest').replace(/[^a-zA-Z0-9._@-]/g, '_');
                     }
                 } catch (e) {}
-                localStorage.setItem('ytm_likedSongs', JSON.stringify(this.likedSongs));
-                localStorage.setItem('ytm_playlists', JSON.stringify(this.playlists));
-                localStorage.setItem(historyKey, JSON.stringify(this.history));
-                localStorage.setItem('ytm_settings', JSON.stringify(this.settings));
-                localStorage.setItem('ytm_queue', JSON.stringify(this.queue));
+                localStorage.setItem('ytm_likedSongs_' + userId, JSON.stringify(this.likedSongs));
+                localStorage.setItem('ytm_playlists_' + userId, JSON.stringify(this.playlists));
+                localStorage.setItem('ytm_history_' + userId, JSON.stringify(this.history));
+                localStorage.setItem('ytm_settings_' + userId, JSON.stringify(this.settings));
+                localStorage.setItem('ytm_queue_' + userId, JSON.stringify(this.queue));
             }
         } catch (e) {
             console.error('Error saving YTMusic data:', e);
@@ -1852,9 +1860,9 @@ const YTMusic = {
             }
         }
         try {
-            const favs = JSON.parse(localStorage.getItem('tamilAIStream_favorites') || '[]');
-            const history = JSON.parse(localStorage.getItem('tamilAIStream_history') || '[]');
-            const playlists = JSON.parse(localStorage.getItem('ytm_playlists') || '[]');
+            const favs = (typeof DataStore !== 'undefined' && DataStore.getFavorites) ? DataStore.getFavorites() : [];
+            const history = (typeof DataStore !== 'undefined' && DataStore.getHistory) ? DataStore.getHistory() : [];
+            const playlists = (typeof DataStore !== 'undefined' && DataStore.getPlaylists) ? DataStore.getPlaylists() : [];
             const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
             el('accountFavCount', Array.isArray(favs) ? favs.length : 0);
             el('accountHistoryCount', Array.isArray(history) ? history.length : 0);
