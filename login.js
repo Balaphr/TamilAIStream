@@ -455,7 +455,29 @@ DOM.loginForm?.addEventListener('submit', async function(e) {
         const rememberMe = DOM.rememberMe.checked;
         await applyPersistence(rememberMe);
 
-         const user = validateCredentials(email, password);
+         let user = validateCredentials(email, password);
+        if (!user) {
+            // Fallback: validate against server-side credentials (cross-device support)
+            try {
+                const resp = await fetch('/api/auth/validate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.success && data.user) {
+                        // Seed into localStorage so future local logins work
+                        user = { ...data.user, password, createdAt: Date.now() };
+                        const users = getStoredUsers();
+                        if (!users.find(u => u.email === user.email)) {
+                            users.push(user);
+                            saveStoredUsers(users);
+                        }
+                    }
+                }
+            } catch (_) { /* server unreachable — fall through to error */ }
+        }
         if (!user) {
             throw new Error('Invalid email or password');
         }

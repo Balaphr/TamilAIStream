@@ -176,6 +176,42 @@ async function clearFailedAttempts(env, identifier) {
 }
 
 /**
+ * Validate login credentials against the server-side admin account.
+ * Used by the regular login page (login.js) so that credentials work
+ * on any device, not just the one where the account was first registered.
+ */
+async function handleAuthValidate(request, env) {
+  try {
+    const body = await request.json();
+    const { email, password } = body;
+    const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
+
+    if (!email || !password) {
+      return json({ error: 'Email and password required' }, 400);
+    }
+
+    if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD_HASH) {
+      await auditLog(env, 'auth_validate_success', { email }, ip);
+      return json({
+        success: true,
+        user: {
+          name: 'Admin',
+          email: ADMIN_EMAIL,
+          uid: 'admin-verified',
+          photoURL: '',
+          role: 'admin'
+        }
+      });
+    }
+
+    await auditLog(env, 'auth_validate_failed', { email, reason: 'invalid_credentials' }, ip);
+    return json({ error: 'Invalid email or password' }, 401);
+  } catch (e) {
+    return json({ error: 'Validation failed: ' + e.message }, 500);
+  }
+}
+
+/**
  * Verify admin credentials (step 1 of 2FA)
  * Returns a verification code on success
  */
@@ -430,6 +466,11 @@ export default {
       }
       if (url.pathname === '/api/admin/verify-code' && request.method === 'POST') {
         return handleAdminVerifyCode(request, env);
+      }
+
+      // ─── Cross-device login validation (same credentials as admin) ───
+      if (url.pathname === '/api/auth/validate' && request.method === 'POST') {
+        return handleAuthValidate(request, env);
       }
 
       // ─── Protected Admin Endpoints (require valid admin token) ───
