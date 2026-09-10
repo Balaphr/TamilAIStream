@@ -6107,6 +6107,9 @@ function showWhyThisSong(track) {
             if (typeof updatePlayPauseButton === 'function') {
                 const playing = typeof audioPlayer !== 'undefined' && audioPlayer && !audioPlayer.paused;
                 updatePlayPauseButton(playing);
+                if (typeof GlobalPlayer !== 'undefined' && typeof GlobalPlayer.updatePlayUI === 'function') {
+                    GlobalPlayer.updatePlayUI(playing);
+                }
             }
         } catch(e) {}
 

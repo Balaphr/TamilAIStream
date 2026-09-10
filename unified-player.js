@@ -1390,7 +1390,10 @@ const UnifiedPlayer = (() => {
       hideMiniPlayer: hideBottomBar,
       toggleQueue: toggleQueuePanel,
       updateTrackUI: _updateTrackUI,
-      updatePlayUI: _updatePlayUI,
+      updatePlayUI: (playing) => {
+        if (typeof playing === 'boolean') state.isPlaying = playing;
+        _updatePlayUI();
+      },
       updateLiveUI: () => {},
       updateProgressUI: _updateProgressUI,
       updateVolumeUI: _updateVolumeUI,
@@ -1404,8 +1407,8 @@ const UnifiedPlayer = (() => {
         else playSong(track);
       },
       closePopup: hideBottomBar,
-      syncPlayingUI: () => _updatePlayUI(),
-      syncPausedUI: () => _updatePlayUI(),
+      syncPlayingUI: () => { state.isPlaying = true; _updatePlayUI(); },
+      syncPausedUI: () => { state.isPlaying = false; _updatePlayUI(); },
     };
 
     /* PlayerUI shim */
@@ -1476,6 +1479,8 @@ const UnifiedPlayer = (() => {
       state.isLive = !!isLive;
       state.mode = isLive ? 'fm' : 'songs';
       state.externalEngine = !!window.audioPlayer;
+      const live = _liveAudio();
+      state.isPlaying = live ? !live.paused : false;
       _showBottomBar();
       _updateTrackUI();
       _updateFavUI();
