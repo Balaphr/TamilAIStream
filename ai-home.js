@@ -1469,23 +1469,38 @@ window.AIHome = (() => {
 
     function bindInstall() {
         const btn = $('aiInstallBtn');
-        if (!btn) return;
+        const moreInstallBtn = $('aiMoreInstallBtn');
+        if (!btn && !moreInstallBtn) return;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             beforeInstallPrompt = e;
-            btn.style.display = '';
+            if (btn) btn.style.display = '';
+            if (moreInstallBtn) moreInstallBtn.style.display = '';
         });
         const isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
-        if (isStandalone) { btn.style.display = 'none'; return; }
-        btn.addEventListener('click', async () => {
+        if (isStandalone) {
+            if (btn) btn.style.display = 'none';
+            if (moreInstallBtn) moreInstallBtn.style.display = 'none';
+            return;
+        }
+        async function triggerInstall() {
             if (beforeInstallPrompt) {
                 beforeInstallPrompt.prompt();
-                try { const r = await beforeInstallPrompt.userChoice; if (r.outcome === 'accepted') showToastSafe('App installed! ðŸŽ‰', 'success'); } catch (e) { /* ignore */ }
+                try { const r = await beforeInstallPrompt.userChoice; if (r.outcome === 'accepted') showToastSafe('App installed!', 'success'); } catch (e) { /* ignore */ }
                 beforeInstallPrompt = null;
             } else {
                 showToastSafe('Bookmark this page or use your browser menu to install the app', 'info');
             }
-        });
+        }
+        if (btn) btn.addEventListener('click', triggerInstall);
+        if (moreInstallBtn) {
+            moreInstallBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                triggerInstall();
+                const moreChip = $('aiMoreChip');
+                if (moreChip) moreChip.classList.remove('open');
+            });
+        }
     }
 
     /* ---------------- Search shortcut (Ctrl+/) ---------------- */
