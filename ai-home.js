@@ -1454,7 +1454,20 @@ window.AIHome = (() => {
             let notifications = [];
             try { notifications = (DataStore.getNotifications && DataStore.getNotifications()) || []; } catch (e) { /* ignore */ }
             const items = notifications.filter(n => n).slice(0, 4);
+
+            /* PWA Install notification — shown at top when installable */
+            let installHtml = '';
+            const isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+            const isInstalled = localStorage.getItem('tamilai_pwa_installed') === '1';
+            if (!isStandalone && !isInstalled && window.__pwaDeferredPrompt) {
+                installHtml = '<div class="ai-notif-item ai-notif-install" id="aiNotifInstall" style="cursor:pointer;background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);border-radius:12px;">' +
+                    '<div class="ai-notif-item-icon" style="background:rgba(34,211,238,0.2);color:#22d3ee;"><i class="fas fa-download"></i></div>' +
+                    '<div><div class="ai-notif-item-title" style="color:#22d3ee;">Install Tamil AI Stream</div>' +
+                    '<div class="ai-notif-item-time">Add to home screen for the best experience</div></div></div>';
+            }
+
             panel.innerHTML = '<div class="ai-notif-head"><i class="fa-solid fa-bell"></i> Notifications</div>' +
+                installHtml +
                 (items.length ? items.map(n => {
                     const t = n.title || n.message || 'Update';
                     const body = n.message && n.message !== t ? n.message : '';
@@ -1463,7 +1476,24 @@ window.AIHome = (() => {
                         '<div><div class="ai-notif-item-title">' + escapeHtml(t) + '</div>' +
                         (body ? '<div class="ai-notif-item-time">' + escapeHtml(body) + '</div>' : '') +
                         '<div class="ai-notif-item-time">' + (n.time ? escapeHtml(n.time) : 'Now') + '</div></div></div>';
-                }).join('') : '<div class="ai-notif-empty">No notifications yet.<br>You are all caught up! ðŸŽ‰</div>');
+                }).join('') : (installHtml ? '' : '<div class="ai-notif-empty">No notifications yet.<br>You are all caught up!</div>'));
+
+            /* Bind install click in notification panel */
+            const installItem = document.getElementById('aiNotifInstall');
+            if (installItem) {
+                installItem.addEventListener('click', async () => {
+                    if (window.__pwaDeferredPrompt) {
+                        window.__pwaDeferredPrompt.prompt();
+                        try {
+                            const r = await window.__pwaDeferredPrompt.userChoice;
+                            if (r.outcome === 'accepted') showToastSafe('App installed!', 'success');
+                        } catch (e) { /* ignore */ }
+                        window.__pwaDeferredPrompt = null;
+                    }
+                    panel.classList.remove('open');
+                    btn.classList.remove('open');
+                });
+            }
         }
     }
 

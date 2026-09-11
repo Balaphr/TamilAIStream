@@ -16,6 +16,7 @@
 const APP_VERSION = '__BUILD_VERSION__';
 const CACHE_NAME = 'tamilai-v' + APP_VERSION;
 const IMAGE_CACHE = 'tamilai-img-v' + APP_VERSION;
+const ICON_CACHE = 'tamilai-icons-v' + APP_VERSION;
 const MAX_IMAGE_CACHE = 150;
 
 const CRITICAL_ASSETS = [
@@ -36,7 +37,10 @@ const CRITICAL_ASSETS = [
   '/pwa-install.css',
   '/icons/favicon-32.png',
   '/icons/apple-touch-icon.png',
-  '/icons/icon-192.png'
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/icon-maskable-512.png',
+  '/manifest.webmanifest'
 ];
 
 /* ---- Install ---- */
@@ -65,7 +69,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       const oldVersioned = keys
-        .filter((k) => (k.startsWith('tamilai-v') || k.startsWith('tamilai-img-v')) && k !== CACHE_NAME && k !== IMAGE_CACHE)
+        .filter((k) => (k.startsWith('tamilai-v') || k.startsWith('tamilai-img-v') || k.startsWith('tamilai-icons-v')) && k !== CACHE_NAME && k !== IMAGE_CACHE && k !== ICON_CACHE)
         .sort()
         .slice(0, Math.max(0, keys.length - MAX_CACHES));
       return Promise.all(oldVersioned.map((k) => caches.delete(k)));
@@ -116,6 +120,31 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => caches.open(CACHE_NAME).then((c) => c.match(request)))
+    );
+    return;
+  }
+
+  /* Manifest — always network-first (no cache) to pick up Builder logo changes */
+  if (url.pathname === '/manifest.webmanifest') {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' })
+        .catch(() => caches.open(CACHE_NAME).then((c) => c.match(request)))
+    );
+    return;
+  }
+
+  /* Icons — network-first to pick up logo updates, fallback to cached */
+  if (url.pathname.startsWith('/icons/')) {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' })
+        .then((response) => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(ICON_CACHE).then((c) => c.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.open(ICON_CACHE).then((c) => c.match(request)))
     );
     return;
   }

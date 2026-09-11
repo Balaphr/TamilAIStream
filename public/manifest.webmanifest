@@ -6,7 +6,7 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": ["standalone"],
   "orientation": "portrait-primary",
   "background_color": "#060e1a",
   "theme_color": "#060e1a",
@@ -15,32 +15,14 @@
   "categories": ["music", "entertainment", "audio"],
   "icons": [
     {
-      "src": "/icons/icon-72.png",
-      "sizes": "72x72",
+      "src": "/icons/favicon-32.png",
+      "sizes": "32x32",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-152.png",
-      "sizes": "152x152",
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },
@@ -51,106 +33,16 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-maskable-72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/icon-maskable-96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/icon-maskable-128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/icon-maskable-144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/icon-maskable-152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/icon-maskable-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/icon-maskable-384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
       "src": "/icons/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    },
-    {
-      "src": "/icons/apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/favicon-32.png",
-      "sizes": "32x32",
-      "type": "image/png",
-      "purpose": "any"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/home-wide.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Tamil AI Stream Home - Live Tamil Radio"
-    },
-    {
-      "src": "/screenshots/home-narrow.png",
-      "sizes": "750x1334",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Tamil AI Stream Mobile - Live Radio & AI Recommendations"
-    },
-    {
-      "src": "/screenshots/player-wide.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Premium Audio Player with Visualizer"
-    },
-    {
-      "src": "/screenshots/player-narrow.png",
-      "sizes": "750x1334",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Now Playing - AI Recommendations & Lyrics"
     }
   ],
   "shortcuts": [

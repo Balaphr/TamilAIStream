@@ -231,28 +231,10 @@
             if (urls[192]) link.href = urls[192];
           });
 
-          try {
-            var brandName = (typeof BRAND !== 'undefined' && BRAND.name) ? BRAND.name : 'Tamil AI Stream';
-            var brandShort = (typeof BRAND !== 'undefined' && BRAND.shortName) ? BRAND.shortName : brandName;
-            var manifest = {
-              name: brandName,
-              short_name: brandShort,
-              description: 'AI-Powered Tamil Radio',
-              start_url: '/',
-              display: 'standalone',
-              background_color: '#060e1a',
-              theme_color: '#060e1a',
-              orientation: 'any',
-              icons: [
-                { src: urls[192] || '', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-                { src: urls[512] || '', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
-              ]
-            };
-            var manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-            var manifestURL = URL.createObjectURL(manifestBlob);
-            var manifestLink = document.querySelector('link[rel="manifest"]');
-            if (manifestLink) manifestLink.href = manifestURL;
-          } catch (e) { /* ignore */ }
+          // NOTE: Do NOT replace the manifest link with a client-side blob.
+          // The server-served manifest (/manifest.webmanifest) already contains
+          // the correct Builder logo via handleManifestWebmanifest() in src/index.js.
+          // Replacing it with a blob would lose the server-side branding.
         }
       };
       img.src = logoUrl;

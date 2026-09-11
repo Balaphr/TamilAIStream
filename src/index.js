@@ -1375,8 +1375,15 @@ async function handleManifestWebmanifest(env) {
 
     if (!manifest) {
       manifest = {
-        name, short_name: shortName, start_url: '/', scope: '/',
-        display: 'standalone', theme_color: themeColor,
+        name: name,
+        short_name: shortName,
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        display_override: ['standalone'],
+        background_color: '#060e1a',
+        theme_color: themeColor,
+        orientation: 'portrait-primary',
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
@@ -1387,13 +1394,21 @@ async function handleManifestWebmanifest(env) {
       manifest.name = name;
       manifest.short_name = shortName;
       manifest.theme_color = themeColor;
+      manifest.background_color = manifest.background_color || '#060e1a';
       if (logo) {
-        manifest.icons = [
+        // Builder logo as primary icon (sizes: 'any' for maximum browser support)
+        // Keep static fallback icons so browsers needing specific sizes still work
+        var builderIcons = [
           { src: logo, sizes: 'any', type: 'image/png', purpose: 'any' },
           { src: logo, sizes: 'any', type: 'image/png', purpose: 'maskable' },
         ];
+        // Preserve existing static icons as fallbacks (skip duplicates of the logo)
+        var existingIcons = (manifest.icons || []).filter(function(icon) {
+          return icon.src && icon.src !== logo;
+        });
+        manifest.icons = builderIcons.concat(existingIcons);
         if (manifest.shortcuts) {
-          manifest.shortcuts.forEach((s) => { if (s.icons) s.icons = [{ src: logo, sizes: 'any' }]; });
+          manifest.shortcuts.forEach(function(s) { if (s.icons) s.icons = [{ src: logo, sizes: 'any' }]; });
         }
       }
     }
