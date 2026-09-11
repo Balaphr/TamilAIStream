@@ -1018,9 +1018,18 @@ const UnifiedPlayer = (() => {
     const bufLen = analyser.frequencyBinCount;
     const data = new Uint8Array(bufLen);
 
-    function draw() {
+    const FPS_LIMIT = 24;
+    const frameInterval = 1000 / FPS_LIMIT;
+    let lastFrameTime = 0;
+
+    function draw(timestamp) {
       if (!state.isPlaying) return;
       aiAnimFrame = requestAnimationFrame(draw);
+
+      const elapsed = timestamp - lastFrameTime;
+      if (elapsed < frameInterval) return;
+      lastFrameTime = timestamp - (elapsed % frameInterval);
+
       analyser.getByteFrequencyData(data);
 
       ctx.clearRect(0, 0, W, H);
@@ -1071,7 +1080,7 @@ const UnifiedPlayer = (() => {
         }
       }
     }
-    draw();
+    draw(0);
   }
 
   function _stopAIAnimation() {
@@ -1087,6 +1096,7 @@ const UnifiedPlayer = (() => {
   function _startProgressLoop() {
     if (_progressLoopRunning) return;
     _progressLoopRunning = true;
+    let _frameCount = 0;
     function tick() {
       if (!_progressLoopRunning) return;
 
@@ -1108,7 +1118,18 @@ const UnifiedPlayer = (() => {
         if (playing) _startAIAnimation(); else _stopAIAnimation();
       }
 
-      // Only update progress when actually playing and not dragging seek
+      _frameCount++;
+      // When external engine (script.js) owns playback, ProgressSync handles
+      // progress UI updates. Only sync state here at 20fps for play-state detection.
+      if (state.externalEngine) {
+        if (_frameCount % 3 === 0) {
+          state.currentTime = live.currentTime || 0;
+          if (isFinite(live.duration) && live.duration > 0) state.duration = live.duration;
+        }
+        return;
+      }
+
+      // Local audio fallback — update progress every frame
       if (playing && !draggingSeek) {
         state.currentTime = live.currentTime || 0;
         if (isFinite(live.duration) && live.duration > 0) state.duration = live.duration;

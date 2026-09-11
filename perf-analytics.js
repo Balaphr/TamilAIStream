@@ -61,14 +61,25 @@ const PerfAnalytics = (() => {
         });
     }
 
+    /* In-memory buffer — avoids synchronous localStorage I/O on every fetch/XHR */
+    let _apiBuffer = { total: 0, repeated: 0, endpoints: {} };
+
+    function _incrementApiStats(url, method) {
+        try {
+            _apiBuffer.total++;
+            const endpoint = (url || '').replace(/\?.*$/, '').replace(/^https?:\/\/[^/]+/, '');
+            if (!_apiBuffer.endpoints[endpoint]) _apiBuffer.endpoints[endpoint] = { count: 0, method: method || 'GET', lastSeen: Date.now() };
+            _apiBuffer.endpoints[endpoint].count++;
+            _apiBuffer.endpoints[endpoint].lastSeen = Date.now();
+            if (_apiBuffer.endpoints[endpoint].count > 10) _apiBuffer.repeated++;
+        } catch (e) {}
+    }
+
     function _flushApiStats() {
         try {
-            const raw = localStorage.getItem(API_STATS_KEY);
-            if (!raw) return;
-            const stats = JSON.parse(raw);
-            if (stats.total > 0) {
-                _track('perf_api', { total: stats.total, repeated: stats.repeated || 0, endpoints: stats.endpoints || {} });
-                localStorage.setItem(API_STATS_KEY, JSON.stringify({ total: 0, repeated: 0, endpoints: {} }));
+            if (_apiBuffer.total > 0) {
+                _track('perf_api', { total: _apiBuffer.total, repeated: _apiBuffer.repeated, endpoints: _apiBuffer.endpoints });
+                _apiBuffer = { total: 0, repeated: 0, endpoints: {} };
             }
         } catch (e) {}
     }
@@ -142,20 +153,6 @@ const PerfAnalytics = (() => {
             _incrementApiStats(url, method);
             return origOpen.apply(this, arguments);
         };
-    }
-
-    function _incrementApiStats(url, method) {
-        try {
-            const raw = localStorage.getItem(API_STATS_KEY);
-            const stats = raw ? JSON.parse(raw) : { total: 0, repeated: 0, endpoints: {} };
-            stats.total++;
-            const endpoint = (url || '').replace(/\?.*$/, '').replace(/^https?:\/\/[^/]+/, '');
-            if (!stats.endpoints[endpoint]) stats.endpoints[endpoint] = { count: 0, method: method || 'GET', lastSeen: Date.now() };
-            stats.endpoints[endpoint].count++;
-            stats.endpoints[endpoint].lastSeen = Date.now();
-            if (stats.endpoints[endpoint].count > 10) stats.repeated++;
-            localStorage.setItem(API_STATS_KEY, JSON.stringify(stats));
-        } catch (e) {}
     }
 
     function _hookAudio() {

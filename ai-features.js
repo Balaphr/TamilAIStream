@@ -961,15 +961,22 @@ const AIFeatures = (() => {
         if (!ap) return;
         const lines = document.querySelectorAll('.lyrics-line');
         if (lines.length === 0) return;
+        let lastIdx = -1;
+        const container = lines[0]?.parentElement;
         const interval = setInterval(() => {
             const current = ap.currentTime || 0;
             const duration = ap.duration || 1;
             const pct = current / duration;
             const activeIdx = Math.floor(pct * lines.length);
-            lines.forEach((line, i) => {
-                line.classList.toggle('active', i === activeIdx);
-                if (i === activeIdx) line.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            });
+            if (activeIdx !== lastIdx) {
+                lastIdx = activeIdx;
+                lines.forEach((line, i) => line.classList.toggle('active', i === activeIdx));
+                if (activeIdx >= 0 && activeIdx < lines.length && container) {
+                    const el = lines[activeIdx];
+                    const offset = el.offsetTop - container.offsetTop - container.clientHeight / 2 + el.clientHeight / 2;
+                    container.scrollTop = offset;
+                }
+            }
             if (ap.paused || ap.ended) clearInterval(interval);
         }, 500);
     }

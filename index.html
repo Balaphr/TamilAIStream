@@ -114,6 +114,12 @@
     (function() {
         var overlay = document.getElementById('splashOverlay');
         if (!overlay) return;
+        /* In PWA standalone mode, pwa-splash.js handles the splash — remove HTML splash immediately */
+        var isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+        if (isStandalone || window.navigator.standalone === true) {
+            overlay.remove();
+            return;
+        }
         var dismissed = false;
         var _splashAudioCtx = null;
 

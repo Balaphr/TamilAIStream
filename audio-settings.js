@@ -242,11 +242,17 @@ const AudioSettings = (() => {
     let _detectInterval = null;
     function _startDetecting() {
         if (_detectInterval) return;
+        /* One-shot check — hook immediately if audio already exists */
+        const el = window.audioPlayer || document.querySelector('audio');
+        if (el) { _hookAudio(el); return; }
+        /* Fallback: poll briefly (max 5s) for audio element creation */
+        let attempts = 0;
         _detectInterval = setInterval(() => {
             if (!_settings.enabled) { clearInterval(_detectInterval); _detectInterval = null; return; }
             const el = window.audioPlayer || document.querySelector('audio');
-            if (el) _hookAudio(el);
-        }, 3000);
+            if (el) { _hookAudio(el); clearInterval(_detectInterval); _detectInterval = null; return; }
+            if (++attempts > 10) { clearInterval(_detectInterval); _detectInterval = null; }
+        }, 500);
     }
 
     /* ─── Public: Initialize ─── */

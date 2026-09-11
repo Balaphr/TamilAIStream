@@ -1278,6 +1278,7 @@
         }
         let raf;
         function draw() {
+            if (document.hidden) { raf = null; return; }
             ctx.clearRect(0, 0, W, H);
             pts.forEach(p => {
                 p.y = (p.y - p.dy + H) % H;
@@ -1289,6 +1290,9 @@
             raf = requestAnimationFrame(draw);
         }
         draw();
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && !raf) raf = requestAnimationFrame(draw);
+        });
     }
 
     /* ---------- data bootstrap ---------- */

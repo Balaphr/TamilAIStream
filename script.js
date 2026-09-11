@@ -656,26 +656,31 @@ function getStationStreamUrl(stationNameOrId) {
 }
 
 // ============================================
-// ProgressSync — Smooth 60fps progress tracking
+// ProgressSync — Smooth progress tracking
 // ============================================
 const ProgressSync = (() => {
     let _rafId = null;
     let _callbacks = [];
     let _lastPercent = -1;
     let _isRunning = false;
+    let _frameSkip = 0;
 
     function _tick() {
         if (!_isRunning) return;
-        const ap = window.audioPlayer;
-        if (ap && !ap.paused) {
-            const cur = ap.currentTime || 0;
-            const dur = ap.duration || 0;
-            if (dur > 0 && isFinite(dur)) {
-                const pct = (cur / dur) * 100;
-                if (Math.abs(pct - _lastPercent) > 0.001) {
-                    _lastPercent = pct;
-                    for (let i = 0; i < _callbacks.length; i++) {
-                        try { _callbacks[i](cur, dur, pct); } catch (e) {}
+        _frameSkip++;
+        /* Fire callbacks every 3rd frame (~20fps) — smooth enough for progress bars */
+        if (_frameSkip % 3 === 0) {
+            const ap = window.audioPlayer;
+            if (ap && !ap.paused) {
+                const cur = ap.currentTime || 0;
+                const dur = ap.duration || 0;
+                if (dur > 0 && isFinite(dur)) {
+                    const pct = (cur / dur) * 100;
+                    if (Math.abs(pct - _lastPercent) > 0.001) {
+                        _lastPercent = pct;
+                        for (let i = 0; i < _callbacks.length; i++) {
+                            try { _callbacks[i](cur, dur, pct); } catch (e) {}
+                        }
                     }
                 }
             }

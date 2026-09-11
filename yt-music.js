@@ -550,6 +550,8 @@ const YTMusic = {
         let _lastFrameTime = 0;
         const FPS_LIMIT = 24;
         const frameInterval = 1000 / FPS_LIMIT;
+        let _cachedGradient = null;
+        let _cachedGradientWidth = 0;
         const draw = (timestamp) => {
             const actuallyPlaying = this.isPlaying && window.audioPlayer && !window.audioPlayer.paused;
             if (document.hidden || !actuallyPlaying) {
@@ -579,10 +581,14 @@ const YTMusic = {
                 } catch(e) {}
             }
 
-            const gradient = ctx.createLinearGradient(0, 0, width, 0);
-            gradient.addColorStop(0, '#34d399');
-            gradient.addColorStop(0.5, '#10b981');
-            gradient.addColorStop(1, '#3ea6ff');
+            /* Cache gradient — only recreate on resize */
+            if (!_cachedGradient || _cachedGradientWidth !== width) {
+                _cachedGradient = ctx.createLinearGradient(0, 0, width, 0);
+                _cachedGradient.addColorStop(0, '#34d399');
+                _cachedGradient.addColorStop(0.5, '#10b981');
+                _cachedGradient.addColorStop(1, '#3ea6ff');
+                _cachedGradientWidth = width;
+            }
 
             if (isActive && freqData) {
                 const barW = 4;
@@ -594,7 +600,7 @@ const YTMusic = {
                     const barH = Math.max(2, val * height * 0.85);
                     const x = i * (barW + gap);
                     const y = (height - barH) / 2;
-                    ctx.fillStyle = gradient;
+                    ctx.fillStyle = _cachedGradient;
                     ctx.globalAlpha = 0.6 + val * 0.4;
                     ctx.beginPath();
                     ctx.roundRect(x, y, barW, barH, 2);
@@ -602,7 +608,7 @@ const YTMusic = {
                 }
                 ctx.globalAlpha = 1;
             } else {
-                ctx.strokeStyle = gradient;
+                ctx.strokeStyle = _cachedGradient;
                 ctx.lineWidth = 2;
                 ctx.globalAlpha = 0.25;
                 ctx.beginPath();
