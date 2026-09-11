@@ -17,6 +17,17 @@ window.AIHome = (() => {
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
         }[c]));
     }
+    function _aiScopedKey(baseKey) {
+        try {
+            if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) return UserDataSync.scopedKey(baseKey);
+        } catch (e) {}
+        try {
+            var u = JSON.parse(localStorage.getItem('tamilAIStream_user') || 'null');
+            var uid = u && (u.uid || u.email);
+            if (uid) return baseKey + '_' + uid.replace(/[^a-zA-Z0-9._@-]/g, '_');
+        } catch (e) {}
+        return baseKey + '_guest';
+    }
     /* Cached published songs — cleared once per refreshHome() cycle */
     var _publishedCache = null;
     var _stationsCache = null;
@@ -1245,13 +1256,13 @@ window.AIHome = (() => {
         const toggle = $('aiDarkToggle');
         if (!toggle) return;
         let light = false;
-        try { light = localStorage.getItem('ai_theme_light') === '1'; } catch (e) { /* ignore */ }
+        try { light = localStorage.getItem(_aiScopedKey('ai_theme_light')) === '1'; } catch (e) { /* ignore */ }
         const apply = (on) => { document.body.classList.toggle('ai-light', on); };
         apply(light);
         toggle.addEventListener('click', () => {
             light = !light;
             apply(light);
-            try { localStorage.setItem('ai_theme_light', light ? '1' : '0'); } catch (e) { /* ignore */ }
+            try { localStorage.setItem(_aiScopedKey('ai_theme_light'), light ? '1' : '0'); } catch (e) { /* ignore */ }
         });
     }
 

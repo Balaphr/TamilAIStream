@@ -32,7 +32,7 @@ window.AccessControl = (function () {
 
     // ─── Constants ───
     var TRIAL_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-    var GUEST_TRIAL_SECONDS = 10; // 10 seconds for non-logged-in users
+    var GUEST_TRIAL_SECONDS = 30; // 30 seconds for non-logged-in users
 
     // ─── Internal State ───
     var _guestTimer = null;
@@ -353,7 +353,7 @@ window.AccessControl = (function () {
     /**
      * Call this before playing any song/station.
      * Returns true if playback is allowed, false if it should be blocked.
-     * For guests: starts the 10-second timer.
+     * For guests: starts the 30-second timer.
      * For logged-in users with expired trial: shows upgrade popup.
      */
     function guardPlayback(audioElement) {
@@ -362,7 +362,7 @@ window.AccessControl = (function () {
         switch (access) {
             case 'granted':
                 if (!isLoggedIn() || isGuest()) {
-                    // Guest: start 10-second timer
+                    // Guest: start 30-second timer
                     startGuestTimer(audioElement);
                 }
                 return true;

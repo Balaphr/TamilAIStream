@@ -19,7 +19,13 @@ function _userScopedKey(baseKey) {
             return UserDataSync.scopedKey(baseKey);
         }
     } catch (e) {}
-    return baseKey;
+    // FAIL CLOSED: never fall back to un-scoped base key — use guest scope
+    try {
+        var u = JSON.parse(localStorage.getItem('tamilAIStream_user') || 'null');
+        var uid = u && (u.uid || u.email);
+        if (uid) return baseKey + '_' + uid.replace(/[^a-zA-Z0-9._@-]/g, '_');
+    } catch (e) {}
+    return baseKey + '_guest';
 }
 function _userGetItem(baseKey) {
     try { return localStorage.getItem(_userScopedKey(baseKey)); } catch (e) { return null; }
@@ -493,7 +499,7 @@ function persistPlaybackState() {
             duration: audioPlayer?.duration || 0,
             timestamp: Date.now()
         };
-        localStorage.setItem('tamilAIStream_player_state', JSON.stringify(state));
+        localStorage.setItem(_userScopedKey('tamilAIStream_player_state'), JSON.stringify(state));
     } catch (e) {
         console.warn('Unable to persist playback state', e);
     }
@@ -501,7 +507,7 @@ function persistPlaybackState() {
 
 function restorePlaybackState() {
     try {
-        const saved = JSON.parse(localStorage.getItem('tamilAIStream_player_state') || '{}');
+        const saved = JSON.parse(localStorage.getItem(_userScopedKey('tamilAIStream_player_state')) || '{}');
         if (!saved || !saved.currentPlaybackTrack && !saved.currentStation) return null;
         currentStation = saved.currentStation || null;
         currentPlaybackMode = saved.currentPlaybackMode || 'station';
@@ -628,7 +634,7 @@ function openMusicPlayer(track, playlist = [], queueIndex = -1) {
         queueIndex,
         source: 'song'
     };
-    localStorage.setItem('tamilAIStream_player_selection', JSON.stringify(selection));
+    localStorage.setItem(_userScopedKey('tamilAIStream_player_selection'), JSON.stringify(selection));
     persistPlaybackState();
     if (!window.location.pathname.includes('music-player.html')) {
         window.location.href = 'music-player.html';
@@ -2176,7 +2182,7 @@ function openPlaylistPage(artist, artistName, songCount) {
         songs: songs,
         timestamp: Date.now()
     };
-    localStorage.setItem('tamilAIStream_currentPlaylist', JSON.stringify(playlistData));
+    localStorage.setItem(_userScopedKey('tamilAIStream_currentPlaylist'), JSON.stringify(playlistData));
     window.location.href = 'playlist.html';
 }
 
@@ -3271,9 +3277,9 @@ function checkAdminAndShowBuilder() {
         } else if (_savedPosition > 0) {
             // Audio element lost — trigger restore from persisted state
             try {
-                var saved = JSON.parse(localStorage.getItem('player_engine_state') || '{}');
+                var saved = JSON.parse(localStorage.getItem(_userScopedKey('player_engine_state')) || '{}');
                 saved.playbackPosition = _savedPosition;
-                localStorage.setItem('player_engine_state', JSON.stringify(saved));
+                localStorage.setItem(_userScopedKey('player_engine_state'), JSON.stringify(saved));
                 if (typeof PlayerEngine !== 'undefined') PlayerEngine.play();
             } catch (e) { _savedPosition = 0; }
         }

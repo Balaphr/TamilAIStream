@@ -287,7 +287,7 @@ window.UpgradePopup = (function () {
                 '<button class="ac-popup-btn ac-popup-btn-primary" id="acPopupMainBtn">' +
                     '<i class="fas fa-arrow-right-to-bracket"></i> Sign In' +
                 '</button>' +
-                '<button class="ac-popup-btn ac-popup-btn-guest" id="acPopupGuestBtn">Continue as Guest (10s limit)</button>';
+                '<button class="ac-popup-btn ac-popup-btn-guest" id="acPopupGuestBtn">Continue as Guest (30s limit)</button>';
         } else {
             buttonsHTML =
                 '<button class="ac-popup-btn ac-popup-btn-premium" id="acPopupMainBtn">' +

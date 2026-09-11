@@ -299,6 +299,19 @@ window.Auth = (function () {
         if (typeof DataStore !== 'undefined' && DataStore.switchHistoryUser) {
             DataStore.switchHistoryUser(null);
         }
+        // ─── Clear in-memory player state so next user starts fresh ───
+        try {
+            if (typeof currentPlaybackTrack !== 'undefined') currentPlaybackTrack = null;
+            if (typeof currentStation !== 'undefined') currentStation = null;
+            if (typeof currentPlaybackQueue !== 'undefined') currentPlaybackQueue = [];
+            if (typeof currentPlaybackQueueIndex !== 'undefined') currentPlaybackQueueIndex = -1;
+            if (typeof currentPlaylist !== 'undefined') currentPlaylist = [];
+            if (typeof currentSongIndex !== 'undefined') currentSongIndex = -1;
+            if (typeof isStreamPlaying !== 'undefined') isStreamPlaying = false;
+        } catch (e) { /* ignore — modules may not be loaded */ }
+        // ─── Remove legacy un-scoped player keys (prevent cross-user leakage) ───
+        lsRemove('tamilAIStream_player_state');
+        lsRemove('tamilAIStream_player_selection');
     }
 
     // --- Firebase sign-out (non-blocking, best-effort) ---
@@ -373,5 +386,17 @@ window.Auth = (function () {
         },
         isTrialActive: function () { return window.AccessControl ? AccessControl.isTrialActive() : false; },
         isSubscribed: function () { return window.AccessControl ? AccessControl.isSubscribed() : false; },
+        /** Clean up legacy un-scoped player state on page load for fresh guests */
+        cleanStalePlayerState: function () {
+            // If not authenticated or guest, remove legacy un-scoped player keys
+            // so the guest doesn't see another user's playback state.
+            if (!isAuthenticated() || isGuest()) {
+                lsRemove('tamilAIStream_player_state');
+                lsRemove('tamilAIStream_player_selection');
+            }
+        },
     };
+
+    // Auto-clean stale player state on script load (runs once)
+    try { Auth.cleanStalePlayerState(); } catch (e) {}
 })();

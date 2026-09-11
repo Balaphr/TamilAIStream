@@ -1,5 +1,17 @@
 'use strict';
 
+function _profileScopedKey(baseKey) {
+    try {
+        if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) return UserDataSync.scopedKey(baseKey);
+    } catch (e) {}
+    try {
+        var u = JSON.parse(localStorage.getItem('tamilAIStream_user') || 'null');
+        var uid = u && (u.uid || u.email);
+        if (uid) return baseKey + '_' + uid.replace(/[^a-zA-Z0-9._@-]/g, '_');
+    } catch (e) {}
+    return baseKey + '_guest';
+}
+
 // ============================================
 // DOM Elements
 // ============================================
@@ -374,21 +386,15 @@ async function loadUserStats() {
  */
 function loadUserPreferences() {
     // Notifications — use user-scoped key
-    const notifications = (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
-        ? localStorage.getItem(UserDataSync.scopedKey('tamilAIStream_notifications'))
-        : localStorage.getItem('tamilAIStream_notifications');
+    const notifications = localStorage.getItem(_profileScopedKey('tamilAIStream_notifications'));
     DOM.notificationsToggle.checked = notifications !== 'false';
     
     // Dark mode — use user-scoped key
-    const darkMode = (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
-        ? localStorage.getItem(UserDataSync.scopedKey('tamilAIStream_darkMode'))
-        : localStorage.getItem('tamilAIStream_darkMode');
+    const darkMode = localStorage.getItem(_profileScopedKey('tamilAIStream_darkMode'));
     DOM.darkModeToggle.checked = darkMode !== 'false';
     
     // Language — use user-scoped key
-    const language = (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
-        ? localStorage.getItem(UserDataSync.scopedKey('tamilAIStream_language'))
-        : localStorage.getItem('tamilAIStream_language');
+    const language = localStorage.getItem(_profileScopedKey('tamilAIStream_language'));
     DOM.languageSelect.value = language || 'en';
 }
 
@@ -733,24 +739,18 @@ DOM.backBtn?.addEventListener('click', () => {
 // Preferences
 // ============================================
 DOM.notificationsToggle?.addEventListener('change', (e) => {
-    const key = (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
-        ? UserDataSync.scopedKey('tamilAIStream_notifications') : 'tamilAIStream_notifications';
-    localStorage.setItem(key, e.target.checked);
+    localStorage.setItem(_profileScopedKey('tamilAIStream_notifications'), e.target.checked);
     showToast(e.target.checked ? 'Notifications enabled' : 'Notifications disabled', 'info');
 });
 
 DOM.darkModeToggle?.addEventListener('change', (e) => {
-    const key = (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
-        ? UserDataSync.scopedKey('tamilAIStream_darkMode') : 'tamilAIStream_darkMode';
-    localStorage.setItem(key, e.target.checked);
+    localStorage.setItem(_profileScopedKey('tamilAIStream_darkMode'), e.target.checked);
     showToast(e.target.checked ? 'Dark mode enabled' : 'Light mode enabled', 'info');
     // In production, toggle CSS class on body
 });
 
 DOM.languageSelect?.addEventListener('change', (e) => {
-    const key = (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
-        ? UserDataSync.scopedKey('tamilAIStream_language') : 'tamilAIStream_language';
-    localStorage.setItem(key, e.target.value);
+    localStorage.setItem(_profileScopedKey('tamilAIStream_language'), e.target.value);
     showToast(`Language changed to ${e.target.value === 'ta' ? 'Tamil' : 'English'}`, 'success');
     // In production, reload page with new language
 });

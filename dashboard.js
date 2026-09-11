@@ -25,6 +25,17 @@
     const esc = (str) => String(str == null ? '' : str).replace(/[&<>"']/g, c => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
+    function _dashScopedKey(baseKey) {
+        try {
+            if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) return UserDataSync.scopedKey(baseKey);
+        } catch (e) {}
+        try {
+            var u = JSON.parse(localStorage.getItem('tamilAIStream_user') || 'null');
+            var uid = u && (u.uid || u.email);
+            if (uid) return baseKey + '_' + uid.replace(/[^a-zA-Z0-9._@-]/g, '_');
+        } catch (e) {}
+        return baseKey + '_guest';
+    }
 
     function activeStations() {
         if (typeof DataStore === 'undefined') return [];
@@ -184,7 +195,7 @@
     function persistState() {
         if (!audioPlayer) return;
         try {
-            localStorage.setItem('tamilAIStream_player_state', JSON.stringify({
+            localStorage.setItem(_dashScopedKey('tamilAIStream_player_state'), JSON.stringify({
                 currentStation, currentPlaybackMode, currentPlaybackTrack,
                 currentPlaybackQueue, currentPlaybackQueueIndex,
                 currentPlaylist: currentPlaybackQueue, currentSongIndex: currentPlaybackQueueIndex,

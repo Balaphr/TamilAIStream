@@ -113,7 +113,20 @@
         document.addEventListener('DOMContentLoaded', function() {
             var playlistData = null;
             try {
-                var raw = localStorage.getItem('tamilAIStream_currentPlaylist');
+                /* Build user-scoped key */
+                var baseKey = 'tamilAIStream_currentPlaylist';
+                var scopedKey = baseKey;
+                try {
+                    if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) {
+                        scopedKey = UserDataSync.scopedKey(baseKey);
+                    } else {
+                        var u = JSON.parse(localStorage.getItem('tamilAIStream_user') || 'null');
+                        var uid = u && (u.uid || u.email);
+                        if (uid) scopedKey = baseKey + '_' + uid.replace(/[^a-zA-Z0-9._@-]/g, '_');
+                        else scopedKey = baseKey + '_guest';
+                    }
+                } catch(e) {}
+                var raw = localStorage.getItem(scopedKey);
                 if (raw) playlistData = JSON.parse(raw);
             } catch(e) {}
 

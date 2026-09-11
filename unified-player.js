@@ -1221,14 +1221,20 @@ const UnifiedPlayer = (() => {
    *  so page navigation / PWA minimize / return restores the same position & state. */
   function _restoreFromScriptState() {
     try {
-      const data = JSON.parse(localStorage.getItem('tamilAIStream_player_state') || '{}');
-      const track = data.currentPlaybackTrack || data.currentStation || null;
+      const data = JSON.parse(localStorage.getItem(_getStorageKey()) || '{}');
+      /* fallback: also check script.js's player state key (user-scoped) */
+      const scriptData = JSON.parse(localStorage.getItem(
+        (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey)
+          ? UserDataSync.scopedKey('tamilAIStream_player_state')
+          : 'tamilAIStream_player_state_guest'
+      ) || '{}');
+      const track = scriptData.currentPlaybackTrack || scriptData.currentStation || null;
       if (!track) return;
       state.track = track;
-      state.mode = data.currentPlaybackMode || (data.currentStation && !data.currentPlaybackTrack ? 'fm' : 'songs');
+      state.mode = scriptData.currentPlaybackMode || (scriptData.currentStation && !scriptData.currentPlaybackTrack ? 'fm' : 'songs');
       state.isLive = !!(track.streamUrl && !track.audioUrl);
-      state.currentTime = typeof data.progress === 'number' ? data.progress : 0;
-      state.duration = typeof data.duration === 'number' ? data.duration : 0;
+      state.currentTime = typeof scriptData.progress === 'number' ? scriptData.progress : 0;
+      state.duration = typeof scriptData.duration === 'number' ? scriptData.duration : 0;
       state.externalEngine = !!window.audioPlayer;
       _showBottomBar();
       _updateTrackUI();

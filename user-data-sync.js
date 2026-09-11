@@ -27,6 +27,14 @@ window.UserDataSync = (function () {
         aiArtistPrefs: 'tamilAI_artistPrefs',
         aiMoviePrefs: 'tamilAI_moviePrefs',
         aiFavorites: 'tamilAI_favorites',
+        aiThemeLight: 'ai_theme_light',
+        notifications: 'tamilAIStream_notifications',
+        darkMode: 'tamilAIStream_darkMode',
+        language: 'tamilAIStream_language',
+        playerState: 'tamilAIStream_player_state',
+        playerSelection: 'tamilAIStream_player_selection',
+        currentPlaylist: 'tamilAIStream_currentPlaylist',
+        playerEngineState: 'player_engine_state',
     };
 
     // ─── Legacy keys that other modules read from (shared → must be isolated) ───
@@ -40,6 +48,14 @@ window.UserDataSync = (function () {
         'tamilAI_artistPrefs',
         'tamilAI_moviePrefs',
         'tamilAI_favorites',
+        'ai_theme_light',
+        'tamilAIStream_notifications',
+        'tamilAIStream_darkMode',
+        'tamilAIStream_language',
+        'tamilAIStream_player_state',
+        'tamilAIStream_player_selection',
+        'tamilAIStream_currentPlaylist',
+        'player_engine_state',
     ];
 
     function _getUserId() {

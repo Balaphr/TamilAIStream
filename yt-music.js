@@ -14,6 +14,18 @@ function moveNavIndicator(activeItem) {
     indicator.style.left = left + 'px';
 }
 
+function _ytScopedKey(baseKey) {
+    try {
+        if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) return UserDataSync.scopedKey(baseKey);
+    } catch (e) {}
+    try {
+        var u = JSON.parse(localStorage.getItem('tamilAIStream_user') || 'null');
+        var uid = u && (u.uid || u.email);
+        if (uid) return baseKey + '_' + uid.replace(/[^a-zA-Z0-9._@-]/g, '_');
+    } catch (e) {}
+    return baseKey + '_guest';
+}
+
 const YTMusic = {
     // State
     isPlaying: false,
@@ -1724,18 +1736,18 @@ const YTMusic = {
             darkToggle.onclick = () => {
                 document.body.classList.toggle('ai-light');
                 const light = document.body.classList.contains('ai-light');
-                try { localStorage.setItem('ai_theme_light', light ? '1' : '0'); } catch (e) {}
+                try { localStorage.setItem(_ytScopedKey('ai_theme_light'), light ? '1' : '0'); } catch (e) {}
                 darkToggle.classList.toggle('active', !light);
             };
         }
         document.querySelectorAll('.settings-toggle[data-setting]').forEach(btn => {
             const key = btn.dataset.setting;
-            const val = localStorage.getItem('settings_' + key) === 'true';
+            const val = localStorage.getItem(_ytScopedKey('settings_' + key)) === 'true';
             btn.classList.toggle('active', val);
             btn.onclick = () => {
                 const newVal = !btn.classList.contains('active');
                 btn.classList.toggle('active', newVal);
-                try { localStorage.setItem('settings_' + key, String(newVal)); } catch (e) {}
+                try { localStorage.setItem(_ytScopedKey('settings_' + key), String(newVal)); } catch (e) {}
             };
         });
         if (user) {
