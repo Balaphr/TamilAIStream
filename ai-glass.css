@@ -3167,7 +3167,6 @@ body.ai-light .ai-news-refresh-indicator { background: rgba(0,0,0,0.04); color: 
     .ai-fm-grid { grid-template-columns: repeat(2, 1fr); }
     .premium-topnav-right > .premium-topnav-right-cluster { display: none !important; }
     .ai-header-actions { gap: 8px; }
-    .ai-hdr-btn.ai-install-btn { display: none !important; }
     .ai-user-meta, .ai-user-caret { display: none; }
 }
 
