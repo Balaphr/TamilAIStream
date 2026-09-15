@@ -204,6 +204,7 @@ const UnifiedPlayer = (() => {
       fsRepeat: document.getElementById('upFsRepeat'),
       fsQueue: document.getElementById('upFsQueue'),
       fsFav: document.getElementById('upFsFav'),
+      fsEffects: document.getElementById('upFsEffects'),
       fsShare: document.getElementById('upFsShare'),
       fsVolume: document.getElementById('upFsVolume'),
       fsVolumeSlider: document.getElementById('upFsVolumeSlider'),
@@ -268,6 +269,7 @@ const UnifiedPlayer = (() => {
     if (els.fsQueue) els.fsQueue.addEventListener('click', toggleQueuePanel);
     if (els.fsFav) els.fsFav.addEventListener('click', toggleFavorite);
     if (els.fsShare) els.fsShare.addEventListener('click', shareCurrent);
+    if (els.fsEffects) els.fsEffects.addEventListener('click', _openEffects);
     if (els.fsMinimize) els.fsMinimize.addEventListener('click', hideFullScreen);
     if (els.fsAskAI) els.fsAskAI.addEventListener('click', _openAIAssistant);
     if (els.fsLyrics) els.fsLyrics.addEventListener('click', _openLyrics);
@@ -295,6 +297,13 @@ const UnifiedPlayer = (() => {
 
     if (els.fsProgress) {
       _bindSeek(els.fsProgress, (pct) => _seekToPercent(pct), els.fsProgressFill, els.fsCurrentTime);
+    }
+
+    /* Effects button: show only for premium users, update state */
+    if (els.fsEffects) {
+      const hasPremium = typeof AudioSettings !== 'undefined' && AudioSettings.hasPremiumAccess();
+      els.fsEffects.style.display = hasPremium ? '' : 'none';
+      if (hasPremium) _updateEffectsBtnState();
     }
   }
 
@@ -666,6 +675,7 @@ const UnifiedPlayer = (() => {
     _updateFavUI();
     _updateShuffleUI();
     _updateRepeatUI();
+    _updateEffectsBtnState();
     _startAIAnimation();
   }
 
@@ -1320,6 +1330,18 @@ const UnifiedPlayer = (() => {
   function _openLyrics() {
     const panel = document.getElementById('ytmLyricsPanel');
     if (panel) panel.classList.toggle('open');
+  }
+  function _openEffects() {
+    if (typeof AudioSettings !== 'undefined' && !AudioSettings.hasPremiumAccess()) {
+      if (typeof window.showToast === 'function') window.showToast('Audio effects require an active subscription', 'error');
+      return;
+    }
+    if (typeof EqualizerUI !== 'undefined') EqualizerUI.openEQ();
+  }
+  function _updateEffectsBtnState() {
+    if (!els.fsEffects) return;
+    const active = typeof AudioSettings !== 'undefined' && AudioSettings.isEnabled();
+    els.fsEffects.classList.toggle('effects-active', !!active);
   }
 
   function _setupServiceWorker() {

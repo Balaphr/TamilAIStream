@@ -3,11 +3,10 @@
 /* ============================================
    Equalizer - 10-Band Audio Equalizer
    Bass/Treble/Vocal Boost, Presets, Effects
-   Dolby-style Enhancement with On/Off Toggle
+   Delegates all Web Audio processing to AudioSettings
    ============================================ */
 
 const Equalizer = (() => {
-    // User-scoped key helper for EQ settings
     function _scopedKey(base) {
         try {
             if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) return UserDataSync.scopedKey(base);
@@ -60,30 +59,15 @@ const Equalizer = (() => {
 
     let currentGains = [...PRESETS.flat];
     let currentPreset = 'flat';
-    
-    // Enhancement state
-    let _enhancementEnabled = false;
-    let _enhancementLevel = 0.7; // 0-1 scale
-    let _spatialEnabled = false;
-    let _loudnessNormEnabled = false;
-    let _stereoWidenEnabled = false;
-    
-    // Enhancement nodes
-    let _spatialNode = null;
-    let _loudnessNode = null;
-    let _stereoWidenNode = null;
-    let _enhancementGain = null;
-    let _dryGain = null;
-    let _wetGain = null;
 
     function setBand(index, gain) {
         currentGains[index] = Math.max(-12, Math.min(12, gain));
-        PlayerEngine.setEqBand(index, currentGains[index]);
+        if (typeof AudioSettings !== 'undefined' && AudioSettings.setEqBand) {
+            AudioSettings.setEqBand(index, currentGains[index]);
+        }
     }
 
-    function getBandGain(index) {
-        return currentGains[index];
-    }
+    function getBandGain(index) { return currentGains[index]; }
 
     function applyPreset(name) {
         const preset = PRESETS[name];
@@ -97,6 +81,7 @@ const Equalizer = (() => {
         setBand(0, v);
         setBand(1, v * 0.8);
         setBand(2, v * 0.5);
+        if (typeof AudioSettings !== 'undefined') AudioSettings.setBassBoost(v);
     }
 
     function setTrebleBoost(value) {
@@ -112,184 +97,52 @@ const Equalizer = (() => {
         setBand(4, v);
         setBand(5, v);
         setBand(6, v * 0.5);
+        if (typeof AudioSettings !== 'undefined') AudioSettings.setVocalClarity(v);
     }
 
     function setStereoBalance(value) {
         const v = Math.max(-1, Math.min(1, value));
-        const audio = PlayerEngine.getAudioElement();
-        if (audio) {
-            audio.stereoBalance = v;
-        }
+        const audio = (typeof PlayerEngine !== 'undefined' && PlayerEngine.getAudioElement) ? PlayerEngine.getAudioElement() : null;
+        if (audio) audio.stereoBalance = v;
     }
 
-    // ============================================
-    // Dolby-style Enhancement System
-    // ============================================
-    
-    function _createEnhancementNodes() {
-        const audioCtx = PlayerEngine.getAudioContext();
-        if (!audioCtx) return false;
-        
-        // Prevent double initialization
-        if (_spatialNode) return true;
-        
-        try {
-            // Create enhancement gain node (controls overall enhancement mix)
-            _enhancementGain = audioCtx.createGain();
-            _enhancementGain.gain.value = 0;
-            
-            // Create dry/wet gain nodes for parallel processing
-            _dryGain = audioCtx.createGain();
-            _dryGain.gain.value = 1;
-            _wetGain = audioCtx.createGain();
-            _wetGain.gain.value = 0;
-            
-            // Create spatial audio simulation (mid-side processing)
-            _spatialNode = audioCtx.createGain();
-            _spatialNode.gain.value = 1;
-            
-            // Create loudness normalization (compressor with makeup gain)
-            _loudnessNode = audioCtx.createDynamicsCompressor();
-            _loudnessNode.threshold.value = -24;
-            _loudnessNode.knee.value = 12;
-            _loudnessNode.ratio.value = 4;
-            _loudnessNode.attack.value = 0.003;
-            _loudnessNode.release.value = 0.25;
-            
-            // Create stereo widening (using gain and delay for Haas effect)
-            _stereoWidenNode = audioCtx.createGain();
-            _stereoWidenNode.gain.value = 1;
-            
-            console.log('[Equalizer] Enhancement nodes created');
-            return true;
-        } catch (e) {
-            console.warn('[Equalizer] Failed to create enhancement nodes:', e);
-            return false;
-        }
-    }
-    
-    function _connectEnhancement() {
-        const audioCtx = PlayerEngine.getAudioContext();
-        const analyser = PlayerEngine.getAnalyser();
-        if (!audioCtx || !analyser) return;
-        
-        // Disconnect existing connections
-        try {
-            _enhancementGain.disconnect();
-            _dryGain.disconnect();
-            _wetGain.disconnect();
-        } catch (e) {}
-        
-        // Connect dry path (bypass)
-        // Note: This is simplified - in production you'd want proper routing
-        // For now, we use gain modulation for enhancement effect
-    }
-    
+    /* ─── Enhancement delegates to AudioSettings ─── */
     function enableEnhancement(enabled) {
-        _enhancementEnabled = enabled;
-        
-        if (enabled) {
-            if (!_createEnhancementNodes()) {
-                console.warn('[Equalizer] Cannot enable enhancement - no audio context');
-                return false;
-            }
-            
-            // Apply enhancement based on current preset
-            _applyEnhancement();
-        } else {
-            // Disable enhancement - reset to flat
-            _removeEnhancement();
-        }
-        
+        if (typeof AudioSettings !== 'undefined') AudioSettings.setEnhance(enabled);
         saveEqSettings();
-        return _enhancementEnabled;
+        return enabled;
     }
-    
-    function _applyEnhancement() {
-        if (!_enhancementEnabled) return;
-        
-        const audioCtx = PlayerEngine.getAudioContext();
-        if (!audioCtx) return;
-        
-        // Apply spatial enhancement (simulate wider soundstage)
-        if (_spatialEnabled && _spatialNode) {
-            // Slight level boost for spatial effect
-            _spatialNode.gain.setValueAtTime(1.1, audioCtx.currentTime);
-        }
-        
-        // Apply loudness normalization
-        if (_loudnessEnabled && _loudnessNode) {
-            // Already configured in creation
-        }
-        
-        // Apply stereo widening
-        if (_stereoWidenEnabled && _stereoWidenNode) {
-            _stereoWidenNode.gain.setValueAtTime(1.15, audioCtx.currentTime);
-        }
-        
-        // Apply overall enhancement gain
-        if (_enhancementGain) {
-            const wetAmount = _enhancementLevel * 0.3; // Max 30% wet
-            _enhancementGain.gain.setValueAtTime(wetAmount, audioCtx.currentTime);
-        }
-    }
-    
-    function _removeEnhancement() {
-        const audioCtx = PlayerEngine.getAudioContext();
-        if (!audioCtx) return;
-        
-        // Reset all enhancement nodes to neutral
-        if (_spatialNode) _spatialNode.gain.setValueAtTime(1, audioCtx.currentTime);
-        if (_loudnessNode) {
-            _loudnessNode.threshold.setValueAtTime(-24, audioCtx.currentTime);
-            _loudnessNode.ratio.setValueAtTime(4, audioCtx.currentTime);
-        }
-        if (_stereoWidenNode) _stereoWidenNode.gain.setValueAtTime(1, audioCtx.currentTime);
-        if (_enhancementGain) _enhancementGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    }
-    
     function setEnhancementLevel(level) {
-        _enhancementLevel = Math.max(0, Math.min(1, level));
-        if (_enhancementEnabled) _applyEnhancement();
+        if (typeof AudioSettings !== 'undefined') AudioSettings.setEnhanceLevel(Math.max(0, Math.min(1, level)));
         saveEqSettings();
     }
-    
     function toggleSpatial(enabled) {
-        _spatialEnabled = enabled;
-        if (_enhancementEnabled) _applyEnhancement();
+        if (typeof AudioSettings !== 'undefined') AudioSettings.setStereoWiden(enabled);
         saveEqSettings();
     }
-    
     function toggleLoudnessNorm(enabled) {
-        _loudnessNormEnabled = enabled;
-        if (_enhancementEnabled) _applyEnhancement();
+        if (typeof AudioSettings !== 'undefined') AudioSettings.setNormalization(enabled);
         saveEqSettings();
     }
-    
     function toggleStereoWiden(enabled) {
-        _stereoWidenEnabled = enabled;
-        if (_enhancementEnabled) _applyEnhancement();
+        if (typeof AudioSettings !== 'undefined') AudioSettings.setStereoWiden(enabled);
         saveEqSettings();
     }
-    
+
     function isEnhancementEnabled() {
-        return _enhancementEnabled;
+        return typeof AudioSettings !== 'undefined' && AudioSettings.isEnabled() && AudioSettings.getSettings().enhance;
     }
-    
     function getEnhancementLevel() {
-        return _enhancementLevel;
+        return typeof AudioSettings !== 'undefined' ? AudioSettings.getSettings().enhanceLevel : 0.7;
     }
-    
     function getSpatialState() {
-        return _spatialEnabled;
+        return typeof AudioSettings !== 'undefined' ? AudioSettings.getSettings().stereoWiden : false;
     }
-    
     function getLoudnessNormState() {
-        return _loudnessNormEnabled;
+        return typeof AudioSettings !== 'undefined' ? AudioSettings.getSettings().normalization : false;
     }
-    
     function getStereoWidenState() {
-        return _stereoWidenEnabled;
+        return typeof AudioSettings !== 'undefined' ? AudioSettings.getSettings().stereoWiden : false;
     }
 
     function reset() {
@@ -299,32 +152,23 @@ const Equalizer = (() => {
         setVocalBoost(0);
         setStereoBalance(0);
         enableEnhancement(false);
+        if (typeof AudioSettings !== 'undefined') {
+            AudioSettings.setNormalization(false);
+            AudioSettings.setStereoWiden(false);
+            AudioSettings.setEnhance(false);
+            AudioSettings.setEnhanceLevel(0.7);
+        }
     }
 
-    function getPresetNames() {
-        return Object.keys(PRESETS);
-    }
-
-    function getCurrentPreset() {
-        return currentPreset;
-    }
-
-    function getCurrentGains() {
-        return [...currentGains];
-    }
+    function getPresetNames() { return Object.keys(PRESETS); }
+    function getCurrentPreset() { return currentPreset; }
+    function getCurrentGains() { return [...currentGains]; }
 
     function saveEqSettings() {
         try {
             localStorage.setItem(_getEqKey(), JSON.stringify({
                 gains: currentGains,
                 preset: currentPreset,
-                enhancement: {
-                    enabled: _enhancementEnabled,
-                    level: _enhancementLevel,
-                    spatial: _spatialEnabled,
-                    loudnessNorm: _loudnessNormEnabled,
-                    stereoWiden: _stereoWidenEnabled
-                }
             }));
         } catch (e) {}
     }
@@ -334,26 +178,11 @@ const Equalizer = (() => {
             const saved = JSON.parse(localStorage.getItem(_getEqKey()) || '{}');
             if (saved.gains) {
                 currentGains = saved.gains;
-                saved.gains.forEach((gain, i) => setBand(i, gain));
-            }
-            if (saved.preset) currentPreset = saved.preset;
-            if (saved.enhancement) {
-                _enhancementEnabled = saved.enhancement.enabled || false;
-                _enhancementLevel = saved.enhancement.level || 0.7;
-                _spatialEnabled = saved.enhancement.spatial || false;
-                _loudnessNormEnabled = saved.enhancement.loudnessNorm || false;
-                _stereoWidenEnabled = saved.enhancement.stereoWiden || false;
-                
-                if (_enhancementEnabled) {
-                    // Delay enhancement init to ensure audio context is ready
-                    setTimeout(() => {
-                        if (PlayerEngine.getAudioContext()) {
-                            _createEnhancementNodes();
-                            _applyEnhancement();
-                        }
-                    }, 500);
+                if (typeof AudioSettings !== 'undefined') {
+                    AudioSettings.setEqBands(currentGains);
                 }
             }
+            if (saved.preset) currentPreset = saved.preset;
         } catch (e) {}
     }
 

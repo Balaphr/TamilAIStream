@@ -1286,6 +1286,36 @@ const YTMusic = {
         this.saveData();
     },
 
+    toggleAudioEnhancement(btn) {
+        if (typeof AudioSettings === 'undefined') return;
+        const next = !AudioSettings.isEnabled();
+        AudioSettings.setEnabled(next);
+        btn.classList.toggle('active', next);
+        this.renderSettingsContent();
+    },
+    setAudioBass(val) {
+        if (typeof AudioSettings !== 'undefined') AudioSettings.setBassBoost(parseFloat(val));
+        const item = event?.target?.closest('.ytm-settings-item');
+        if (item) { const v = item.querySelector('.ytm-settings-item-value'); if (v) v.textContent = Math.round(val) + 'dB'; }
+    },
+    setAudioVocal(val) {
+        if (typeof AudioSettings !== 'undefined') AudioSettings.setVocalClarity(parseFloat(val));
+        const item = event?.target?.closest('.ytm-settings-item');
+        if (item) { const v = item.querySelector('.ytm-settings-item-value'); if (v) v.textContent = Math.round(val) + 'dB'; }
+    },
+    toggleAudioNorm(btn) {
+        if (typeof AudioSettings === 'undefined') return;
+        const next = !AudioSettings.getSettings().normalization;
+        AudioSettings.setNormalization(next);
+        btn.classList.toggle('active', next);
+    },
+    toggleAudioStereo(btn) {
+        if (typeof AudioSettings === 'undefined') return;
+        const next = !AudioSettings.getSettings().stereoWiden;
+        AudioSettings.setStereoWiden(next);
+        btn.classList.toggle('active', next);
+    },
+
     toggleSettingsPanel() {
         const panel = document.getElementById('ytmSettingsPanel');
         if (panel) { panel.classList.toggle('active'); if (panel.classList.contains('active')) this.renderSettingsContent(); }
@@ -1716,6 +1746,8 @@ const YTMusic = {
     renderSettingsContent() {
         const c = document.getElementById('ytmSettingsContent');
         if (!c) return;
+        const hasPremium = (typeof AudioSettings !== 'undefined' && AudioSettings.hasPremiumAccess());
+        const as = (typeof AudioSettings !== 'undefined') ? AudioSettings.getSettings() : {};
         c.innerHTML = `
             <div class="ytm-settings-section"><div class="ytm-settings-section-title">Playback</div>
                 <div class="ytm-settings-item"><span class="ytm-settings-item-label">Autoplay</span><button class="ytm-settings-toggle ${this.settings.autoplay ? 'active' : ''}" onclick="YTMusic.updateSetting('autoplay',!YTMusic.settings.autoplay);this.classList.toggle('active')"></button></div>
@@ -1730,7 +1762,19 @@ const YTMusic = {
             </div>
             <div class="ytm-settings-section"><div class="ytm-settings-section-title">Audio</div>
                 <div class="ytm-settings-item"><span class="ytm-settings-item-label">Volume</span><span class="ytm-settings-item-value">${Math.round(this.volume * 100)}%</span></div>
-            </div>`;
+            </div>
+            ${hasPremium ? `
+            <div class="ytm-settings-section"><div class="ytm-settings-section-title"><i class="fas fa-sliders" style="margin-right:6px;opacity:0.7;"></i>Audio Enhancement</div>
+                <div class="ytm-settings-item"><span class="ytm-settings-item-label">Enable Effects</span><button class="ytm-settings-toggle ${as.enabled ? 'active' : ''}" onclick="YTMusic.toggleAudioEnhancement(this)"></button></div>
+                <div class="ytm-settings-item"><span class="ytm-settings-item-label">Bass Boost</span><input type="range" class="ytm-settings-range" min="-12" max="12" value="${as.bassBoost || 0}" oninput="YTMusic.setAudioBass(this.value)"><span class="ytm-settings-item-value">${as.bassBoost || 0}dB</span></div>
+                <div class="ytm-settings-item"><span class="ytm-settings-item-label">Vocal Clarity</span><input type="range" class="ytm-settings-range" min="-12" max="12" value="${as.vocalClarity || 0}" oninput="YTMusic.setAudioVocal(this.value)"><span class="ytm-settings-item-value">${as.vocalClarity || 0}dB</span></div>
+                <div class="ytm-settings-item"><span class="ytm-settings-item-label">Loudness Normalization</span><button class="ytm-settings-toggle ${as.normalization ? 'active' : ''}" onclick="YTMusic.toggleAudioNorm(this)"></button></div>
+                <div class="ytm-settings-item"><span class="ytm-settings-item-label">Stereo Widening</span><button class="ytm-settings-toggle ${as.stereoWiden ? 'active' : ''}" onclick="YTMusic.toggleAudioStereo(this)"></button></div>
+                <div class="ytm-settings-item"><span class="ytm-settings-item-label">Open Equalizer</span><button class="ytm-settings-toggle-btn" onclick="if(typeof EqualizerUI!=='undefined')EqualizerUI.openEQ()"><i class="fas fa-sliders"></i></button></div>
+            </div>` : `
+            <div class="ytm-settings-section"><div class="ytm-settings-section-title"><i class="fas fa-lock" style="margin-right:6px;opacity:0.5;"></i>Audio Enhancement</div>
+                <div class="ytm-settings-item"><span class="ytm-settings-item-label" style="opacity:0.5;">Subscribe to unlock EQ, Bass Boost, and audio effects</span></div>
+            </div>`}`;
     },
 
     renderSettingsPage() {

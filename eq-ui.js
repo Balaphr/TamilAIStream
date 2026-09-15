@@ -10,16 +10,17 @@ const EqualizerUI = (() => {
 
     function createEQOverlay() {
         if (document.getElementById('eq-overlay')) return;
+        const hasPremium = typeof AudioSettings !== 'undefined' && AudioSettings.hasPremiumAccess();
         const el = document.createElement('div');
         el.id = 'eq-overlay';
         el.className = 'eq-overlay';
         el.innerHTML = `
             <div class="eq-panel">
                 <div class="eq-header">
-                    <h3>Equalizer</h3>
+                    <h3>${hasPremium ? 'Equalizer' : 'Audio Effects — Premium Only'}</h3>
                     <button class="eq-close" id="eqClose"><i class="fas fa-times"></i></button>
                 </div>
-                
+                ${hasPremium ? `
                 <div class="eq-section">
                     <div class="eq-section-title">Presets</div>
                     <div class="eq-presets" id="eqPresets"></div>
@@ -96,14 +97,25 @@ const EqualizerUI = (() => {
                     <button class="eq-reset-btn" id="eqReset">
                         <i class="fas fa-undo"></i> Reset All
                     </button>
-                </div>
+                </div>` : `
+                <div class="eq-section" style="text-align:center;padding:32px 0;">
+                    <i class="fas fa-lock" style="font-size:2rem;opacity:0.3;margin-bottom:12px;display:block;"></i>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;line-height:1.5;max-width:260px;margin:0 auto;">
+                        Subscribe to unlock the 10-band equalizer, bass boost, vocal clarity, stereo widening, and audio enhancement.
+                    </p>
+                    <button class="eq-reset-btn" style="margin-top:16px;" onclick="window.location.href='login.html?redirect=index.html'">
+                        <i class="fas fa-crown"></i> Upgrade Now
+                    </button>
+                </div>`}
             </div>
         `;
         document.body.appendChild(el);
-        bindEQEvents();
-        renderPresets();
-        renderBands();
-        loadEnhancementState();
+        if (hasPremium) {
+            bindEQEvents();
+            renderPresets();
+            renderBands();
+            loadEnhancementState();
+        }
     }
 
     function bindEQEvents() {
@@ -194,7 +206,8 @@ const EqualizerUI = (() => {
     function renderBands() {
         const container = document.getElementById('eqBands');
         if (!container) return;
-        const gains = Equalizer.getCurrentGains();
+        const gains = (typeof AudioSettings !== 'undefined' && AudioSettings.isEnabled())
+            ? AudioSettings.getEqBands() : Equalizer.getCurrentGains();
         const bands = Equalizer.BANDS;
 
         container.innerHTML = bands.map((band, i) => `
@@ -231,11 +244,13 @@ const EqualizerUI = (() => {
     }
     
     function loadEnhancementState() {
-        const enabled = Equalizer.isEnhancementEnabled();
-        const level = Equalizer.getEnhancementLevel();
-        const spatial = Equalizer.getSpatialState();
-        const loudness = Equalizer.getLoudnessNormState();
-        const stereo = Equalizer.getStereoWidenState();
+        const asEnabled = typeof AudioSettings !== 'undefined' && AudioSettings.isEnabled();
+        const asSettings = typeof AudioSettings !== 'undefined' ? AudioSettings.getSettings() : {};
+        const enabled = asEnabled && asSettings.enhance;
+        const level = asSettings.enhanceLevel || 0.7;
+        const spatial = asSettings.stereoWiden || false;
+        const loudness = asSettings.normalization || false;
+        const stereo = asSettings.stereoWiden || false;
         
         const toggle = document.getElementById('eqEnhancementToggle');
         const options = document.getElementById('eqEnhancementOptions');

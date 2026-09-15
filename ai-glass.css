@@ -5948,6 +5948,52 @@ body.up-fullscreen-open {
 .up-fs-btn-sm.favorited, .up-fs-btn-sm.active {
     color: #f43f5e;
 }
+.up-fs-btn-sm.effects-active {
+    color: #10b981;
+    background: rgba(16,185,129,0.15);
+}
+.ytm-settings-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.12);
+    outline: none;
+    cursor: pointer;
+    vertical-align: middle;
+}
+.ytm-settings-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #10b981;
+    cursor: pointer;
+}
+.ytm-settings-range::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #10b981;
+    border: none;
+    cursor: pointer;
+}
+.ytm-settings-toggle-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+.ytm-settings-toggle-btn:hover {
+    background: rgba(16,185,129,0.15);
+    color: #10b981;
+    border-color: rgba(16,185,129,0.3);
+}
 .up-fs-ask-ai {
     background: rgba(52, 211, 153, 0.15);
     color: #34d399;
