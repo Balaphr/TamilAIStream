@@ -6775,7 +6775,7 @@ function loadHomeControl() {
     _hccSettings = JSON.parse(JSON.stringify(DataStore.getSectionSettings()));
     _hccLogoSettings = JSON.parse(JSON.stringify(DataStore.getLogoSettings()));
     if (!_hccLogoSettings.logo || Object.keys(_hccLogoSettings).length < 3) {
-        _hccLogoSettings = { logo: '', logoWidth: 40, animation3d: false, animationStyle: 'float', animationSpeed: 3, sizeDesktop: 40, sizeTablet: 36, sizeMobile: 32, position: 'left', headerPlacement: 'topnav', showSplash: true, showPwa: true, showFavicon: true };
+        _hccLogoSettings = { logo: '', logoWidth: 40, animation3d: false, animationStyle: 'float', animationSpeed: 3, animationDuration: 0, sizeDesktop: 40, sizeTablet: 36, sizeMobile: 32, position: 'left', headerPlacement: 'topnav', showSplash: true, showPwa: true, showFavicon: true, logoText: '', logoTextSize: 14, logoSpacing: 8 };
     }
     // Ensure all sections have settings
     _hccSections.forEach(sec => {
@@ -6796,6 +6796,11 @@ function _hccRenderLogoPanel() {
     const ls = _hccLogoSettings;
     const previewSrc = ls.logo || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none'%3E%3Ccircle cx='20' cy='20' r='18' fill='url(%23g)'/%3E%3Cpath d='M14 28V14l14 7-14 7z' fill='%23fff' opacity='.9'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='40' y2='40'%3E%3Cstop stop-color='%2322d3ee'/%3E%3Cstop offset='.5' stop-color='%233b82f6'/%3E%3Cstop offset='1' stop-color='%23a855f7'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E";
     const animClass = ls.animation3d ? ('logo-3d-' + (ls.animationStyle || 'float')) : '';
+    const logoText = ls.logoText || 'Tamil AI Stream';
+    const textDisplay = ls.logoText !== undefined ? ls.logoText : 'Tamil AI Stream';
+    const logoSize = ls.sizeDesktop || 40;
+    const textSize = ls.logoTextSize || 14;
+    const spacing = ls.logoSpacing != null ? ls.logoSpacing : 8;
 
     panel.innerHTML = `
     <div class="hcc-section" style="border-color: rgba(34,211,238,0.2);">
@@ -6809,17 +6814,33 @@ function _hccRenderLogoPanel() {
         <div class="hcc-settings" style="display:block;">
             <div style="display:flex;gap:24px;flex-wrap:wrap;padding:16px;">
                 <!-- Preview -->
-                <div style="text-align:center;min-width:120px;">
-                    <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:8px;">PREVIEW</div>
-                    <div style="width:80px;height:80px;margin:0 auto;background:rgba(255,255,255,0.05);border-radius:16px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.1);">
-                        <div data-brand-logo class="${animClass}" style="width:${ls.sizeDesktop || 40}px;height:${ls.sizeDesktop || 40}px;">
-                            <img src="${previewSrc}" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">
+                <div style="text-align:center;min-width:160px;">
+                    <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:8px;">LIVE PREVIEW</div>
+                    <div style="background:rgba(255,255,255,0.05);border-radius:16px;padding:20px 16px;border:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;gap:12px;">
+                        <!-- Desktop preview -->
+                        <div>
+                            <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">Desktop</div>
+                            <div style="display:inline-flex;align-items:center;gap:${spacing}px;padding:8px 12px;background:rgba(0,0,0,0.3);border-radius:10px;">
+                                <div data-brand-logo class="${animClass}" style="width:${logoSize}px;height:${logoSize}px;flex-shrink:0;">
+                                    <img src="${previewSrc}" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">
+                                </div>
+                                <span style="font-size:${textSize}px;font-weight:700;color:#fff;white-space:nowrap;">${_hccEsc(textDisplay)}</span>
+                            </div>
+                        </div>
+                        <!-- Mobile preview -->
+                        <div>
+                            <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;">Mobile</div>
+                            <div style="display:inline-flex;align-items:center;gap:${Math.max(4, spacing - 2)}px;padding:6px 10px;background:rgba(0,0,0,0.3);border-radius:8px;">
+                                <div data-brand-logo class="${animClass}" style="width:${ls.sizeMobile || 32}px;height:${ls.sizeMobile || 32}px;flex-shrink:0;">
+                                    <img src="${previewSrc}" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">
+                                </div>
+                                <span style="font-size:${Math.max(10, textSize - 2)}px;font-weight:700;color:#fff;white-space:nowrap;">${_hccEsc(textDisplay)}</span>
+                            </div>
                         </div>
                     </div>
-                    <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:6px;">Tamil AI Stream</div>
                 </div>
                 <!-- Controls -->
-                <div style="flex:1;min-width:280px;">
+                <div style="flex:1;min-width:300px;">
                     <div class="hcc-settings-group">
                         <div class="hcc-settings-group-title"><i class="fas fa-image"></i> Logo Image</div>
                         <div class="hcc-settings-row">
@@ -6836,6 +6857,23 @@ function _hccRenderLogoPanel() {
                         </div>
                     </div>
                     <div class="hcc-settings-group">
+                        <div class="hcc-settings-group-title"><i class="fas fa-font"></i> Logo Text</div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Text</span>
+                            <input class="hcc-input" value="${_hccEsc(textDisplay)}" placeholder="Tamil AI Stream" onchange="hccLogoUpdate('logoText',this.value)">
+                        </div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Text Size</span>
+                            <input class="hcc-input" type="range" min="8" max="32" step="1" value="${textSize}" oninput="hccLogoUpdate('logoTextSize',parseInt(this.value))" style="padding:0;">
+                            <span style="font-size:11px;color:rgba(255,255,255,0.5);min-width:30px;text-align:right;">${textSize}px</span>
+                        </div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Logo/Text Spacing</span>
+                            <input class="hcc-input" type="range" min="0" max="32" step="1" value="${spacing}" oninput="hccLogoUpdate('logoSpacing',parseInt(this.value))" style="padding:0;">
+                            <span style="font-size:11px;color:rgba(255,255,255,0.5);min-width:30px;text-align:right;">${spacing}px</span>
+                        </div>
+                    </div>
+                    <div class="hcc-settings-group">
                         <div class="hcc-settings-group-title"><i class="fas fa-cube"></i> 3D Animation</div>
                         <div class="hcc-settings-row">
                             <span class="hcc-label">Enable 3D</span>
@@ -6847,32 +6885,41 @@ function _hccRenderLogoPanel() {
                         <div class="hcc-settings-row">
                             <span class="hcc-label">Style</span>
                             <select class="hcc-input" onchange="hccLogoUpdate('animationStyle',this.value)">
-                                <option value="float" ${ls.animationStyle==='float'?'selected':''}>Float</option>
-                                <option value="rotate" ${ls.animationStyle==='rotate'?'selected':''}>Rotate</option>
-                                <option value="pulse" ${ls.animationStyle==='pulse'?'selected':''}>Pulse</option>
-                                <option value="glow" ${ls.animationStyle==='glow'?'selected':''}>Glow</option>
-                                <option value="tilt" ${ls.animationStyle==='tilt'?'selected':''}>Tilt</option>
-                                <option value="breathe" ${ls.animationStyle==='breathe'?'selected':''}>Breathe</option>
+                                <option value="float" ${ls.animationStyle==='float'?'selected':''}>Float (Gentle Bob)</option>
+                                <option value="rotate" ${ls.animationStyle==='rotate'?'selected':''}>Rotate (360 Spin)</option>
+                                <option value="pulse" ${ls.animationStyle==='pulse'?'selected':''}>Pulse (Scale + Glow)</option>
+                                <option value="glow" ${ls.animationStyle==='glow'?'selected':''}>Glow (Halo Pulse)</option>
+                                <option value="tilt" ${ls.animationStyle==='tilt'?'selected':''}>Tilt (Perspective Tilt)</option>
+                                <option value="breathe" ${ls.animationStyle==='breathe'?'selected':''}>Breathe (Scale In/Out)</option>
                             </select>
                         </div>
                         <div class="hcc-settings-row">
-                            <span class="hcc-label">Speed (s)</span>
-                            <input class="hcc-input" type="number" min="0.5" max="10" step="0.5" value="${ls.animationSpeed || 3}" onchange="hccLogoUpdate('animationSpeed',parseFloat(this.value))">
+                            <span class="hcc-label">Speed</span>
+                            <input class="hcc-input" type="range" min="0.5" max="10" step="0.5" value="${ls.animationSpeed || 3}" oninput="hccLogoUpdate('animationSpeed',parseFloat(this.value))" style="padding:0;">
+                            <span style="font-size:11px;color:rgba(255,255,255,0.5);min-width:30px;text-align:right;">${ls.animationSpeed || 3}s</span>
+                        </div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Duration (0=infinite)</span>
+                            <input class="hcc-input" type="range" min="0" max="30" step="1" value="${ls.animationDuration || 0}" oninput="hccLogoUpdate('animationDuration',parseInt(this.value))" style="padding:0;">
+                            <span style="font-size:11px;color:rgba(255,255,255,0.5);min-width:30px;text-align:right;">${ls.animationDuration || 0}s</span>
                         </div>
                     </div>
                     <div class="hcc-settings-group">
-                        <div class="hcc-settings-group-title"><i class="fas fa-arrows-alt"></i> Sizes (px)</div>
+                        <div class="hcc-settings-group-title"><i class="fas fa-arrows-alt"></i> Logo Size (px)</div>
                         <div class="hcc-settings-row">
                             <span class="hcc-label">Desktop</span>
-                            <input class="hcc-input" type="number" min="16" max="120" value="${ls.sizeDesktop || 40}" onchange="hccLogoUpdate('sizeDesktop',parseInt(this.value))">
+                            <input class="hcc-input" type="range" min="16" max="120" step="2" value="${ls.sizeDesktop || 40}" oninput="hccLogoUpdate('sizeDesktop',parseInt(this.value))" style="padding:0;">
+                            <span style="font-size:11px;color:rgba(255,255,255,0.5);min-width:30px;text-align:right;">${ls.sizeDesktop || 40}px</span>
                         </div>
                         <div class="hcc-settings-row">
                             <span class="hcc-label">Tablet</span>
-                            <input class="hcc-input" type="number" min="16" max="120" value="${ls.sizeTablet || 36}" onchange="hccLogoUpdate('sizeTablet',parseInt(this.value))">
+                            <input class="hcc-input" type="range" min="16" max="100" step="2" value="${ls.sizeTablet || 36}" oninput="hccLogoUpdate('sizeTablet',parseInt(this.value))" style="padding:0;">
+                            <span style="font-size:11px;color:rgba(255,255,255,0.5);min-width:30px;text-align:right;">${ls.sizeTablet || 36}px</span>
                         </div>
                         <div class="hcc-settings-row">
                             <span class="hcc-label">Mobile</span>
-                            <input class="hcc-input" type="number" min="16" max="120" value="${ls.sizeMobile || 32}" onchange="hccLogoUpdate('sizeMobile',parseInt(this.value))">
+                            <input class="hcc-input" type="range" min="16" max="80" step="2" value="${ls.sizeMobile || 32}" oninput="hccLogoUpdate('sizeMobile',parseInt(this.value))" style="padding:0;">
+                            <span style="font-size:11px;color:rgba(255,255,255,0.5);min-width:30px;text-align:right;">${ls.sizeMobile || 32}px</span>
                         </div>
                     </div>
                     <div class="hcc-settings-group">
@@ -6907,6 +6954,13 @@ function _hccRenderLogoPanel() {
                             </label>
                         </div>
                     </div>
+                    <div class="hcc-settings-group">
+                        <div class="hcc-settings-group-title"><i class="fas fa-eye"></i> Preview</div>
+                        <div class="hcc-settings-row">
+                            <span class="hcc-label">Open Live Site</span>
+                            <button class="hcc-topbar-btn hcc-save" onclick="hccPreview()" style="font-size:12px;padding:6px 12px;"><i class="fas fa-external-link-alt"></i> Preview</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -6932,7 +6986,7 @@ function hccLogoUpdate(key, value) {
 }
 
 function hccLogoReset() {
-    _hccLogoSettings = { logo: '', logoWidth: 40, animation3d: false, animationStyle: 'float', animationSpeed: 3, sizeDesktop: 40, sizeTablet: 36, sizeMobile: 32, position: 'left', headerPlacement: 'topnav', showSplash: true, showPwa: true, showFavicon: true };
+    _hccLogoSettings = { logo: '', logoWidth: 40, animation3d: false, animationStyle: 'float', animationSpeed: 3, animationDuration: 0, sizeDesktop: 40, sizeTablet: 36, sizeMobile: 32, position: 'left', headerPlacement: 'topnav', showSplash: true, showPwa: true, showFavicon: true, logoText: '', logoTextSize: 14, logoSpacing: 8 };
     _hccRenderLogoPanel();
     showToast('Logo reset to default', 'success');
 }
@@ -8605,6 +8659,13 @@ function saveSettings(e) {
     if (brandLogoEl) settings.logo = brandLogoEl.value.trim();
     if (faviconEl) settings.favicon = faviconEl.value.trim();
     DataStore.setSiteSettings(settings);
+    /* Also sync logo URL to logoSettings so the unified brand system picks it up */
+    if (settings.logo) {
+        var ls = DataStore.getLogoSettings() || {};
+        ls.logo = settings.logo;
+        DataStore.setLogoSettings(ls);
+    }
+    if (typeof BrandConfig !== 'undefined' && BrandConfig.apply) BrandConfig.apply();
     showToast('Settings saved!', 'success');
     syncToLiveWebsite();
     addActivity('Settings Updated', 'Site settings have been saved');
@@ -12358,23 +12419,23 @@ const PWALogo = (function() {
 
         if (typeof DataStore !== 'undefined' && DataStore.setLogoSettings) {
             DataStore.setLogoSettings({
-                url: cfg.logoUrl || _logoDataUrl,
-                logo3d: cfg.anim3d === 'true',
-                logo3dStyle: cfg.animStyle,
-                logo3dSpeed: cfg.animSpeed,
+                logo: cfg.logoUrl || _logoDataUrl,
+                animation3d: cfg.anim3d === 'true',
+                animationStyle: cfg.animStyle,
+                animationSpeed: cfg.animSpeed,
+                sizeDesktop: cfg.logoWidth || 40,
+                sizeTablet: cfg.logoWidth ? Math.round(cfg.logoWidth * 0.9) : 36,
+                sizeMobile: cfg.logoWidth ? Math.round(cfg.logoWidth * 0.8) : 32,
+                showSplash: cfg.showSplash !== 'false',
+                showPwa: cfg.showPwa !== 'false',
+                showFavicon: cfg.showFavicon !== 'false',
             });
         }
 
         if (cfg.logoUrl || _logoDataUrl) {
             const logoSrc = _logoDataUrl || cfg.logoUrl;
-            const logoSettings = {
-                url: logoSrc,
-                logo3d: cfg.anim3d === 'true',
-                logo3dStyle: cfg.animStyle,
-                logo3dSpeed: cfg.animSpeed,
-            };
-            if (typeof BrandConfig !== 'undefined' && BrandConfig.applyLogoToDOM) {
-                BrandConfig.applyLogoToDOM(logoSettings);
+            if (typeof BrandConfig !== 'undefined' && BrandConfig.apply) {
+                BrandConfig.apply();
             }
             document.querySelectorAll('.header-logo img, .nav-logo img, .app-logo img, .footer-logo img').forEach(img => { img.src = logoSrc; });
         }

@@ -4541,7 +4541,7 @@ body.home-active .ytm-page-home {
 .premium-mobile-menu-brand {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--brand-logo-text-spacing, 10px);
 }
 .premium-mobile-menu-logo {
     width: 32px;

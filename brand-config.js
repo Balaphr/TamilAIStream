@@ -7,23 +7,28 @@
  *   logo  : configured in Builder → Home Control → Global 3D Logo,
  *           stored in tamilAIStream_logoSettings and synced via R2.
  *           Every page, PWA, favicon and splash read from here.
+ *
+ * Animation is paused when the document is hidden (tab switch,
+ * app backgrounded) to save GPU/CPU/battery.  CSS-only 3D
+ * transforms are used — no JS timers, no WebGL, no Canvas.
  * ------------------------------------------------------------------ */
 (function (global) {
   'use strict';
 
-  const BRAND = {
+  var BRAND = {
     name: 'Tamil AI Stream',
     shortName: 'Tamil AI Stream',
     tagline: 'AI-Powered Tamil Radio',
     defaultLogo: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none'%3E%3Ccircle cx='20' cy='20' r='18' fill='url(%23g)'/%3E%3Cpath d='M14 28V14l14 7-14 7z' fill='%23fff' opacity='.9'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='40' y2='40'%3E%3Cstop stop-color='%2322d3ee'/%3E%3Cstop offset='.5' stop-color='%233b82f6'/%3E%3Cstop offset='1' stop-color='%23a855f7'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E"
   };
 
-  const DEFAULT_LOGO_SETTINGS = {
+  var DEFAULT_LOGO_SETTINGS = {
     logo: '',
     logoWidth: 40,
     animation3d: false,
     animationStyle: 'float',
     animationSpeed: 3,
+    animationDuration: 0,
     sizeDesktop: 40,
     sizeTablet: 36,
     sizeMobile: 32,
@@ -31,8 +36,46 @@
     headerPlacement: 'topnav',
     showSplash: true,
     showPwa: true,
-    showFavicon: true
+    showFavicon: true,
+    logoText: '',
+    logoTextSize: 14,
+    logoSpacing: 8
   };
+
+  /* ---- Visibility-aware animation pause ---- */
+  var _animationPaused = false;
+
+  function _setAnimationState(paused) {
+    if (paused === _animationPaused) return;
+    _animationPaused = paused;
+    var root = document.documentElement;
+    if (paused) {
+      root.classList.add('brand-anim-paused');
+    } else {
+      root.classList.remove('brand-anim-paused');
+    }
+  }
+
+  function _initVisibilityListener() {
+    if (!global.document) return;
+    document.addEventListener('visibilitychange', function () {
+      _setAnimationState(document.hidden);
+    });
+    if (global.addEventListener) {
+      global.addEventListener('pageshow', function () { _setAnimationState(false); });
+      global.addEventListener('pagehide', function () { _setAnimationState(true); });
+    }
+    /* Also honour prefers-reduced-motion */
+    if (global.matchMedia) {
+      var mq = global.matchMedia('(prefers-reduced-motion: reduce)');
+      if (mq.matches) _setAnimationState(true);
+      if (mq.addEventListener) {
+        mq.addEventListener('change', function (e) { _setAnimationState(e.matches); });
+      }
+    }
+  }
+
+  /* ---- Settings readers ---- */
 
   function readSettings() {
     try {
@@ -48,23 +91,21 @@
   function readLogoSettings() {
     try {
       if (typeof global.DataStore !== 'undefined' && global.DataStore && typeof global.DataStore.getLogoSettings === 'function') {
-        const s = global.DataStore.getLogoSettings();
+        var s = global.DataStore.getLogoSettings();
         if (s && Object.keys(s).length > 0) return Object.assign({}, DEFAULT_LOGO_SETTINGS, s);
       }
     } catch (e) { /* ignore */ }
     try {
-      const raw = JSON.parse(localStorage.getItem('tamilAIStream_logoSettings') || '{}');
+      var raw = JSON.parse(localStorage.getItem('tamilAIStream_logoSettings') || '{}');
       if (raw && Object.keys(raw).length > 0) return Object.assign({}, DEFAULT_LOGO_SETTINGS, raw);
     } catch (e) { /* ignore */ }
     return Object.assign({}, DEFAULT_LOGO_SETTINGS);
   }
 
-  // The centralized logo is a single asset (image URL) configured in the
-  // Builder. When unset we fall back to the default brand SVG data URI.
   function getLogo() {
-    const ls = readLogoSettings();
+    var ls = readLogoSettings();
     if (ls.logo) return ls.logo;
-    const s = readSettings();
+    var s = readSettings();
     return (s && s.logo) || BRAND.defaultLogo;
   }
 
@@ -73,53 +114,69 @@
   }
 
   function getFavicon() {
-    const s = readSettings();
+    var s = readSettings();
     return (s && s.favicon) || getLogo();
   }
 
   function getThemeColor() {
-    const s = readSettings();
+    var s = readSettings();
     return (s && s.themeColor) || '#000000';
   }
 
-  // Apply the centralized brand + logo to the current document.
-  // Elements opt in via [data-brand-text], [data-brand-logo],
-  // [data-brand-tagline] attributes.
+  /* ---- Apply brand to DOM ---- */
+
   function apply() {
     try {
-      const logo = getLogo();
-      const ls = readLogoSettings();
-      const name = BRAND.name;
-      const tagline = BRAND.tagline;
+      var logo = getLogo();
+      var ls = readLogoSettings();
+      var name = ls.logoText || BRAND.name;
+      var tagline = BRAND.tagline;
 
-      // Set CSS variables for responsive logo sizing
-      const root = document.documentElement;
+      var root = document.documentElement;
+
+      /* Responsive logo sizing */
       root.style.setProperty('--brand-logo-size-desktop', ls.sizeDesktop + 'px');
       root.style.setProperty('--brand-logo-size-tablet', ls.sizeTablet + 'px');
       root.style.setProperty('--brand-logo-size-mobile', ls.sizeMobile + 'px');
 
-      // Apply 3D animation class to all logo containers
-      const animClass = ls.animation3d ? ('logo-3d-' + (ls.animationStyle || 'float')) : '';
-      const speedVar = ls.animationSpeed || 3;
+      /* Animation speed / duration */
+      var speedVar = ls.animationSpeed || 3;
       root.style.setProperty('--logo-anim-speed', speedVar + 's');
+      if (ls.animationDuration && ls.animationDuration > 0) {
+        root.style.setProperty('--logo-anim-duration', ls.animationDuration + 's');
+        root.style.setProperty('--logo-anim-iterations', Math.ceil(ls.animationDuration / speedVar));
+      } else {
+        root.style.setProperty('--logo-anim-duration', '0s');
+        root.style.setProperty('--logo-anim-iterations', 'infinite');
+      }
 
-      document.querySelectorAll('[data-brand-text]').forEach((el) => {
+      /* Logo-text spacing */
+      root.style.setProperty('--brand-logo-text-spacing', (ls.logoSpacing != null ? ls.logoSpacing : 8) + 'px');
+      root.style.setProperty('--brand-logo-text-size', (ls.logoTextSize || 14) + 'px');
+
+      /* Animation class */
+      var animClass = ls.animation3d ? ('logo-3d-' + (ls.animationStyle || 'float')) : '';
+
+      /* Brand text elements */
+      document.querySelectorAll('[data-brand-text]').forEach(function (el) {
         el.textContent = name;
       });
-      document.querySelectorAll('[data-brand-tagline]').forEach((el) => {
+      document.querySelectorAll('[data-brand-tagline]').forEach(function (el) {
         el.textContent = tagline;
       });
-      document.querySelectorAll('[data-brand-logo]').forEach((el) => {
+
+      /* Logo elements — single unified component */
+      document.querySelectorAll('[data-brand-logo]').forEach(function (el) {
         if (logo) {
           el.innerHTML = '';
-          const img = document.createElement('img');
+          var img = document.createElement('img');
           img.src = logo;
           img.alt = name;
           img.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:50%;';
           img.loading = 'lazy';
           el.appendChild(img);
 
-          // Apply 3D animation to logo container
+          /* Remove all animation classes then apply configured one */
           el.classList.remove('logo-3d-float', 'logo-3d-rotate', 'logo-3d-pulse', 'logo-3d-glow', 'logo-3d-tilt', 'logo-3d-breathe');
           if (animClass) {
             el.classList.add(animClass);
@@ -127,37 +184,58 @@
         }
       });
 
-      // Favicon / apple-touch-icon follow the centralized logo.
+      /* Also apply to the unified brand-logo-component wrappers */
+      document.querySelectorAll('[data-brand-logo-component]').forEach(function (wrap) {
+        var logoEl = wrap.querySelector('[data-brand-logo]');
+        var textEl = wrap.querySelector('[data-brand-text]');
+        if (logoEl && logo) {
+          logoEl.innerHTML = '';
+          var img2 = document.createElement('img');
+          img2.src = logo;
+          img2.alt = name;
+          img2.style.cssText = 'width:100%;height:100%;object-fit:contain;border-radius:50%;';
+          img2.loading = 'lazy';
+          logoEl.appendChild(img2);
+          logoEl.classList.remove('logo-3d-float', 'logo-3d-rotate', 'logo-3d-pulse', 'logo-3d-glow', 'logo-3d-tilt', 'logo-3d-breathe');
+          if (animClass) logoEl.classList.add(animClass);
+        }
+        if (textEl) textEl.textContent = name;
+        wrap.style.setProperty('--brand-logo-text-size', (ls.logoTextSize || 14) + 'px');
+        wrap.style.gap = (ls.logoSpacing != null ? ls.logoSpacing : 8) + 'px';
+      });
+
+      /* Favicon / apple-touch-icon */
       if (ls.showFavicon !== false && logo) {
-        const favicon = document.querySelector('link[rel="icon"]');
+        var favicon = document.querySelector('link[rel="icon"]');
         if (favicon && favicon.getAttribute('href')) favicon.setAttribute('href', logo);
-        const apple = document.querySelector('link[rel="apple-touch-icon"]');
+        var apple = document.querySelector('link[rel="apple-touch-icon"]');
         if (apple && apple.getAttribute('href')) apple.setAttribute('href', logo);
       }
-      const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      var appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
       if (appleTitle) appleTitle.setAttribute('content', BRAND.shortName);
-      const themeMeta = document.querySelector('meta[name="theme-color"]');
+      var themeMeta = document.querySelector('meta[name="theme-color"]');
       if (themeMeta) themeMeta.setAttribute('content', getThemeColor());
 
-      // Generate dynamic PWA icons from canvas if SVG logo is available
+      /* Dynamic PWA icons */
       if (ls.showPwa !== false) {
         generateDynamicIcons(logo);
       }
     } catch (e) { /* ignore */ }
   }
 
-  // Generate PWA icons dynamically from the brand SVG logo using Canvas API
+  /* ---- Generate PWA icons from SVG via Canvas API ---- */
+
   function generateDynamicIcons(logoUrl) {
     if (!logoUrl || !logoUrl.startsWith('data:image/svg')) return;
     try {
-      const img = new Image();
+      var img = new Image();
       img.crossOrigin = 'anonymous';
-      img.onload = function() {
+      img.onload = function () {
         var sizes = [192, 512];
         var blobs = {};
         var loaded = 0;
 
-        sizes.forEach(function(size) {
+        sizes.forEach(function (size) {
           try {
             var canvas = document.createElement('canvas');
             canvas.width = size;
@@ -179,7 +257,7 @@
             ctx.fill();
             var padding = size * 0.15;
             ctx.drawImage(img, padding, padding, size - padding * 2, size - padding * 2);
-            canvas.toBlob(function(blob) {
+            canvas.toBlob(function (blob) {
               if (blob) {
                 blobs[size] = URL.createObjectURL(blob);
                 loaded++;
@@ -189,7 +267,7 @@
           } catch (e) { loaded++; }
         });
 
-        // Also generate a small favicon (48px) from the SVG
+        /* Small favicon (48px) */
         try {
           var favCanvas = document.createElement('canvas');
           favCanvas.width = 48;
@@ -211,7 +289,7 @@
           favCtx.fill();
           var fp = 48 * 0.15;
           favCtx.drawImage(img, fp, fp, 48 - fp * 2, 48 - fp * 2);
-          favCanvas.toBlob(function(blob) {
+          favCanvas.toBlob(function (blob) {
             if (blob) {
               blobs['favicon'] = URL.createObjectURL(blob);
               if (loaded === sizes.length) applyIconURLs(blobs);
@@ -227,21 +305,18 @@
           var appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
           if (appleIcon && urls[192]) appleIcon.href = urls[192];
 
-          document.querySelectorAll('link[rel="icon"][data-dynamic]').forEach(function(link) {
+          document.querySelectorAll('link[rel="icon"][data-dynamic]').forEach(function (link) {
             if (urls[192]) link.href = urls[192];
           });
-
-          // NOTE: Do NOT replace the manifest link with a client-side blob.
-          // The server-served manifest (/manifest.webmanifest) already contains
-          // the correct Builder logo via handleManifestWebmanifest() in src/index.js.
-          // Replacing it with a blob would lose the server-side branding.
         }
       };
       img.src = logoUrl;
     } catch (e) { /* ignore */ }
   }
 
-  global.BrandConfig = { BRAND, readSettings, getLogo, getLogoSettings, getFavicon, getThemeColor, apply };
+  global.BrandConfig = { BRAND: BRAND, readSettings: readSettings, getLogo: getLogo, getLogoSettings: getLogoSettings, getFavicon: getFavicon, getThemeColor: getThemeColor, apply: apply };
+
+  _initVisibilityListener();
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', apply);

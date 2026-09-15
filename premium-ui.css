@@ -3203,7 +3203,7 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
 .premium-topnav-brand {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--brand-logo-text-spacing, 8px);
     flex-shrink: 0;
 }
 .premium-topnav-logo {
@@ -3228,7 +3228,9 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
 
 /* Centralized brand logo (from Builder Site Settings -> Brand Identity).
    When a logo is configured, brand-config.js injects an <img> that fills
-   the logo container; default SVG art is replaced at runtime. */
+   the logo container; default SVG art is replaced at runtime.
+   3D animation is controlled via the configurable logo-3d-* classes
+   applied by brand-config.js — no hardcoded animation here. */
 .premium-topnav-logo img,
 .ai-sidebar-logo-icon img,
 .splash-logo img,
@@ -3240,32 +3242,8 @@ body.ai-light .ytm-page-home .greeting-datetime { color: rgba(22, 24, 74, 0.62);
     border-radius: inherit;
 }
 
-.premium-topnav-logo {
+.premium-topnav-brand {
     perspective: 400px;
-}
-.premium-topnav-logo svg,
-.premium-topnav-logo img {
-    animation: premiumBrand3D 10s ease-in-out infinite;
-}
-@keyframes premiumBrand3D {
-    0%, 100% {
-        transform: perspective(400px) rotateY(0deg) rotateX(0deg);
-    }
-    25% {
-        transform: perspective(400px) rotateY(8deg) rotateX(3deg);
-    }
-    50% {
-        transform: perspective(400px) rotateY(0deg) rotateX(0deg);
-    }
-    75% {
-        transform: perspective(400px) rotateY(-8deg) rotateX(-3deg);
-    }
-}
-@media (prefers-reduced-motion: reduce) {
-    .premium-topnav-logo svg,
-    .premium-topnav-logo img {
-        animation: none !important;
-    }
 }
 
 /* Search bar — AI-enhanced */
