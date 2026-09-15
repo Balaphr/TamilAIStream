@@ -42,6 +42,10 @@ function scheduleSync() {
 // Client-side admin access requires 2FA verification via admin-login.html
 
 const BUILDER_USERS_KEY = 'tamilAIStream_builderUsers';
+const BUILDER_REMEMBER_KEY = 'tamilAIStream_builderRemember';
+const BUILDER_REMEMBER_EMAIL_KEY = 'tamilAIStream_builderRememberEmail';
+const BUILDER_SESSION_DURATION = 24 * 60 * 60 * 1000;       // 24 hours
+const BUILDER_REMEMBER_DURATION = 30 * 24 * 60 * 60 * 1000;  // 30 days
 
 function getBuilderUsers() {
     try {
@@ -53,6 +57,31 @@ function getBuilderUsers() {
 
 function saveBuilderUsers(users) {
     localStorage.setItem(BUILDER_USERS_KEY, JSON.stringify(users));
+}
+
+function setBuilderRemember(remember, email) {
+    if (remember && email) {
+        localStorage.setItem(BUILDER_REMEMBER_KEY, 'true');
+        localStorage.setItem(BUILDER_REMEMBER_EMAIL_KEY, email);
+    } else {
+        localStorage.removeItem(BUILDER_REMEMBER_KEY);
+        localStorage.removeItem(BUILDER_REMEMBER_EMAIL_KEY);
+    }
+}
+
+function loadBuilderRememberedEmail() {
+    try {
+        if (localStorage.getItem(BUILDER_REMEMBER_KEY) === 'true') {
+            const email = localStorage.getItem(BUILDER_REMEMBER_EMAIL_KEY);
+            if (email) return email;
+        }
+    } catch (e) { /* ignore */ }
+    return null;
+}
+
+function clearBuilderRemember() {
+    localStorage.removeItem(BUILDER_REMEMBER_KEY);
+    localStorage.removeItem(BUILDER_REMEMBER_EMAIL_KEY);
 }
 
 // Detect requests arriving from the login page's "Open Website Builder" button (?auto=1)
@@ -164,21 +193,22 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Sign In
-async function signInWithEmail(email, password) {
+async function signInWithEmail(email, password, remember) {
     try {
         const users = getBuilderUsers();
         const user = users.find(u => u.email === email && u.password === password);
         
         if (user) {
-            // Regular builder user — create session and enter
+            const sessionExpiry = remember ? BUILDER_REMEMBER_DURATION : BUILDER_SESSION_DURATION;
             localStorage.setItem('adminSession', JSON.stringify({
                 username: user.email,
                 email: user.email,
                 displayName: user.displayName,
                 role: user.role,
                 loginTime: Date.now(),
-                expiry: Date.now() + (24 * 60 * 60 * 1000)
+                expiry: Date.now() + sessionExpiry
             }));
+            setBuilderRemember(remember, user.email);
             showToast(`Welcome ${user.displayName}!`, 'success');
             showAccessGate(user);
             return;
@@ -193,16 +223,17 @@ async function signInWithEmail(email, password) {
                     body: JSON.stringify({ email, password })
                 });
                 if (resp.ok) {
-                    // Credentials valid — create Builder session directly
+                    const sessionExpiry = remember ? BUILDER_REMEMBER_DURATION : BUILDER_SESSION_DURATION;
                     const sessionData = {
                         username: email,
                         email: email,
                         displayName: 'Admin',
                         role: 'admin',
                         loginTime: Date.now(),
-                        expiry: Date.now() + (24 * 60 * 60 * 1000)
+                        expiry: Date.now() + sessionExpiry
                     };
                     localStorage.setItem('adminSession', JSON.stringify(sessionData));
+                    setBuilderRemember(remember, email);
                     showToast('Welcome Admin!', 'success');
                     showAccessGate(sessionData);
                     return;
@@ -286,6 +317,7 @@ async function signInWithGoogle() {
             return;
         }
 
+        const sessionExpiry = document.getElementById('builderRememberMe')?.checked ? BUILDER_REMEMBER_DURATION : BUILDER_SESSION_DURATION;
         const sessionData = {
             username: email,
             email: email,
@@ -294,9 +326,10 @@ async function signInWithGoogle() {
             photoURL: user.photoURL || '',
             role: 'admin',
             loginTime: Date.now(),
-            expiry: Date.now() + (24 * 60 * 60 * 1000)
+            expiry: Date.now() + sessionExpiry
         };
         localStorage.setItem('adminSession', JSON.stringify(sessionData));
+        setBuilderRemember(document.getElementById('builderRememberMe')?.checked, email);
 
         if (typeof Auth !== 'undefined' && Auth.createSession) {
             Auth.createSession({
@@ -337,6 +370,8 @@ async function signOut() {
             firebase.auth().signOut();
         }
         Auth.clearAll();
+        clearBuilderRemember();
+        localStorage.removeItem('adminSession');
         currentUser = null;
         if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.track('user_logout');
         showLoginScreen();
@@ -407,7 +442,8 @@ function setupLoginScreen() {
         e.preventDefault();
         const email = document.getElementById('signinEmail').value;
         const password = document.getElementById('signinPassword').value;
-        await signInWithEmail(email, password);
+        const remember = document.getElementById('builderRememberMe')?.checked || false;
+        await signInWithEmail(email, password, remember);
     });
     
     // Sign Up form
@@ -458,6 +494,15 @@ function setupLoginScreen() {
         document.getElementById('signinForm').style.display = 'block';
         document.getElementById('signupForm').style.display = 'none';
     });
+
+    // Auto-fill remembered email
+    const rememberedEmail = loadBuilderRememberedEmail();
+    if (rememberedEmail) {
+        const emailInput = document.getElementById('signinEmail');
+        const rememberCheckbox = document.getElementById('builderRememberMe');
+        if (emailInput) emailInput.value = rememberedEmail;
+        if (rememberCheckbox) rememberCheckbox.checked = true;
+    }
 }
 
 // ============================================

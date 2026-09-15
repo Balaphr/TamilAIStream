@@ -116,6 +116,29 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
 
 .login-form { display: flex; flex-direction: column; gap: 16px; }
 
+/* Builder Remember Me */
+.builder-remember-row {
+    display: flex; align-items: center; justify-content: space-between;
+}
+.builder-remember-me {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    font-size: 0.85rem; color: var(--text-secondary); user-select: none;
+}
+.builder-remember-me input[type="checkbox"] { display: none; }
+.builder-remember-checkmark {
+    width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s ease; flex-shrink: 0;
+}
+.builder-remember-me input[type="checkbox"]:checked + .builder-remember-checkmark {
+    background: var(--gradient-brand); border-color: transparent;
+}
+.builder-remember-me input[type="checkbox"]:checked + .builder-remember-checkmark::after {
+    content: ''; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translate(-1px, -1px);
+}
+.builder-remember-text { color: inherit; }
+
 .login-divider {
     display: flex; align-items: center; gap: 16px; margin: 8px 0;
 }
