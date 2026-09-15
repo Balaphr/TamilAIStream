@@ -1727,50 +1727,50 @@ async function saveSong(e) {
 
     try {
         AIUploadOverlay.show();
-        AIUploadOverlay.update(2, 'Preparing', 'Validating song dataâ€¦');
+        AIUploadOverlay.update(2, 'Processing', 'Validating song data\u2026');
         showToast('Saving song...', 'info');
 
         const albumFile = document.getElementById('albumImage').files[0];
         if (albumFile) {
             const albumSizeMB = (albumFile.size / (1024 * 1024)).toFixed(1);
-            AIUploadOverlay.update(3, 'Album cover', 'Uploading ' + albumFile.name + ' (' + albumSizeMB + ' MB)â€¦');
+            AIUploadOverlay.update(3, 'Uploading', 'Uploading album cover\u2026 (' + albumSizeMB + ' MB)');
             try {
                 const albumResult = await R2Uploader.uploadImage(albumFile, 'tamil-ai-stream/albums', (pct) => {
-                    AIUploadOverlay.update(3 + pct * 0.3, 'Album cover', 'Uploading coverâ€¦ ' + pct + '% (' + albumSizeMB + ' MB)');
+                    AIUploadOverlay.update(3 + pct * 0.3, 'Uploading', 'Album cover: ' + pct + '% \u2014 ' + albumSizeMB + ' MB');
                 });
                 songData.albumCover = albumResult.url;
                 songData.albumPublicId = albumResult.publicId;
-                AIUploadOverlay.update(33, 'Album cover', 'Cover uploaded successfully');
+                AIUploadOverlay.update(33, 'Completed', 'Album cover uploaded');
             } catch (err) {
                 console.warn('Album upload failed:', err);
                 showToast('Album cover upload failed: ' + err.message, 'error');
-                AIUploadOverlay.update(33, 'Album cover', 'Cover upload failed â€” continuing without cover');
+                AIUploadOverlay.update(33, 'Failed', 'Cover upload failed \u2014 continuing without cover');
             }
         }
 
         const audioFile = document.getElementById('audioFile').files[0];
         if (audioFile) {
             const audioSizeMB = (audioFile.size / (1024 * 1024)).toFixed(1);
-            AIUploadOverlay.update(35, 'Audio', 'Uploading ' + audioFile.name + ' (' + audioSizeMB + ' MB)â€¦');
+            AIUploadOverlay.update(35, 'Uploading', 'Uploading audio\u2026 (' + audioSizeMB + ' MB)');
             try {
                 const audioResult = await R2Uploader.uploadAudio(audioFile, 'tamil-ai-stream/audio', (pct) => {
-                    AIUploadOverlay.update(35 + pct * 0.6, 'Audio', 'Uploading audioâ€¦ ' + pct + '% (' + audioSizeMB + ' MB)');
+                    AIUploadOverlay.update(35 + pct * 0.6, 'Uploading', 'Audio: ' + pct + '% \u2014 ' + audioSizeMB + ' MB');
                 });
                 songData.audioUrl = audioResult.url;
                 songData.audioPublicId = audioResult.publicId;
                 songData.audioFormat = audioResult.format;
                 songData.audioSize = audioResult.bytes;
                 songData.audioFileName = audioFile.name;
-                AIUploadOverlay.update(95, 'Audio', 'Audio uploaded successfully');
+                AIUploadOverlay.update(95, 'Completed', 'Audio uploaded');
             } catch (err) {
                 console.error('Audio upload error:', err);
-                AIUploadOverlay.error('Audio upload failed: ' + err.message);
+                AIUploadOverlay.error('Failed: Audio upload failed \u2014 ' + err.message);
                 showToast('Audio upload failed: ' + err.message, 'error');
                 return;
             }
         }
 
-        AIUploadOverlay.update(96, 'Saving', 'Saving to databaseâ€¦');
+        AIUploadOverlay.update(96, 'Processing', 'Saving to database\u2026');
 
         const songs = DataStore.getSongs();
 
@@ -1823,10 +1823,10 @@ async function saveSong(e) {
 
         DataStore.setSongs(songs);
 
-        AIUploadOverlay.update(98, 'Publishing', 'Syncing to live websiteâ€¦');
+        AIUploadOverlay.update(98, 'Processing', 'Syncing to live website\u2026');
         await syncToLiveWebsite();
 
-        AIUploadOverlay.success('Song saved and published!');
+        AIUploadOverlay.success('Completed! Song saved and published');
         showToast('Song saved and published to live website!', 'success');
         resetSongForm();
         loadAllSongs();
@@ -3183,6 +3183,9 @@ function handleAudioPreview(file) {
 // Initialize Builder
 // ============================================
 function initBuilder() {
+    // Initialize upload progress overlay
+    if (typeof AIUploadOverlay !== 'undefined') AIUploadOverlay.init();
+
     // Navigation
     document.querySelectorAll('.builder-sidebar-item, .builder-nav-item').forEach(item => {
         item.addEventListener('click', function() {

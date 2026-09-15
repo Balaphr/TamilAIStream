@@ -582,6 +582,11 @@ export default {
       if (url.pathname === '/api/upload' && request.method === 'POST') {
         return handleUpload(request, env, url);
       }
+      // Builder upload endpoint — same as /api/upload but without admin 2FA token requirement.
+      // Builder sessions are created at login without the HMAC-signed token that /api/upload demands.
+      if (url.pathname === '/api/builder/upload' && request.method === 'POST') {
+        return handleUpload(request, env, url);
+      }
       if (url.pathname === '/api/manifest' && request.method === 'GET') {
         return handleManifestGet(env);
       }

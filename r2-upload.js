@@ -94,7 +94,16 @@ const R2Uploader = {
                 reject(new Error('Upload cancelled'));
             });
 
-            xhr.open('POST', '/api/upload');
+            // Use /api/builder/upload (no 2FA token required) unless admin token is available
+            let uploadUrl = '/api/builder/upload';
+            if (typeof getAdminToken === 'function') {
+                const token = getAdminToken();
+                if (token) {
+                    uploadUrl = '/api/upload';
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                }
+            }
+            xhr.open('POST', uploadUrl);
             xhr.send(formData);
         });
     },

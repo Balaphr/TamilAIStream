@@ -21,6 +21,25 @@
     <link rel="stylesheet" href="ai-webflow.css">
     <link rel="stylesheet" href="analytics.css">
     <link rel="stylesheet" href="ultra-perf.css">
+    <style>
+        .ai-upload-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px)}
+        .ai-upload-card{position:relative;background:rgba(17,24,39,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:40px 48px;text-align:center;min-width:320px;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.6)}
+        .ai-upload-close{position:absolute;top:12px;right:16px;background:none;border:none;color:rgba(255,255,255,0.5);font-size:24px;cursor:pointer;line-height:1;padding:4px}
+        .ai-upload-close:hover{color:#fff}
+        .ai-upload-ring-wrap{position:relative;width:120px;height:120px;margin:0 auto 20px}
+        .ai-upload-svg{width:120px;height:120px;transform:rotate(-90deg)}
+        .ai-upload-track{fill:none;stroke:rgba(255,255,255,0.08);stroke-width:8}
+        .ai-upload-ring{fill:none;stroke:#60a5fa;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 0.4s ease}
+        .ai-upload-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;font-family:Inter,sans-serif}
+        .ai-upload-orbit{position:absolute;top:50%;left:50%;width:8px;height:8px;background:#60a5fa;border-radius:50%;transform-origin:0 0;animation:aiOrbit 2s linear infinite}
+        @keyframes aiOrbit{to{transform:rotate(360deg) translateX(52px)}}
+        .ai-upload-phase{font-size:16px;font-weight:600;color:#fff;margin-bottom:6px}
+        .ai-upload-status{font-size:13px;color:rgba(255,255,255,0.6)}
+        .ai-upload-overlay.ai-upload-done .ai-upload-ring{stroke:#10b981}
+        .ai-upload-overlay.ai-upload-done .ai-upload-orbit{background:#10b981;animation:none}
+        .ai-upload-overlay.ai-upload-error .ai-upload-ring{stroke:#ef4444}
+        .ai-upload-overlay.ai-upload-error .ai-upload-orbit{background:#ef4444;animation:none}
+    </style>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -4196,6 +4215,23 @@
     <audio id="previewAudio"></audio>
 
     <!-- R2 Upload -->
+    <!-- Upload Progress Overlay -->
+    <div id="aiUploadOverlay" class="ai-upload-overlay" style="display:none">
+        <div class="ai-upload-card">
+            <button id="aiUploadClose" class="ai-upload-close">&times;</button>
+            <div class="ai-upload-ring-wrap">
+                <svg class="ai-upload-svg" viewBox="0 0 120 120">
+                    <circle id="aiUploadTrack" class="ai-upload-track" cx="60" cy="60" r="52" />
+                    <circle id="aiUploadRing" class="ai-upload-ring" cx="60" cy="60" r="52" />
+                </svg>
+                <span id="aiUploadPct" class="ai-upload-pct">0%</span>
+                <div class="ai-upload-orbit"></div>
+            </div>
+            <div id="aiUploadPhase" class="ai-upload-phase">Preparing</div>
+            <div id="aiUploadStatus" class="ai-upload-status">Validating song data...</div>
+        </div>
+    </div>
+
     <script src="firebase-config.js"></script>
     <script src="firebase-init.js"></script>
     <script src="auth.js"></script>
