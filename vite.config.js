@@ -21,7 +21,8 @@ const vanillaFiles = [
   'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
   'app-init.js', 'site-integration.js', 'pwa.js', 'pwa-splash.js', 'analytics.js', 'analytics-tracker.js',
   'brand-config.js', 've-edit-mode.js',
-  'nexvora-model-manager.js', 'nexvora-api-config.js', 'nexvora-ai-service.js', 'nexvora.js'
+  'nexvora-model-manager.js', 'nexvora-api-config.js', 'nexvora-ai-service.js', 'nexvora.js',
+  'ai-tools-api.js', 'ai-tools-worker.js', 'ai-tools.js'
 ]
 
 function skipVanillaTransform() {
@@ -75,7 +76,8 @@ function copyVanillaScripts() {
         'login.js', 'profile.js', 'dashboard.js', 'site-config.js',
         'app-init.js', 'site-integration.js', 'pwa.js', 'pwa-splash.js', 'analytics.js', 'analytics-tracker.js',
         'brand-config.js', 've-edit-mode.js',
-        'nexvora-model-manager.js', 'nexvora-api-config.js', 'nexvora-ai-service.js', 'nexvora.js'
+        'nexvora-model-manager.js', 'nexvora-api-config.js', 'nexvora-ai-service.js', 'nexvora.js',
+        'ai-tools-api.js', 'ai-tools-worker.js', 'ai-tools.js'
       ]
 
       const vanillaCSS = [
@@ -87,7 +89,8 @@ function copyVanillaScripts() {
         'builder.css', 'builder-360.css', 'ai-webflow.css', 'admin.css', 'admin-upload.css', 'analytics.css',
         'login.css', 'particles.css',
         'profile.css', 'playlist.css', 'dashboard.css',
-        'nexvora.css'
+        'nexvora.css',
+        'ai-tools.css'
       ]
 
       const outDir = resolve('dist')
@@ -165,7 +168,8 @@ export default defineConfig({
       'premium-effects.js', 'player-engine.js', 'r2-content-sync.js',
       'pwa.js', 'ai-music-assistant.js', 'listening-history.js', 'ai-home.js',
       'builder.js', 'admin.js', 'admin-pages.js', 'login.js', 'profile.js', 'dashboard.js',
-      'nexvora-model-manager.js', 'nexvora-api-config.js', 'nexvora-ai-service.js', 'nexvora.js'
+      'nexvora-model-manager.js', 'nexvora-api-config.js', 'nexvora-ai-service.js', 'nexvora.js',
+      'ai-tools-api.js', 'ai-tools-worker.js', 'ai-tools.js'
     ]
   }
 })

@@ -63,7 +63,7 @@ window.AIToolsWorker = (function () {
                 saveJobs(jobs);
                 _emit('job-updated', jobs[i]);
 
-                if (updates.status === 'completed' || updates.status === 'failed') {
+                if (updates.status === 'completed' || updates.status === 'failed' || updates.status === 'cancelled') {
                     moveToHistory(jobs[i]);
                     jobs.splice(i, 1);
                     saveJobs(jobs);

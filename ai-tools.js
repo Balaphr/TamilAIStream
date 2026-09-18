@@ -188,28 +188,7 @@ window.AIToolsApp = (function () {
         if (!text || !text.trim()) return;
         text = text.trim();
 
-        // Call server AI to parse the command
-        fetch('/api/ai-tools/process', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ command: text })
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-            if (data.error) {
-                showToast(data.error, 'error');
-                return;
-            }
-            if (data.success && data.tool) {
-                openToolPanel(data.tool, data.options || {});
-            } else if (data.raw) {
-                showToast('AI response: ' + data.raw.substring(0, 100), 'info');
-            } else {
-                showToast('Could not understand the command. Try selecting a tool below.', 'info');
-            }
-        })
-        .catch(function () {
-            // Fallback to local pattern matching
+        function localMatch() {
             var matched = null;
             var extractedOptions = {};
             for (var i = 0; i < AI_COMMANDS.length; i++) {
@@ -229,6 +208,31 @@ window.AIToolsApp = (function () {
             } else {
                 showToast('Could not understand the command. Try selecting a tool below.', 'info');
             }
+        }
+
+        // Call server AI to parse the command
+        fetch('/api/ai-tools/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: text })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.error) {
+                // Server error — fall back to local pattern matching
+                localMatch();
+                return;
+            }
+            if (data.success && data.tool) {
+                openToolPanel(data.tool, data.options || {});
+            } else if (data.raw) {
+                showToast('AI response: ' + data.raw.substring(0, 100), 'info');
+            } else {
+                localMatch();
+            }
+        })
+        .catch(function () {
+            localMatch();
         });
     }
 
