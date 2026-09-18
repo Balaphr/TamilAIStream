@@ -379,6 +379,25 @@ window.NexvoraAI = (function () {
         if (adminLoginBtn) adminLoginBtn.addEventListener('click', function () { handleAdminLogin(); });
         var adminDashBtn = $('#nexvoraAdminDashboard');
         if (adminDashBtn) adminDashBtn.addEventListener('click', function () { handleAdminDashboard(); });
+
+        // Inline admin login modal listeners
+        var adminLoginClose = $('#nexvoraAdminLoginClose');
+        if (adminLoginClose) adminLoginClose.addEventListener('click', hideAdminLoginModal);
+        var adminLoginBackdrop = $('#nexvoraAdminLoginBackdrop');
+        if (adminLoginBackdrop) adminLoginBackdrop.addEventListener('click', hideAdminLoginModal);
+        var adminSubmitBtn = $('#nexvoraAdminSubmitBtn');
+        if (adminSubmitBtn) adminSubmitBtn.addEventListener('click', handleAdminCredentialSubmit);
+        var adminVerifyBtn = $('#nexvoraAdminVerifyBtn');
+        if (adminVerifyBtn) adminVerifyBtn.addEventListener('click', handleAdminCodeSubmit);
+        var adminBackBtn = $('#nexvoraAdminBackBtn');
+        if (adminBackBtn) adminBackBtn.addEventListener('click', handleAdminBackToLogin);
+        var adminResendBtn = $('#nexvoraAdminResendBtn');
+        if (adminResendBtn) adminResendBtn.addEventListener('click', handleAdminResendCode);
+        // Auto-submit when 6 digits entered
+        var adminCodeInput = $('#nexvoraAdminCode');
+        if (adminCodeInput) adminCodeInput.addEventListener('input', function (e) {
+            if (e.target.value.length === 6) handleAdminCodeSubmit();
+        });
     }
 
     function handleLogin() {
@@ -452,43 +471,213 @@ window.NexvoraAI = (function () {
         showApp(); showToast('Continuing as Guest', 'info');
     }
 
-    // Admin credentials are server-side only — 2FA required via admin-login.html
+    // Admin credentials are server-side only — 2FA inline via nexvora modal
     var ADMIN_NAME = 'Admin User';
+    var _adminPendingEmail = null;
+    var _adminPendingPassword = null;
 
     function handleAdminLogin() {
-        // Redirect to admin-login.html for 2FA verification
-        window.location.href = 'admin-login.html';
+        // Check for existing verified admin session first
+        try {
+            var s = JSON.parse(localStorage.getItem('adminSession') || 'null');
+            if (s && s.verified && s.token && s.expiry && s.expiry > Date.now()) {
+                Auth.createSession({ email: s.email || 'admin@tamilaistream.com', name: s.displayName || 'Admin' }, true);
+                showApp();
+                showToast('Welcome back, Admin!', 'success');
+                return;
+            }
+        } catch (e) {}
+        // No valid session — show inline admin login modal
+        showAdminLoginModal();
     }
 
     function handleAdminDashboard() {
         var btn = $('#nexvoraAdminDashboard');
         if (!btn) return;
-        btn.classList.add('loading');
-        btn.disabled = true;
-        var originalHTML = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Opening...';
+        // Check for existing verified admin session
         try {
-            // Check for verified admin session
-            var isAdmin = false;
-            try {
-                var s = JSON.parse(localStorage.getItem('adminSession') || 'null');
-                if (s && s.verified && s.token && s.expiry && s.expiry > Date.now()) isAdmin = true;
-            } catch (e) {}
-            
-            if (isAdmin) {
-                Auth.createSession({ email: 'admin@tamilaistream.com', name: 'Admin' }, true);
-            } else {
-                window.location.href = 'admin-login.html';
+            var s = JSON.parse(localStorage.getItem('adminSession') || 'null');
+            if (s && s.verified && s.token && s.expiry && s.expiry > Date.now()) {
+                Auth.createSession({ email: s.email || 'admin@tamilaistream.com', name: s.displayName || 'Admin' }, true);
+                showApp();
+                showToast('Opening Admin Dashboard...', 'success');
                 return;
             }
-            showToast('Opening Admin Dashboard...', 'success');
-            setTimeout(function () { window.location.href = 'dashboard.html'; }, 600);
-        } catch (e) {
-            btn.innerHTML = originalHTML;
-            btn.classList.remove('loading');
-            btn.disabled = false;
-            showToast('Failed to open dashboard', 'error');
+        } catch (e) {}
+        // No valid session — show inline admin login modal
+        showAdminLoginModal();
+    }
+
+    function showAdminLoginModal() {
+        var modal = $('#nexvoraAdminLoginModal');
+        if (!modal) return;
+        modal.classList.remove('nexvora-hidden');
+        // Reset to step 1
+        var step1 = $('#nexvoraAdminStep1');
+        var step2 = $('#nexvoraAdminStep2');
+        if (step1) step1.style.display = '';
+        if (step2) step2.style.display = 'none';
+        _adminPendingEmail = null;
+        _adminPendingPassword = null;
+        // Clear errors
+        var errs = ['nexvoraAdminEmailErr', 'nexvoraAdminPassErr', 'nexvoraAdminCredErr', 'nexvoraAdminCodeErr'];
+        errs.forEach(function (id) { var el = document.getElementById(id); if (el) el.textContent = ''; });
+        // Reset buttons
+        var submitBtn = $('#nexvoraAdminSubmitBtn');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('loading'); }
+        var verifyBtn = $('#nexvoraAdminVerifyBtn');
+        if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.classList.remove('loading'); }
+        var emailInput = $('#nexvoraAdminEmail');
+        if (emailInput) { emailInput.value = ''; emailInput.focus(); }
+        var passInput = $('#nexvoraAdminPassword');
+        if (passInput) passInput.value = '';
+        var codeInput = $('#nexvoraAdminCode');
+        if (codeInput) codeInput.value = '';
+    }
+
+    function hideAdminLoginModal() {
+        var modal = $('#nexvoraAdminLoginModal');
+        if (modal) modal.classList.add('nexvora-hidden');
+    }
+
+    function handleAdminCredentialSubmit() {
+        var email = ($('#nexvoraAdminEmail') || {}).value || '';
+        var password = ($('#nexvoraAdminPassword') || {}).value || '';
+        var credErr = $('#nexvoraAdminCredErr');
+        var submitBtn = $('#nexvoraAdminSubmitBtn');
+        if (!email || !password) {
+            if (credErr) credErr.textContent = 'Please fill in all fields';
+            return;
         }
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.classList.add('loading'); }
+        if (credErr) credErr.textContent = '';
+
+        fetch('/api/admin/verify-credentials', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: password })
+        })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (result) {
+            if (!result.ok) {
+                if (credErr) credErr.textContent = result.data.error || 'Invalid credentials';
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('loading'); }
+                return;
+            }
+            // Credentials valid — move to step 2
+            _adminPendingEmail = email;
+            _adminPendingPassword = password;
+            var step1 = $('#nexvoraAdminStep1');
+            var step2 = $('#nexvoraAdminStep2');
+            if (step1) step1.style.display = 'none';
+            if (step2) step2.style.display = '';
+            var emailDisplay = $('#nexvoraAdminVerifyEmail');
+            if (emailDisplay) emailDisplay.textContent = email;
+            var codeInput = $('#nexvoraAdminCode');
+            if (codeInput) { codeInput.value = ''; codeInput.focus(); }
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('loading'); }
+            showToast('Credentials verified. Enter the code.', 'success');
+        })
+        .catch(function () {
+            if (credErr) credErr.textContent = 'Network error. Please try again.';
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('loading'); }
+        });
+    }
+
+    function handleAdminCodeSubmit() {
+        var code = ($('#nexvoraAdminCode') || {}).value || '';
+        var codeErr = $('#nexvoraAdminCodeErr');
+        var verifyBtn = $('#nexvoraAdminVerifyBtn');
+        if (!code || code.length !== 6) {
+            if (codeErr) codeErr.textContent = 'Please enter the 6-digit verification code';
+            return;
+        }
+        if (verifyBtn) { verifyBtn.disabled = true; verifyBtn.classList.add('loading'); }
+        if (codeErr) codeErr.textContent = '';
+
+        fetch('/api/admin/verify-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: _adminPendingEmail, code: code })
+        })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (result) {
+            if (!result.ok) {
+                if (codeErr) codeErr.textContent = result.data.error || 'Invalid verification code';
+                if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.classList.remove('loading'); }
+                return;
+            }
+            // Verification successful — create admin session
+            var token = result.data.token;
+            var sessionData = {
+                username: _adminPendingEmail,
+                email: _adminPendingEmail,
+                displayName: 'Admin',
+                role: 'admin',
+                verified: true,
+                token: token,
+                loginTime: Date.now(),
+                expiry: Date.now() + (result.data.expiresIn * 1000)
+            };
+            localStorage.setItem('adminSession', JSON.stringify(sessionData));
+
+            // Create main website session
+            Auth.createSession({
+                name: 'Admin',
+                email: _adminPendingEmail,
+                uid: 'admin-verified',
+                photoURL: '',
+                role: 'admin'
+            }, true, false);
+
+            hideAdminLoginModal();
+            showApp();
+            showToast('Login successful! Welcome, Admin.', 'success');
+
+            if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.classList.remove('loading'); }
+        })
+        .catch(function () {
+            if (codeErr) codeErr.textContent = 'Network error. Please try again.';
+            if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.classList.remove('loading'); }
+        });
+    }
+
+    function handleAdminBackToLogin() {
+        var step1 = $('#nexvoraAdminStep1');
+        var step2 = $('#nexvoraAdminStep2');
+        if (step1) step1.style.display = '';
+        if (step2) step2.style.display = 'none';
+        _adminPendingEmail = null;
+        _adminPendingPassword = null;
+        var codeErr = $('#nexvoraAdminCodeErr');
+        if (codeErr) codeErr.textContent = '';
+    }
+
+    function handleAdminResendCode() {
+        if (!_adminPendingEmail || !_adminPendingPassword) return;
+        var resendBtn = $('#nexvoraAdminResendBtn');
+        if (resendBtn) { resendBtn.disabled = true; resendBtn.textContent = 'Sending...'; }
+
+        fetch('/api/admin/verify-credentials', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: _adminPendingEmail, password: _adminPendingPassword })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.code) {
+                showToast('New code sent!', 'success');
+                var codeInput = $('#nexvoraAdminCode');
+                if (codeInput) { codeInput.placeholder = 'Code: ' + data.code; codeInput.value = ''; }
+            } else {
+                showToast('Failed to resend code', 'error');
+            }
+            if (resendBtn) { resendBtn.disabled = false; resendBtn.textContent = 'Resend Code'; }
+        })
+        .catch(function () {
+            showToast('Network error', 'error');
+            if (resendBtn) { resendBtn.disabled = false; resendBtn.textContent = 'Resend Code'; }
+        });
     }
 
     // --- App Initialization ---
