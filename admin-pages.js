@@ -35,7 +35,7 @@
         const target = $('page-' + page);
         if (target) target.classList.add('active');
         document.querySelectorAll('#sidebarNav button').forEach(b => b.classList.toggle('active', b.dataset.page === page));
-        const renderers = { dashboard: renderDashboard, content: renderContent, sections: renderSectionSettings, design: renderDesign, header: renderHeaderSettings, logo: renderLogoSettings, splash: renderSplashSettings, player: renderPlayerSettings, platform: renderPlatformSettings };
+        const renderers = { dashboard: renderDashboard, content: renderContent, sections: renderSectionSettings, design: renderDesign, header: renderHeaderSettings, logo: renderLogoSettings, splash: renderSplashSettings, player: renderPlayerSettings, platform: renderPlatformSettings, 'ai-tools': renderAIToolsSettings };
         if (renderers[page]) renderers[page]();
         if (page === 'visual-editor') setTimeout(() => { try { if (typeof AdminEditor !== 'undefined') { AdminEditor.detectSections(); AdminEditor.detectElements(); } } catch(e) {} }, 100);
     }
@@ -669,6 +669,17 @@
             var gsRes2 = await fetch('/api/global-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings: gs, admin: 'Admin', publish: true }) });
             var gsData2 = await gsRes2.json().catch(function() { return null; });
             if (!gsRes2.ok || (gsData2 && !gsData2.success)) { console.warn('[Admin] Global settings save warning:', gsData2); }
+
+            showProgress(70, 'Saving AI Tools config...');
+            var aiToolsConfigs = {};
+            try { aiToolsConfigs = JSON.parse(localStorage.getItem('nexvora_aitools_api_config') || '{}'); } catch(e) {}
+            for (var aiKey in aiToolsConfigs) {
+                if (aiToolsConfigs[aiKey] && typeof aiToolsConfigs[aiKey] === 'object') {
+                    try {
+                        await fetch('/api/ai-tools/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: aiKey, config: aiToolsConfigs[aiKey] }) });
+                    } catch(e) {}
+                }
+            }
             showProgress(80, 'Syncing content to R2...');
             if (typeof ContentSync !== 'undefined') {
                 try {
@@ -751,6 +762,225 @@
             if ((e.ctrlKey || e.metaKey) && e.key === 'v') { try { AdminEditor.pasteProperties(); } catch(e) {} }
         }
     });
+
+    /* ═══════════ AI TOOLS SETTINGS ═══════════ */
+
+    function resolvePath(obj, path) {
+        return path.split('.').reduce((o, k) => (o && o[k] !== undefined) ? o[k] : '', obj);
+    }
+    function setPath(obj, path, val) {
+        const parts = path.split('.');
+        let cur = obj;
+        for (let i = 0; i < parts.length - 1; i++) {
+            if (!cur[parts[i]]) cur[parts[i]] = {};
+            cur = cur[parts[i]];
+        }
+        cur[parts[parts.length - 1]] = val;
+    }
+
+    function renderAIToolsSettings() {
+        const body = $('aiToolsSettingsBody');
+        if (!body) return;
+        const STORAGE_KEY = 'nexvora_aitools_api_config';
+        let config;
+        try { config = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch (e) { config = {}; }
+        const defaults = {
+            ai: { enabled: true, provider: 'openai', apiKey: '', model: 'gpt-4o-mini', endpoint: 'https://api.openai.com/v1/chat/completions' },
+            imageEnhance: { enabled: true, provider: 'sharp', apiKey: '', model: 'realesrgan-x4', endpoint: '' },
+            imageUpscale: { enabled: true, provider: 'sharp', apiKey: '', model: 'realesrgan-x4', endpoint: '' },
+            bgRemoval: { enabled: true, provider: 'rembg', apiKey: '', model: 'u2net', endpoint: '' },
+            videoProcessing: { enabled: true, provider: 'ffmpeg', apiKey: '', model: '', endpoint: '', maxFileSize: 524288000 },
+            audioProcessing: { enabled: true, provider: 'ffmpeg', apiKey: '', model: '', endpoint: '', maxFileSize: 104857600 },
+            imageProcessing: { enabled: true, provider: 'sharp', apiKey: '', model: '', endpoint: '', maxFileSize: 52428800 },
+            pdfTools: { enabled: true, provider: 'pdf-lib', apiKey: '', model: '', endpoint: '', maxFileSize: 104857600 },
+            urlDownloader: { enabled: true, provider: 'yt-dlp', apiKey: '', model: '', endpoint: '', maxQuality: '1080p' },
+            storage: { tempDir: '/tmp/aitools', maxStorage: 2147483648, autoCleanup: true, cleanupAfterHours: 24 },
+            limits: { maxUploadSize: 524288000, maxConcurrentJobs: 3, maxDailyJobs: 100, rateLimitPerMinute: 10 },
+            security: { allowDRMBypass: false, allowPrivateContent: false, allowAuthBypass: false, allowShellCommands: false, validateUrls: true, blockedDomains: ['localhost','127.0.0.1','0.0.0.0','169.254.169.254'] }
+        };
+        function mergeDeep(t, s) { for (const k in s) { if (s[k] && typeof s[k] === 'object' && !Array.isArray(s[k])) { if (!t[k]) t[k] = {}; mergeDeep(t[k], s[k]); } else if (t[k] === undefined) { t[k] = s[k]; } } return t; }
+        config = mergeDeep(config, defaults);
+
+        function section(id, title, icon, fields) {
+            let h = '<div class="section-card" style="margin-bottom:16px;">';
+            h += '<div class="section-card-head"><div class="section-card-title"><i class="fas ' + icon + '" style="color:var(--accent);"></i> ' + title + '</div></div>';
+            h += '<div class="section-card-body" style="flex-direction:column;gap:10px;">';
+            fields.forEach(function(f) {
+                h += '<div class="fg"><div class="fg-label">' + f.label + '</div>';
+                if (f.type === 'toggle') {
+                    const val = f.path ? resolvePath(config, f.path) : f.value;
+                    h += '<label class="toggle"><input type="checkbox" ' + (val ? 'checked' : '') + ' data-field="' + f.path + '"><span class="slider"></span></label>';
+                } else if (f.type === 'select') {
+                    const val = f.path ? resolvePath(config, f.path) : f.value;
+                    h += '<select data-field="' + f.path + '">';
+                    f.options.forEach(function(o) { h += '<option value="' + o + '" ' + (val === o ? 'selected' : '') + '>' + o + '</option>'; });
+                    h += '</select>';
+                } else if (f.type === 'number') {
+                    const val = f.path ? resolvePath(config, f.path) : f.value;
+                    h += '<input type="number" data-field="' + f.path + '" value="' + (val || '') + '">';
+                } else {
+                    const val = f.path ? resolvePath(config, f.path) : f.value;
+                    h += '<input type="' + (f.type || 'text') + '" data-field="' + f.path + '" value="' + (val || '') + '" placeholder="' + (f.placeholder || '') + '">';
+                }
+                h += '</div>';
+            });
+            h += '<div style="display:flex;gap:6px;margin-top:4px;">';
+            h += '<button class="btn btn-green btn-sm" onclick="saveAIToolsSection(\'' + id + '\')"><i class="fas fa-save"></i> Save</button>';
+            h += '<button class="btn btn-sm" onclick="testAIToolsProvider(\'' + id + '\')"><i class="fas fa-vial"></i> Test API</button>';
+            h += '<button class="btn btn-sm" onclick="renderAIToolsSettings()"><i class="fas fa-rotate"></i> Reset</button>';
+            h += '</div></div></div>';
+            return h;
+        }
+
+        body.innerHTML =
+            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">' +
+            '<p style="color:var(--text-secondary);font-size:12px;">Configure AI providers, media processing, and tool settings. API keys are stored securely.</p>' +
+            '<button class="btn btn-green" onclick="saveAllSettings()"><i class="fas fa-save"></i> Save All</button></div>' +
+            section('ai', 'AI Providers', 'fa-robot', [
+                { label: 'Enable AI', type: 'toggle', path: 'ai.enabled' },
+                { label: 'Provider', type: 'select', path: 'ai.provider', options: ['openai', 'anthropic', 'google', 'custom'] },
+                { label: 'API Key', type: 'password', path: 'ai.apiKey', placeholder: 'sk-...' },
+                { label: 'Model', type: 'text', path: 'ai.model', placeholder: 'gpt-4o-mini' },
+                { label: 'Endpoint', type: 'url', path: 'ai.endpoint', placeholder: 'https://api.openai.com/v1/chat/completions' }
+            ]) +
+            section('imageEnhance', 'Image Enhancer', 'fa-wand-magic-sparkles', [
+                { label: 'Enable Enhancer', type: 'toggle', path: 'imageEnhance.enabled' },
+                { label: 'Provider', type: 'select', path: 'imageEnhance.provider', options: ['sharp', 'openai', 'replicate', 'custom'] },
+                { label: 'API Key', type: 'password', path: 'imageEnhance.apiKey', placeholder: 'API key (if cloud)' },
+                { label: 'Model', type: 'text', path: 'imageEnhance.model', placeholder: 'realesrgan-x4' },
+                { label: 'Endpoint', type: 'url', path: 'imageEnhance.endpoint', placeholder: 'Custom endpoint' }
+            ]) +
+            section('imageUpscale', 'Image Upscaler', 'fa-maximize', [
+                { label: 'Enable Upscaler', type: 'toggle', path: 'imageUpscale.enabled' },
+                { label: 'Provider', type: 'select', path: 'imageUpscale.provider', options: ['sharp', 'openai', 'replicate', 'custom'] },
+                { label: 'API Key', type: 'password', path: 'imageUpscale.apiKey', placeholder: 'API key (if cloud)' },
+                { label: 'Model', type: 'text', path: 'imageUpscale.model', placeholder: 'realesrgan-x4' },
+                { label: 'Endpoint', type: 'url', path: 'imageUpscale.endpoint', placeholder: 'Custom endpoint' }
+            ]) +
+            section('bgRemoval', 'Background Removal', 'fa-eraser', [
+                { label: 'Enable BG Removal', type: 'toggle', path: 'bgRemoval.enabled' },
+                { label: 'Provider', type: 'select', path: 'bgRemoval.provider', options: ['rembg', 'remove.bg', 'clipdrop', 'custom'] },
+                { label: 'API Key', type: 'password', path: 'bgRemoval.apiKey', placeholder: 'API key (if cloud)' },
+                { label: 'Model', type: 'text', path: 'bgRemoval.model', placeholder: 'u2net' },
+                { label: 'Endpoint', type: 'url', path: 'bgRemoval.endpoint', placeholder: 'Custom endpoint' }
+            ]) +
+            section('videoProcessing', 'Video Processing', 'fa-film', [
+                { label: 'Enable Video Tools', type: 'toggle', path: 'videoProcessing.enabled' },
+                { label: 'Provider', type: 'select', path: 'videoProcessing.provider', options: ['ffmpeg', 'cloudconvert', 'custom'] },
+                { label: 'Max File Size (MB)', type: 'number', path: 'videoProcessing.maxFileSize', min: 1, max: 2000 }
+            ]) +
+            section('audioProcessing', 'Audio Processing', 'fa-headphones', [
+                { label: 'Enable Audio Tools', type: 'toggle', path: 'audioProcessing.enabled' },
+                { label: 'Provider', type: 'select', path: 'audioProcessing.provider', options: ['ffmpeg', 'cloudconvert', 'custom'] },
+                { label: 'Max File Size (MB)', type: 'number', path: 'audioProcessing.maxFileSize', min: 1, max: 500 }
+            ]) +
+            section('urlDownloader', 'URL Downloader', 'fa-download', [
+                { label: 'Enable URL Download', type: 'toggle', path: 'urlDownloader.enabled' },
+                { label: 'Provider', type: 'select', path: 'urlDownloader.provider', options: ['yt-dlp', 'ytdl-core', 'custom'] },
+                { label: 'Max Quality', type: 'select', path: 'urlDownloader.maxQuality', options: ['720p', '1080p', '1440p', '2160p', 'best'] },
+                { label: 'Allow Audio Only', type: 'toggle', path: 'urlDownloader.allowAudioOnly' }
+            ]) +
+            section('pdfTools', 'PDF Tools', 'fa-file-pdf', [
+                { label: 'Enable PDF Tools', type: 'toggle', path: 'pdfTools.enabled' },
+                { label: 'Provider', type: 'select', path: 'pdfTools.provider', options: ['pdf-lib', 'puppeteer', 'custom'] },
+                { label: 'Max File Size (MB)', type: 'number', path: 'pdfTools.maxFileSize', min: 1, max: 500 }
+            ]) +
+            section('storage', 'Storage', 'fa-database', [
+                { label: 'Temp Directory', type: 'text', path: 'storage.tempDir', placeholder: '/tmp/aitools' },
+                { label: 'Auto Cleanup', type: 'toggle', path: 'storage.autoCleanup' },
+                { label: 'Cleanup After (hours)', type: 'number', path: 'storage.cleanupAfterHours', min: 1, max: 168 }
+            ]) +
+            section('limits', 'Processing Limits', 'fa-gauge-high', [
+                { label: 'Max Upload Size (MB)', type: 'number', path: 'limits.maxUploadSize', min: 1, max: 2000 },
+                { label: 'Max Concurrent Jobs', type: 'number', path: 'limits.maxConcurrentJobs', min: 1, max: 20 },
+                { label: 'Max Daily Jobs', type: 'number', path: 'limits.maxDailyJobs', min: 1, max: 1000 },
+                { label: 'Rate Limit (per min)', type: 'number', path: 'limits.rateLimitPerMinute', min: 1, max: 100 }
+            ]) +
+            section('security', 'Security', 'fa-shield-halved', [
+                { label: 'Validate URLs', type: 'toggle', path: 'security.validateUrls' },
+                { label: 'Allow DRM Bypass', type: 'toggle', path: 'security.allowDRMBypass' },
+                { label: 'Allow Private Content', type: 'toggle', path: 'security.allowPrivateContent' },
+                { label: 'Allow Shell Commands', type: 'toggle', path: 'security.allowShellCommands' },
+                { label: 'Blocked Domains', type: 'text', path: 'security.blockedDomains', placeholder: 'localhost,127.0.0.1' }
+            ]);
+
+        body.querySelectorAll('[data-field]').forEach(function(el) {
+            el.addEventListener('change', function() {
+                const path = el.dataset.field;
+                let val;
+                if (el.type === 'checkbox') val = el.checked;
+                else if (el.type === 'number') val = parseFloat(el.value) || 0;
+                else val = el.value;
+                setPath(config, path, val);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+                toast('Setting updated', 'ok');
+            });
+        });
+    }
+
+    function collectAIToolsFields(sectionId) {
+        const STORAGE_KEY = 'nexvora_aitools_api_config';
+        let config;
+        try { config = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch (e) { config = {}; }
+        const body = $('aiToolsSettingsBody');
+        if (!body) return config;
+        body.querySelectorAll('[data-field]').forEach(function(el) {
+            const path = el.dataset.field;
+            if (!path || !path.startsWith(sectionId + '.')) return;
+            let val;
+            if (el.type === 'checkbox') val = el.checked;
+            else if (el.type === 'number') val = parseFloat(el.value) || 0;
+            else val = el.value;
+            setPath(config, path, val);
+        });
+        return config;
+    }
+
+    window.saveAIToolsSection = function(sectionId) {
+        const STORAGE_KEY = 'nexvora_aitools_api_config';
+        let config = collectAIToolsFields(sectionId);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+
+        if (config[sectionId]) {
+            fetch('/api/ai-tools/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: sectionId, config: config[sectionId] })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) toast('Saved to server', 'ok');
+                else toast(data.error || 'Save failed', 'err');
+            }).catch(function(err) {
+                toast('Server save failed: ' + err.message, 'err');
+            });
+        } else {
+            toast('Saved locally', 'ok');
+        }
+    };
+
+    // Test API connection for a provider
+    window.testAIToolsProvider = function(type) {
+        const btn = event.target.closest('button');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...'; }
+
+        fetch('/api/ai-tools/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: type })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-vial"></i> Test API'; }
+            if (data.success) {
+                toast(data.message || 'Connection successful', 'ok');
+            } else {
+                toast(data.error || 'Test failed', 'err');
+            }
+        })
+        .catch(function(err) {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-vial"></i> Test API'; }
+            toast('Network error: ' + err.message, 'err');
+        });
+    };
 
     /* ═══════════ VISUAL EDITOR (preserved) ═══════════ */
     try {

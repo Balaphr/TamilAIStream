@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="nexvora.css">
+    <link rel="stylesheet" href="ai-tools.css">
 </head>
 <body>
     <!-- Auth Gate -->
@@ -173,6 +174,10 @@
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                     <span class="nexvora-sidebar-label">Tools</span>
                     <i class="fa-solid fa-chevron-right nexvora-nav-arrow nexvora-sidebar-label"></i>
+                </button>
+                <button class="nexvora-nav-item" data-nav="aitools" type="button">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                    <span class="nexvora-sidebar-label">AI Tools</span>
                 </button>
                 <button class="nexvora-nav-item" data-nav="prompts" type="button">
                     <i class="fa-solid fa-wand-sparkles"></i>
@@ -475,6 +480,111 @@
                         <p>Additional tools coming soon</p>
                         <span class="nexvora-tc-badge soon">Coming Soon</span>
                     </div>
+                </div>
+            </div>
+
+            <!-- ===== AI TOOLS VIEW ===== -->
+            <div class="nexvora-view" id="nexvoraAIToolsView">
+                <!-- AI Tools Header -->
+                <div class="ait-view-header">
+                    <div class="ait-header-top">
+                        <h2><i class="fa-solid fa-screwdriver-wrench"></i> AI Utility & Media Tools</h2>
+                        <div class="ait-header-actions">
+                            <button class="ait-btn ait-btn-ghost" id="aitHistoryBtn"><i class="fa-solid fa-clock-rotate-left"></i> History</button>
+                            <button class="ait-btn ait-btn-ghost" id="aitSettingsBtn"><i class="fa-solid fa-gear"></i></button>
+                        </div>
+                    </div>
+                    <!-- AI Command Box -->
+                    <div class="ait-command-box">
+                        <div class="ait-command-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                        <input type="text" id="aitCommandInput" class="ait-command-input" placeholder="Describe what you want to do... e.g. &quot;Convert this video to MP4&quot;">
+                        <button class="ait-btn ait-btn-primary" id="aitCommandRun"><i class="fa-solid fa-play"></i></button>
+                    </div>
+                    <div class="ait-command-suggestions" id="aitCommandSuggestions">
+                        <button class="ait-suggestion-chip" data-cmd="Convert video to MP4"><i class="fa-solid fa-film"></i> Convert Video</button>
+                        <button class="ait-suggestion-chip" data-cmd="Compress video"><i class="fa-solid fa-compress"></i> Compress Video</button>
+                        <button class="ait-suggestion-chip" data-cmd="Extract audio from video"><i class="fa-solid fa-music"></i> Extract Audio</button>
+                        <button class="ait-suggestion-chip" data-cmd="Enhance image"><i class="fa-solid fa-wand-magic-sparkles"></i> Enhance Image</button>
+                        <button class="ait-suggestion-chip" data-cmd="Remove image background"><i class="fa-solid fa-eraser"></i> Remove BG</button>
+                        <button class="ait-suggestion-chip" data-cmd="Convert image to WebP"><i class="fa-solid fa-image"></i> Convert Image</button>
+                        <button class="ait-suggestion-chip" data-cmd="Create PDF from images"><i class="fa-solid fa-file-pdf"></i> Image to PDF</button>
+                        <button class="ait-suggestion-chip" data-cmd="Download this video"><i class="fa-solid fa-download"></i> Download URL</button>
+                    </div>
+                </div>
+
+                <!-- Tool Categories -->
+                <div class="ait-categories" id="aitCategories">
+                    <button class="ait-cat-btn active" data-cat="all"><i class="fa-solid fa-grid-2"></i> All</button>
+                    <button class="ait-cat-btn" data-cat="video"><i class="fa-solid fa-film"></i> Video</button>
+                    <button class="ait-cat-btn" data-cat="audio"><i class="fa-solid fa-headphones"></i> Audio</button>
+                    <button class="ait-cat-btn" data-cat="image"><i class="fa-solid fa-image"></i> Image</button>
+                    <button class="ait-cat-btn" data-cat="imageai"><i class="fa-solid fa-wand-magic-sparkles"></i> Image AI</button>
+                    <button class="ait-cat-btn" data-cat="pdf"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+                    <button class="ait-cat-btn" data-cat="file"><i class="fa-solid fa-box-archive"></i> File Tools</button>
+                    <button class="ait-cat-btn" data-cat="url"><i class="fa-solid fa-link"></i> URL Downloader</button>
+                </div>
+
+                <!-- File Drop Zone -->
+                <div class="ait-dropzone" id="aitDropzone">
+                    <div class="ait-dropzone-inner">
+                        <div class="ait-dropzone-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                        <h3>Drop files here or click to upload</h3>
+                        <p>Supports video, audio, images, PDFs, and archives</p>
+                        <div class="ait-dropzone-actions">
+                            <button class="ait-btn ait-btn-primary" id="aitUploadBtn"><i class="fa-solid fa-folder-open"></i> Browse Files</button>
+                            <button class="ait-btn ait-btn-outline" id="aitPasteUrlBtn"><i class="fa-solid fa-link"></i> Paste URL</button>
+                        </div>
+                        <input type="file" id="aitFileInput" multiple hidden>
+                        <input type="text" id="aitUrlInput" class="ait-url-input" placeholder="Paste a public video/media URL..." style="display:none;">
+                        <button class="ait-btn ait-btn-primary ait-url-go" id="aitUrlGo" style="display:none;"><i class="fa-solid fa-arrow-right"></i> Process URL</button>
+                    </div>
+                </div>
+
+                <!-- Uploaded Files List -->
+                <div class="ait-files-section" id="aitFilesSection" style="display:none;">
+                    <div class="ait-section-header">
+                        <h3><i class="fa-solid fa-folder-open"></i> Uploaded Files <span class="ait-badge" id="aitFileCount">0</span></h3>
+                        <div>
+                            <button class="ait-btn ait-btn-sm ait-btn-ghost" id="aitClearFiles"><i class="fa-solid fa-trash"></i> Clear</button>
+                            <button class="ait-btn ait-btn-sm ait-btn-primary" id="aitBatchProcess" style="display:none;"><i class="fa-solid fa-play"></i> Batch Process</button>
+                        </div>
+                    </div>
+                    <div class="ait-files-list" id="aitFilesList"></div>
+                </div>
+
+                <!-- Tool Grid -->
+                <div class="ait-tools-section">
+                    <div class="ait-section-header">
+                        <h3><i class="fa-solid fa-screwdriver-wrench"></i> Available Tools</h3>
+                    </div>
+                    <div class="ait-tool-grid" id="aitToolGrid"></div>
+                </div>
+
+                <!-- Active Jobs -->
+                <div class="ait-jobs-section" id="aitJobsSection" style="display:none;">
+                    <div class="ait-section-header">
+                        <h3><i class="fa-solid fa-spinner"></i> Processing <span class="ait-badge" id="aitJobCount">0</span></h3>
+                    </div>
+                    <div class="ait-jobs-list" id="aitJobsList"></div>
+                </div>
+
+                <!-- Recent Jobs -->
+                <div class="ait-recent-section" id="aitRecentSection" style="display:none;">
+                    <div class="ait-section-header">
+                        <h3><i class="fa-solid fa-clock-rotate-left"></i> Recent Jobs</h3>
+                        <button class="ait-btn ait-btn-sm ait-btn-ghost" id="aitClearHistory"><i class="fa-solid fa-trash"></i> Clear</button>
+                    </div>
+                    <div class="ait-recent-list" id="aitRecentList"></div>
+                </div>
+
+                <!-- Tool Detail Modal (inline) -->
+                <div class="ait-tool-panel" id="aitToolPanel" style="display:none;">
+                    <div class="ait-panel-header">
+                        <button class="ait-btn ait-btn-ghost" id="aitPanelBack"><i class="fa-solid fa-arrow-left"></i></button>
+                        <h3 id="aitPanelTitle">Tool</h3>
+                        <button class="ait-btn ait-btn-ghost" id="aitPanelClose"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="ait-panel-body" id="aitPanelBody"></div>
                 </div>
             </div>
 
@@ -1192,5 +1302,37 @@
     <script src="nexvora-ai-service.js"></script>
     <script src="nexvora-model-manager.js"></script>
     <script src="nexvora.js"></script>
+    <script src="ai-tools-api.js"></script>
+    <script src="ai-tools-worker.js"></script>
+    <script src="ai-tools.js"></script>
+    <script>
+        // Initialize AI Tools when the aitools view is navigated to
+        (function() {
+            var _origNav = null;
+            var _aitInited = false;
+            function initAIToolsOnce() {
+                if (!_aitInited && window.AIToolsApp) {
+                    AIToolsApp.init();
+                    _aitInited = true;
+                }
+            }
+            // Hook into the existing navigation system
+            var observer = new MutationObserver(function() {
+                var view = document.getElementById('nexvoraAIToolsView');
+                if (view && view.classList.contains('nexvora-active')) {
+                    initAIToolsOnce();
+                }
+            });
+            observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+            // Also init on DOMContentLoaded if already visible
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    setTimeout(initAIToolsOnce, 500);
+                });
+            } else {
+                setTimeout(initAIToolsOnce, 500);
+            }
+        })();
+    </script>
 </body>
 </html>

@@ -1,0 +1,885 @@
+/* ============================================================================
+   ai-tools.css — Nexvora AI Utility & Media Tools Styling
+   ============================================================================ */
+
+:root {
+    --ait-primary: #6c5ce7;
+    --ait-primary-hover: #5a4bd1;
+    --ait-primary-bg: rgba(108, 92, 231, 0.12);
+    --ait-success: #10b981;
+    --ait-success-bg: rgba(16, 185, 129, 0.12);
+    --ait-warning: #f59e0b;
+    --ait-warning-bg: rgba(245, 158, 11, 0.12);
+    --ait-danger: #ef4444;
+    --ait-danger-bg: rgba(239, 68, 68, 0.12);
+    --ait-info: #3b82f6;
+    --ait-info-bg: rgba(59, 130, 246, 0.12);
+    --ait-bg: #0f0f14;
+    --ait-surface: #1a1a24;
+    --ait-surface-hover: #22222e;
+    --ait-border: rgba(255, 255, 255, 0.08);
+    --ait-border-hover: rgba(255, 255, 255, 0.15);
+    --ait-text: #ffffff;
+    --ait-text-secondary: rgba(255, 255, 255, 0.6);
+    --ait-text-muted: rgba(255, 255, 255, 0.35);
+    --ait-radius: 12px;
+    --ait-radius-sm: 8px;
+    --ait-radius-xs: 6px;
+    --ait-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    --ait-glass: rgba(255, 255, 255, 0.05);
+    --ait-glass-border: rgba(255, 255, 255, 0.08);
+}
+
+/* --- AI Tools View Container (scrollable) --- */
+#nexvoraAIToolsView {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+}
+
+#nexvoraAIToolsView.nexvora-active {
+    display: flex;
+}
+
+/* --- View Header --- */
+.ait-view-header {
+    padding: 24px 24px 16px;
+    border-bottom: 1px solid var(--ait-border);
+    flex-shrink: 0;
+}
+
+.ait-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.ait-header-top h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ait-text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ait-header-top h2 i {
+    color: var(--ait-primary);
+}
+
+.ait-header-actions {
+    display: flex;
+    gap: 6px;
+}
+
+/* --- Command Box --- */
+.ait-command-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--ait-surface);
+    border: 1px solid var(--ait-border);
+    border-radius: var(--ait-radius);
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ait-command-box:focus-within {
+    border-color: var(--ait-primary);
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
+}
+
+.ait-command-icon {
+    color: var(--ait-primary);
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.ait-command-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--ait-text);
+    font-size: 14px;
+    font-family: inherit;
+    padding: 4px 0;
+}
+
+.ait-command-input::placeholder {
+    color: var(--ait-text-muted);
+}
+
+.ait-command-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ait-suggestion-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: var(--ait-glass);
+    border: 1px solid var(--ait-glass-border);
+    border-radius: 20px;
+    color: var(--ait-text-secondary);
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.ait-suggestion-chip:hover {
+    background: var(--ait-primary-bg);
+    border-color: rgba(108, 92, 231, 0.3);
+    color: var(--ait-primary);
+}
+
+/* --- Buttons --- */
+.ait-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--ait-radius-xs);
+    border: 1px solid var(--ait-border);
+    background: var(--ait-glass);
+    color: var(--ait-text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.ait-btn:hover {
+    background: var(--ait-surface-hover);
+    color: var(--ait-text);
+    border-color: var(--ait-border-hover);
+}
+
+.ait-btn-primary {
+    background: var(--ait-primary);
+    border-color: var(--ait-primary);
+    color: #fff;
+}
+
+.ait-btn-primary:hover {
+    background: var(--ait-primary-hover);
+    border-color: var(--ait-primary-hover);
+    color: #fff;
+}
+
+.ait-btn-success {
+    background: var(--ait-success);
+    border-color: var(--ait-success);
+    color: #fff;
+}
+
+.ait-btn-danger {
+    background: var(--ait-danger-bg);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--ait-danger);
+}
+
+.ait-btn-outline {
+    background: transparent;
+    border-color: var(--ait-border);
+    color: var(--ait-text-secondary);
+}
+
+.ait-btn-outline:hover {
+    border-color: var(--ait-primary);
+    color: var(--ait-primary);
+}
+
+.ait-btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--ait-text-secondary);
+}
+
+.ait-btn-ghost:hover {
+    background: var(--ait-glass);
+    color: var(--ait-text);
+}
+
+.ait-btn-sm {
+    padding: 5px 10px;
+    font-size: 11px;
+}
+
+.ait-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* --- Categories --- */
+.ait-categories {
+    display: flex;
+    gap: 6px;
+    padding: 12px 24px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--ait-border);
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    flex-shrink: 0;
+}
+
+.ait-categories::-webkit-scrollbar {
+    display: none;
+}
+
+.ait-cat-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--ait-border);
+    background: transparent;
+    color: var(--ait-text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ait-cat-btn:hover {
+    background: var(--ait-glass);
+    color: var(--ait-text);
+}
+
+.ait-cat-btn.active {
+    background: var(--ait-primary-bg);
+    border-color: rgba(108, 92, 231, 0.4);
+    color: var(--ait-primary);
+}
+
+/* --- Drop Zone --- */
+.ait-dropzone {
+    margin: 16px 24px;
+    border: 2px dashed var(--ait-border);
+    border-radius: var(--ait-radius);
+    transition: all 0.2s;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.ait-dropzone:hover,
+.ait-dropzone.drag-over {
+    border-color: var(--ait-primary);
+    background: rgba(108, 92, 231, 0.05);
+}
+
+.ait-dropzone.drag-over {
+    transform: scale(1.01);
+}
+
+.ait-dropzone-inner {
+    padding: 32px 24px;
+    text-align: center;
+}
+
+.ait-dropzone-icon {
+    font-size: 40px;
+    color: var(--ait-text-muted);
+    margin-bottom: 12px;
+}
+
+.ait-dropzone h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ait-text);
+    margin-bottom: 6px;
+}
+
+.ait-dropzone p {
+    font-size: 12px;
+    color: var(--ait-text-muted);
+    margin-bottom: 16px;
+}
+
+.ait-dropzone-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.ait-url-input {
+    width: 100%;
+    max-width: 500px;
+    margin: 12px auto 0;
+    padding: 10px 14px;
+    background: var(--ait-bg);
+    border: 1px solid var(--ait-border);
+    border-radius: var(--ait-radius-xs);
+    color: var(--ait-text);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    display: block;
+}
+
+.ait-url-input:focus {
+    border-color: var(--ait-primary);
+}
+
+.ait-url-go {
+    margin-top: 8px;
+}
+
+/* --- Files Section --- */
+.ait-files-section,
+.ait-tools-section,
+.ait-jobs-section,
+.ait-recent-section {
+    padding: 16px 24px;
+}
+
+.ait-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.ait-section-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ait-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ait-section-header h3 i {
+    color: var(--ait-primary);
+    font-size: 13px;
+}
+
+.ait-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: var(--ait-primary-bg);
+    color: var(--ait-primary);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+/* --- File Items --- */
+.ait-files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ait-file-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--ait-surface);
+    border: 1px solid var(--ait-border);
+    border-radius: var(--ait-radius-sm);
+    transition: border-color 0.15s;
+}
+
+.ait-file-item:hover {
+    border-color: var(--ait-border-hover);
+}
+
+.ait-file-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--ait-radius-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.ait-file-icon.video { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+.ait-file-icon.audio { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+.ait-file-icon.image { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.ait-file-icon.pdf { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.ait-file-icon.archive { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.ait-file-icon.other { background: rgba(255, 255, 255, 0.08); color: var(--ait-text-secondary); }
+
+.ait-file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ait-file-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ait-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ait-file-meta {
+    font-size: 11px;
+    color: var(--ait-text-muted);
+    margin-top: 2px;
+}
+
+.ait-file-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* --- Tool Grid --- */
+.ait-tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.ait-tool-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 14px;
+    background: var(--ait-surface);
+    border: 1px solid var(--ait-border);
+    border-radius: var(--ait-radius);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.ait-tool-card:hover {
+    border-color: var(--ait-primary);
+    background: var(--ait-primary-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(108, 92, 231, 0.15);
+}
+
+.ait-tool-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--ait-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    background: var(--ait-primary-bg);
+    color: var(--ait-primary);
+}
+
+.ait-tool-card.video .ait-tool-card-icon { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+.ait-tool-card.audio .ait-tool-card-icon { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+.ait-tool-card.image .ait-tool-card-icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.ait-tool-card.imageai .ait-tool-card-icon { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.ait-tool-card.pdf .ait-tool-card-icon { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.ait-tool-card.file .ait-tool-card-icon { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.ait-tool-card.url .ait-tool-card-icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+.ait-tool-card h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ait-text);
+}
+
+.ait-tool-card p {
+    font-size: 11px;
+    color: var(--ait-text-muted);
+    line-height: 1.4;
+}
+
+.ait-tool-card .ait-tool-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.ait-tool-badge.pro {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--ait-warning);
+}
+
+.ait-tool-badge.free {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--ait-success);
+}
+
+/* --- Jobs --- */
+.ait-jobs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ait-job-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--ait-surface);
+    border: 1px solid var(--ait-border);
+    border-radius: var(--ait-radius-sm);
+}
+
+.ait-job-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--ait-radius-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    background: var(--ait-primary-bg);
+    color: var(--ait-primary);
+    flex-shrink: 0;
+}
+
+.ait-job-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ait-job-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ait-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ait-job-status {
+    font-size: 11px;
+    color: var(--ait-text-muted);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ait-job-status.queued { color: var(--ait-text-muted); }
+.ait-job-status.processing { color: var(--ait-info); }
+.ait-job-status.completed { color: var(--ait-success); }
+.ait-job-status.failed { color: var(--ait-danger); }
+
+.ait-progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--ait-bg);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.ait-progress-fill {
+    height: 100%;
+    background: var(--ait-primary);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.ait-progress-fill.success { background: var(--ait-success); }
+.ait-progress-fill.error { background: var(--ait-danger); }
+
+.ait-job-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* --- Tool Panel (Detail View) --- */
+.ait-tool-panel {
+    position: fixed;
+    inset: 0;
+    background: var(--ait-bg);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.ait-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ait-border);
+    background: var(--ait-surface);
+}
+
+.ait-panel-header h3 {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ait-text);
+}
+
+.ait-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+
+/* --- Toggle Switch --- */
+.ait-settings-panel label.toggle {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    width: 40px;
+    height: 22px;
+}
+.ait-settings-panel label.toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+.ait-settings-panel label.toggle .slider {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 22px;
+    transition: background 0.2s;
+}
+.ait-settings-panel label.toggle .slider::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 3px;
+    bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+.ait-settings-panel label.toggle input:checked + .slider {
+    background: var(--ait-primary);
+}
+.ait-settings-panel label.toggle input:checked + .slider::before {
+    transform: translateX(18px);
+}
+
+.ait-settings-section h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ait-text);
+    margin: 0;
+}
+
+.ait-settings-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--ait-border);
+}
+
+.ait-settings-section-btns {
+    display: flex;
+    gap: 6px;
+}
+
+/* --- Tool Panel Forms --- */
+.ait-form-group {
+    margin-bottom: 16px;
+}
+
+.ait-form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ait-text-secondary);
+    margin-bottom: 6px;
+}
+
+.ait-form-input,
+.ait-form-select,
+.ait-form-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--ait-surface);
+    border: 1px solid var(--ait-border);
+    border-radius: var(--ait-radius-xs);
+    color: var(--ait-text);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.ait-form-input:focus,
+.ait-form-select:focus,
+.ait-form-textarea:focus {
+    border-color: var(--ait-primary);
+}
+
+.ait-form-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+}
+
+.ait-form-textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.ait-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.ait-form-hint {
+    font-size: 11px;
+    color: var(--ait-text-muted);
+    margin-top: 4px;
+}
+
+/* --- Recent Jobs --- */
+.ait-recent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ait-recent-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--ait-radius-xs);
+    transition: background 0.1s;
+    cursor: pointer;
+}
+
+.ait-recent-item:hover {
+    background: var(--ait-surface);
+}
+
+.ait-recent-icon {
+    font-size: 14px;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.ait-recent-icon.success { color: var(--ait-success); }
+.ait-recent-icon.error { color: var(--ait-danger); }
+
+.ait-recent-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ait-recent-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ait-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ait-recent-time {
+    font-size: 10px;
+    color: var(--ait-text-muted);
+}
+
+.ait-recent-download {
+    color: var(--ait-primary);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.ait-recent-download:hover {
+    color: var(--ait-primary-hover);
+}
+
+/* --- Empty State --- */
+.ait-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--ait-text-muted);
+}
+
+.ait-empty i {
+    font-size: 28px;
+    margin-bottom: 10px;
+    opacity: 0.4;
+}
+
+.ait-empty h4 {
+    font-size: 13px;
+    color: var(--ait-text-secondary);
+    margin-bottom: 4px;
+}
+
+.ait-empty p {
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* --- Spinner --- */
+.ait-spin {
+    animation: ait-spin 1s linear infinite;
+}
+
+@keyframes ait-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .ait-view-header { padding: 16px; }
+    .ait-categories { padding: 10px 16px; }
+    .ait-files-section,
+    .ait-tools-section,
+    .ait-jobs-section,
+    .ait-recent-section { padding: 12px 16px; }
+    .ait-tool-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+    .ait-tool-card { padding: 14px 10px; }
+    .ait-dropzone { margin: 12px 16px; }
+    .ait-dropzone-inner { padding: 24px 16px; }
+    .ait-form-row { grid-template-columns: 1fr; }
+    .ait-command-suggestions { gap: 4px; }
+    .ait-suggestion-chip { padding: 4px 8px; font-size: 10px; }
+}
+
+@media (max-width: 480px) {
+    .ait-tool-grid { grid-template-columns: repeat(2, 1fr); }
+    .ait-header-top h2 { font-size: 16px; }
+    .ait-dropzone-actions { flex-direction: column; align-items: center; }
+}

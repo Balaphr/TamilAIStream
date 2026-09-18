@@ -222,6 +222,7 @@
         <button data-page="splash"><i class="fas fa-rocket"></i><span class="sidebar-label">Splash</span></button>
         <button data-page="player"><i class="fas fa-headphones"></i><span class="sidebar-label">Player</span></button>
         <button data-page="platform"><i class="fas fa-desktop"></i><span class="sidebar-label">Platform</span></button>
+        <button data-page="ai-tools"><i class="fas fa-screwdriver-wrench"></i><span class="sidebar-label">AI & Tools</span></button>
         <button data-page="visual-editor"><i class="fas fa-wand-magic-sparkles"></i><span class="sidebar-label">Visual Editor</span></button>
     </nav>
 </div>
@@ -269,6 +270,11 @@
 <div class="page-panel" id="page-platform">
     <div class="pg-header"><h2><i class="fas fa-desktop"></i> Platform Layout</h2><button class="btn btn-green" onclick="saveAllSettings()"><i class="fas fa-save"></i> Save</button></div>
     <div class="pg-body"><div class="tab-bar" id="platformTabs"><button class="active" data-ptab="desktop">Desktop</button><button data-ptab="tablet">Tablet</button><button data-ptab="mobile">Mobile</button></div><div id="platformBody"></div></div>
+</div>
+
+<div class="page-panel" id="page-ai-tools">
+    <div class="pg-header"><h2><i class="fas fa-screwdriver-wrench"></i> AI & Media Tools Settings</h2><button class="btn btn-green" onclick="saveAllSettings()"><i class="fas fa-save"></i> Save</button></div>
+    <div class="pg-body"><div id="aiToolsSettingsBody"></div></div>
 </div>
 
 <div class="page-panel visual-editor" id="page-visual-editor">

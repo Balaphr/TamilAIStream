@@ -1130,6 +1130,7 @@ window.NexvoraAI = (function () {
             dashboard: 'nexvoraDashboardView',
             chat: 'nexvoraChatView',
             tools: 'nexvoraToolsView',
+            aitools: 'nexvoraAIToolsView',
             prompts: 'nexvoraPromptsView',
             favorites: 'nexvoraFavoritesView',
             library: 'nexvoraLibraryView',
@@ -1145,7 +1146,7 @@ window.NexvoraAI = (function () {
             var el = document.getElementById(viewId);
             if (el) el.classList.add('nexvora-active');
         }
-        updateNavActive(nav === 'nexvoraHelpView' || nav === 'nexvoraAdminView' || nav === 'nexvoraSettingsView' || nav === 'nexvoraModelsView' || nav === 'nexvoraFilesView' ? 'chat' : nav);
+        updateNavActive(nav === 'nexvoraHelpView' || nav === 'nexvoraAdminView' || nav === 'nexvoraSettingsView' || nav === 'nexvoraModelsView' || nav === 'nexvoraFilesView' ? 'chat' : (nav === 'nexvoraAIToolsView' ? 'aitools' : nav));
         // Refresh data for specific views
         if (nav === 'dashboard') renderDashboard();
         if (nav === 'favorites') renderFavorites();

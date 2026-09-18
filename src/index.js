@@ -3,6 +3,13 @@
   handleAnalyticsRealtimeGet, handleAnalyticsRawGet, handleAnalyticsResetPost
 } from './analytics-handler.js';
 
+import {
+  handleAIToolsProcess,
+  handleAIToolsConfigSave,
+  handleAIToolsConfigGet,
+  handleAIToolsTest
+} from './ai-tools-handler.js';
+
 // ============================================================================
 // ADMIN SECURITY — HMAC-signed tokens, two-step verification, audit logging
 // ============================================================================
@@ -547,6 +554,24 @@ export default {
       // ─── Cross-device login validation (same credentials as admin) ───
       if (url.pathname === '/api/auth/validate' && request.method === 'POST') {
         return handleAuthValidate(request, env);
+      }
+
+      // ─── AI Tools API Endpoints ───
+      if (url.pathname === '/api/ai-tools/process' && request.method === 'POST') {
+        return handleAIToolsProcess(request, env);
+      }
+      if (url.pathname === '/api/ai-tools/config' && request.method === 'GET') {
+        return handleAIToolsConfigGet(request, env);
+      }
+      if (url.pathname === '/api/ai-tools/config' && request.method === 'POST') {
+        const auth = await requireAdminAuth(request, env);
+        if (!auth.authorized) return json({ error: auth.error }, 401);
+        return handleAIToolsConfigSave(request, env);
+      }
+      if (url.pathname === '/api/ai-tools/test' && request.method === 'POST') {
+        const auth = await requireAdminAuth(request, env);
+        if (!auth.authorized) return json({ error: auth.error }, 401);
+        return handleAIToolsTest(request, env);
       }
 
       // ─── User Data Sync Endpoints (require user token) ───
