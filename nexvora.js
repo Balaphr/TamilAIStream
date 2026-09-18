@@ -18,7 +18,8 @@ window.NexvoraAI = (function () {
         PROMPTS: 'nexvora_prompts',
         FAVORITES: 'nexvora_favorites',
         FEEDBACK: 'nexvora_feedback',
-        ADMIN_SEEN: 'nexvora_admin_seen'
+        ADMIN_SEEN: 'nexvora_admin_seen',
+        LAST_VIEW: 'nexvora_last_view'
     };
 
     var DEFAULT_SETTINGS = {
@@ -729,10 +730,12 @@ window.NexvoraAI = (function () {
             });
         }
 
-        var lastChat = lsGet(SK.ACTIVE_CHAT);
+        var lastView = lsGetJSON(SK.LAST_VIEW);
+        var lastChat = lsGetJSON(SK.ACTIVE_CHAT);
         if (lastChat && getChat(lastChat)) {
             openChat(lastChat);
-            showView('chat');
+        } else if (lastView) {
+            showView(lastView);
         } else {
             showView('dashboard');
             showWelcome();
@@ -1147,6 +1150,10 @@ window.NexvoraAI = (function () {
             if (el) el.classList.add('nexvora-active');
         }
         updateNavActive(nav === 'nexvoraHelpView' || nav === 'nexvoraAdminView' || nav === 'nexvoraSettingsView' || nav === 'nexvoraModelsView' || nav === 'nexvoraFilesView' ? 'chat' : (nav === 'nexvoraAIToolsView' ? 'aitools' : nav));
+        // Save current view for restore on refresh (skip admin/settings/models — not meaningful to persist)
+        if (viewMap[nav] && nav !== 'admin' && nav !== 'models' && nav !== 'settings') {
+            lsSet(SK.LAST_VIEW, nav);
+        }
         // Refresh data for specific views
         if (nav === 'dashboard') renderDashboard();
         if (nav === 'favorites') renderFavorites();
