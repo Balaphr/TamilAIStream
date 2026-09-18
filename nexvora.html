@@ -22,100 +22,127 @@
             <div class="nexvora-auth-glow g2"></div>
             <div class="nexvora-auth-glow g3"></div>
         </div>
-        <div class="nexvora-auth-card">
-            <div class="nexvora-auth-logo">
-                <div class="nexvora-logo-mark"><i class="fa-solid fa-bolt"></i></div>
-                <h1>Nexvora <span>AI</span></h1>
-                <p>Intelligent Assistant Platform</p>
-            </div>
-            <div class="nexvora-auth-body" id="authLoginForm">
-                <div class="nexvora-auth-welcome">
-                    <h2>Welcome Back</h2>
-                    <p>Sign in to access your AI workspace</p>
-                </div>
-                <div class="nexvora-auth-methods">
-                    <button class="nexvora-auth-google" id="nexvoraGoogleLogin" type="button">
-                        <svg viewBox="0 0 48 48" width="20" height="20"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
-                        <span>Continue with Google</span>
-                    </button>
-                    <button class="nexvora-auth-guest" id="nexvoraGuestLogin" type="button">
-                        <i class="fa-solid fa-user-astronaut"></i>
-                        <span>Continue as Guest</span>
-                    </button>
-                </div>
-                <div class="nexvora-admin-access">
-                    <div class="nexvora-admin-header">
-                        <i class="fa-solid fa-shield-halved"></i>
-                        <span>Admin Account</span>
+        <div class="nexvora-auth-layout">
+            <!-- Left: Branding -->
+            <div class="nexvora-auth-brand">
+                <div class="nexvora-auth-brand-inner">
+                    <div class="nexvora-brand-logo">
+                        <div class="nexvora-logo-mark"><i class="fa-solid fa-bolt"></i></div>
+                        <h1>Nexvora <span>AI</span></h1>
                     </div>
-                    <button class="nexvora-admin-login-btn" id="nexvoraAdminLogin" type="button">
-                        <i class="fa-solid fa-bolt"></i>
-                        <span>Quick Admin Login</span>
-                    </button>
-                    <button class="nexvora-admin-login-btn nexvora-admin-open-dashboard" id="nexvoraAdminDashboard" type="button">
-                        <i class="fa-solid fa-chart-line"></i>
-                        <span>Open Admin Dashboard</span>
-                    </button>
-                </div>
-                <div class="nexvora-auth-divider"><span>or sign in with email</span></div>
-                <form id="nexvoraLoginForm" novalidate>
-                    <div class="nexvora-input-group">
-                        <label for="nexvoraEmail"><i class="fa-solid fa-envelope"></i> Email</label>
-                        <input type="email" id="nexvoraEmail" placeholder="you@example.com" autocomplete="email" required>
-                        <div class="nexvora-input-error" id="nexvoraEmailErr"></div>
-                    </div>
-                    <div class="nexvora-input-group">
-                        <label for="nexvoraPass"><i class="fa-solid fa-lock"></i> Password</label>
-                        <div class="nexvora-pass-wrap">
-                            <input type="password" id="nexvoraPass" placeholder="Enter password" autocomplete="current-password" required>
-                            <button type="button" class="nexvora-pass-toggle" id="nexvoraPassToggle"><i class="fa-solid fa-eye"></i></button>
+                    <p class="nexvora-brand-tagline">Intelligent Assistant Platform</p>
+                    <div class="nexvora-brand-features">
+                        <div class="nexvora-brand-feature">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <div><strong>AI-Powered Tools</strong><span>Image, PDF, Video & Audio processing</span></div>
                         </div>
-                        <div class="nexvora-input-error" id="nexvoraPassErr"></div>
-                    </div>
-                    <div class="nexvora-auth-error" id="nexvoraAuthError"></div>
-                    <div class="nexvora-form-opts">
-                        <label class="nexvora-remember"><input type="checkbox" id="nexvoraRemember"> <span>Remember me</span></label>
-                        <a href="javascript:void(0)" id="nexvoraForgot">Forgot Password?</a>
-                    </div>
-                    <button type="submit" class="nexvora-submit-btn" id="nexvoraSubmitBtn">
-                        <span class="nexvora-btn-text"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</span>
-                        <span class="nexvora-btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Signing In...</span>
-                    </button>
-                </form>
-                <div class="nexvora-auth-footer">New to Nexvora AI? <a href="javascript:void(0)" id="nexvoraShowRegister">Create Account</a></div>
-            </div>
-            <div class="nexvora-auth-body nexvora-hidden" id="authRegisterForm">
-                <div class="nexvora-auth-welcome">
-                    <h2>Create Account</h2>
-                    <p>Join Nexvora AI for a powerful assistant experience</p>
-                </div>
-                <form id="nexvoraRegisterForm" novalidate>
-                    <div class="nexvora-input-group">
-                        <label for="nexvoraRegName"><i class="fa-solid fa-user"></i> Full Name</label>
-                        <input type="text" id="nexvoraRegName" placeholder="Your name" autocomplete="name" required>
-                    </div>
-                    <div class="nexvora-input-group">
-                        <label for="nexvoraRegEmail"><i class="fa-solid fa-envelope"></i> Email</label>
-                        <input type="email" id="nexvoraRegEmail" placeholder="you@example.com" autocomplete="email" required>
-                    </div>
-                    <div class="nexvora-input-group">
-                        <label for="nexvoraRegPass"><i class="fa-solid fa-lock"></i> Password</label>
-                        <div class="nexvora-pass-wrap">
-                            <input type="password" id="nexvoraRegPass" placeholder="Min 8 characters" autocomplete="new-password" required>
-                            <button type="button" class="nexvora-pass-toggle" id="nexvoraRegPassToggle"><i class="fa-solid fa-eye"></i></button>
+                        <div class="nexvora-brand-feature">
+                            <i class="fa-solid fa-comments"></i>
+                            <div><strong>Smart Assistant</strong><span>Multi-model chat with context memory</span></div>
+                        </div>
+                        <div class="nexvora-brand-feature">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <div><strong>Secure & Private</strong><span>Your data stays on your device</span></div>
                         </div>
                     </div>
-                    <div class="nexvora-input-group">
-                        <label for="nexvoraRegConfirm"><i class="fa-solid fa-lock"></i> Confirm Password</label>
-                        <input type="password" id="nexvoraRegConfirm" placeholder="Confirm password" autocomplete="new-password" required>
+                </div>
+            </div>
+            <!-- Right: Auth Form -->
+            <div class="nexvora-auth-form-side">
+                <div class="nexvora-auth-card">
+                    <div class="nexvora-auth-body" id="authLoginForm">
+                        <div class="nexvora-auth-welcome">
+                            <h2>Welcome Back</h2>
+                            <p>Sign in to access your AI workspace</p>
+                        </div>
+                        <div class="nexvora-auth-methods">
+                            <button class="nexvora-auth-google" id="nexvoraGoogleLogin" type="button">
+                                <svg viewBox="0 0 48 48" width="20" height="20"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+                                <span>Continue with Google</span>
+                            </button>
+                            <button class="nexvora-auth-guest" id="nexvoraGuestLogin" type="button">
+                                <i class="fa-solid fa-user-astronaut"></i>
+                                <span>Continue as Guest</span>
+                            </button>
+                        </div>
+                        <div class="nexvora-auth-divider"><span>or sign in with email</span></div>
+                        <form id="nexvoraLoginForm" novalidate>
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraEmail"><i class="fa-solid fa-envelope"></i> Email</label>
+                                <input type="email" id="nexvoraEmail" placeholder="you@example.com" autocomplete="email" required>
+                                <div class="nexvora-input-error" id="nexvoraEmailErr"></div>
+                            </div>
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraPass"><i class="fa-solid fa-lock"></i> Password</label>
+                                <div class="nexvora-pass-wrap">
+                                    <input type="password" id="nexvoraPass" placeholder="Enter password" autocomplete="current-password" required>
+                                    <button type="button" class="nexvora-pass-toggle" id="nexvoraPassToggle"><i class="fa-solid fa-eye"></i></button>
+                                </div>
+                                <div class="nexvora-input-error" id="nexvoraPassErr"></div>
+                            </div>
+                            <div class="nexvora-auth-error" id="nexvoraAuthError"></div>
+                            <div class="nexvora-form-opts">
+                                <label class="nexvora-remember"><input type="checkbox" id="nexvoraRemember"> <span>Remember me</span></label>
+                                <a href="javascript:void(0)" id="nexvoraForgot">Forgot Password?</a>
+                            </div>
+                            <button type="submit" class="nexvora-submit-btn" id="nexvoraSubmitBtn">
+                                <span class="nexvora-btn-text"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</span>
+                                <span class="nexvora-btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Signing In...</span>
+                            </button>
+                        </form>
+                        <div class="nexvora-auth-footer">New to Nexvora AI? <a href="javascript:void(0)" id="nexvoraShowRegister">Create Account</a></div>
                     </div>
-                    <div class="nexvora-auth-error" id="nexvoraRegError"></div>
-                    <button type="submit" class="nexvora-submit-btn" id="nexvoraRegBtn">
-                        <span class="nexvora-btn-text"><i class="fa-solid fa-user-plus"></i> Create Account</span>
-                        <span class="nexvora-btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Creating...</span>
-                    </button>
-                </form>
-                <div class="nexvora-auth-footer">Already have an account? <a href="javascript:void(0)" id="nexvoraShowLogin">Sign In</a></div>
+                    <div class="nexvora-auth-admin-bar">
+                        <div class="nexvora-admin-bar-header">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <span>Administrator Access</span>
+                        </div>
+                        <div class="nexvora-admin-bar-actions">
+                            <button class="nexvora-admin-bar-btn" id="nexvoraAdminLogin" type="button">
+                                <i class="fa-solid fa-bolt"></i>
+                                <span>Quick Admin Login</span>
+                            </button>
+                            <div class="nexvora-admin-bar-divider"></div>
+                            <button class="nexvora-admin-bar-btn" id="nexvoraAdminDashboard" type="button">
+                                <i class="fa-solid fa-chart-line"></i>
+                                <span>Admin Dashboard</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="nexvora-auth-body nexvora-hidden" id="authRegisterForm">
+                        <div class="nexvora-auth-welcome">
+                            <h2>Create Account</h2>
+                            <p>Join Nexvora AI for a powerful assistant experience</p>
+                        </div>
+                        <form id="nexvoraRegisterForm" novalidate>
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraRegName"><i class="fa-solid fa-user"></i> Full Name</label>
+                                <input type="text" id="nexvoraRegName" placeholder="Your name" autocomplete="name" required>
+                            </div>
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraRegEmail"><i class="fa-solid fa-envelope"></i> Email</label>
+                                <input type="email" id="nexvoraRegEmail" placeholder="you@example.com" autocomplete="email" required>
+                            </div>
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraRegPass"><i class="fa-solid fa-lock"></i> Password</label>
+                                <div class="nexvora-pass-wrap">
+                                    <input type="password" id="nexvoraRegPass" placeholder="Min 8 characters" autocomplete="new-password" required>
+                                    <button type="button" class="nexvora-pass-toggle" id="nexvoraRegPassToggle"><i class="fa-solid fa-eye"></i></button>
+                                </div>
+                            </div>
+                            <div class="nexvora-input-group">
+                                <label for="nexvoraRegConfirm"><i class="fa-solid fa-lock"></i> Confirm Password</label>
+                                <input type="password" id="nexvoraRegConfirm" placeholder="Confirm password" autocomplete="new-password" required>
+                            </div>
+                            <div class="nexvora-auth-error" id="nexvoraRegError"></div>
+                            <button type="submit" class="nexvora-submit-btn" id="nexvoraRegBtn">
+                                <span class="nexvora-btn-text"><i class="fa-solid fa-user-plus"></i> Create Account</span>
+                                <span class="nexvora-btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Creating...</span>
+                            </button>
+                        </form>
+                        <div class="nexvora-auth-footer">Already have an account? <a href="javascript:void(0)" id="nexvoraShowLogin">Sign In</a></div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="nexvora-auth-bottom"><a href="index.html"><i class="fa-solid fa-arrow-left"></i> Back to Tamil AI Stream</a></div>
@@ -1224,75 +1251,75 @@
             <button class="nexvora-ctx-item nexvora-ctx-danger" data-action="delete"><i class="fa-solid fa-trash"></i> Delete</button>
         </div>
 
-        <!-- Inline Admin Login Modal -->
-        <div class="nexvora-modal nexvora-hidden" id="nexvoraAdminLoginModal">
-            <div class="nexvora-modal-backdrop" id="nexvoraAdminLoginBackdrop"></div>
-            <div class="nexvora-modal-content nexvora-modal-sm">
-                <div class="nexvora-modal-header">
-                    <h3><i class="fa-solid fa-shield-halved"></i> Admin Login</h3>
-                    <button class="nexvora-modal-close" id="nexvoraAdminLoginClose"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="nexvora-modal-body">
-                    <!-- Step 1: Credentials -->
-                    <div id="nexvoraAdminStep1">
-                        <div style="text-align:center;margin-bottom:16px;">
-                            <div style="width:48px;height:48px;border-radius:50%;background:rgba(108,92,231,0.15);border:2px solid rgba(108,92,231,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
-                                <i class="fa-solid fa-shield-halved" style="font-size:20px;color:#6c5ce7;"></i>
-                            </div>
-                            <p style="color:var(--nexvora-text-secondary,#a0a0b0);font-size:13px;">Enter admin credentials to continue</p>
+        <!-- Toast Container -->
+        <div class="nexvora-toast-container" id="nexvoraToasts"></div>
+    </div>
+
+    <!-- Admin Login Modal (outside nexvoraApp so it's visible from auth gate) -->
+    <div class="nexvora-modal nexvora-hidden" id="nexvoraAdminLoginModal">
+        <div class="nexvora-modal-backdrop" id="nexvoraAdminLoginBackdrop"></div>
+        <div class="nexvora-modal-content nexvora-modal-sm">
+            <div class="nexvora-modal-header">
+                <h3><i class="fa-solid fa-shield-halved"></i> Admin Login</h3>
+                <button class="nexvora-modal-close" id="nexvoraAdminLoginClose"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="nexvora-modal-body">
+                <!-- Step 1: Credentials -->
+                <div id="nexvoraAdminStep1">
+                    <div style="text-align:center;margin-bottom:16px;">
+                        <div style="width:48px;height:48px;border-radius:50%;background:rgba(108,92,231,0.15);border:2px solid rgba(108,92,231,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                            <i class="fa-solid fa-shield-halved" style="font-size:20px;color:#6c5ce7;"></i>
                         </div>
-                        <div class="nexvora-input-group">
-                            <label for="nexvoraAdminEmail"><i class="fa-solid fa-envelope"></i> Email</label>
-                            <input type="email" id="nexvoraAdminEmail" placeholder="admin@example.com" autocomplete="email">
-                            <div class="nexvora-input-error" id="nexvoraAdminEmailErr"></div>
-                        </div>
-                        <div class="nexvora-input-group">
-                            <label for="nexvoraAdminPassword"><i class="fa-solid fa-lock"></i> Password</label>
-                            <input type="password" id="nexvoraAdminPassword" placeholder="Enter password" autocomplete="current-password">
-                            <div class="nexvora-input-error" id="nexvoraAdminPassErr"></div>
-                        </div>
-                        <div class="nexvora-input-error" id="nexvoraAdminCredErr" style="text-align:center;margin-bottom:8px;"></div>
-                        <button type="button" class="nexvora-submit-btn" id="nexvoraAdminSubmitBtn">
-                            <span class="nexvora-btn-text"><i class="fa-solid fa-arrow-right-to-bracket"></i> Verify Credentials</span>
-                            <span class="nexvora-btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Verifying...</span>
-                        </button>
+                        <p style="color:var(--nexvora-text-secondary,#a0a0b0);font-size:13px;">Enter admin credentials to continue</p>
                     </div>
-                    <!-- Step 2: Verification Code -->
-                    <div id="nexvoraAdminStep2" style="display:none;">
-                        <div style="text-align:center;margin-bottom:16px;">
-                            <div style="width:48px;height:48px;border-radius:50%;background:rgba(16,185,129,0.15);border:2px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
-                                <i class="fa-solid fa-key" style="font-size:20px;color:#10b981;"></i>
-                            </div>
-                            <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;color:var(--nexvora-text-primary,#fff);">Verification Required</h3>
-                            <p style="color:var(--nexvora-text-secondary,#a0a0b0);font-size:13px;">Enter the 6-digit code sent to</p>
-                            <p style="color:#10b981;font-size:13px;font-weight:600;" id="nexvoraAdminVerifyEmail"></p>
+                    <div class="nexvora-input-group">
+                        <label for="nexvoraAdminEmail"><i class="fa-solid fa-envelope"></i> Email</label>
+                        <input type="email" id="nexvoraAdminEmail" placeholder="admin@example.com" autocomplete="email">
+                        <div class="nexvora-input-error" id="nexvoraAdminEmailErr"></div>
+                    </div>
+                    <div class="nexvora-input-group">
+                        <label for="nexvoraAdminPassword"><i class="fa-solid fa-lock"></i> Password</label>
+                        <input type="password" id="nexvoraAdminPassword" placeholder="Enter password" autocomplete="current-password">
+                        <div class="nexvora-input-error" id="nexvoraAdminPassErr"></div>
+                    </div>
+                    <div class="nexvora-input-error" id="nexvoraAdminCredErr" style="text-align:center;margin-bottom:8px;"></div>
+                    <button type="button" class="nexvora-submit-btn" id="nexvoraAdminSubmitBtn">
+                        <span class="nexvora-btn-text"><i class="fa-solid fa-arrow-right-to-bracket"></i> Verify Credentials</span>
+                        <span class="nexvora-btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Verifying...</span>
+                    </button>
+                </div>
+                <!-- Step 2: Verification Code -->
+                <div id="nexvoraAdminStep2" style="display:none;">
+                    <div style="text-align:center;margin-bottom:16px;">
+                        <div style="width:48px;height:48px;border-radius:50%;background:rgba(16,185,129,0.15);border:2px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                            <i class="fa-solid fa-key" style="font-size:20px;color:#10b981;"></i>
                         </div>
-                        <div class="nexvora-input-group">
-                            <label for="nexvoraAdminCode"><i class="fa-solid fa-key"></i> Verification Code</label>
-                            <input type="text" id="nexvoraAdminCode" placeholder="000000" maxlength="6"
-                                style="text-align:center;font-size:20px;letter-spacing:8px;font-weight:700;"
-                                autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*">
-                        </div>
-                        <div class="nexvora-input-error" id="nexvoraAdminCodeErr" style="text-align:center;margin-bottom:8px;"></div>
-                        <button type="button" class="nexvora-submit-btn" id="nexvoraAdminVerifyBtn">
-                            <span class="nexvora-btn-text"><i class="fa-solid fa-check"></i> Verify & Login</span>
-                            <span class="nexvora-btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Verifying...</span>
+                        <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;color:var(--nexvora-text-primary,#fff);">Verification Required</h3>
+                        <p style="color:var(--nexvora-text-secondary,#a0a0b0);font-size:13px;">Enter the 6-digit code sent to</p>
+                        <p style="color:#10b981;font-size:13px;font-weight:600;" id="nexvoraAdminVerifyEmail"></p>
+                    </div>
+                    <div class="nexvora-input-group">
+                        <label for="nexvoraAdminCode"><i class="fa-solid fa-key"></i> Verification Code</label>
+                        <input type="text" id="nexvoraAdminCode" placeholder="000000" maxlength="6"
+                            style="text-align:center;font-size:20px;letter-spacing:8px;font-weight:700;"
+                            autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*">
+                    </div>
+                    <div class="nexvora-input-error" id="nexvoraAdminCodeErr" style="text-align:center;margin-bottom:8px;"></div>
+                    <button type="button" class="nexvora-submit-btn" id="nexvoraAdminVerifyBtn">
+                        <span class="nexvora-btn-text"><i class="fa-solid fa-check"></i> Verify & Login</span>
+                        <span class="nexvora-btn-loader"><i class="fa-solid fa-circle-notch fa-spin"></i> Verifying...</span>
+                    </button>
+                    <div style="display:flex;justify-content:space-between;margin-top:12px;">
+                        <button type="button" id="nexvoraAdminBackBtn" style="background:none;border:none;color:var(--nexvora-text-secondary,#a0a0b0);cursor:pointer;font-size:13px;padding:4px;">
+                            <i class="fa-solid fa-arrow-left"></i> Back
                         </button>
-                        <div style="display:flex;justify-content:space-between;margin-top:12px;">
-                            <button type="button" id="nexvoraAdminBackBtn" style="background:none;border:none;color:var(--nexvora-text-secondary,#a0a0b0);cursor:pointer;font-size:13px;padding:4px;">
-                                <i class="fa-solid fa-arrow-left"></i> Back
-                            </button>
-                            <button type="button" id="nexvoraAdminResendBtn" style="background:none;border:none;color:#10b981;cursor:pointer;font-size:13px;padding:4px;">
-                                Resend Code
-                            </button>
-                        </div>
+                        <button type="button" id="nexvoraAdminResendBtn" style="background:none;border:none;color:#10b981;cursor:pointer;font-size:13px;padding:4px;">
+                            Resend Code
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Toast Container -->
-        <div class="nexvora-toast-container" id="nexvoraToasts"></div>
     </div>
 
     <script src="auth.js"></script>

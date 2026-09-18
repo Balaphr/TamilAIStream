@@ -476,8 +476,10 @@ window.NexvoraAI = (function () {
     var ADMIN_NAME = 'Admin User';
     var _adminPendingEmail = null;
     var _adminPendingPassword = null;
+    var _adminWantsDashboard = false;
 
     function handleAdminLogin() {
+        _adminWantsDashboard = false;
         // Check for existing verified admin session first
         try {
             var s = JSON.parse(localStorage.getItem('adminSession') || 'null');
@@ -495,6 +497,7 @@ window.NexvoraAI = (function () {
     function handleAdminDashboard() {
         var btn = $('#nexvoraAdminDashboard');
         if (!btn) return;
+        _adminWantsDashboard = true;
         // Check for existing verified admin session
         try {
             var s = JSON.parse(localStorage.getItem('adminSession') || 'null');
@@ -502,6 +505,7 @@ window.NexvoraAI = (function () {
                 Auth.createSession({ email: s.email || 'admin@tamilaistream.com', name: s.displayName || 'Admin' }, true);
                 showApp();
                 showToast('Opening Admin Dashboard...', 'success');
+                setTimeout(function () { navigateTo('admin'); }, 300);
                 return;
             }
         } catch (e) {}
@@ -634,6 +638,12 @@ window.NexvoraAI = (function () {
             hideAdminLoginModal();
             showApp();
             showToast('Login successful! Welcome, Admin.', 'success');
+
+            // If "Admin Dashboard" was clicked, navigate to admin view
+            if (_adminWantsDashboard) {
+                setTimeout(function () { navigateTo('admin'); }, 300);
+            }
+            _adminWantsDashboard = false;
 
             if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.classList.remove('loading'); }
         })

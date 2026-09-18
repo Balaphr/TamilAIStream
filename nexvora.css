@@ -84,38 +84,79 @@ a:hover { text-decoration: underline; }
 .nexvora-auth-glow.g2 { width: 400px; height: 400px; bottom: -100px; right: -50px; background: #00cec9; }
 .nexvora-auth-glow.g3 { width: 300px; height: 300px; top: 50%; left: 50%; transform: translate(-50%,-50%); background: #a29bfe; }
 
-.nexvora-auth-card {
+/* Split Layout */
+.nexvora-auth-layout {
     position: relative; z-index: 1;
-    width: 100%; max-width: 420px;
-    background: rgba(17,24,39,0.85);
+    display: flex; width: 100%; max-width: 920px;
+    min-height: 540px; border-radius: var(--nv-radius-xl);
+    background: rgba(17,24,39,0.6);
     backdrop-filter: blur(40px);
     border: 1px solid var(--nv-border);
-    border-radius: var(--nv-radius-xl);
-    padding: 40px 36px;
     box-shadow: var(--nv-shadow-lg);
 }
 
-.nexvora-auth-logo {
-    text-align: center; margin-bottom: 32px;
+/* Left: Branding */
+.nexvora-auth-brand {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 48px 40px;
+    background: linear-gradient(135deg, rgba(108,92,231,0.12) 0%, rgba(0,206,201,0.08) 100%);
+    border-right: 1px solid var(--nv-border);
 }
-.nexvora-logo-mark {
-    width: 56px; height: 56px; margin: 0 auto 16px;
+.nexvora-auth-brand-inner { max-width: 320px; }
+.nexvora-brand-logo { text-align: center; margin-bottom: 36px; }
+.nexvora-brand-logo .nexvora-logo-mark {
+    width: 64px; height: 64px; margin: 0 auto 20px;
     background: var(--nv-accent-gradient);
-    border-radius: var(--nv-radius);
+    border-radius: 18px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 24px; color: #fff;
-    box-shadow: 0 4px 20px var(--nv-accent-glow);
+    font-size: 28px; color: #fff;
+    box-shadow: 0 8px 32px var(--nv-accent-glow);
 }
-.nexvora-auth-logo h1 {
-    font-size: 26px; font-weight: 800; letter-spacing: -0.5px;
+.nexvora-brand-logo h1 {
+    font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
 }
-.nexvora-auth-logo h1 span { color: var(--nv-accent-light); }
-.nexvora-auth-logo p {
-    color: var(--nv-text-secondary); font-size: 14px; margin-top: 4px;
+.nexvora-brand-logo h1 span { color: var(--nv-accent-light); }
+.nexvora-brand-tagline {
+    color: var(--nv-text-secondary); font-size: 14px;
+    text-align: center; margin-top: 6px;
+}
+.nexvora-brand-features {
+    display: flex; flex-direction: column; gap: 20px; margin-top: 32px;
+}
+.nexvora-brand-feature {
+    display: flex; align-items: flex-start; gap: 14px;
+}
+.nexvora-brand-feature i {
+    width: 40px; height: 40px; min-width: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    background: rgba(108,92,231,0.12);
+    color: var(--nv-accent-light);
+    border: 1px solid rgba(108,92,231,0.2);
+}
+.nexvora-brand-feature div { display: flex; flex-direction: column; }
+.nexvora-brand-feature strong {
+    font-size: 14px; font-weight: 600; color: var(--nv-text);
+}
+.nexvora-brand-feature span {
+    font-size: 12px; color: var(--nv-text-muted); margin-top: 2px;
+}
+
+/* Right: Form */
+.nexvora-auth-form-side {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 36px 36px;
+}
+
+.nexvora-auth-card {
+    width: 100%; max-width: 380px;
+    background: transparent;
 }
 
 .nexvora-auth-welcome { margin-bottom: 24px; }
-.nexvora-auth-welcome h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.nexvora-auth-welcome h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
 .nexvora-auth-welcome p { color: var(--nv-text-secondary); font-size: 14px; }
 
 .nexvora-auth-methods {
@@ -137,50 +178,50 @@ a:hover { text-decoration: underline; }
 }
 .nexvora-auth-guest:hover { background: var(--nv-surface-hover); }
 
-.nexvora-admin-access {
-    margin: 16px 0;
-    padding: 14px;
-    background: var(--nv-surface);
-    border: 1px solid var(--nv-border);
-    border-radius: var(--nv-radius);
-}
-.nexvora-admin-header {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 13px; font-weight: 600;
-    color: var(--nv-text-secondary); margin-bottom: 12px;
-}
-.nexvora-admin-header i { color: #6c5ce7; }
-.nexvora-admin-login-btn {
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    width: 100%; padding: 10px; border-radius: var(--nv-radius-sm);
-    font-size: 13px; font-weight: 500; cursor: pointer;
-    transition: all var(--nv-transition);
-    background: linear-gradient(135deg, #6c5ce7, #5a4bd1);
-    color: #fff; border: none;
-    box-shadow: 0 4px 14px rgba(108, 92, 231, 0.3);
-}
-.nexvora-admin-login-btn:hover {
-    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.5);
-    transform: translateY(-1px);
-}
-.nexvora-admin-open-dashboard {
-    margin-top: 8px;
-    background: var(--nv-surface);
-    color: var(--nv-text);
-    border: 1px solid var(--nv-border);
-    box-shadow: none;
-}
-.nexvora-admin-open-dashboard:hover {
-    background: var(--nv-surface-hover);
-    box-shadow: none;
-}
-
 .nexvora-auth-divider {
     display: flex; align-items: center; gap: 12px;
     margin: 20px 0; color: var(--nv-text-muted); font-size: 12px;
 }
 .nexvora-auth-divider::before, .nexvora-auth-divider::after {
     content: ''; flex: 1; height: 1px; background: var(--nv-border);
+}
+
+/* Admin Bar */
+.nexvora-auth-admin-bar {
+    width: 100%; max-width: 380px;
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: var(--nv-surface);
+    border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius);
+}
+.nexvora-admin-bar-header {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600;
+    color: var(--nv-text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+.nexvora-admin-bar-header i { color: #6c5ce7; }
+.nexvora-admin-bar-actions {
+    display: flex; align-items: center; gap: 8px;
+}
+.nexvora-admin-bar-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 9px 12px; border-radius: var(--nv-radius-sm);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all var(--nv-transition);
+    background: linear-gradient(135deg, #6c5ce7, #5a4bd1);
+    color: #fff; border: none;
+    box-shadow: 0 2px 10px rgba(108, 92, 231, 0.25);
+}
+.nexvora-admin-bar-btn:hover {
+    box-shadow: 0 4px 16px rgba(108, 92, 231, 0.45);
+    transform: translateY(-1px);
+}
+.nexvora-admin-bar-divider {
+    width: 1px; height: 28px;
+    background: var(--nv-border);
 }
 
 /* Form Elements */
@@ -1384,6 +1425,23 @@ a:hover { text-decoration: underline; }
     .nexvora-sidebar-close { display: flex; }
     .nexvora-sidebar-collapse-btn { display: none; }
     .nexvora-sidebar-overlay.open { display: block; }
+
+    /* Auth Gate Mobile */
+    .nexvora-auth-layout {
+        flex-direction: column;
+        max-width: 420px;
+        margin: 12px;
+        min-height: auto;
+    }
+    .nexvora-auth-brand {
+        border-right: none;
+        border-bottom: 1px solid var(--nv-border);
+        padding: 32px 28px;
+    }
+    .nexvora-auth-brand-inner { max-width: 100%; }
+    .nexvora-brand-features { display: none; }
+    .nexvora-auth-form-side { padding: 28px 24px; }
+    .nexvora-auth-admin-bar { max-width: 100%; }
 
     /* Reset collapsed state labels on mobile */
     .nexvora-sidebar .nexvora-sidebar-label,
