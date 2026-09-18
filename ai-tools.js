@@ -462,7 +462,10 @@ window.AIToolsApp = (function () {
         ]);
         h += renderSettingSection('URL Downloader', 'urlDownloader', config.urlDownloader, [
             { key: 'enabled', label: 'Enable URL Download', type: 'toggle' },
-            { key: 'provider', label: 'Provider', type: 'select', options: ['yt-dlp', 'ytdl-core', 'custom'] },
+            { key: 'provider', label: 'Provider', type: 'select', options: ['cobalt', 'rapidapi', 'yt-dlp', 'ytdl-core', 'custom'] },
+            { key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'Enter API key for selected provider' },
+            { key: 'model', label: 'Model / Service ID', type: 'text', placeholder: 'e.g. yt1s, ssyoutube (RapidAPI service)' },
+            { key: 'endpoint', label: 'Custom Endpoint', type: 'text', placeholder: 'https://api.example.com/download' },
             { key: 'maxQuality', label: 'Max Quality', type: 'select', options: ['720p', '1080p', '1440p', '2160p', 'best'] }
         ]);
         h += '</div>';
@@ -550,7 +553,9 @@ window.AIToolsApp = (function () {
         var section = collectSectionConfig(group);
         var btn = document.querySelector('.ait-section-test-btn[data-group="' + group + '"]');
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...'; }
-        if (!section.apiKey) {
+        // Cobalt provider is free and doesn't need an API key
+        var needsKey = group !== 'urlDownloader' || (section.provider && section.provider !== 'cobalt');
+        if (needsKey && !section.apiKey) {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-vial"></i> Test'; }
             showToast(group + ': No API key configured', 'info');
             return;
@@ -558,7 +563,7 @@ window.AIToolsApp = (function () {
         fetch('/api/ai-tools/test', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: group })
+            body: JSON.stringify({ type: group, config: section })
         }).then(function (r) { return r.json(); }).then(function (data) {
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-vial"></i> Test'; }
             if (data.success) showToast(group + ': ' + (data.message || 'Connection OK'), 'success');
@@ -648,13 +653,35 @@ window.AIToolsApp = (function () {
         }
 
         if (tool.id === 'url-download') {
+            var urlConfig = AIToolsAPI.getConfig().urlDownloader || {};
+            var provider = urlConfig.provider || 'cobalt';
+            var hasKey = !!(urlConfig.apiKey && urlConfig.apiKey.trim());
+            var providerLabel = provider === 'cobalt' ? 'Cobalt (Free)' : provider === 'rapidapi' ? 'RapidAPI' : provider === 'yt-dlp' ? 'yt-dlp (Server)' : provider === 'ytdl-core' ? 'ytdl-core' : 'Custom API';
+            var statusColor = hasKey || provider === 'cobalt' ? '#10b981' : '#f59e0b';
+            var statusText = hasKey || provider === 'cobalt' ? 'Ready' : 'API Key Required';
+            h += '<div style="padding:10px 14px;background:var(--ait-surface);border:1px solid var(--ait-border);border-radius:8px;margin-bottom:16px;font-size:12px;display:flex;align-items:center;justify-content:space-between;">' +
+                '<span style="color:var(--ait-text-secondary);">Provider: <strong style="color:var(--ait-text);">' + providerLabel + '</strong></span>' +
+                '<span style="color:' + statusColor + ';font-weight:600;"><i class="fa-solid fa-circle" style="font-size:6px;margin-right:4px;"></i>' + statusText + '</span></div>';
             h += '<div class="ait-form-group"><label class="ait-form-label">URL</label>' +
-                '<input type="url" id="aitToolUrl" class="ait-form-input" placeholder="https://example.com/video.mp4" value="' + (options && options.url ? escHtml(options.url) : '') + '"></div>';
+                '<input type="url" id="aitToolUrl" class="ait-form-input" placeholder="https://youtube.com/watch?v=... or any video/audio URL" value="' + (options && options.url ? escHtml(options.url) : '') + '"></div>';
+            h += '<div class="ait-form-group"><label class="ait-form-label">Output Format</label>' +
+                '<select id="aitToolFormat" class="ait-form-select">' +
+                '<option value="mp4">MP4 (Video)</option>' +
+                '<option value="mp3">MP3 (Audio)</option>' +
+                '<option value="webm">WebM (Video)</option>' +
+                '<option value="wav">WAV (Audio)</option>' +
+                '<option value="best">Best Available</option></select></div>';
             h += '<div class="ait-form-group"><label class="ait-form-label">Download Quality</label>' +
                 '<select id="aitToolQuality" class="ait-form-select">' +
-                '<option value="best">Best Available</option><option value="1080p" selected>1080p</option>' +
-                '<option value="720p">720p</option><option value="480p">480p</option>' +
+                '<option value="best">Best Available</option><option value="2160p">2160p (4K)</option>' +
+                '<option value="1440p">1440p (2K)</option><option value="1080p" selected>1080p (Full HD)</option>' +
+                '<option value="720p">720p (HD)</option><option value="480p">480p (SD)</option>' +
                 '<option value="audio-only">Audio Only</option></select></div>';
+            if (!hasKey && provider !== 'cobalt') {
+                h += '<div style="padding:10px 14px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;font-size:12px;color:#f59e0b;margin-bottom:16px;">' +
+                    '<i class="fa-solid fa-triangle-exclamation" style="margin-right:6px;"></i>' +
+                    'No API key configured. Go to <strong>Settings → URL Downloader</strong> to add your API key.</div>';
+            }
         }
 
         if (tool.id === 'pdf-create') {

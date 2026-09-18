@@ -142,6 +142,17 @@ window.AIToolsWorker = (function () {
                     updateJob(jobId, { status: 'failed', error: err.message || 'Processing failed', completedAt: Date.now() });
                 } else if (result && result.error) {
                     updateJob(jobId, { status: 'failed', error: result.error, completedAt: Date.now() });
+                } else if (result && result.downloadUrl) {
+                    // Trigger browser download for URL download results
+                    var a = document.createElement('a');
+                    a.href = result.downloadUrl;
+                    a.download = result.filename || 'download';
+                    a.target = '_blank';
+                    a.rel = 'noopener';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    updateJob(jobId, { status: 'completed', progress: 100, result: result, completedAt: Date.now() });
                 } else {
                     updateJob(jobId, { status: 'completed', progress: 100, result: result, completedAt: Date.now() });
                 }

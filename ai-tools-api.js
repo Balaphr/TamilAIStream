@@ -78,7 +78,7 @@ window.AIToolsAPI = (function () {
         },
         urlDownloader: {
             enabled: true,
-            provider: 'yt-dlp',
+            provider: 'cobalt',
             apiKey: '',
             model: '',
             endpoint: '',

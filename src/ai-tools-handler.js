@@ -474,14 +474,127 @@ async function processUrlDownload(config, body) {
   if (!urlCheck.ok) return { error: urlCheck.error };
 
   const provider = config.urlDownloader.provider;
+  const apiKey = config.urlDownloader.apiKey || '';
+  const quality = (options && options.quality) || config.urlDownloader.maxQuality || '1080p';
+  const format = (options && options.format) || 'mp4';
 
-  if (provider === 'yt-dlp') {
-    // yt-dlp is a CLI tool — not available in Cloudflare Workers
-    // Return the URL for client-side processing or use a hosted service
-    return { success: true, clientSide: true, url, message: 'URL download requires yt-dlp (server-side) or client-side processing.' };
+  // Cobalt API (free, no API key required)
+  if (provider === 'cobalt') {
+    try {
+      const cobaltBody = {
+        url: url,
+        downloadMode: format === 'mp3' || format === 'wav' ? 'audio' : 'auto',
+        filenameStyle: 'basic',
+        videoQuality: quality === 'best' ? '1080' : quality.replace('p', '')
+      };
+      if (format === 'mp3') cobaltBody.audioFormat = 'mp3';
+      else if (format === 'wav') cobaltBody.audioFormat = 'wav';
+
+      const cobaltRes = await fetch('https://api.cobalt.tools/api/json', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(cobaltBody),
+        signal: AbortSignal.timeout(30000)
+      });
+      const cobaltData = await cobaltRes.json();
+      if (cobaltData.error) {
+        return { error: cobaltData.error.message || 'Cobalt API error: ' + cobaltData.error };
+      }
+      if (cobaltData.url) {
+        return {
+          success: true,
+          downloadUrl: cobaltData.url,
+          filename: cobaltData.filename || 'download.' + format,
+          provider: 'cobalt',
+          contentType: format === 'mp3' ? 'audio/mpeg' : format === 'wav' ? 'audio/wav' : 'video/mp4'
+        };
+      }
+      return { error: 'Cobalt returned no download URL. The content may be protected or unsupported.' };
+    } catch (e) {
+      return { error: 'Cobalt API request failed: ' + e.message };
+    }
   }
 
-  // For direct HTTP downloads, just validate and return the URL
+  // RapidAPI providers (requires API key)
+  if (provider === 'rapidapi') {
+    if (!apiKey) {
+      return { error: 'RapidAPI requires an API key. Add it in Settings → URL Downloader.' };
+    }
+    const serviceName = config.urlDownloader.model || 'youtube-downloader';
+    try {
+      const rapidRes = await fetch('https://' + serviceName + '.p.rapidapi.com/download', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RapidAPI-Key': apiKey,
+          'X-RapidAPI-Host': serviceName + '.p.rapidapi.com'
+        },
+        body: JSON.stringify({ url: url, quality: quality, format: format }),
+        signal: AbortSignal.timeout(30000)
+      });
+      const rapidData = await rapidRes.json();
+      if (rapidData.error || !rapidData.result) {
+        return { error: rapidData.error || rapidData.message || 'RapidAPI request failed' };
+      }
+      return {
+        success: true,
+        downloadUrl: rapidData.result || rapidData.download_url || rapidData.url,
+        filename: rapidData.filename || 'download.' + format,
+        provider: 'rapidapi'
+      };
+    } catch (e) {
+      return { error: 'RapidAPI request failed: ' + e.message };
+    }
+  }
+
+  // yt-dlp or ytdl-core (server-side CLI, not available in CF Workers)
+  if (provider === 'yt-dlp' || provider === 'ytdl-core') {
+    return {
+      success: true,
+      clientSide: true,
+      url,
+      message: provider + ' requires server-side processing. Switch to "cobalt" or "rapidapi" provider for cloud downloads.',
+      suggestion: 'Switch provider to "cobalt" (free) or "rapidapi" (with API key) for working downloads.'
+    };
+  }
+
+  // Custom API endpoint (requires endpoint + API key)
+  if (provider === 'custom') {
+    const endpoint = config.urlDownloader.endpoint;
+    if (!endpoint) {
+      return { error: 'Custom endpoint is required. Add it in Settings → URL Downloader.' };
+    }
+    if (!apiKey) {
+      return { error: 'Custom API requires an API key. Add it in Settings → URL Downloader.' };
+    }
+    try {
+      const customHeaders = { 'Content-Type': 'application/json' };
+      if (apiKey) customHeaders['Authorization'] = 'Bearer ' + apiKey;
+      const customRes = await fetch(endpoint, {
+        method: 'POST',
+        headers: customHeaders,
+        body: JSON.stringify({ url: url, quality: quality, format: format, ...((options && options.extra) || {}) }),
+        signal: AbortSignal.timeout(30000)
+      });
+      const customData = await customRes.json();
+      if (customData.error) {
+        return { error: customData.error || 'Custom API error' };
+      }
+      return {
+        success: true,
+        downloadUrl: customData.downloadUrl || customData.url || customData.result,
+        filename: customData.filename || 'download.' + format,
+        provider: 'custom'
+      };
+    } catch (e) {
+      return { error: 'Custom API request failed: ' + e.message };
+    }
+  }
+
+  // Fallback: direct HTTP download validation
   try {
     const headRes = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
     if (!headRes.ok) return { error: `URL not accessible (HTTP ${headRes.status})` };
@@ -492,7 +605,8 @@ async function processUrlDownload(config, body) {
       url,
       contentType,
       contentLength: parseInt(contentLength),
-      downloadable: true
+      downloadable: true,
+      provider: 'direct'
     };
   } catch (e) {
     return { error: `Could not access URL: ${e.message}` };
@@ -584,7 +698,9 @@ async function handleAIToolsTest(request, env) {
 
     if (!provider) return json({ error: 'Unknown provider type' }, 400);
     if (!provider.enabled) return json({ error: 'Provider is disabled' }, 400);
-    if (!provider.apiKey && provider.provider !== 'sharp' && provider.provider !== 'pdf-lib') {
+    // Cobalt is free and doesn't need API key
+    const skipKeyCheck = type === 'urlDownloader' && (provider.provider === 'cobalt' || provider.provider === 'yt-dlp' || provider.provider === 'ytdl-core');
+    if (!skipKeyCheck && !provider.apiKey && provider.provider !== 'sharp' && provider.provider !== 'pdf-lib') {
       return json({ error: 'API key not configured' }, 400);
     }
 
@@ -650,6 +766,53 @@ async function handleAIToolsTest(request, env) {
           return json({ success: true, message: `CloudConvert connected — Plan: ${data.data?.credits?.plan || 'unknown'}` });
         }
         return json({ success: true, message: `${provider.provider} configured (local tool)` });
+
+      case 'urlDownloader':
+        if (provider.provider === 'cobalt') {
+          try {
+            const cobaltRes = await fetch('https://api.cobalt.tools/', {
+              method: 'GET',
+              headers: { 'Accept': 'application/json' },
+              signal: AbortSignal.timeout(10000)
+            });
+            if (!cobaltRes.ok) return json({ error: 'Cobalt API not reachable (HTTP ' + cobaltRes.status + ')' });
+            return json({ success: true, message: 'Cobalt API is reachable and ready' });
+          } catch (e) {
+            return json({ error: 'Cobalt API unreachable: ' + e.message });
+          }
+        }
+        if (provider.provider === 'rapidapi') {
+          if (!provider.apiKey) return json({ error: 'RapidAPI requires an API key' });
+          try {
+            const serviceName = provider.model || 'youtube-downloader';
+            const rapidRes = await fetch(`https://${serviceName}.p.rapidapi.com/`, {
+              headers: { 'X-RapidAPI-Key': provider.apiKey, 'X-RapidAPI-Host': serviceName + '.p.rapidapi.com' },
+              signal: AbortSignal.timeout(10000)
+            });
+            if (!rapidRes.ok) return json({ error: 'RapidAPI connection failed (HTTP ' + rapidRes.status + '). Check your API key and service name.' });
+            return json({ success: true, message: `RapidAPI service "${serviceName}" connected` });
+          } catch (e) {
+            return json({ error: 'RapidAPI connection failed: ' + e.message });
+          }
+        }
+        if (provider.provider === 'custom') {
+          if (!provider.endpoint) return json({ error: 'Custom endpoint URL is required' });
+          if (!provider.apiKey) return json({ error: 'Custom API requires an API key' });
+          try {
+            const customRes = await fetch(provider.endpoint, {
+              method: 'GET',
+              headers: { 'Authorization': 'Bearer ' + provider.apiKey },
+              signal: AbortSignal.timeout(10000)
+            });
+            return json({ success: true, message: `Custom endpoint reachable (HTTP ${customRes.status})` });
+          } catch (e) {
+            return json({ error: 'Custom endpoint unreachable: ' + e.message });
+          }
+        }
+        if (provider.provider === 'yt-dlp' || provider.provider === 'ytdl-core') {
+          return json({ success: true, message: `${provider.provider} configured (server-side, not available in Cloudflare Workers)` });
+        }
+        return json({ success: true, message: `${provider.provider} configured` });
 
       default:
         return json({ success: true, message: `${provider.provider} configured` });
