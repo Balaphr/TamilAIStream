@@ -175,19 +175,114 @@ input { font-family: inherit; }
     margin-bottom: 36px;
 }
 
-.brand-logo .logo-icon {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 20px;
-    border-radius: 18px;
-    font-size: 1.5rem;
+/* ---------- 3D Logo Animation ---------- */
+.logo-icon-3d {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+    perspective: 200px;
 }
 
-.brand-logo h1 {
+.logo-icon-inner {
+    width: 80px;
+    height: 80px;
+    border-radius: 22px;
+    display: grid;
+    place-items: center;
+    background: var(--grad);
+    color: #051016;
+    font-size: 1.8rem;
+    box-shadow:
+        0 12px 40px rgba(52, 211, 153, 0.5),
+        0 0 0 1px rgba(52, 211, 153, 0.2);
+    animation: logo3dSpin 6s ease-in-out infinite, logoColorShift 4s ease-in-out infinite;
+    transform-style: preserve-3d;
+    position: relative;
+    z-index: 2;
+}
+
+.logo-glow {
+    position: absolute;
+    inset: -12px;
+    border-radius: 30px;
+    background: conic-gradient(
+        from 0deg,
+        rgba(52, 211, 153, 0.4),
+        rgba(34, 211, 238, 0.4),
+        rgba(168, 85, 247, 0.4),
+        rgba(236, 72, 153, 0.4),
+        rgba(52, 211, 153, 0.4)
+    );
+    filter: blur(20px);
+    opacity: 0.5;
+    animation: glowRotate 4s linear infinite;
+    z-index: 1;
+}
+
+@keyframes logo3dSpin {
+    0%, 100% { transform: rotateY(0deg) rotateX(0deg) scale(1); }
+    25% { transform: rotateY(8deg) rotateX(-5deg) scale(1.03); }
+    50% { transform: rotateY(0deg) rotateX(5deg) scale(1); }
+    75% { transform: rotateY(-8deg) rotateX(-3deg) scale(1.03); }
+}
+
+@keyframes logoColorShift {
+    0%, 100% {
+        box-shadow: 0 12px 40px rgba(52, 211, 153, 0.5), 0 0 0 1px rgba(52, 211, 153, 0.2);
+    }
+    33% {
+        box-shadow: 0 12px 40px rgba(34, 211, 238, 0.5), 0 0 0 1px rgba(34, 211, 238, 0.2);
+    }
+    66% {
+        box-shadow: 0 12px 40px rgba(168, 85, 247, 0.5), 0 0 0 1px rgba(168, 85, 247, 0.2);
+    }
+}
+
+@keyframes glowRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ---------- 3D Title Animation ---------- */
+.brand-title-3d {
     font-family: var(--font-display);
     font-size: 1.75rem;
     font-weight: 800;
     line-height: 1.1;
+    background: linear-gradient(135deg, #34d399, #22d3ee, #a855f7, #ec4899, #34d399);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGradient 5s ease infinite, titleFloat 4s ease-in-out infinite;
+    text-shadow: none;
+    position: relative;
+}
+
+.brand-title-3d::after {
+    content: attr(data-brand-text);
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #34d399, #22d3ee, #a855f7, #ec4899, #34d399);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGradient 5s ease infinite;
+    filter: blur(12px);
+    opacity: 0.4;
+    z-index: -1;
+}
+
+@keyframes titleGradient {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+@keyframes titleFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
 }
 
 .brand-tagline {
@@ -195,6 +290,12 @@ input { font-family: inherit; }
     color: var(--faint);
     font-size: 0.9rem;
     margin-top: 6px;
+    animation: taglineFade 3s ease-in-out infinite alternate;
+}
+
+@keyframes taglineFade {
+    0% { opacity: 0.5; }
+    100% { opacity: 1; }
 }
 
 .brand-features {
@@ -600,6 +701,28 @@ input { font-family: inherit; }
     font-size: 0.8rem;
 }
 
+.login-error {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+}
+
+.login-error.visible {
+    display: flex;
+}
+
+.login-error i {
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
 /* ---------- Form Options ---------- */
 .form-options {
     display: flex;
@@ -1001,13 +1124,19 @@ input { font-family: inherit; }
         padding: 24px 20px;
     }
 
-    .brand-logo .logo-icon {
-        width: 52px;
-        height: 52px;
-        font-size: 1.3rem;
+    .brand-logo .logo-icon-3d {
+        width: 56px;
+        height: 56px;
     }
 
-    .brand-logo h1 {
+    .brand-logo .logo-icon-inner {
+        width: 56px;
+        height: 56px;
+        font-size: 1.3rem;
+        border-radius: 16px;
+    }
+
+    .brand-title-3d {
         font-size: 1.4rem;
     }
 
