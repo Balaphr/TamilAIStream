@@ -1,6 +1,6 @@
 /* ============================================
    Tamil AI Stream — Splash Screen
-   Single 3D animated logo, 2 seconds, no sound
+   Full-screen flash logo, 2 seconds, no sound
    ============================================ */
 
 /* Full-screen overlay */
@@ -11,40 +11,95 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(ellipse at 50% 40%, #0d1b2a 0%, #060e1a 60%, #020810 100%);
+    background: #060e1a;
     opacity: 1;
-    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
     will-change: opacity, transform;
     pointer-events: auto;
 }
 
+/* Flash burst background effect */
+.splash-overlay::before {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, rgba(34, 211, 238, 0.1) 40%, transparent 70%);
+    animation: splashBurst 2s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes splashBurst {
+    0% { transform: scale(0); opacity: 0; }
+    30% { opacity: 1; }
+    100% { transform: scale(3); opacity: 0; }
+}
+
 .splash-overlay.splash-hide {
     opacity: 0;
-    transform: scale(1.05);
+    transform: scale(1.1);
     pointer-events: none;
 }
 
 /* 3D animated logo */
 .splash-logo-3d {
     position: relative;
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 24px;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow:
-        0 8px 40px rgba(99, 102, 241, 0.25),
-        0 0 80px rgba(99, 102, 241, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        0 0 60px rgba(52, 211, 153, 0.3),
+        0 0 120px rgba(34, 211, 238, 0.15),
+        0 20px 60px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
     transform-style: preserve-3d;
     perspective: 800px;
     opacity: 0;
-    animation: splash3dLogo 3s ease-in-out infinite, splashLogoFadeIn 0.6s ease-out 0.1s forwards;
+    animation:
+        splashLogoFlashIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+        splashLogoFloat 3s ease-in-out 0.4s infinite;
+}
+
+/* Color-shifting glow behind logo */
+.splash-logo-3d::before {
+    content: '';
+    position: absolute;
+    inset: -30px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        rgba(52, 211, 153, 0.4),
+        rgba(34, 211, 238, 0.4),
+        rgba(168, 85, 247, 0.4),
+        rgba(236, 72, 153, 0.4),
+        rgba(52, 211, 153, 0.4)
+    );
+    filter: blur(30px);
+    opacity: 0;
+    animation: splashGlowPulse 2s ease-in-out 0.3s forwards;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Pulsing ring around logo */
+.splash-logo-3d::after {
+    content: '';
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border: 1.5px solid rgba(52, 211, 153, 0.15);
+    border-radius: 50%;
+    opacity: 0;
+    animation: splashRingPulse 2.5s ease-in-out 0.5s forwards;
+    pointer-events: none;
 }
 
 .splash-logo-3d img {
@@ -59,43 +114,71 @@
     width: 80px;
     height: 80px;
     pointer-events: none;
+    filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.5));
 }
 
-@keyframes splash3dLogo {
-    0%   { transform: translateY(0)    rotateY(0deg)   rotateX(0deg)   scale(1); }
-    12%  { transform: translateY(-6px) rotateY(10deg)  rotateX(4deg)   scale(1.04); }
-    25%  { transform: translateY(-10px) rotateY(-8deg)  rotateX(-3deg)  scale(1.06); }
-    37%  { transform: translateY(-14px) rotateY(12deg)  rotateX(5deg)   scale(1.08); }
-    50%  { transform: translateY(-16px) rotateY(0deg)   rotateX(0deg)   scale(1.1); }
-    62%  { transform: translateY(-12px) rotateY(-12deg) rotateX(4deg)   scale(1.07); }
-    75%  { transform: translateY(-8px)  rotateY(8deg)   rotateX(-3deg)  scale(1.04); }
-    87%  { transform: translateY(-4px)  rotateY(-5deg)  rotateX(2deg)   scale(1.02); }
-    100% { transform: translateY(0)    rotateY(0deg)   rotateX(0deg)   scale(1); }
+/* Logo flash-in with scale bounce */
+@keyframes splashLogoFlashIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3) rotateY(0deg);
+        box-shadow: 0 0 0 rgba(52, 211, 153, 0), 0 0 0 rgba(34, 211, 238, 0);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.12) rotateY(5deg);
+        box-shadow: 0 0 80px rgba(52, 211, 153, 0.5), 0 0 160px rgba(34, 211, 238, 0.2);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotateY(0deg);
+        box-shadow: 0 0 60px rgba(52, 211, 153, 0.3), 0 0 120px rgba(34, 211, 238, 0.15);
+    }
 }
 
-@keyframes splashLogoFadeIn {
-    from { opacity: 0; transform: scale(0.85); }
-    to   { opacity: 1; transform: scale(1); }
+/* Gentle floating motion after flash-in */
+@keyframes splashLogoFloat {
+    0%, 100% { transform: translateY(0) rotateY(0deg) rotateX(0deg) scale(1); }
+    25% { transform: translateY(-6px) rotateY(6deg) rotateX(-3deg) scale(1.02); }
+    50% { transform: translateY(-10px) rotateY(0deg) rotateX(3deg) scale(1.04); }
+    75% { transform: translateY(-4px) rotateY(-5deg) rotateX(-2deg) scale(1.01); }
 }
 
-/* Glow ring around logo */
-.splash-logo-3d::after {
-    content: '';
-    position: absolute;
-    width: 150px;
-    height: 150px;
-    border: 1.5px solid rgba(34, 211, 238, 0.1);
-    border-radius: 50%;
-    animation: splashRingPulse 4s ease-in-out infinite;
-    pointer-events: none;
+/* Glow fade-in */
+@keyframes splashGlowPulse {
+    0% { opacity: 0; transform: scale(0.8); }
+    50% { opacity: 0.6; transform: scale(1.1); }
+    100% { opacity: 0.35; transform: scale(1); animation: splashGlowRotate 4s linear infinite; }
 }
 
+/* Ring pulse */
 @keyframes splashRingPulse {
-    0%, 100% { transform: scale(1);    opacity: 0.15; border-color: rgba(34, 211, 238, 0.1); }
-    50%      { transform: scale(1.35); opacity: 0.4;  border-color: rgba(168, 85, 247, 0.15); }
+    0% { opacity: 0; transform: scale(0.6); border-color: rgba(52, 211, 153, 0.2); }
+    50% { opacity: 0.5; transform: scale(1.2); border-color: rgba(34, 211, 238, 0.15); }
+    100% { opacity: 0.2; transform: scale(1); border-color: rgba(168, 85, 247, 0.1); }
 }
 
 /* Builder preview: hide splash */
 html.builder-preview .splash-overlay {
     display: none !important;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .splash-overlay::before,
+    .splash-logo-3d,
+    .splash-logo-3d::before,
+    .splash-logo-3d::after {
+        animation: none !important;
+    }
+    .splash-logo-3d {
+        opacity: 1;
+        transform: none;
+    }
+    .splash-logo-3d::before {
+        opacity: 0.3;
+    }
+    .splash-logo-3d::after {
+        opacity: 0.2;
+    }
 }

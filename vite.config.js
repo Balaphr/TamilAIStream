@@ -90,7 +90,8 @@ function copyVanillaScripts() {
         'login.css', 'particles.css',
         'profile.css', 'playlist.css', 'dashboard.css',
         'nexvora.css',
-        'ai-tools.css'
+        'ai-tools.css',
+        'logo-3d.css'
       ]
 
       const outDir = resolve('dist')

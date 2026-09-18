@@ -1,0 +1,229 @@
+/* ============================================================
+   logo-3d.css — Shared 3D Logo & Title Animations
+   ============================================================ */
+
+/* ---------- 3D Icon Animation ---------- */
+@keyframes logo3dSpin {
+    0%, 100% { transform: rotateY(0deg) rotateX(0deg) scale(1); }
+    25% { transform: rotateY(8deg) rotateX(-5deg) scale(1.03); }
+    50% { transform: rotateY(0deg) rotateX(5deg) scale(1); }
+    75% { transform: rotateY(-8deg) rotateX(-3deg) scale(1.03); }
+}
+
+@keyframes logoColorShift {
+    0%, 100% { box-shadow: 0 8px 28px rgba(52, 211, 153, 0.45), 0 0 0 1px rgba(52, 211, 153, 0.15); }
+    33% { box-shadow: 0 8px 28px rgba(34, 211, 238, 0.45), 0 0 0 1px rgba(34, 211, 238, 0.15); }
+    66% { box-shadow: 0 8px 28px rgba(168, 85, 247, 0.45), 0 0 0 1px rgba(168, 85, 247, 0.15); }
+}
+
+@keyframes logoColorShiftGreen {
+    0%, 100% { box-shadow: 0 8px 28px rgba(52, 211, 153, 0.45), 0 0 0 1px rgba(52, 211, 153, 0.15); }
+    33% { box-shadow: 0 8px 28px rgba(16, 185, 129, 0.45), 0 0 0 1px rgba(16, 185, 129, 0.15); }
+    66% { box-shadow: 0 8px 28px rgba(20, 184, 166, 0.45), 0 0 0 1px rgba(20, 184, 166, 0.15); }
+}
+
+@keyframes glowRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ---------- Gradient Text Animation ---------- */
+@keyframes titleGradient {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+@keyframes titleFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+}
+
+@keyframes taglineFade {
+    0% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+/* ============================================================
+   3D Logo Icon Class — add to any logo icon wrapper
+   ============================================================ */
+.logo-icon-3d {
+    position: relative;
+    perspective: 200px;
+}
+
+.logo-icon-3d .logo-icon-inner,
+.logo-icon-3d[data-brand-logo] {
+    animation: logo3dSpin 6s ease-in-out infinite, logoColorShift 4s ease-in-out infinite;
+    transform-style: preserve-3d;
+}
+
+.logo-icon-3d .logo-glow {
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        rgba(52, 211, 153, 0.4),
+        rgba(34, 211, 238, 0.4),
+        rgba(168, 85, 247, 0.4),
+        rgba(236, 72, 153, 0.4),
+        rgba(52, 211, 153, 0.4)
+    );
+    filter: blur(16px);
+    opacity: 0.4;
+    animation: glowRotate 4s linear infinite;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* ============================================================
+   3D Gradient Title Class — add to any title text
+   ============================================================ */
+.brand-title-3d {
+    background: linear-gradient(135deg, #34d399, #22d3ee, #a855f7, #ec4899, #34d399);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGradient 5s ease infinite, titleFloat 4s ease-in-out infinite;
+    position: relative;
+}
+
+.brand-title-3d-green {
+    background: linear-gradient(135deg, #34d399, #10b981, #14b8a6, #34d399);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGradient 5s ease infinite, titleFloat 4s ease-in-out infinite;
+    position: relative;
+}
+
+/* ============================================================
+   Sidebar Logo 3D — index.html sidebar
+   ============================================================ */
+.ai-sidebar-logo-icon {
+    animation: logo3dSpin 8s ease-in-out infinite, logoColorShift 5s ease-in-out infinite;
+    transform-style: preserve-3d;
+    position: relative;
+}
+
+.ai-sidebar-logo:hover .ai-sidebar-logo-icon {
+    animation: logo3dSpin 3s ease-in-out infinite, logoColorShift 2s ease-in-out infinite;
+}
+
+.ai-sidebar-logo-text span:first-child {
+    background: linear-gradient(135deg, #22d3ee, #3b82f6, #a855f7, #22d3ee);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGradient 6s ease infinite;
+}
+
+/* ============================================================
+   Top Nav Logo 3D — index.html top nav
+   ============================================================ */
+.premium-topnav-logo {
+    animation: logoColorShift 5s ease-in-out infinite;
+    position: relative;
+}
+
+.premium-topnav-title {
+    background: linear-gradient(135deg, #fff, #34d399, #22d3ee, #a855f7, #fff);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGradient 6s ease infinite;
+}
+
+/* ============================================================
+   Mobile Menu Logo 3D — index.html mobile menu
+   ============================================================ */
+.premium-mobile-menu-logo {
+    animation: logo3dSpin 8s ease-in-out infinite, logoColorShift 5s ease-in-out infinite;
+    transform-style: preserve-3d;
+}
+
+.premium-mobile-menu-title {
+    background: linear-gradient(135deg, #22d3ee, #3b82f6, #a855f7, #22d3ee);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGradient 6s ease infinite;
+}
+
+/* ============================================================
+   Dashboard Logo 3D — dashboard.html
+   ============================================================ */
+.cc-brand svg {
+    animation: logo3dSpin 8s ease-in-out infinite, logoColorShiftGreen 5s ease-in-out infinite;
+    transform-style: preserve-3d;
+}
+
+.cc-brand-title {
+    background: linear-gradient(135deg, #34d399, #10b981, #14b8a6, #34d399);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGradient 5s ease infinite, titleFloat 4s ease-in-out infinite;
+}
+
+/* ============================================================
+   Builder Logo 3D — builder.html
+   ============================================================ */
+.builder-nav-logo .logo-icon {
+    animation: logo3dSpin 8s ease-in-out infinite, logoColorShift 5s ease-in-out infinite;
+    transform-style: preserve-3d;
+}
+
+.builder-nav-logo h1 {
+    background: linear-gradient(135deg, #34d399, #22d3ee, #a855f7, #34d399) !important;
+    background-size: 300% 300% !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    animation: titleGradient 5s ease infinite, titleFloat 4s ease-in-out infinite;
+}
+
+/* Builder Login Screen */
+.login-logo .logo-icon {
+    animation: logo3dSpin 6s ease-in-out infinite, logoColorShift 4s ease-in-out infinite;
+    transform-style: preserve-3d;
+}
+
+.login-logo h1 {
+    background: linear-gradient(135deg, #34d399, #22d3ee, #a855f7, #34d399);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGradient 5s ease infinite, titleFloat 4s ease-in-out infinite;
+}
+
+/* ============================================================
+   Accessibility — Respect user preference
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+    .ai-sidebar-logo-icon,
+    .premium-topnav-logo,
+    .premium-mobile-menu-logo,
+    .cc-brand svg,
+    .builder-nav-logo .logo-icon,
+    .login-logo .logo-icon,
+    .brand-title-3d,
+    .brand-title-3d-green,
+    .ai-sidebar-logo-text span:first-child,
+    .premium-topnav-title,
+    .premium-mobile-menu-title,
+    .cc-brand-title,
+    .builder-nav-logo h1,
+    .login-logo h1,
+    .logo-icon-3d .logo-icon-inner,
+    .logo-icon-3d[data-brand-logo] {
+        animation: none !important;
+    }
+}
