@@ -135,73 +135,143 @@ input { font-family: inherit; }
     50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.15; }
 }
 
-/* ---------- Auth Container ---------- */
-.auth-container {
+/* ---------- Auth Layout (Split) ---------- */
+.auth-layout {
     position: relative;
     z-index: 1;
+    display: flex;
     width: 100%;
-    max-width: 440px;
-    padding: 24px;
+    max-width: 960px;
+    min-height: 580px;
     margin: 20px auto;
-}
-
-/* ---------- Auth Card ---------- */
-.auth-card {
-    background: rgba(10, 15, 25, 0.7);
-    border: 1px solid var(--stroke);
-    backdrop-filter: blur(24px) saturate(140%);
-    -webkit-backdrop-filter: blur(24px) saturate(140%);
     border-radius: 24px;
-    padding: 36px 32px 28px;
+    overflow: hidden;
+    background: rgba(10, 15, 25, 0.5);
+    backdrop-filter: blur(40px) saturate(140%);
+    -webkit-backdrop-filter: blur(40px) saturate(140%);
+    border: 1px solid var(--stroke);
     box-shadow:
         0 25px 80px rgba(0, 0, 0, 0.5),
         inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    position: relative;
-    overflow: hidden;
 }
 
-.auth-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(600px 300px at 100% 0%, rgba(52, 211, 153, 0.08), transparent 60%);
-    pointer-events: none;
-}
-
-.auth-card > * {
-    position: relative;
-}
-
-/* ---------- Logo ---------- */
-.login-logo {
+/* Left: Branding */
+.auth-brand {
+    flex: 1;
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-bottom: 28px;
+    justify-content: center;
+    padding: 48px 40px;
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.08) 0%, rgba(34, 211, 238, 0.05) 100%);
+    border-right: 1px solid var(--stroke);
 }
 
-.logo-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    display: grid;
-    place-items: center;
-    background: var(--grad);
-    color: #051016;
-    font-size: 1.3rem;
-    box-shadow: 0 10px 28px rgba(52, 211, 153, 0.4);
+.auth-brand-inner {
+    max-width: 320px;
 }
 
-.logo-text h1 {
+.brand-logo {
+    text-align: center;
+    margin-bottom: 36px;
+}
+
+.brand-logo .logo-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 20px;
+    border-radius: 18px;
+    font-size: 1.5rem;
+}
+
+.brand-logo h1 {
     font-family: var(--font-display);
-    font-size: 1.3rem;
+    font-size: 1.75rem;
     font-weight: 800;
     line-height: 1.1;
 }
 
-.logo-text span {
+.brand-tagline {
+    display: block;
     color: var(--faint);
-    font-size: 0.78rem;
+    font-size: 0.9rem;
+    margin-top: 6px;
+}
+
+.brand-features {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 32px;
+}
+
+.brand-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.brand-feature i {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    background: rgba(52, 211, 153, 0.1);
+    color: var(--primary);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+}
+
+.brand-feature div {
+    display: flex;
+    flex-direction: column;
+}
+
+.brand-feature strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.brand-feature span {
+    font-size: 12px;
+    color: var(--faint);
+    margin-top: 2px;
+}
+
+/* Right: Form */
+.auth-form-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 36px;
+}
+
+/* ---------- Auth Card ---------- */
+.auth-card {
+    width: 100%;
+    max-width: 380px;
+    position: relative;
+}
+
+.auth-welcome {
+    margin-bottom: 20px;
+}
+
+.auth-welcome h2 {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.auth-welcome p {
+    color: var(--muted);
+    font-size: 14px;
 }
 
 /* ---------- Auth Views ---------- */
@@ -221,19 +291,7 @@ input { font-family: inherit; }
 
 /* ---------- Welcome Section ---------- */
 .welcome-section {
-    margin-bottom: 20px;
-}
-
-.welcome-title {
-    font-family: var(--font-display);
-    font-size: 1.4rem;
-    font-weight: 800;
-}
-
-.welcome-sub {
-    color: var(--muted);
-    font-size: 0.9rem;
-    margin-top: 4px;
+    display: none;
 }
 
 /* ---------- Social Login ---------- */
@@ -906,29 +964,55 @@ input { font-family: inherit; }
 }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 480px) {
-    .auth-container {
-        padding: 16px;
-        margin: 10px auto 70px;
+@media (max-width: 768px) {
+    .auth-layout {
+        flex-direction: column;
+        max-width: 440px;
+        margin: 12px auto;
+        min-height: auto;
     }
 
-    .auth-card {
-        padding: 28px 22px 22px;
+    .auth-brand {
+        border-right: none;
+        border-bottom: 1px solid var(--stroke);
+        padding: 32px 28px;
+    }
+
+    .auth-brand-inner {
+        max-width: 100%;
+    }
+
+    .brand-features {
+        display: none;
+    }
+
+    .auth-form-side {
+        padding: 28px 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-layout {
+        margin: 10px auto 70px;
         border-radius: 20px;
     }
 
-    .login-logo {
-        margin-bottom: 24px;
+    .auth-brand {
+        padding: 24px 20px;
     }
 
-    .logo-icon {
-        width: 42px;
-        height: 42px;
-        font-size: 1.1rem;
+    .brand-logo .logo-icon {
+        width: 52px;
+        height: 52px;
+        font-size: 1.3rem;
     }
 
-    .logo-text h1 {
-        font-size: 1.15rem;
+    .brand-logo h1 {
+        font-size: 1.4rem;
+    }
+
+    .auth-form-side {
+        padding: 24px 20px;
     }
 
     .social-btn {

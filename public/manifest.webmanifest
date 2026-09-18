@@ -6,8 +6,8 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone"],
-  "orientation": "portrait-primary",
+  "display_override": ["window", "standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#060e1a",
   "theme_color": "#060e1a",
   "lang": "en",
@@ -77,5 +77,11 @@
   ],
   "edge_side_panel": {
     "preferred_width": 400
+  },
+  "window": {
+    "width": 1200,
+    "height": 800,
+    "minWidth": 800,
+    "minHeight": 600
   }
 }
