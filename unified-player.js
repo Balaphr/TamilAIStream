@@ -266,7 +266,6 @@ const UnifiedPlayer = (() => {
     if (els.fsNext) els.fsNext.addEventListener('click', next);
     if (els.fsShuffle) els.fsShuffle.addEventListener('click', toggleShuffle);
     if (els.fsRepeat) els.fsRepeat.addEventListener('click', cycleRepeat);
-    if (els.fsQueue) els.fsQueue.addEventListener('click', toggleQueuePanel);
     if (els.fsFav) els.fsFav.addEventListener('click', toggleFavorite);
     if (els.fsShare) els.fsShare.addEventListener('click', shareCurrent);
     if (els.fsEffects) els.fsEffects.addEventListener('click', _openEffects);
@@ -977,7 +976,6 @@ const UnifiedPlayer = (() => {
         else if (dx < -THRESHOLD) next();
       } else {
         if (dy > THRESHOLD) hideFullScreen();
-        else if (dy < -THRESHOLD) showQueuePanel();
       }
     }, { passive: true });
   }
