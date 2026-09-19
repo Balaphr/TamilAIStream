@@ -666,6 +666,11 @@ const UnifiedPlayer = (() => {
     if (!els.fullScreen) return;
     els.fullScreen.classList.add('open');
     document.body.classList.add('up-fullscreen-open');
+    // Push a history entry so Back button closes the player instead of exiting PWA
+    try {
+      if (typeof YTMusic !== 'undefined') YTMusic._fullScreenOpen = true;
+      history.pushState({ upFullscreen: true }, '');
+    } catch (_) {}
     if (state.mode === 'fm') _showFMPlayer();
     else _showSongPlayer();
     _updateTrackUI();
@@ -682,7 +687,17 @@ const UnifiedPlayer = (() => {
   function hideFullScreen() {
     if (els.fullScreen) els.fullScreen.classList.remove('open');
     document.body.classList.remove('up-fullscreen-open');
+    var wasOpen = false;
+    try { wasOpen = !!(typeof YTMusic !== 'undefined' && YTMusic._fullScreenOpen); } catch (_) {}
+    try { if (typeof YTMusic !== 'undefined') YTMusic._fullScreenOpen = false; } catch (_) {}
     _stopAIAnimation();
+    // If player was open and this isn't triggered by popstate (back button),
+    // pop the history entry so the next Back press goes to the previous page
+    var fromPop = false;
+    try { fromPop = !!(typeof YTMusic !== 'undefined' && YTMusic._closingFromPop); } catch (_) {}
+    if (wasOpen && !fromPop) {
+      try { history.back(); } catch (_) {}
+    }
   }
 
   function _showSongPlayer() {

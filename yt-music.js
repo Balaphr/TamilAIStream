@@ -191,6 +191,16 @@ const YTMusic = {
                 this.toggleMobileMenu(false);
                 return;
             }
+            // If full-screen player is open, close it and stay on current page
+            if (this._fullScreenOpen) {
+                this._fullScreenOpen = false;
+                this._closingFromPop = true;
+                if (typeof UnifiedPlayer !== 'undefined' && UnifiedPlayer.hideFullScreen) {
+                    UnifiedPlayer.hideFullScreen();
+                }
+                this._closingFromPop = false;
+                return;
+            }
             const hash = (location.hash || '').replace('#', '');
             const target = hash && document.getElementById('page-' + hash) ? hash : 'home';
             this.navigateTo(target, { _fromPop: true });
@@ -687,6 +697,13 @@ const YTMusic = {
         if (!opts._fromPop && !opts._fromBack && this.currentPage && this.currentPage !== page) {
             this.historyStack.push({ page: this.currentPage, scroll: window.scrollY || 0 });
         }
+        // Close full-screen player if navigating to a new page while it's open
+        if (!opts._fromPop && this._fullScreenOpen) {
+            this._fullScreenOpen = false;
+            if (typeof UnifiedPlayer !== 'undefined' && UnifiedPlayer.hideFullScreen) {
+                UnifiedPlayer.hideFullScreen();
+            }
+        }
         this.currentPage = page;
         document.body.classList.toggle('home-active', page === 'home');
         document.body.classList.toggle('radio-active', page === 'radio');
@@ -748,7 +765,7 @@ const YTMusic = {
                 break;
         }
 
-        if (!opts._fromPop && history.pushState) history.replaceState(null, null, '#' + page);
+        if (!opts._fromPop && history.pushState) history.pushState({ page: page }, '', '#' + page);
     },
 
     // Navigate back to the previous page (in-app back button). Restores scroll.

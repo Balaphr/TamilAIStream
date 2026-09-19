@@ -6614,15 +6614,13 @@ function showWhyThisSong(track) {
         }
     });
 
-    // APP CLOSE: Pause audio when the app/tab is unloaded. The playback
-    // position and playing state are saved by persistPlaybackState() so the
-    // session can resume on next visit.
+    // APP CLOSE: Save playback state but do NOT pause audio.
+    // In standalone PWA mode the OS/media session keeps audio alive in background.
+    // Only persist state so it can resume on next visit.
     window.addEventListener('pagehide', () => {
         try {
             if (typeof audioPlayer !== 'undefined' && audioPlayer) {
-                // Save final position before pausing
                 persistPlaybackState();
-                audioPlayer.pause();
             }
         } catch(e) {}
     });
@@ -6631,7 +6629,6 @@ function showWhyThisSong(track) {
         try {
             if (typeof audioPlayer !== 'undefined' && audioPlayer) {
                 persistPlaybackState();
-                audioPlayer.pause();
             }
         } catch(e) {}
     });
