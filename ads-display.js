@@ -66,7 +66,7 @@ const AdsDisplay = (() => {
         const label = ad.label || 'Sponsored';
 
         const bannerHTML = bannerSrc
-            ? `<img class="tas-ad-banner" src="${bannerSrc}" alt="${title}" loading="lazy" onerror="this.outerHTML='<div class=\\'tas-ad-banner-placeholder\\'><i class=\\'fas fa-ad\\'></i></div>'">`
+            ? `<img class="tas-ad-banner" src="${bannerSrc}" alt="${title}" loading="lazy" decoding="async" onerror="this.outerHTML='<div class=\\'tas-ad-banner-placeholder\\'><i class=\\'fas fa-ad\\'></i></div>'">`
             : `<div class="tas-ad-banner-placeholder"><i class="fas fa-ad"></i></div>`;
 
         return `

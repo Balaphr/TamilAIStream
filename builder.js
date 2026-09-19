@@ -1712,7 +1712,7 @@ function createSongRow(song) {
         <tr>
             <td>
                 <div class="song-thumb">
-                    <img src="${thumb}" alt="${song.title}" loading="lazy">
+                    <img src="${thumb}" alt="${song.title}" loading="lazy" decoding="async">
                 </div>
             </td>
             <td>
@@ -2192,7 +2192,7 @@ function createImageCard(img) {
     return `
         <div class="image-card" data-id="${img.id}">
             <div class="image-card-thumb" onclick="openImagePreview('${img.id}')">
-                <img src="${img.url}" alt="${img.title || 'Image'}" loading="lazy">
+                <img src="${img.url}" alt="${img.title || 'Image'}" loading="lazy" decoding="async">
                 <div class="image-card-overlay">
                     <i class="fas fa-expand"></i>
                 </div>

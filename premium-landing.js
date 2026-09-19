@@ -87,7 +87,7 @@ const TamilAIPremium = (function () {
         return `
             <div class="premium-radio-card" data-name="${escapeHtml(station.name)}" data-genre="${escapeHtml(genreOf(station))}">
                 <div class="premium-radio-art" style="background:${escapeHtml(g)};">
-                    <img src="${escapeHtml(thumbOf(station))}" alt="${escapeHtml(station.name)}" loading="lazy">
+                    <img src="${escapeHtml(thumbOf(station))}" alt="${escapeHtml(station.name)}" loading="lazy" decoding="async">
                     <span class="premium-radio-live">LIVE</span>
                     <span class="premium-radio-freq">${escapeHtml(freqLabel(station))}</span>
                     <i class="fas fa-play premium-radio-play" aria-hidden="true"></i>

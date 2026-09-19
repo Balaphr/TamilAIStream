@@ -129,19 +129,7 @@ body {
    5. CONTENT VISIBILITY — Skip off-screen rendering
    Only for sections guaranteed to be below the fold.
    ============================================ */
-.ytm-page .section:nth-child(n+6) {
-    content-visibility: auto;
-    contain-intrinsic-size: 0 300px;
-}
-
-.movies-collection-section,
-.yearly-collection-section,
-.tamil-hits-section,
-.albums-section,
-.ai-recommended-section {
-    content-visibility: auto;
-    contain-intrinsic-size: 0 320px;
-}
+/* content-visibility removed to prevent thumbnail pop-in during scroll */
 
 /* ============================================
    6. SMOOTH TRANSITIONS — Replace transition: all
@@ -387,10 +375,7 @@ canvas,
 
 /* Reduce GPU overdraw on 120Hz+ panels — paint less often */
 @media (update: fast) and (min-width: 1025px) {
-    .ytm-page .section:nth-child(n+5) {
-        content-visibility: auto;
-        contain-intrinsic-size: 0 280px;
-    }
+    /* content-visibility removed to prevent thumbnail pop-in during scroll */
 }
 
 /* ============================================
@@ -928,15 +913,10 @@ a,
     .ai-news-card {
         contain: layout style;
     }
-    /* Content-visibility for below-fold sections on mobile */
-    .ytm-page:not(.ytm-page-home),
-    .ai-favorites-section,
-    .ai-news-section,
-    .ai-artist-hits-section,
-    .ai-movies-section,
-    .ai-yearly-section {
+    /* Content-visibility removed for home page sections to prevent thumbnail pop-in */
+    .ytm-page:not(.ytm-page-home) {
         content-visibility: auto;
-        contain-intrinsic-size: 0 400px;
+        contain-intrinsic-size: 0 500px;
     }
     /* Reduce paint area for player elements */
     .gp-mini {
@@ -1050,9 +1030,6 @@ img[loading="lazy"]:not([src=""]) {
 .ra-card-art img,
 .ytm-song-art img,
 .dash-song-art img {
-    will-change: auto;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
     image-rendering: -webkit-optimize-contrast;
 }
 
@@ -1086,8 +1063,6 @@ body {
 .slide-card,
 .ra-card {
     contain: layout style;
-    content-visibility: auto;
-    contain-intrinsic-size: 80px 120px;
 }
 .ai-song-card {
     contain: layout style;
@@ -1119,7 +1094,7 @@ img[src=""] {
    PERFORMANCE OPTIMIZATIONS - No Battery Drain, No Heating, No Lag
    ============================================ */
 
-/* CSS Containment - Isolate layout/paint for independent sections */
+/* CSS Containment - Isolate layout for independent sections */
 .greeting-hero,
 .hero-section,
 .section-content,
@@ -1131,9 +1106,7 @@ img[src=""] {
 .ai-radio-section,
 .bottom-nav,
 .global-player {
-    contain: layout style paint;
-    content-visibility: auto;
-    contain-intrinsic-size: 400px;
+    contain: layout style;
 }
 
 /* Offscreen elements don't paint */
@@ -1197,15 +1170,13 @@ body {
     text-rendering: optimizeLegibility;
 }
 
-/* Efficient image rendering */
-img,
+/* Efficient image rendering — no content-visibility on <img> to prevent pop-in */
 .card-image,
 .station-image,
 .featured-image,
 .album-image,
 .artist-image,
 .track-artwork {
-    content-visibility: auto;
     contain-intrinsic-size: 200px 200px;
 }
 
@@ -1516,8 +1487,7 @@ audio {
 .ai-category-section,
 .ai-section-playlists,
 .ai-section-artists {
-    content-visibility: auto;
-    contain-intrinsic-size: 0 400px;
+    /* content-visibility removed to prevent thumbnail pop-in during scroll */
 }
 
 /* ============================================

@@ -897,7 +897,7 @@
         return '' +
             '<div class="premium-radio-card" data-name="' + esc(station.name) + '" data-genre="' + esc((station.genre || 'Music').toLowerCase()) + '">' +
             '  <div class="premium-radio-art" style="background:' + esc(g) + ';">' +
-            '    <img src="' + esc(thumbOf(station)) + '" alt="' + esc(station.name) + '" loading="lazy">' +
+            '    <img src="' + esc(thumbOf(station)) + '" alt="' + esc(station.name) + '" loading="lazy" decoding="async">' +
             '    <span class="premium-radio-live">LIVE</span>' +
             '    <span class="premium-radio-freq">' + esc(freqLabel(station)) + '</span>' +
             '    <i class="fa-solid fa-play premium-radio-play" aria-hidden="true"></i>' +
@@ -1125,7 +1125,7 @@
             } else {
                 recentEl.innerHTML = songs.map(s => '' +
                     '<div class="cc-list-item">' +
-                    '  <img src="' + esc(thumbOf(s, '%2338bdf8')) + '" alt="" loading="lazy">' +
+                    '  <img src="' + esc(thumbOf(s, '%2338bdf8')) + '" alt="" loading="lazy" decoding="async">' +
                     '  <div class="cc-list-info">' +
                     '    <div class="cc-list-title">' + esc(s.title || 'Untitled') + '</div>' +
                     '    <div class="cc-list-sub">' + esc(s.artist || 'Unknown') + '</div>' +
@@ -1150,7 +1150,7 @@
                     return '' +
                         '<div class="cc-list-item">' +
                         '  <span class="cc-list-rank">' + (i + 1) + '</span>' +
-                        '  <img src="' + esc(thumbOf(song, '%23f59e0b')) + '" alt="" loading="lazy">' +
+                        '  <img src="' + esc(thumbOf(song, '%23f59e0b')) + '" alt="" loading="lazy" decoding="async">' +
                         '  <div class="cc-list-info">' +
                         '    <div class="cc-list-title">' + esc(song.title || t.title || 'Unknown') + '</div>' +
                         '    <div class="cc-list-sub">' + esc(song.artist || '') + '</div>' +

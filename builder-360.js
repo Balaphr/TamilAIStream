@@ -1544,7 +1544,7 @@ const Site360 = (function () {
     function getThumbnailHtml(el) {
         const img = el.value && (el.value.thumbnail || el.value.image || el.value.albumCover || el.value.logo || el.value.background);
         if (img) {
-            return '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=s360-canvas-card-icon><i class=fas ' + esc(el.icon) + '></i></div>\'">';
+            return '<img src="' + esc(img) + '" alt="" loading="lazy" decoding="async" onerror="this.parentElement.innerHTML=\'<div class=s360-canvas-card-icon><i class=fas ' + esc(el.icon) + '></i></div>\'">';
         }
         return '<div class="s360-canvas-card-icon"><i class="fas ' + esc(el.icon) + '"></i></div>';
     }

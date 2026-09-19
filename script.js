@@ -2498,7 +2498,7 @@ function displaySongs(songs) {
         <div class="song-card" data-song-id="${song.id}" style="animation-delay: ${index * 0.05}s">
             <div class="song-card-header">
                 <div class="song-thumbnail">
-                    <img src="${song.albumCover || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"%3E%3Ccircle cx="40" cy="40" r="30" fill="%2334d399" opacity="0.3"/%3E%3C/svg%3E'}" alt="${song.title || 'Song'}" loading="lazy">
+                    <img src="${song.albumCover || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"%3E%3Ccircle cx="40" cy="40" r="30" fill="%2334d399" opacity="0.3"/%3E%3C/svg%3E'}" alt="${song.title || 'Song'}" loading="lazy" decoding="async">
                     <div class="song-eq-bars"><span></span><span></span><span></span><span></span></div>
                     <div class="song-play-overlay" data-song-id="${song.id}">
                         <i class="fas fa-play"></i>
@@ -3517,7 +3517,7 @@ function renderFeaturedSliderDynamic() {
         return `
             <div class="slide-card" style="--slide-bg: ${item.gradient || station.gradient || 'linear-gradient(135deg, #0f3b2e, #064e3b)'};">
                 <div class="slide-art">
-                    <img src="${thumbSrc}" alt="${item.title || station.name || ''}" ${isRealImage ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy">
+                    <img src="${thumbSrc}" alt="${item.title || station.name || ''}" ${isRealImage ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy" decoding="async">
                 </div>
                 <div class="slide-info">
                     <span class="slide-badge"><i class="fas fa-signal"></i> Live</span>
@@ -3563,7 +3563,7 @@ function renderTrendingDynamicStationsLegacy() {
         return `
             <div class="station-card" data-genre="${(station.genre || '').toLowerCase()}" data-station="${escapeHtml(station.name || '')}">
                 <div class="station-art" style="background:${station.gradient || 'linear-gradient(135deg,#1e3a5f,#0d1f3c)'};">
-                    <img src="${thumbSrc}" alt="${station.name || ''}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy">
+                    <img src="${thumbSrc}" alt="${station.name || ''}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy" decoding="async">
                     <div class="station-play-overlay"><i class="fas fa-play"></i></div>
                 </div>
                 <div class="station-info">
@@ -3643,7 +3643,7 @@ function renderArtistHitsDynamic() {
             <div class="hit-card-bg" style="background:${hit.gradient || 'linear-gradient(135deg,#1e3a5f,#0d1f3c)'};"></div>
             <div class="hit-card-content">
                 <div class="hit-artist-image">
-                    <img src="${thumbSrc}" alt="${hit.name}" ${hit.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy">
+                    <img src="${thumbSrc}" alt="${hit.name}" ${hit.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy" decoding="async">
                     <div class="hit-play-overlay"><i class="fas fa-play"></i></div>
                 </div>
                 <div class="hit-info">
@@ -3716,7 +3716,7 @@ function renderRoundCollectionCard(item) {
     return `
     <div class="round-collection-card" data-id="${item.id}" onclick="playCollectionSongs('${item.id}', '${item.type || ''}')">
         <div class="round-collection-thumb">
-            <img src="${thumbSrc}" alt="${item.name}" loading="lazy">
+            <img src="${thumbSrc}" alt="${item.name}" loading="lazy" decoding="async">
             <div class="round-collection-play"><i class="fas fa-play"></i></div>
         </div>
         <div class="round-collection-info">
@@ -3777,7 +3777,7 @@ function renderMusicCollectionCard(item) {
     return `
     <div class="music-collection-card" data-id="${item.id}" onclick="playCollectionSongs('${item.id}', 'music')">
         <div class="music-collection-thumb">
-            <img src="${thumbSrc}" alt="${item.name}" loading="lazy">
+            <img src="${thumbSrc}" alt="${item.name}" loading="lazy" decoding="async">
             <div class="music-collection-play"><i class="fas fa-play"></i></div>
         </div>
         <div class="music-collection-info">
@@ -3856,7 +3856,7 @@ function buildHeroAdHTML(ad) {
     const wrapper = ad.targetLink ? 'a' : 'div';
     const attrs = ad.targetLink ? `href="${ad.targetLink}" ${ad.targetLink.startsWith('#') ? '' : 'target="_blank" rel="noopener"'}` : '';
     return `<${wrapper} class="hero-ad-card" ${attrs}>
-        <img src="${ad.imageUrl}" alt="${ad.title || 'Advertisement'}" class="hero-ad-image" loading="lazy">
+        <img src="${ad.imageUrl}" alt="${ad.title || 'Advertisement'}" class="hero-ad-image" loading="lazy" decoding="async">
         <div class="hero-ad-overlay">
             ${ad.title ? `<span class="hero-ad-title">${ad.title}</span>` : ''}
             ${ad.description ? `<span class="hero-ad-desc">${ad.description}</span>` : ''}
@@ -3970,7 +3970,7 @@ function buildAdBannerHTML(ad) {
     const attrs = ad.targetLink ? `href="${ad.targetLink}" ${ad.targetLink.startsWith('#') ? '' : 'target="_blank" rel="noopener"'}` : '';
     return `<${wrapper} class="ad-banner-card" ${attrs}>
         <div class="ad-banner-glow"></div>
-        <img src="${ad.imageUrl}" alt="${ad.title || 'Advertisement'}" class="ad-banner-image" loading="lazy">
+        <img src="${ad.imageUrl}" alt="${ad.title || 'Advertisement'}" class="ad-banner-image" loading="lazy" decoding="async">
         <div class="ad-banner-overlay">
             <div class="ad-banner-content">
                 <span class="ad-banner-title">${ad.title || ''}</span>
@@ -4024,7 +4024,7 @@ function renderAlbumsDynamic() {
         return `
         <div class="ra-card" onclick="playAlbumSongs('${album.name.replace(/'/g, "\\'")}')">
             <div class="ra-card-art">
-                <img src="${coverSrc}" alt="${album.name}" loading="lazy" onerror="this.src='${placeholder}'">
+                <img src="${coverSrc}" alt="${album.name}" loading="lazy" decoding="async" onerror="this.src='${placeholder}'">
                 <div class="ra-card-play-overlay">
                     <button class="ra-card-play-btn" title="Play ${album.name}">
                         <i class="fas fa-play" style="margin-left:2px;"></i>
@@ -4296,7 +4296,7 @@ function renderMovieSidebarContent() {
         return `
         <div class="movie-sidebar-card" onclick="playCollectionSongs('${col.id}', 'movies')">
             <div class="movie-sidebar-poster">
-                <img src="${thumb}" alt="${col.name}" loading="lazy">
+                <img src="${thumb}" alt="${col.name}" loading="lazy" decoding="async">
                 <div class="movie-sidebar-play"><i class="fas fa-play"></i></div>
             </div>
             <div class="movie-sidebar-info">
@@ -4320,7 +4320,7 @@ function renderMovieCollectionCard(item) {
     return `
     <div class="movie-collection-card" data-id="${item.id}" onclick="playCollectionSongs('${item.id}', '${item.type || 'movies'}')">
         <div class="movie-card-poster">
-            <img src="${thumbSrc}" alt="${item.name}" loading="lazy">
+            <img src="${thumbSrc}" alt="${item.name}" loading="lazy" decoding="async">
             <div class="movie-card-play"><i class="fas fa-play"></i></div>
             ${year ? `<span class="movie-card-year">${year}</span>` : ''}
         </div>
@@ -4510,7 +4510,7 @@ function renderAllStationsDynamic() {
             <div class="sg-card-content">
                 <div class="sg-card-top">
                     <div class="sg-logo" style="background:${station.gradient || 'linear-gradient(135deg,#0f3b2e,#064e3b)'};">
-                        <img src="${thumbSrc}" alt="${station.name}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy">
+                        <img src="${thumbSrc}" alt="${station.name}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy" decoding="async">
                     </div>
                     <div class="sg-badges">
                         <span class="sg-live-badge"><i class="fas fa-signal"></i> Live</span>
@@ -4574,7 +4574,7 @@ function renderAIRecommendedStationsLegacy() {
         return `
         <div class="station-card recommended" data-genre="${(station.genre || '').toLowerCase()}" data-station="${escapeHtml(station.name || '')}">
             <div class="station-art" style="background:${station.gradient || 'linear-gradient(135deg,#0f3b2e,#064e3b)'};">
-                <img src="${thumbSrc}" alt="${station.name}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy">
+                <img src="${thumbSrc}" alt="${station.name}" ${station.thumbnail ? 'style="width:100%;height:100%;object-fit:cover;"' : ''} loading="lazy" decoding="async">
                 <div class="station-play-overlay"><i class="fas fa-play"></i></div>
                 <div class="ai-recommend-badge"><i class="fas fa-brain"></i> ${98 - i * 3}% Match</div>
             </div>
@@ -6120,7 +6120,7 @@ function renderSongTrack(container, songs, limit) {
         return `
         <div class="ra-card" data-song-id="${song.id}">
             <div class="ra-card-art">
-                <img src="${artwork}" alt="${song.title || 'Song'}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'ra-card-art-placeholder\\'><i class=\\'fas fa-music\\'></i></div>'">
+                <img src="${artwork}" alt="${song.title || 'Song'}" loading="lazy" decoding="async" onerror="this.parentElement.innerHTML='<div class=\\'ra-card-art-placeholder\\'><i class=\\'fas fa-music\\'></i></div>'">
                 <div class="ra-card-play-overlay">
                     <button class="ra-card-play-btn" data-song-id="${song.id}" title="Play ${song.title || 'Song'}">
                         <i class="fas fa-play" style="margin-left:2px;"></i>

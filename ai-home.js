@@ -333,7 +333,7 @@ window.AIHome = (() => {
             return '<div class="ai-playlist-card" data-pl="' + i + '">' +
                 '<div class="ai-playlist-art" style="background:' + grad + ';' +
                 (cover ? 'background-image:url(\'' + cover + '\');background-size:cover;background-position:center;' : '') + '">' +
-                (cover ? '<img src="' + escapeHtml(cover) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-compact-disc ai-pa-icon"></i>') +
+                (cover ? '<img src="' + escapeHtml(cover) + '" alt="" loading="lazy" decoding="async" onerror="this.remove()">' : '<i class="fa-solid fa-compact-disc ai-pa-icon"></i>') +
                 '<button class="ai-play-btn" data-pl="' + i + '" aria-label="Play ' + escapeHtml(name) + '"><i class="fa-solid fa-play" style="margin-left:2px;"></i></button>' +
                 '</div><div class="ai-playlist-info">' +
                 '<div class="ai-playlist-name" title="' + escapeHtml(name) + '">' + escapeHtml(name) + '</div>' +
@@ -486,7 +486,7 @@ window.AIHome = (() => {
             const art = item.image || item.thumbnail || '';
             return '<div class="upcoming-card" data-idx="' + i + '">' +
                 '<div class="upcoming-card-art">' +
-                    (art ? '<img src="' + escapeHtml(art) + '" alt="' + escapeHtml(title) + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=upcoming-placeholder><i class=fa-solid fa-calendar-days></i></div>\'">' :
+                    (art ? '<img src="' + escapeHtml(art) + '" alt="' + escapeHtml(title) + '" loading="lazy" decoding="async" onerror="this.parentElement.innerHTML=\'<div class=upcoming-placeholder><i class=fa-solid fa-calendar-days></i></div>\'">' :
                     '<div class="upcoming-placeholder"><i class="fa-solid fa-calendar-days"></i></div>') +
                     '<div class="upcoming-badge"><i class="fas fa-bell"></i> Soon</div>' +
                 '</div>' +
@@ -560,7 +560,7 @@ window.AIHome = (() => {
                 return '<div class="ai-pl-detail-song" data-idx="' + i + '">' +
                     '<div class="ai-pl-ds-num">' + (i + 1) + '</div>' +
                     '<div class="ai-pl-ds-art">' +
-                    (songArt ? '<img src="' + escapeHtml(songArt) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-music"></i>') +
+                    (songArt ? '<img src="' + escapeHtml(songArt) + '" alt="" loading="lazy" decoding="async" onerror="this.remove()">' : '<i class="fa-solid fa-music"></i>') +
                     '</div>' +
                     '<div class="ai-pl-ds-info">' +
                     '<div class="ai-pl-ds-title">' + escapeHtml(title) + '</div>' +
@@ -622,7 +622,7 @@ window.AIHome = (() => {
             return '<div class="ai-fm-card" data-station-id="' + escapeHtml(s.id || '') + '" data-station="' + escapeHtml(name) + '">' +
                 '<div class="ai-fm-art" style="background:' + stationColor(s, i) + ';">' +
                 '<span class="ai-fm-live-badge"><span class="ai-live-dot" style="box-shadow:none;animation:none;"></span>LIVE</span>' +
-                (thumb ? '<img src="' + escapeHtml(thumb) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-tower-broadcast"></i>') +
+                (thumb ? '<img src="' + escapeHtml(thumb) + '" alt="" loading="lazy" decoding="async" onerror="this.remove()">' : '<i class="fa-solid fa-tower-broadcast"></i>') +
                 '</div>' +
                 '<div class="ai-fm-info">' +
                 '<div class="ai-fm-name">' + escapeHtml(displayName) + '</div>' +
@@ -702,7 +702,7 @@ window.AIHome = (() => {
         const art = artOf(song);
         const dur = durationText(song.duration);
         const artHtml = art
-            ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=\\\'eg-card-art-placeholder\\\'><i class=\\\'fas fa-gem\\\'></i></div>\'">'
+            ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" decoding="async" onerror="this.parentElement.innerHTML=\'<div class=\\\'eg-card-art-placeholder\\\'><i class=\\\'fas fa-gem\\\'></i></div>\'">'
             : '<div class="eg-card-art-placeholder"><i class="fas fa-gem"></i></div>';
         const songJson = escapeHtml(JSON.stringify({ id: song.id, title: song.title, artist: song.artist, thumbnail: art, genre: song.genre, mood: song.mood }));
         return '<div class="eg-card" data-idx="' + i + '">' +
@@ -960,7 +960,7 @@ window.AIHome = (() => {
                     ${badges.length ? `<div class="new-album-badges">${badges.join('')}</div>` : ''}
                     <button class="card-menu-trigger" onclick="event.stopPropagation();AIHome.openCardContextMenu(event, JSON.parse(this.dataset.song))" data-song='${songJson}' aria-label="More options"><i class="fas fa-ellipsis-vertical"></i></button>
                     <div class="new-album-thumb">
-                        <img src="${art}" alt="${album.name || ''}" loading="lazy" onerror="this.style.display='none'">
+                        <img src="${art}" alt="${album.name || ''}" loading="lazy" decoding="async" onerror="this.style.display='none'">
                         <button class="new-album-play-btn" aria-label="Play album"><i class="fas fa-play"></i></button>
                     </div>
                 </div>
@@ -1046,7 +1046,7 @@ window.AIHome = (() => {
         const dur = durationText(song.duration);
         const songJson = escapeHtml(JSON.stringify({ id: song.id, title: song.title, artist: song.artist, thumbnail: artOf(song), genre: song.genre, mood: song.mood }));
         return '<div class="ai-song-card" data-idx="' + i + '">' +
-            '<div class="ai-song-art">' + (artOf(song) ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+            '<div class="ai-song-art">' + (artOf(song) ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" decoding="async" onerror="this.remove()">' : '') +
             '<i class="fa-solid fa-music"></i>' +
             '<button class="card-menu-trigger" onclick="event.stopPropagation();AIHome.openCardContextMenu(event, JSON.parse(this.dataset.song))" data-song=\'' + songJson + '\' aria-label="More options"><i class="fas fa-ellipsis-vertical"></i></button>' +
             '</div>' +
@@ -1137,7 +1137,7 @@ window.AIHome = (() => {
             const artist = (s.artist || s.singer || 'Unknown').slice(0, 28);
             const art = artOf(s) || ART_PLACEHOLDER;
             return '<div class="ai-rec-song" data-idx="' + i + '">' +
-                '<div class="ai-rec-song-art">' + (artOf(s) ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
+                '<div class="ai-rec-song-art">' + (artOf(s) ? '<img src="' + escapeHtml(art) + '" alt="" loading="lazy" decoding="async" onerror="this.remove()">' : '') +
                 '<i class="fa-solid fa-music"></i></div>' +
                 '<div class="ai-rec-song-info">' +
                 '<div class="ai-rec-song-title">' + escapeHtml(title) + '</div>' +
@@ -1693,7 +1693,7 @@ window.AIHome = (() => {
                 return '<div class="ai-decade-song' + (playing ? ' playing-song' : '') + '" data-idx="' + i + '">' +
                     '<div class="ai-decade-song-num">' + (i + 1) + '</div>' +
                     '<div class="ai-decade-song-art">' +
-                    (songArt ? '<img src="' + escapeHtml(songArt) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-music"></i>') +
+                    (songArt ? '<img src="' + escapeHtml(songArt) + '" alt="" loading="lazy" decoding="async" onerror="this.remove()">' : '<i class="fa-solid fa-music"></i>') +
                     '</div>' +
                     '<div class="ai-decade-song-info">' +
                     '<div class="ai-decade-song-title">' + escapeHtml(title) + '</div>' +
@@ -1899,7 +1899,7 @@ window.AIHome = (() => {
             return '<div class="ai-decade-song' + (playing ? ' playing-song' : '') + '" data-idx="' + i + '">' +
                 '<div class="ai-decade-song-num">' + (i + 1) + '</div>' +
                 '<div class="ai-decade-song-art">' +
-                (songArt ? '<img src="' + escapeHtml(songArt) + '" alt="" loading="lazy" onerror="this.remove()">' : '<i class="fa-solid fa-heart"></i>') +
+                (songArt ? '<img src="' + escapeHtml(songArt) + '" alt="" loading="lazy" decoding="async" onerror="this.remove()">' : '<i class="fa-solid fa-heart"></i>') +
                 '</div>' +
                 '<div class="ai-decade-song-info">' +
                 '<div class="ai-decade-song-title">' + escapeHtml(title) + '</div>' +
@@ -2235,8 +2235,6 @@ window.AIHome = (() => {
      * without touching the DOM layout.  Runs once after refreshHome().
      */
     function _preloadVisibleThumbnails() {
-        /* Skip aggressive preload on mobile to conserve bandwidth */
-        if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) return;
         var urls = [];
         try {
             /* Hero image */
@@ -2264,13 +2262,36 @@ window.AIHome = (() => {
         for (var j = 0; j < urls.length; j++) {
             try {
                 var img = new Image();
+                img.decoding = 'async';
                 img.src = urls[j];
             } catch (_) { /* ignore */ }
         }
+        /* Start viewport-prefetch observer for smooth scroll loading */
+        _startViewportPrefetch();
+    }
+
+    /* Viewport-prefetch: force-load images BEFORE they enter the viewport */
+    var _prefetchObserver = null;
+    function _startViewportPrefetch() {
+        if (_prefetchObserver) return;
+        try {
+            _prefetchObserver = new IntersectionObserver(function(entries) {
+                for (var i = 0; i < entries.length; i++) {
+                    if (entries[i].isIntersecting) {
+                        var img = entries[i].target;
+                        if (img.loading === 'lazy') img.loading = 'eager';
+                        _prefetchObserver.unobserve(img);
+                    }
+                }
+            }, { rootMargin: '600px 0px' });
+        } catch (_) { return; }
+        document.querySelectorAll('img[loading="lazy"]').forEach(function(img) {
+            if (!img.complete && _prefetchObserver) _prefetchObserver.observe(img);
+        });
     }
 
     function bindDataSync() {
-        const refresh = () => setTimeout(() => { refreshHome(); if (typeof applySectionSettings === 'function') applySectionSettings(); if (typeof BrandConfig !== 'undefined' && BrandConfig.apply) BrandConfig.apply(); }, 300);
+        const refresh = () => { refreshHome(); if (typeof applySectionSettings === 'function') applySectionSettings(); if (typeof BrandConfig !== 'undefined' && BrandConfig.apply) BrandConfig.apply(); };
         window.addEventListener('storage-sync', refresh);
         window.addEventListener('premium-sections-sync', refresh);
         window.addEventListener('tamilAIStream-content-synced', refresh);
@@ -2281,7 +2302,7 @@ window.AIHome = (() => {
             ContentSync.onSync(function(result) {
                 if (result && result.changed) {
                     clearTimeout(_onSyncDebounce);
-                    _onSyncDebounce = setTimeout(refreshHome, 300);
+                    _onSyncDebounce = setTimeout(refreshHome, 100);
                 }
             });
         }
@@ -2672,7 +2693,7 @@ window.AIHome = (() => {
                     const safeId = (s.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
                     return `
                     <div class="ai-orb-song-card" data-orb-play="${idx}">
-                        <div class="ai-orb-song-art"><img src="${escapeHtml(s.thumbnail || s.albumCover || s.cover || s.image || '')}" alt="" loading="lazy" onerror="this.style.display='none'"></div>
+                        <div class="ai-orb-song-art"><img src="${escapeHtml(s.thumbnail || s.albumCover || s.cover || s.image || '')}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'"></div>
                         <div class="ai-orb-song-info">
                             <div class="ai-orb-song-name">${escapeHtml(s.title || s.name || 'Unknown')}</div>
                             <div class="ai-orb-song-meta">${escapeHtml(s.artist || s.singer || '')}${s.movie ? ' · ' + escapeHtml(s.movie) : ''}</div>
