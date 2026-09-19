@@ -425,7 +425,8 @@ document.querySelectorAll('.bottom-nav-item').forEach(item => {
         if (tab === 'home') {
             document.querySelector('.home-container')?.scrollIntoView({ behavior: 'smooth' });
         } else if (tab === 'profile') {
-            window.location.href = 'profile.html';
+            if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) { YTMusic.navigateTo('account'); }
+            else { document.querySelector('[data-page="account"]')?.click(); }
         } else if (tab === 'favorites') {
             // Navigate to home tab first, then scroll to favorites section
             const homeTab = document.querySelector('.nav-tab[data-tab="home"]');
@@ -2312,7 +2313,8 @@ document.querySelectorAll('.nav-icon-btn').forEach(btn => {
 // Nav Avatar Click
 // ============================================
 document.querySelector('.nav-avatar')?.addEventListener('click', function() {
-    window.location.href = 'profile.html';
+    if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) { YTMusic.navigateTo('account'); }
+    else { document.querySelector('[data-page="account"]')?.click(); }
 });
 
 // ============================================
@@ -5421,6 +5423,242 @@ function filterStations() {
 }
 
 // ============================================
+// Profile Editing (merged from profile.html)
+// ============================================
+const _ProfileEditor = {
+    userData: { name: 'User', email: '', phone: '', bio: '', photoURL: '', memberSince: '', accountType: 'User', isGuest: false },
+    _scopedKey(baseKey) {
+        try { if (typeof UserDataSync !== 'undefined' && UserDataSync.scopedKey) return UserDataSync.scopedKey(baseKey); } catch (e) {}
+        try { var u = JSON.parse(localStorage.getItem('tamilAIStream_user') || 'null'); var uid = u && (u.uid || u.email); if (uid) return baseKey + '_' + uid.replace(/[^a-zA-Z0-9._@-]/g, '_'); } catch (e) {}
+        return baseKey + '_guest';
+    },
+    showModal(title, content, onConfirm, onCancel) {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay active';
+        overlay.innerHTML = `<div class="modal"><div class="modal-header"><h3 class="modal-title">${title}</h3><button class="modal-close" aria-label="Close"><i class="fas fa-times"></i></button></div><div class="modal-body">${content}</div><div class="modal-footer"><button class="btn btn-secondary modal-cancel">Cancel</button><button class="btn btn-primary modal-confirm">Confirm</button></div></div>`;
+        document.body.appendChild(overlay);
+        const close = () => { overlay.classList.remove('active'); setTimeout(() => overlay.remove(), 300); };
+        overlay.querySelector('.modal-close').addEventListener('click', close);
+        overlay.querySelector('.modal-cancel').addEventListener('click', () => { close(); if (onCancel) onCancel(); });
+        overlay.querySelector('.modal-confirm').addEventListener('click', () => { close(); if (onConfirm) onConfirm(); });
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    },
+    loadUserData() {
+        try {
+            const stored = localStorage.getItem('tamilAIStream_user');
+            if (stored) {
+                const saved = JSON.parse(stored);
+                this.userData.name = saved.name || 'User';
+                this.userData.email = saved.email || '';
+                this.userData.phone = saved.phone || '';
+                this.userData.bio = saved.bio || '';
+                this.userData.photoURL = saved.photoURL || '';
+                this.userData.memberSince = saved.memberSince || '';
+                this.userData.password = saved.password || '';
+                this.userData.accountType = 'User';
+                const atb = document.getElementById('accountTypeBadge');
+                if (atb) atb.innerHTML = '<i class="fas fa-user"></i> <span>User</span>';
+                const asb = document.getElementById('authStatusBadge');
+                if (asb) asb.innerHTML = '<i class="fas fa-check-circle"></i> <span>Verified</span>';
+            } else {
+                this.userData.memberSince = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                const asb = document.getElementById('authStatusBadge');
+                if (asb) asb.innerHTML = '<i class="fas fa-times-circle"></i> <span>Not Verified</span>';
+            }
+            this.updateProfileUI();
+            this.loadUserStats();
+            this.loadUserPreferences();
+        } catch (error) { console.error('Error loading profile data:', error); }
+    },
+    updateProfileUI() {
+        const $ = (id) => document.getElementById(id);
+        const pn = $('profileName'); if (pn) pn.textContent = this.userData.name;
+        const pe = $('profileEmail'); if (pe) pe.textContent = this.userData.email;
+        const se = $('settingEmail'); if (se) se.textContent = this.userData.email;
+        const sp = $('settingPhone'); if (sp) sp.textContent = this.userData.phone || 'Not set';
+        const sb = $('settingBio'); if (sb) sb.textContent = this.userData.bio || 'Tell us about yourself';
+        const ms = $('memberSince'); if (ms) ms.textContent = this.userData.memberSince || 'January 2024';
+        const pi = $('profileImage');
+        const ap = $('avatarPlaceholder');
+        if (this.userData.photoURL && pi) { pi.src = this.userData.photoURL; pi.style.display = 'block'; if (ap) ap.style.display = 'none'; }
+        else { if (pi) pi.style.display = 'none'; if (ap) ap.style.display = 'flex'; }
+    },
+    loadUserStats() {
+        try {
+            const favCount = (typeof DataStore !== 'undefined' && DataStore.getFavorites) ? DataStore.getFavorites().length : 0;
+            const recentCount = (typeof ListeningHistory !== 'undefined' && ListeningHistory.getHistory) ? ListeningHistory.getHistory().length : 0;
+            const playlistCount = (typeof PlaylistManager !== 'undefined' && PlaylistManager.getPlaylists) ? PlaylistManager.getPlaylists().length : 0;
+            const $ = (id) => document.getElementById(id);
+            const fc = $('favoritesCount'); if (fc) fc.textContent = favCount;
+            const rc = $('recentCount'); if (rc) rc.textContent = recentCount;
+            const lt = $('listeningTime'); if (lt) lt.textContent = '24h';
+            const pc = $('playlistsCount'); if (pc) pc.textContent = playlistCount;
+        } catch (error) { console.error('Error loading stats:', error); }
+    },
+    loadUserPreferences() {
+        const $ = (id) => document.getElementById(id);
+        const nt = $('notificationsToggle'); if (nt) nt.checked = localStorage.getItem(this._scopedKey('tamilAIStream_notifications')) !== 'false';
+        const dm = $('darkModeToggle'); if (dm) dm.checked = localStorage.getItem(this._scopedKey('tamilAIStream_darkMode')) !== 'false';
+        const ls = $('languageSelect'); if (ls) ls.value = localStorage.getItem(this._scopedKey('tamilAIStream_language')) || 'en';
+    },
+    _saveField(field, value) {
+        this.userData[field] = value;
+        const stored = localStorage.getItem('tamilAIStream_user');
+        const saved = stored ? JSON.parse(stored) : {};
+        saved[field] = value;
+        localStorage.setItem('tamilAIStream_user', JSON.stringify(saved));
+        this.updateProfileUI();
+    },
+    init() {
+        const $ = (id) => document.getElementById(id);
+        this.loadUserData();
+        // Photo
+        const cpb = $('changePhotoBtn');
+        const pi = $('photoInput');
+        if (cpb && pi) cpb.addEventListener('click', () => pi.click());
+        if (pi) pi.addEventListener('change', (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            if (!file.type.startsWith('image/')) { showToast('Please select an image file', 'error'); return; }
+            if (file.size > 5 * 1024 * 1024) { showToast('Image must be less than 5MB', 'error'); return; }
+            showToast('Uploading photo...', 'info');
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const photoURL = ev.target.result;
+                const pImg = $('profileImage'); const ap = $('avatarPlaceholder');
+                if (pImg) { pImg.src = photoURL; pImg.style.display = 'block'; }
+                if (ap) ap.style.display = 'none';
+                this.userData.photoURL = photoURL;
+                const stored = localStorage.getItem('tamilAIStream_user');
+                const saved = stored ? JSON.parse(stored) : {};
+                saved.photoURL = photoURL;
+                localStorage.setItem('tamilAIStream_user', JSON.stringify(saved));
+                showToast('Profile photo updated!', 'success');
+            };
+            reader.readAsDataURL(file);
+        });
+        // Edit Name
+        const enb = $('editNameBtn');
+        if (enb) enb.addEventListener('click', () => {
+            this.showModal('Edit Display Name', `<div class="form-group"><label class="form-label">Display Name</label><input type="text" class="form-input" id="editNameInput" value="${this.userData.name}" placeholder="Enter your name"></div>`, () => {
+                const v = document.getElementById('editNameInput').value.trim();
+                if (!v) { showToast('Name cannot be empty', 'error'); return; }
+                this._saveField('name', v); showToast('Name updated successfully!', 'success');
+            });
+        });
+        // Edit Email
+        const eeb = $('editEmailBtn');
+        if (eeb) eeb.addEventListener('click', () => {
+            this.showModal('Edit Email Address', `<div class="form-group"><label class="form-label">Email Address</label><input type="email" class="form-input" id="editEmailInput" value="${this.userData.email}" placeholder="Enter your email"></div><p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px;"><i class="fas fa-info-circle"></i> Changing email requires verification</p>`, () => {
+                const v = document.getElementById('editEmailInput').value.trim();
+                if (!v || !v.includes('@')) { showToast('Please enter a valid email', 'error'); return; }
+                this._saveField('email', v); showToast('Email updated!', 'success');
+            });
+        });
+        // Edit Phone
+        const epb = $('editPhoneBtn');
+        if (epb) epb.addEventListener('click', () => {
+            this.showModal('Edit Phone Number', `<div class="form-group"><label class="form-label">Phone Number</label><input type="tel" class="form-input" id="editPhoneInput" value="${this.userData.phone}" placeholder="Enter your phone number"></div>`, () => {
+                const v = document.getElementById('editPhoneInput').value.trim();
+                this._saveField('phone', v); showToast('Phone number updated!', 'success');
+            });
+        });
+        // Edit Bio
+        const ebb = $('editBioBtn');
+        if (ebb) ebb.addEventListener('click', () => {
+            this.showModal('Edit Bio', `<div class="form-group"><label class="form-label">Bio</label><textarea class="form-input" id="editBioInput" placeholder="Tell us about yourself">${this.userData.bio}</textarea></div>`, () => {
+                const v = document.getElementById('editBioInput').value.trim();
+                this._saveField('bio', v); showToast('Bio updated!', 'success');
+            });
+        });
+        // Change Password
+        const cpw = $('changePasswordBtn');
+        if (cpw) cpw.addEventListener('click', () => {
+            this.showModal('Change Password', `<div class="form-group"><label class="form-label">Current Password</label><input type="password" class="form-input" id="currentPassword" placeholder="Enter current password"></div><div class="form-group"><label class="form-label">New Password</label><input type="password" class="form-input" id="newPassword" placeholder="Enter new password (min 8 characters)"></div><div class="form-group"><label class="form-label">Confirm New Password</label><input type="password" class="form-input" id="confirmNewPassword" placeholder="Confirm new password"></div>`, () => {
+                const cp = document.getElementById('currentPassword').value;
+                const np = document.getElementById('newPassword').value;
+                const cnp = document.getElementById('confirmNewPassword').value;
+                if (!cp || !np || !cnp) { showToast('Please fill all fields', 'error'); return; }
+                if (np.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
+                if (np !== cnp) { showToast('Passwords do not match', 'error'); return; }
+                const stored = localStorage.getItem('tamilAIStream_user');
+                const saved = stored ? JSON.parse(stored) : {};
+                if (saved.password && saved.password !== cp) { showToast('Current password is incorrect', 'error'); return; }
+                saved.password = np;
+                localStorage.setItem('tamilAIStream_user', JSON.stringify(saved));
+                showToast('Password changed successfully!', 'success');
+            });
+        });
+        // Delete Account
+        const dab = $('deleteAccountBtn');
+        if (dab) dab.addEventListener('click', () => {
+            this.showModal('Delete Account', `<div style="text-align:center;padding:20px 0;"><i class="fas fa-exclamation-triangle" style="font-size:48px;color:#ef4444;margin-bottom:16px;"></i><h4 style="margin-bottom:12px;color:#ef4444;">This action cannot be undone!</h4><p style="color:var(--text-secondary);">All your data, including favorites, playlists, and listening history will be permanently deleted.</p></div><div class="form-group"><label class="form-label">Type "DELETE" to confirm</label><input type="text" class="form-input" id="deleteConfirmInput" placeholder="Type DELETE"></div>`, () => {
+                if (document.getElementById('deleteConfirmInput').value !== 'DELETE') { showToast('Please type DELETE to confirm', 'error'); return; }
+                showToast('Deleting account...', 'info');
+                Auth.clearAll();
+                showToast('Account deleted successfully', 'success');
+                setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+            });
+        });
+        // Preferences
+        const nt = $('notificationsToggle');
+        if (nt) nt.addEventListener('change', (e) => { localStorage.setItem(this._scopedKey('tamilAIStream_notifications'), e.target.checked); showToast(e.target.checked ? 'Notifications enabled' : 'Notifications disabled', 'info'); });
+        const dm = $('darkModeToggle');
+        if (dm) dm.addEventListener('change', (e) => { localStorage.setItem(this._scopedKey('tamilAIStream_darkMode'), e.target.checked); showToast(e.target.checked ? 'Dark mode enabled' : 'Light mode enabled', 'info'); });
+        const ls = $('languageSelect');
+        if (ls) ls.addEventListener('change', (e) => { localStorage.setItem(this._scopedKey('tamilAIStream_language'), e.target.value); showToast('Language changed to ' + (e.target.value === 'ta' ? 'Tamil' : 'English'), 'success'); });
+        // Content Buttons
+        const fb = $('favoritesBtn');
+        if (fb) fb.addEventListener('click', () => { if (typeof YTMusic !== 'undefined') YTMusic.navigateTo('liked'); });
+        const rpb = $('recentlyPlayedBtn');
+        if (rpb) rpb.addEventListener('click', () => { if (typeof YTMusic !== 'undefined') YTMusic.navigateTo('history'); });
+        const db = $('downloadsBtn');
+        if (db) db.addEventListener('click', () => { showToast('Downloads coming soon!', 'info'); });
+        const pb = $('playlistsBtn');
+        if (pb) pb.addEventListener('click', () => { if (typeof YTMusic !== 'undefined') YTMusic.navigateTo('playlists'); });
+        const lab = $('likedArtistsBtn');
+        if (lab) lab.addEventListener('click', () => { if (typeof YTMusic !== 'undefined') YTMusic.navigateTo('artists'); });
+        // About modals
+        const hb = $('helpBtn');
+        if (hb) hb.addEventListener('click', () => {
+            this.showModal('Help & Support', `<div style="padding:20px 0;"><h4 style="margin-bottom:16px;color:var(--emerald-400);">Contact Us</h4><p style="margin-bottom:12px;"><i class="fas fa-envelope" style="width:20px;"></i> support@tamilaistream.com</p><p style="margin-bottom:12px;"><i class="fas fa-phone" style="width:20px;"></i> +91 98765 43210</p><p style="margin-bottom:12px;"><i class="fas fa-clock" style="width:20px;"></i> 24/7 Support</p></div>`, null);
+        });
+        const ppb = $('privacyBtn');
+        if (ppb) ppb.addEventListener('click', () => {
+            this.showModal('Privacy Policy', `<div style="padding:20px 0;max-height:400px;overflow-y:auto;"><h4 style="margin-bottom:16px;color:var(--emerald-400);">Privacy Policy</h4><p style="margin-bottom:12px;color:var(--text-secondary);">Last updated: January 2024</p><p style="color:var(--text-secondary);margin-bottom:12px;">We collect information you provide directly to us, such as your name, email address, and profile information.</p><p style="color:var(--text-secondary);margin-bottom:12px;">We use your information to provide and improve our services, personalize your experience, and communicate with you.</p></div>`, null);
+        });
+        const tb = $('termsBtn');
+        if (tb) tb.addEventListener('click', () => {
+            this.showModal('Terms & Conditions', `<div style="padding:20px 0;max-height:400px;overflow-y:auto;"><h4 style="margin-bottom:16px;color:var(--emerald-400);">Terms & Conditions</h4><p style="margin-bottom:12px;color:var(--text-secondary);">Last updated: January 2024</p><p style="color:var(--text-secondary);margin-bottom:12px;">By accessing or using Tamil AI Stream, you agree to be bound by these terms.</p></div>`, null);
+        });
+        const ab = $('aboutBtn');
+        if (ab) ab.addEventListener('click', () => {
+            this.showModal('About Tamil AI Stream', `<div style="text-align:center;padding:20px 0;"><div class="logo-icon" style="width:80px;height:80px;margin:0 auto 16px;background:var(--gradient-brand);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:36px;color:white;box-shadow:0 4px 16px rgba(16,185,129,0.3);"><i class="fas fa-microphone-alt"></i></div><h4 style="margin-bottom:8px;background:var(--gradient-brand);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Tamil AI Stream</h4><p style="color:var(--text-secondary);margin-bottom:16px;">AI-Powered Tamil Radio</p><p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:8px;">Version 1.0.0</p><p style="font-size:0.85rem;color:var(--text-secondary);">© 2024 Tamil AI Stream. All rights reserved.</p></div>`, null);
+        });
+        // Logout
+        const lob = $('accountLogoutBtn');
+        if (lob) lob.addEventListener('click', () => {
+            this.showModal('Logout', `<div style="text-align:center;padding:20px 0;"><i class="fas fa-sign-out-alt" style="font-size:48px;color:var(--emerald-400);margin-bottom:16px;"></i><h4 style="margin-bottom:12px;">Are you sure you want to logout?</h4><p style="color:var(--text-secondary);">You will need to sign in again to access your account.</p></div>`, () => {
+                Auth.clearAll(); showToast('Logged out successfully', 'success');
+                setTimeout(() => { window.location.href = 'login.html'; }, 1000);
+            });
+        });
+        // Stats update
+        try {
+            const user = (typeof Auth !== 'undefined' && Auth.currentUser) ? Auth.currentUser() : null;
+            if (user) {
+                const initial = (user.displayName || user.name || 'G').charAt(0).toUpperCase();
+                const avatar = $('profileAvatar');
+                if (avatar && !this.userData.photoURL) { const ph = avatar.querySelector('.avatar-placeholder'); if (ph) ph.textContent = initial; }
+                if (!$('profileName')?.textContent || $('profileName')?.textContent === 'Loading...') {
+                    const pn = $('profileName'); if (pn) pn.textContent = user.displayName || user.name || 'User';
+                    const pe = $('profileEmail'); if (pe) pe.textContent = user.email || '';
+                }
+            }
+        } catch (e) {}
+    }
+};
+
+// ============================================
 // Initialize
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
@@ -5469,6 +5707,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Analytics: track page view
     if (typeof AnalyticsTracker !== 'undefined') AnalyticsTracker.trackPageView(window.location.pathname);
+    
+    // Initialize profile editor (edit profile is now inline on Account page)
+    _ProfileEditor.init();
     
     // Setup real-time sync from builder
     setupRealtimeSync();

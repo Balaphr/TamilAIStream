@@ -458,7 +458,6 @@ const REDIRECTS = {
   '/builder': '/builder.html',
   '/admin': '/admin.html',
   '/playlist': '/playlist.html',
-  '/profile': '/profile.html',
   '/dashboard': '/dashboard.html',
   '/particles': '/particles.html',
   '/Nexvora': '/nexvora.html',

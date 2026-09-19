@@ -1198,17 +1198,17 @@ window.AIHome = (() => {
         // premium upgrade
         const up = $('aiPremiumBtn') || $('aiUpgradeBtn');
         if (up) up.addEventListener('click', () => {
-            try { window.location.href = 'profile.html'; } catch (e) { /* ignore */ }
+            try { if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) YTMusic.navigateTo('account'); else window.location.href = 'profile.html'; } catch (e) { /* ignore */ }
         });
         // sidebar profile button
         const profileBtn = $('aiSidebarProfileBtn');
         if (profileBtn) profileBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            try { window.location.href = 'profile.html'; } catch (e) { /* ignore */ }
+            try { if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) YTMusic.navigateTo('account'); else window.location.href = 'profile.html'; } catch (e) { /* ignore */ }
         });
         const profileSection = document.querySelector('.ai-sidebar-profile');
         if (profileSection) profileSection.addEventListener('click', () => {
-            try { window.location.href = 'profile.html'; } catch (e) { /* ignore */ }
+            try { if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) YTMusic.navigateTo('account'); else window.location.href = 'profile.html'; } catch (e) { /* ignore */ }
         });
     }
 
@@ -1322,7 +1322,7 @@ window.AIHome = (() => {
         document.querySelectorAll('[data-ai-menu]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const action = btn.dataset.aiMenu;
-                if (action === 'profile') { window.location.href = 'profile.html'; }
+                if (action === 'profile') { if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) YTMusic.navigateTo('account'); else window.location.href = 'profile.html'; }
                 else if (action === 'settings') { if (typeof YTMusic !== 'undefined' && YTMusic.toggleSettingsPanel) YTMusic.toggleSettingsPanel(); }
                 else if (action === 'dashboard') { if (typeof YTMusic !== 'undefined' && YTMusic.navigateTo) YTMusic.navigateTo('dashboard'); }
                 else if (action === 'builder') {

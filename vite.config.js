@@ -142,7 +142,6 @@ export default defineConfig({
         login: 'login.html',
         builder: 'builder.html',
         playlist: 'playlist.html',
-        profile: 'profile.html',
         admin: 'admin.html',
         'admin-login': 'admin-login.html',
         'admin-upload': 'admin-upload.html',

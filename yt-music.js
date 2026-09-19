@@ -211,7 +211,7 @@ const YTMusic = {
                 if (action === 'settings') {
                     this.toggleSettingsPanel();
                 } else if (action === 'profile') {
-                    window.location.href = 'profile.html';
+                    this.navigateTo('account');
                 } else if (action === 'builder') {
                     // Require verified admin to access builder
                     let isAdmin = false;
@@ -1901,38 +1901,28 @@ const YTMusic = {
         const user = (typeof Auth !== 'undefined' && Auth.currentUser) ? Auth.currentUser() : null;
         if (user) {
             const initial = (user.displayName || user.name || 'G').charAt(0).toUpperCase();
-            const el = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
-            const avatar = document.getElementById('accountAvatar');
-            if (avatar) avatar.textContent = initial;
-            el('accountName', user.displayName || user.name || 'User');
-            el('accountEmail', user.email || '');
-            const badge = document.getElementById('accountPlanBadge');
-            if (badge) {
-                const isPremium = user.premium || user.plan === 'premium';
-                const isSubscribed = (typeof AccessControl !== 'undefined' && AccessControl.isSubscribed());
-                const isTrialActive = (typeof AccessControl !== 'undefined' && AccessControl.isTrialActive());
-                if (isPremium || isSubscribed) {
-                    badge.innerHTML = '<i class="fas fa-crown" style="color:#f59e0b;"></i> Premium';
-                } else if (isTrialActive) {
-                    const days = AccessControl.getTrialDaysRemaining();
-                    badge.innerHTML = '<i class="fas fa-clock" style="color:#a78bfa;"></i> Trial (' + days + 'd)';
-                } else {
-                    badge.innerHTML = '<i class="fas fa-crown" style="color:rgba(255,255,255,0.4);"></i> Free';
-                }
+            const avatar = document.getElementById('profileAvatar');
+            if (avatar) {
+                const ph = avatar.querySelector('.avatar-placeholder');
+                if (ph && !document.getElementById('profileImage')?.src) ph.textContent = initial;
             }
+            const el = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+            const pn = document.getElementById('profileName');
+            if (pn && (!pn.textContent || pn.textContent === 'Loading...')) pn.textContent = user.displayName || user.name || 'User';
+            const pe = document.getElementById('profileEmail');
+            if (pe && (!pe.textContent || pe.textContent === 'loading@example.com')) pe.textContent = user.email || '';
         }
         try {
             const favs = (typeof DataStore !== 'undefined' && DataStore.getFavorites) ? DataStore.getFavorites() : [];
             const history = (typeof DataStore !== 'undefined' && DataStore.getHistory) ? DataStore.getHistory() : [];
             const playlists = (typeof DataStore !== 'undefined' && DataStore.getPlaylists) ? DataStore.getPlaylists() : [];
             const el = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-            el('accountFavCount', Array.isArray(favs) ? favs.length : 0);
-            el('accountHistoryCount', Array.isArray(history) ? history.length : 0);
-            el('accountPlaylistCount', Array.isArray(playlists) ? playlists.length : 0);
-            el('accountPlayCount', history.length || 0);
+            el('favoritesCount', Array.isArray(favs) ? favs.length : 0);
+            el('recentCount', Array.isArray(history) ? history.length : 0);
+            el('playlistsCount', Array.isArray(playlists) ? playlists.length : 0);
+            el('listeningTime', '24h');
         } catch (e) {}
-        const logoutBtn = document.getElementById('accountLogoutBtn');
-        if (logoutBtn) logoutBtn.onclick = () => { if (typeof Auth !== 'undefined') Auth.logout(); else window.location.href = 'login.html'; };
+        if (typeof _ProfileEditor !== 'undefined') _ProfileEditor.loadUserData();
     },
 
     renderPremiumPage() {
@@ -2173,7 +2163,7 @@ const YTMusic = {
                 <div class="ytm-profile-menu-item" onclick="YTMusic.navigateTo('history');YTMusic.closeProfileDropdown()"><i class="fas fa-clock-rotate-left"></i> History</div>
                 <div class="ytm-profile-divider"></div>
                 <div class="ytm-profile-menu-item" onclick="YTMusic.toggleSettingsPanel();YTMusic.closeProfileDropdown()"><i class="fas fa-gear"></i> Settings</div>
-                <div class="ytm-profile-menu-item" onclick="window.location.href='profile.html'"><i class="fas fa-user"></i> Profile</div>
+                <div class="ytm-profile-menu-item" onclick="YTMusic.navigateTo('account');YTMusic.closeProfileDropdown()"><i class="fas fa-user"></i> Profile</div>
                 <div class="ytm-profile-divider"></div>
                  <div class="ytm-profile-menu-item" onclick="window.logout();YTMusic.closeProfileDropdown()"><i class="fas fa-sign-out-alt"></i> Sign out</div>
             </div>`;
