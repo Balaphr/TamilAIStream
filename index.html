@@ -1015,354 +1015,279 @@
 
             <!-- ============ PAGE: ACCOUNT / MY PROFILE ============ -->
             <div class="ytm-page ytm-page-account" id="page-account">
-                <div class="account-page profile-container" id="accountPage">
-                    <!-- Profile Header -->
-                    <section class="profile-header">
-                        <div class="profile-cover">
-                            <div class="cover-gradient"></div>
-                            <div class="cover-particles"></div>
-                        </div>
-                        <div class="profile-info">
-                            <div class="profile-avatar-container">
-                                <div class="profile-avatar" id="profileAvatar">
-                                    <img src="" alt="Profile" id="profileImage" style="display: none;">
-                                    <div class="avatar-placeholder" id="avatarPlaceholder">
-                                        <i class="fas fa-user"></i>
+                <div class="settings-page" id="accountPage">
+                    <div class="settings-header">
+                        <h1><i class="fas fa-user"></i> My Profile</h1>
+                        <p>Manage your profile and preferences</p>
+                    </div>
+                    <div class="settings-grid">
+                        <!-- Profile Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-id-badge"></i>
+                                <h3>Profile</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-account-info" id="settingsAccountInfo">
+                                    <div class="settings-avatar" id="profileAvatar">
+                                        <img src="" alt="Profile" id="profileImage" style="display:none;">
+                                        <div class="avatar-placeholder" id="avatarPlaceholder">G</div>
+                                    </div>
+                                    <div class="settings-account-meta">
+                                        <div class="settings-account-name" id="profileName">Loading...</div>
+                                        <div class="settings-account-email" id="profileEmail">loading@example.com</div>
+                                        <div style="display:flex;gap:6px;margin-top:4px;">
+                                            <span class="settings-account-plan" id="accountTypeBadge"><i class="fas fa-user"></i> User</span>
+                                            <span class="settings-account-plan" id="authStatusBadge" style="color:var(--ai-green,#34d399);"><i class="fas fa-check-circle"></i> Verified</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <button class="change-photo-btn" id="changePhotoBtn" title="Change Profile Photo">
-                                    <i class="fas fa-camera"></i>
-                                </button>
-                                <input type="file" id="photoInput" accept="image/*" style="display: none;">
-                            </div>
-                            <div class="profile-details">
-                                <h2 class="profile-name" id="profileName">Loading...</h2>
-                                <p class="profile-email" id="profileEmail">loading@example.com</p>
-                                <div class="profile-badges">
-                                    <span class="badge badge-account-type" id="accountTypeBadge">
-                                        <i class="fas fa-user"></i> <span>User</span>
-                                    </span>
-                                    <span class="badge badge-auth-status" id="authStatusBadge">
-                                        <i class="fas fa-check-circle"></i> <span>Verified</span>
-                                    </span>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Change Photo</div>
+                                        <div class="settings-row-desc">Update your profile picture</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="changePhotoBtn"><i class="fas fa-camera"></i></button>
+                                    <input type="file" id="photoInput" accept="image/*" style="display:none;">
                                 </div>
                             </div>
                         </div>
-                    </section>
 
-                    <!-- Profile Stats -->
-                    <section class="profile-stats">
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="fas fa-heart"></i></div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="favoritesCount">0</span>
-                                <span class="stat-label">Favorites</span>
+                        <!-- Stats Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-chart-simple"></i>
+                                <h3>My Stats</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Favorites</div>
+                                        <div class="settings-row-desc">Songs you've liked</div>
+                                    </div>
+                                    <span class="settings-account-plan" id="favoritesCount">0</span>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Recently Played</div>
+                                        <div class="settings-row-desc">Your listening history</div>
+                                    </div>
+                                    <span class="settings-account-plan" id="recentCount">0</span>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Listening Time</div>
+                                        <div class="settings-row-desc">Total time listened</div>
+                                    </div>
+                                    <span class="settings-account-plan" id="listeningTime">0h</span>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Playlists</div>
+                                        <div class="settings-row-desc">Custom playlists created</div>
+                                    </div>
+                                    <span class="settings-account-plan" id="playlistsCount">0</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="fas fa-play-circle"></i></div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="recentCount">0</span>
-                                <span class="stat-label">Recently Played</span>
+
+                        <!-- Account Settings Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-user-gear"></i>
+                                <h3>Account Settings</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Display Name</div>
+                                        <div class="settings-row-desc" id="settingDisplayName">Your public name</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="editNameBtn"><i class="fas fa-pen"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Email Address</div>
+                                        <div class="settings-row-desc" id="settingEmail">user@example.com</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="editEmailBtn"><i class="fas fa-pen"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Phone Number</div>
+                                        <div class="settings-row-desc" id="settingPhone">Not set</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="editPhoneBtn"><i class="fas fa-pen"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Bio</div>
+                                        <div class="settings-row-desc" id="settingBio">Tell us about yourself</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="editBioBtn"><i class="fas fa-pen"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Member Since</div>
+                                        <div class="settings-row-desc" id="memberSince">January 2024</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="fas fa-clock"></i></div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="listeningTime">0h</span>
-                                <span class="stat-label">Listening Time</span>
+
+                        <!-- Security Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-shield-halved"></i>
+                                <h3>Security</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Change Password</div>
+                                        <div class="settings-row-desc">Update your password</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="changePasswordBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Delete Account</div>
+                                        <div class="settings-row-desc">Permanently delete your account</div>
+                                    </div>
+                                    <button class="settings-action-btn settings-action-danger" id="deleteAccountBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="fas fa-music"></i></div>
-                            <div class="stat-info">
-                                <span class="stat-value" id="playlistsCount">0</span>
-                                <span class="stat-label">Playlists</span>
+
+                        <!-- My Content Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-music"></i>
+                                <h3>My Content</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Favorite Songs</div>
+                                        <div class="settings-row-desc">View your liked songs</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="favoritesBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Recently Played</div>
+                                        <div class="settings-row-desc">Your listening history</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="recentlyPlayedBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Downloads</div>
+                                        <div class="settings-row-desc">Manage offline music</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="downloadsBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Playlists</div>
+                                        <div class="settings-row-desc">Your custom playlists</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="playlistsBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Liked Artists</div>
+                                        <div class="settings-row-desc">Artists you follow</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="likedArtistsBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
                             </div>
                         </div>
-                    </section>
 
-                    <!-- Settings Sections -->
-                    <div class="profile-sections">
-                        <!-- Account Settings -->
-                        <section class="settings-section">
-                            <h3 class="section-title">
-                                <i class="fas fa-user-cog"></i> Account Settings
-                            </h3>
-                            <div class="settings-card">
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-user"></i>
-                                        <div>
-                                            <label>Display Name</label>
-                                            <p>Your public display name</p>
-                                        </div>
-                                    </div>
-                                    <button class="setting-btn" id="editNameBtn">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-envelope"></i>
-                                        <div>
-                                            <label>Email Address</label>
-                                            <p id="settingEmail">user@example.com</p>
-                                        </div>
-                                    </div>
-                                    <button class="setting-btn" id="editEmailBtn">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-phone"></i>
-                                        <div>
-                                            <label>Phone Number</label>
-                                            <p id="settingPhone">Not set</p>
-                                        </div>
-                                    </div>
-                                    <button class="setting-btn" id="editPhoneBtn">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-info-circle"></i>
-                                        <div>
-                                            <label>Bio</label>
-                                            <p id="settingBio">Tell us about yourself</p>
-                                        </div>
-                                    </div>
-                                    <button class="setting-btn" id="editBioBtn">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-calendar"></i>
-                                        <div>
-                                            <label>Member Since</label>
-                                            <p id="memberSince">January 2024</p>
-                                        </div>
-                                    </div>
-                                </div>
+                        <!-- Preferences Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-sliders"></i>
+                                <h3>Preferences</h3>
                             </div>
-                        </section>
-
-                        <!-- Security Settings -->
-                        <section class="settings-section">
-                            <h3 class="section-title">
-                                <i class="fas fa-shield-alt"></i> Security
-                            </h3>
-                            <div class="settings-card">
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-lock"></i>
-                                        <div>
-                                            <label>Change Password</label>
-                                            <p>Update your password</p>
-                                        </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Notifications</div>
+                                        <div class="settings-row-desc">Manage notification settings</div>
                                     </div>
-                                    <button class="setting-btn" id="changePasswordBtn">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
+                                    <button class="ai-dark-toggle settings-toggle" id="notificationsToggle" data-setting="notifications"><span class="ai-dark-knob"></span></button>
                                 </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-trash-alt"></i>
-                                        <div>
-                                            <label>Delete Account</label>
-                                            <p>Permanently delete your account</p>
-                                        </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Dark Mode</div>
+                                        <div class="settings-row-desc">Switch between dark and light theme</div>
                                     </div>
-                                    <button class="setting-btn danger" id="deleteAccountBtn">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
+                                    <button class="ai-dark-toggle settings-toggle" id="darkModeToggle" data-setting="darkMode"><span class="ai-dark-knob"></span></button>
                                 </div>
-                            </div>
-                        </section>
-
-                        <!-- My Content -->
-                        <section class="settings-section">
-                            <h3 class="section-title">
-                                <i class="fas fa-music"></i> My Content
-                            </h3>
-                            <div class="settings-card">
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-heart"></i>
-                                        <div>
-                                            <label>My Favorite Songs</label>
-                                            <p>View your liked songs</p>
-                                        </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Language</div>
+                                        <div class="settings-row-desc">Choose your preferred language</div>
                                     </div>
-                                    <button class="setting-btn" id="favoritesBtn">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-history"></i>
-                                        <div>
-                                            <label>Recently Played</label>
-                                            <p>Your listening history</p>
-                                        </div>
-                                    </div>
-                                    <button class="setting-btn" id="recentlyPlayedBtn">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-download"></i>
-                                        <div>
-                                            <label>Downloaded Songs</label>
-                                            <p>Manage offline music</p>
-                                        </div>
-                                    </div>
-                                    <button class="setting-btn" id="downloadsBtn">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-list"></i>
-                                        <div>
-                                            <label>My Playlists</label>
-                                            <p>Your custom playlists</p>
-                                        </div>
-                                    </div>
-                                    <button class="setting-btn" id="playlistsBtn">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-user-friends"></i>
-                                        <div>
-                                            <label>Liked Artists</label>
-                                            <p>Artists you follow</p>
-                                        </div>
-                                    </div>
-                                    <button class="setting-btn" id="likedArtistsBtn">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </section>
-
-                        <!-- Preferences -->
-                        <section class="settings-section">
-                            <h3 class="section-title">
-                                <i class="fas fa-sliders-h"></i> Preferences
-                            </h3>
-                            <div class="settings-card">
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-bell"></i>
-                                        <div>
-                                            <label>Notifications</label>
-                                            <p>Manage notification settings</p>
-                                        </div>
-                                    </div>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="notificationsToggle" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-moon"></i>
-                                        <div>
-                                            <label>Dark Mode</label>
-                                            <p>Toggle dark/light theme</p>
-                                        </div>
-                                    </div>
-                                    <label class="toggle-switch">
-                                        <input type="checkbox" id="darkModeToggle" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-language"></i>
-                                        <div>
-                                            <label>Language</label>
-                                            <p>Select your preferred language</p>
-                                        </div>
-                                    </div>
-                                    <select class="setting-select" id="languageSelect">
+                                    <select class="settings-select" id="languageSelect">
                                         <option value="en">English</option>
                                         <option value="ta">தமிழ் (Tamil)</option>
                                     </select>
                                 </div>
                             </div>
-                        </section>
+                        </div>
 
-                        <!-- About & Support -->
-                        <section class="settings-section">
-                            <h3 class="section-title">
-                                <i class="fas fa-info-circle"></i> About & Support
-                            </h3>
-                            <div class="settings-card">
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-question-circle"></i>
-                                        <div>
-                                            <label>Help & Support</label>
-                                            <p>Get help and contact us</p>
-                                        </div>
+                        <!-- About & Support Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-circle-info"></i>
+                                <h3>About & Support</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Help & Support</div>
+                                        <div class="settings-row-desc">Get help and contact us</div>
                                     </div>
-                                    <button class="setting-btn" id="helpBtn">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
+                                    <button class="settings-action-btn" id="helpBtn"><i class="fas fa-chevron-right"></i></button>
                                 </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-file-alt"></i>
-                                        <div>
-                                            <label>Privacy Policy</label>
-                                            <p>How we protect your data</p>
-                                        </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Privacy Policy</div>
+                                        <div class="settings-row-desc">How we protect your data</div>
                                     </div>
-                                    <button class="setting-btn" id="privacyBtn">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
+                                    <button class="settings-action-btn" id="privacyBtn"><i class="fas fa-chevron-right"></i></button>
                                 </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-file-contract"></i>
-                                        <div>
-                                            <label>Terms & Conditions</label>
-                                            <p>Terms of service</p>
-                                        </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Terms & Conditions</div>
+                                        <div class="settings-row-desc">Terms of service</div>
                                     </div>
-                                    <button class="setting-btn" id="termsBtn">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
+                                    <button class="settings-action-btn" id="termsBtn"><i class="fas fa-chevron-right"></i></button>
                                 </div>
-                                <div class="setting-item">
-                                    <div class="setting-info">
-                                        <i class="fas fa-info"></i>
-                                        <div>
-                                            <label>About Tamil AI Stream</label>
-                                            <p>Version 1.0.0</p>
-                                        </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">About Tamil AI Stream</div>
+                                        <div class="settings-row-desc">Version 1.0.0</div>
                                     </div>
-                                    <button class="setting-btn" id="aboutBtn">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
+                                    <button class="settings-action-btn" id="aboutBtn"><i class="fas fa-chevron-right"></i></button>
                                 </div>
                             </div>
-                        </section>
+                        </div>
 
-                        <!-- Logout -->
-                        <section class="settings-section">
-                            <button class="logout-btn" id="accountLogoutBtn">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </button>
-                        </section>
+                        <!-- Logout Card -->
+                        <div class="settings-card" style="grid-column: 1 / -1;">
+                            <div class="settings-card-body">
+                                <div class="settings-row" id="accountLogoutBtn" style="cursor:pointer;">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label" style="color:#ef4444;">Logout</div>
+                                        <div class="settings-row-desc">Sign out of your account</div>
+                                    </div>
+                                    <button class="settings-action-btn settings-action-danger"><i class="fas fa-right-from-bracket"></i></button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -5473,6 +5473,7 @@ const _ProfileEditor = {
     updateProfileUI() {
         const $ = (id) => document.getElementById(id);
         const pn = $('profileName'); if (pn) pn.textContent = this.userData.name;
+        const sd = $('settingDisplayName'); if (sd) sd.textContent = this.userData.name || 'Your public name';
         const pe = $('profileEmail'); if (pe) pe.textContent = this.userData.email;
         const se = $('settingEmail'); if (se) se.textContent = this.userData.email;
         const sp = $('settingPhone'); if (sp) sp.textContent = this.userData.phone || 'Not set';
@@ -5497,8 +5498,8 @@ const _ProfileEditor = {
     },
     loadUserPreferences() {
         const $ = (id) => document.getElementById(id);
-        const nt = $('notificationsToggle'); if (nt) nt.checked = localStorage.getItem(this._scopedKey('tamilAIStream_notifications')) !== 'false';
-        const dm = $('darkModeToggle'); if (dm) dm.checked = localStorage.getItem(this._scopedKey('tamilAIStream_darkMode')) !== 'false';
+        const nt = $('notificationsToggle'); if (nt) { const on = localStorage.getItem(this._scopedKey('tamilAIStream_notifications')) !== 'false'; nt.classList.toggle('active', on); }
+        const dm = $('darkModeToggle'); if (dm) { const on = localStorage.getItem(this._scopedKey('tamilAIStream_darkMode')) !== 'false'; dm.classList.toggle('active', on); }
         const ls = $('languageSelect'); if (ls) ls.value = localStorage.getItem(this._scopedKey('tamilAIStream_language')) || 'en';
     },
     _saveField(field, value) {
@@ -5601,9 +5602,9 @@ const _ProfileEditor = {
         });
         // Preferences
         const nt = $('notificationsToggle');
-        if (nt) nt.addEventListener('change', (e) => { localStorage.setItem(this._scopedKey('tamilAIStream_notifications'), e.target.checked); showToast(e.target.checked ? 'Notifications enabled' : 'Notifications disabled', 'info'); });
+        if (nt) nt.addEventListener('click', () => { nt.classList.toggle('active'); const on = nt.classList.contains('active'); localStorage.setItem(this._scopedKey('tamilAIStream_notifications'), on); showToast(on ? 'Notifications enabled' : 'Notifications disabled', 'info'); });
         const dm = $('darkModeToggle');
-        if (dm) dm.addEventListener('change', (e) => { localStorage.setItem(this._scopedKey('tamilAIStream_darkMode'), e.target.checked); showToast(e.target.checked ? 'Dark mode enabled' : 'Light mode enabled', 'info'); });
+        if (dm) dm.addEventListener('click', () => { dm.classList.toggle('active'); const on = dm.classList.contains('active'); localStorage.setItem(this._scopedKey('tamilAIStream_darkMode'), on); showToast(on ? 'Dark mode enabled' : 'Light mode enabled', 'info'); });
         const ls = $('languageSelect');
         if (ls) ls.addEventListener('change', (e) => { localStorage.setItem(this._scopedKey('tamilAIStream_language'), e.target.value); showToast('Language changed to ' + (e.target.value === 'ta' ? 'Tamil' : 'English'), 'success'); });
         // Content Buttons
