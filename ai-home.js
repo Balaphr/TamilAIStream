@@ -2277,10 +2277,11 @@ window.AIHome = (() => {
         // After R2 bootstrap completes, force a re-render so songs/upcoming
         // collections picked up from R2 are displayed immediately.
         if (typeof ContentSync !== 'undefined' && typeof ContentSync.onSync === 'function') {
+            var _onSyncDebounce = null;
             ContentSync.onSync(function(result) {
                 if (result && result.changed) {
-                    setTimeout(refreshHome, 100);
-                    setTimeout(refreshHome, 500);
+                    clearTimeout(_onSyncDebounce);
+                    _onSyncDebounce = setTimeout(refreshHome, 300);
                 }
             });
         }

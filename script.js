@@ -2668,6 +2668,150 @@ function setupLayoutSync() {
 }
 
 // ============================================
+// Canonical Section Order (single source of truth)
+// Resolves the authoritative section order from
+// the highest-priority localStorage source and
+// applies it to the DOM exactly once, preventing
+// the three competing systems from each reordering.
+// Priority: VE overrides > sectionSettings > websiteLayout.
+// ============================================
+let _sectionOrderApplied = false;
+let _lastAppliedOrderKey = '';
+
+function _readCanonicalOrder() {
+    // Build a string key representing the current canonical order so we can
+    // detect when it actually changes (avoiding redundant DOM mutations).
+    const parts = [];
+
+    // Source 1: VE overrides (highest priority — Builder VE is latest)
+    try {
+        const veRaw = localStorage.getItem('tamilAIStream_veOverrides');
+        if (veRaw) {
+            const veData = JSON.parse(veRaw);
+            if (veData && veData.sectionStates && veData.sectionStates.length) {
+                const ids = veData.sectionStates.map(s => s.id).filter(Boolean);
+                if (ids.length) parts.push('ve:' + ids.join(','));
+            }
+        }
+    } catch(e) {}
+
+    // Source 2: Section settings (Builder HCC)
+    if (!parts.length) {
+        try {
+            const ssRaw = localStorage.getItem('tamilAIStream_sectionSettings');
+            if (ssRaw) {
+                const ssData = JSON.parse(ssRaw);
+                if (ssData && typeof ssData === 'object') {
+                    const sorted = Object.entries(ssData)
+                        .map(([id, s]) => ({ id, o: (s && s.order) || 99 }))
+                        .sort((a, b) => a.o - b.o);
+                    parts.push('ss:' + sorted.map(s => s.id).join(','));
+                }
+            }
+        } catch(e) {}
+    }
+
+    // Source 3: websiteLayout (legacy)
+    if (!parts.length) {
+        try {
+            const layoutRaw = localStorage.getItem('websiteLayout');
+            if (layoutRaw) {
+                const layoutData = JSON.parse(layoutRaw);
+                if (layoutData && layoutData.length) {
+                    parts.push('layout:' + layoutData.map(s => s.type).join(','));
+                }
+            }
+        } catch(e) {}
+    }
+
+    return parts.join('|') || '';
+}
+
+function _applyCanonicalSectionOrder() {
+    if (_sectionOrderApplied) return;
+
+    const mainContent = document.querySelector('.ai-home') || document.querySelector('main') || document.querySelector('#mainContent');
+    if (!mainContent) { _sectionOrderApplied = true; return; }
+
+    const allSections = mainContent.querySelectorAll('[data-section]');
+    if (!allSections.length) { _sectionOrderApplied = true; return; }
+
+    // Build element map
+    const sectionMap = {};
+    allSections.forEach(el => { sectionMap[el.dataset.section] = el; });
+
+    // Determine canonical order from the highest-priority source
+    let canonicalOrder = null;
+    let canonicalVisibility = {};
+
+    // Source 1: VE overrides (highest priority)
+    try {
+        const veRaw = localStorage.getItem('tamilAIStream_veOverrides');
+        if (veRaw) {
+            const veData = JSON.parse(veRaw);
+            if (veData && veData.sectionStates && veData.sectionStates.length) {
+                const ids = veData.sectionStates.map(s => s.id).filter(Boolean);
+                if (ids.length) {
+                    canonicalOrder = ids;
+                    veData.sectionStates.forEach(s => {
+                        if (s.id) canonicalVisibility[s.id] = !s.hidden;
+                    });
+                }
+            }
+        }
+    } catch(e) {}
+
+    // Source 2: Section settings (if no VE overrides)
+    if (!canonicalOrder) {
+        try {
+            const ssRaw = localStorage.getItem('tamilAIStream_sectionSettings');
+            if (ssRaw) {
+                const ssData = JSON.parse(ssRaw);
+                if (ssData && typeof ssData === 'object') {
+                    const sorted = Object.entries(ssData)
+                        .map(([id, s]) => ({ id, o: (s && s.order) || 99 }))
+                        .sort((a, b) => a.o - b.o);
+                    canonicalOrder = sorted.map(s => s.id);
+                }
+            }
+        } catch(e) {}
+    }
+
+    // Source 3: websiteLayout (legacy fallback)
+    if (!canonicalOrder) {
+        try {
+            const layoutRaw = localStorage.getItem('websiteLayout');
+            if (layoutRaw) {
+                const layoutData = JSON.parse(layoutRaw);
+                if (layoutData && layoutData.length) {
+                    canonicalOrder = layoutData.map(s => s.type).filter(Boolean);
+                }
+            }
+        } catch(e) {}
+    }
+
+    // No order source found — keep DOM default order
+    if (!canonicalOrder) { _sectionOrderApplied = true; return; }
+
+    // Apply canonical order to the DOM (appendChild moves existing nodes)
+    canonicalOrder.forEach(id => {
+        const el = sectionMap[id];
+        if (el) el.parentElement.appendChild(el);
+    });
+
+    // Apply visibility from the canonical source
+    Object.entries(canonicalVisibility).forEach(([id, visible]) => {
+        const el = sectionMap[id];
+        if (el) el.style.display = visible ? '' : 'none';
+    });
+
+    _lastAppliedOrderKey = _readCanonicalOrder();
+    _sectionOrderApplied = true;
+    _layoutApplied = true; // also satisfies layout sync guard
+    console.log('[Order] Applied canonical section order from', _lastAppliedOrderKey.split(':')[0] || 'default');
+}
+
+// ============================================
 // Visual Editor Overrides (from Builder Publish)
 // ============================================
 function applyVEOverrides() {
@@ -2689,6 +2833,12 @@ function applyVEOverrides() {
                     if (converted) {
                         localStorage.setItem('tamilAIStream_veOverrides', JSON.stringify(converted));
                         _applyVEOverridesFromRaw(JSON.stringify(converted));
+                        // Re-apply canonical order since VE overrides just changed
+                        const newKey = _readCanonicalOrder();
+                        if (newKey !== _lastAppliedOrderKey) {
+                            _sectionOrderApplied = false;
+                            _applyCanonicalSectionOrder();
+                        }
                     }
                 }
             }).catch(() => {}).finally(() => { window._veOverridesFetchPending = false; });
@@ -2735,9 +2885,8 @@ function _applyVEOverridesFromRaw(raw) {
         // Apply section visibility and order
         if (data.sectionStates && data.sectionStates.length) {
             const mainContent = document.querySelector('.ai-home') || document.querySelector('main') || document.querySelector('#mainContent') || document.body;
-            const allSections = mainContent.querySelectorAll('[data-section], header, nav, footer, section');
 
-            // First: apply visibility
+            // Apply visibility
             data.sectionStates.forEach(state => {
                 if (!state.id) return;
                 const el = mainContent.querySelector(`[data-section="${state.id}"]`) ||
@@ -2747,13 +2896,20 @@ function _applyVEOverridesFromRaw(raw) {
                 }
             });
 
-            // Second: apply order (re-append sections in saved order)
-            const sectionOrder = data.sectionStates.map(s => s.id).filter(Boolean);
-            sectionOrder.forEach(id => {
-                const el = mainContent.querySelector(`[data-section="${id}"]`) ||
-                           mainContent.querySelector(`#${id}`);
-                if (el && el.parentElement) el.parentElement.appendChild(el);
-            });
+            // DOM reordering is handled by _applyCanonicalSectionOrder().
+            // Skip re-appending here to prevent redundant shifts.
+            if (_sectionOrderApplied) {
+                // Order already canonical — nothing to reorder.
+            } else {
+                // Fallback: canonical order hasn't been applied yet (shouldn't
+                // normally happen on the live site). Apply order directly.
+                const sectionOrder = data.sectionStates.map(s => s.id).filter(Boolean);
+                sectionOrder.forEach(id => {
+                    const el = mainContent.querySelector(`[data-section="${id}"]`) ||
+                               mainContent.querySelector(`#${id}`);
+                    if (el && el.parentElement) el.parentElement.appendChild(el);
+                });
+            }
         }
 
         // Apply element style overrides (position, size, etc.)
@@ -2821,14 +2977,26 @@ function applySectionSettings() {
             .sort((a, b) => (a.order || 99) - (b.order || 99));
 
         // 1. Apply visibility and reorder DOM
-        sorted.forEach(sec => {
-            const el = mainContent.querySelector(`[data-section="${sec.id}"]`);
-            if (!el) return;
-            el.style.display = sec.enabled === false ? 'none' : '';
-            if (sec.enabled !== false && el.parentElement) {
-                el.parentElement.appendChild(el);
-            }
-        });
+        // DOM reordering is handled by _applyCanonicalSectionOrder().
+        // Only apply visibility here to avoid redundant DOM mutations.
+        if (!_sectionOrderApplied) {
+            // Fallback: canonical order not yet applied
+            sorted.forEach(sec => {
+                const el = mainContent.querySelector(`[data-section="${sec.id}"]`);
+                if (!el) return;
+                el.style.display = sec.enabled === false ? 'none' : '';
+                if (sec.enabled !== false && el.parentElement) {
+                    el.parentElement.appendChild(el);
+                }
+            });
+        } else {
+            // Canonical order already applied — only set visibility
+            sorted.forEach(sec => {
+                const el = mainContent.querySelector(`[data-section="${sec.id}"]`);
+                if (!el) return;
+                el.style.display = sec.enabled === false ? 'none' : '';
+            });
+        }
 
         // 2. Apply per-section settings
         sorted.forEach(sec => {
@@ -5187,18 +5355,43 @@ function setupRealtimeSync() {
             renderLatestCollectionsDynamic();
         }
         if (e.key === 'tamilAIStream_veOverrides' || e.key === 'tamilAIStream_sectionSettings') {
-            setTimeout(() => { applySectionSettings(); applyVEOverrides(); }, 100);
+            setTimeout(() => {
+                // Only re-apply section order if the canonical order actually changed
+                const newKey = _readCanonicalOrder();
+                if (newKey !== _lastAppliedOrderKey) {
+                    _sectionOrderApplied = false;
+                    _applyCanonicalSectionOrder();
+                }
+                applySectionSettings();
+                applyVEOverrides();
+            }, 100);
         }
     });
     // Custom event from builder for immediate sync
     window.addEventListener('storage-sync', () => {
         refreshLiveContent();
-        setTimeout(() => { applySectionSettings(); applyVEOverrides(); }, 500);
+        setTimeout(() => {
+            const newKey = _readCanonicalOrder();
+            if (newKey !== _lastAppliedOrderKey) {
+                _sectionOrderApplied = false;
+                _applyCanonicalSectionOrder();
+            }
+            applySectionSettings();
+            applyVEOverrides();
+        }, 500);
     });
     // ContentSync change notifications (manifest pulled/applied)
     window.addEventListener('tamilAIStream-content-synced', () => {
         refreshLiveContent();
-        setTimeout(() => { applySectionSettings(); applyVEOverrides(); }, 500);
+        setTimeout(() => {
+            const newKey = _readCanonicalOrder();
+            if (newKey !== _lastAppliedOrderKey) {
+                _sectionOrderApplied = false;
+                _applyCanonicalSectionOrder();
+            }
+            applySectionSettings();
+            applyVEOverrides();
+        }, 500);
     });
     window.addEventListener('premium-sections-sync', () => {
         refreshLiveContent();
@@ -5280,13 +5473,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Setup real-time sync from builder
     setupRealtimeSync();
     
-    // Setup layout sync from builder
+    // Apply the single canonical section order FIRST (prevents three
+    // competing systems from each reordering the DOM).
+    _applyCanonicalSectionOrder();
+    
+    // Setup layout sync from builder (skipped if canonical order applied)
     setupLayoutSync();
     
-    // Apply Home Control Center section settings FIRST (base order)
+    // Apply Home Control Center section settings (visual settings only —
+    // DOM reorder is already handled by canonical order above)
     applySectionSettings();
 
-    // Apply visual editor overrides AFTER (VE order takes final precedence)
+    // Apply visual editor overrides (visual overrides only —
+    // DOM reorder is already handled by canonical order above)
     applyVEOverrides();
 
     // Setup filter buttons
