@@ -805,9 +805,18 @@ a,
     .gp-mini.gp-hidden,
     .gp-mini *,
     .gp-expanded,
-    .gp-expanded * {
-        animation-duration: inherit !important;
+    .gp-expanded *,
+    .up-bottom-art.spinning,
+    .up-fs-artwork.spinning {
         transition-duration: 0.4s !important;
+    }
+    .up-bottom-art.spinning {
+        animation-duration: 9s !important;
+        animation-iteration-count: infinite !important;
+    }
+    .up-fs-artwork.spinning {
+        animation-duration: 8s !important;
+        animation-iteration-count: infinite !important;
     }
     /* Preserve glassmorphism on player in PWA */
     .gp-mini,
