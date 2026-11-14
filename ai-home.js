@@ -1245,9 +1245,7 @@ window.AIHome = (() => {
             YTMusic.navigateTo = function (page, opts) {
                 const res = orig(page, opts);
                 syncSidebar(page);
-                // Home is already rendered by init() and kept fresh by bindDataSync().
-                // Re-rendering on every navigation causes card animation resets and
-                // image reloads (blinking/flickering). Skip it to keep nav smooth.
+                if (page === 'home') setTimeout(refreshHome, 250);
                 return res;
             };
         } catch (e) { /* ignore */ }
@@ -1457,7 +1455,19 @@ window.AIHome = (() => {
             try { notifications = (DataStore.getNotifications && DataStore.getNotifications()) || []; } catch (e) { /* ignore */ }
             const items = notifications.filter(n => n).slice(0, 4);
 
+            /* PWA Install notification — shown at top when installable */
+            let installHtml = '';
+            const isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+            const isInstalled = localStorage.getItem('tamilai_pwa_installed') === '1';
+            if (!isStandalone && !isInstalled && window.__pwaDeferredPrompt) {
+                installHtml = '<div class="ai-notif-item ai-notif-install" id="aiNotifInstall" style="cursor:pointer;background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);border-radius:12px;">' +
+                    '<div class="ai-notif-item-icon" style="background:rgba(34,211,238,0.2);color:#22d3ee;"><i class="fas fa-download"></i></div>' +
+                    '<div><div class="ai-notif-item-title" style="color:#22d3ee;">Install Tamil AI Stream</div>' +
+                    '<div class="ai-notif-item-time">Add to home screen for the best experience</div></div></div>';
+            }
+
             panel.innerHTML = '<div class="ai-notif-head"><i class="fa-solid fa-bell"></i> Notifications</div>' +
+                installHtml +
                 (items.length ? items.map(n => {
                     const t = n.title || n.message || 'Update';
                     const body = n.message && n.message !== t ? n.message : '';
@@ -1466,7 +1476,60 @@ window.AIHome = (() => {
                         '<div><div class="ai-notif-item-title">' + escapeHtml(t) + '</div>' +
                         (body ? '<div class="ai-notif-item-time">' + escapeHtml(body) + '</div>' : '') +
                         '<div class="ai-notif-item-time">' + (n.time ? escapeHtml(n.time) : 'Now') + '</div></div></div>';
-                }).join('') : '<div class="ai-notif-empty">No notifications yet.<br>You are all caught up!</div>');
+                }).join('') : (installHtml ? '' : '<div class="ai-notif-empty">No notifications yet.<br>You are all caught up!</div>'));
+
+            /* Bind install click in notification panel */
+            const installItem = document.getElementById('aiNotifInstall');
+            if (installItem) {
+                installItem.addEventListener('click', async () => {
+                    if (window.__pwaDeferredPrompt) {
+                        window.__pwaDeferredPrompt.prompt();
+                        try {
+                            const r = await window.__pwaDeferredPrompt.userChoice;
+                            if (r.outcome === 'accepted') showToastSafe('App installed!', 'success');
+                        } catch (e) { /* ignore */ }
+                        window.__pwaDeferredPrompt = null;
+                    }
+                    panel.classList.remove('open');
+                    btn.classList.remove('open');
+                });
+            }
+        }
+    }
+
+    function bindInstall() {
+        const btn = $('aiInstallBtn');
+        const moreInstallBtn = $('aiMoreInstallBtn');
+        if (!btn && !moreInstallBtn) return;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            beforeInstallPrompt = e;
+            if (btn) btn.style.display = '';
+            if (moreInstallBtn) moreInstallBtn.style.display = '';
+        });
+        const isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+        if (isStandalone) {
+            if (btn) btn.style.display = 'none';
+            if (moreInstallBtn) moreInstallBtn.style.display = 'none';
+            return;
+        }
+        async function triggerInstall() {
+            if (beforeInstallPrompt) {
+                beforeInstallPrompt.prompt();
+                try { const r = await beforeInstallPrompt.userChoice; if (r.outcome === 'accepted') showToastSafe('App installed!', 'success'); } catch (e) { /* ignore */ }
+                beforeInstallPrompt = null;
+            } else {
+                showToastSafe('Bookmark this page or use your browser menu to install the app', 'info');
+            }
+        }
+        if (btn) btn.addEventListener('click', triggerInstall);
+        if (moreInstallBtn) {
+            moreInstallBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                triggerInstall();
+                const moreChip = $('aiMoreChip');
+                if (moreChip) moreChip.classList.remove('open');
+            });
         }
     }
 
@@ -2277,6 +2340,7 @@ window.AIHome = (() => {
         bindDarkToggle();
         bindHeaderUser();
         bindNotifications();
+        bindInstall();
         bindSearchShortcut();
         bindPlaybackHooks();
         hookNavigation();
