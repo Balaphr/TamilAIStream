@@ -1168,6 +1168,18 @@ window.AIHome = (() => {
         });
     }
 
+    function bindHomeHelpButton() {
+        const btn = $('aiHomeHelpButton');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            if (window.YTMusic && typeof YTMusic.toggleAssistant === 'function') {
+                YTMusic.toggleAssistant();
+            } else {
+                showToastSafe('The help assistant is still loading. Please try again.', 'info');
+            }
+        });
+    }
+
     /* ---------------- Sidebar ---------------- */
     const PAGE_TO_AI = { home: 'home', explore: 'explore', library: 'library', liked: 'liked', playlists: 'playlists', radio: 'live-fm', stations: 'live-fm', history: 'history', music: 'music', activity: 'activity', presets: 'presets', replays: 'replays', community: 'community', charts: 'charts', settings: 'settings' };
     const AI_TO_PAGE = { 'home': 'home', 'explore': 'explore', 'music': 'explore', 'live-fm': 'radio', 'evergreen': 'explore', 'library': 'library', 'liked': 'liked', 'playlists': 'playlists', 'activity': 'home', 'presets': 'home', 'replays': 'home', 'community': 'home', 'charts': 'home', 'history': 'home', 'settings': 'home' };
@@ -2228,6 +2240,7 @@ window.AIHome = (() => {
     }
 
     function init() {
+        bindHomeHelpButton();
         refreshHome();
         bindHeroPlay();
         bindDiscoverAI();

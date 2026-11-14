@@ -12,6 +12,11 @@
         .ytm-page-home { }
         .ai-home { padding: 0 20px 32px; display: flex; flex-direction: column; gap: 18px; }
         @media (max-width: 768px) { .ai-home { padding: 0 12px 24px; gap: 14px; } }
+        .ai-home-help-button { position: fixed; right: 24px; bottom: 108px; z-index: 1599; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 88px; min-height: 48px; padding: 0 16px; border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; background: linear-gradient(135deg,#34d399,#3ea6ff); color: #fff; font: inherit; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.35); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .ai-home-help-button:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.42); }
+        .ai-home-help-button:focus-visible { outline: 3px solid rgba(34,211,238,0.75); outline-offset: 3px; }
+        #page-home:not(.active) .ai-home-help-button, html.builder-preview .ai-home-help-button { display: none; }
+        @media (max-width: 768px) { .ai-home-help-button { right: 14px; bottom: calc(128px + env(safe-area-inset-bottom, 0px)); min-height: 46px; } }
     </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -443,6 +448,10 @@
 
                 <!-- AI Premium Home -->
                 <div class="ai-home">
+                    <button class="ai-home-help-button" id="aiHomeHelpButton" type="button" aria-label="Open AI help assistant" aria-controls="ytmAiPanel">
+                        <i class="fas fa-robot" aria-hidden="true"></i>
+                        <span>Help</span>
+                    </button>
 
                     <!-- Futuristic Audio Visualizer (behind player area) -->
                     <div class="premium-fm-visualizer-wrap" id="premiumFmVisualizerWrap">
@@ -1766,6 +1775,4 @@
     </script>
 </body>
 </html>
-
-
 
