@@ -14,7 +14,6 @@
   }
 
   function shouldShowSplash() {
-    if (!isStandalone()) return false;
     if (sessionStorage.getItem(SPLASH_KEY)) return false;
     return true;
   }
