@@ -740,8 +740,8 @@ a,
     .ai-live-dot { animation: none !important; }
 }
 
-/* PWA standalone: maximum performance mode */
-@media (display-mode: standalone) {
+/* Desktop animations - match PWA exact timing */
+@media (display-mode: standalone) or (display-mode: window) {
     *, *::before, *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
