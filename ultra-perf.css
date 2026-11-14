@@ -585,6 +585,41 @@ a,
     }
 }
 
+/* Disable heavy canvas particles on phones */
+@media (max-width: 480px) {
+    .premium-particles-canvas,
+    .hero-particles-canvas,
+    .neural-bg-canvas,
+    .splash-particles {
+        display: none !important;
+    }
+}
+
+/* Reduce floating and pulsing animations on mobile */
+@media (max-width: 768px) {
+    .artwork-float,
+    .gp-art-float,
+    .ambient-glow,
+    .ambient-light::after {
+        animation: none !important;
+    }
+    .vinyl-disc.spinning {
+        animation-duration: 6s !important;
+    }
+    .card-pulse,
+    .now-playing-glow::before,
+    .glass-player.playing::before,
+    .progress-shimmer::before,
+    .splash-orb-1,
+    .splash-orb-2,
+    .splash-orb-3 {
+        animation: none !important;
+    }
+    .splash-logo {
+        animation: splashLogoFloat 3s ease-in-out infinite !important;
+    }
+}
+
 /* Disable 3D transforms on splash for mobile */
 @media (max-width: 768px) {
     .splash-logo-wrap {
@@ -592,6 +627,24 @@ a,
     }
     .splash-logo {
         animation: splashLogoFloat 3s ease-in-out infinite !important;
+    }
+}
+
+/* ============================================
+   27. PWA LOW-POWER MODE
+   ============================================ */
+@media (display-mode: standalone) {
+    .premium-particles-canvas,
+    .hero-particles-canvas,
+    .neural-bg-canvas {
+        display: none !important;
+    }
+    .ambient-glow,
+    .ambient-light::after {
+        animation: none !important;
+    }
+    .vinyl-disc.spinning {
+        animation-duration: 8s !important;
     }
 }
 
@@ -610,6 +663,7 @@ a,
     .ad-banner-card,
     .hero-ad-card {
         will-change: auto !important;
+        transform: none !important;
     }
     img,
     .premium-radio-art img,
@@ -635,8 +689,13 @@ a,
    30. AGGRESSIVE MOBILE / PWA PERFORMANCE
    ============================================ */
 
-/* Keep controls responsive without globally overriding animation playback. */
+/* Kill ALL non-essential animations on phones to prevent overheating */
 @media (max-width: 768px) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.12s !important;
+    }
     .ai-playlist-card,
     .ai-fm-card,
     .ai-song-card,
@@ -661,6 +720,12 @@ a,
     .ai-decade-card:active {
         transition-duration: 0.06s !important;
     }
+    /* Kill splash animations entirely */
+    .splash-overlay { animation: none !important; }
+    .splash-orb { display: none !important; }
+    .splash-logo { animation: none !important; transform: none !important; }
+    .splash-eq-bar { animation: none !important; }
+    .splash-loading-fill { animation: none !important; width: 100% !important; }
     /* Reduce will-change on interactive elements */
     .ai-song-card,
     .ai-fm-card,
@@ -672,17 +737,94 @@ a,
     }
     /* Reduce box-shadow */
     .ai-panel { box-shadow: 0 2px 10px rgba(0,0,0,0.15) !important; }
+    .ai-live-dot { animation: none !important; }
 }
 
-/* Preserve layout and player compositing in standalone mode; animation rules
-   are shared with browser mode above. */
+/* PWA standalone: maximum performance mode */
 @media (display-mode: standalone) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.12s !important;
+    }
+    .sc-autoscroll-up,
+    .sc-autoscroll-down {
+        animation-duration: var(--sc-duration, 30s) !important;
+        animation-iteration-count: infinite !important;
+        animation-play-state: running !important;
+    }
+    .sc-paused { animation-play-state: paused !important; }
+    .foryou-autoscroll {
+        animation-duration: var(--foryou-duration, 30s) !important;
+        animation-iteration-count: infinite !important;
+        animation-play-state: running !important;
+    }
+    .ai-playlist-card,
+    .ai-fm-card,
+    .ai-song-card,
+    .ai-rec-song,
+    .ai-news-card,
+    .ai-play-btn,
+    .ai-fm-play-btn,
+    .ai-play-now,
+    .gp-btn {
+        transition-duration: 0.18s !important;
+    }
+    .ai-playlist-card:active,
+    .ai-fm-card:active,
+    .ai-song-card:active,
+    .ai-rec-song:active,
+    .ai-news-card:active {
+        transition-duration: 0.06s !important;
+    }
+    .splash-overlay,
+    .splash-logo,
+    .splash-logo-wrap,
+    .splash-eq-bar,
+    .splash-loading-fill,
+    .splash-title,
+    .splash-subtitle,
+    .gp-mini,
+    .gp-mini.visible,
+    .gp-mini.gp-hidden,
+    .gp-mini *,
+    .gp-expanded,
+    .gp-expanded *,
+    .up-bottom-art.spinning,
+    .up-fs-artwork.spinning {
+        transition-duration: 0.4s !important;
+    }
+    .up-bottom-art.spinning {
+        animation-duration: 9s !important;
+        animation-iteration-count: infinite !important;
+    }
+    .up-fs-artwork.spinning {
+        animation-duration: 8s !important;
+        animation-iteration-count: infinite !important;
+    }
     /* Preserve glassmorphism on player in PWA */
     .gp-mini,
     .gp-expanded {
         backdrop-filter: blur(20px) saturate(1.8) !important;
         -webkit-backdrop-filter: blur(20px) saturate(1.8) !important;
     }
+    .gp-mini-eq span,
+    .gp-mini-progress-bar,
+    .gp-mini-progress-thumb,
+    .gp-mini-wave canvas,
+    .gp-mini-play,
+    .gp-mini-prev,
+    .gp-mini-next,
+    .gp-mini-artwork,
+    .gp-rainbow-line,
+    .gp-mini-progress {
+        animation: none !important;
+        animation-duration: inherit !important;
+        animation-iteration-count: inherit !important;
+        transition-duration: inherit !important;
+    }
+    .gp-mini-eq span { animation: gpEq 0.8s ease-in-out infinite !important; }
+    .gp-rainbow-line { animation: gpRainbowLine 6s linear infinite !important; }
     /* Kill ALL glass/blur effects in PWA (except player) */
     *:not(.gp-mini):not(.gp-expanded):not(.gp-mini *):not(.gp-expanded *)::before,
     *:not(.gp-mini):not(.gp-expanded):not(.gp-mini *):not(.gp-expanded *)::after {
@@ -734,6 +876,7 @@ a,
     .now-playing-bar {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
+        animation: none !important;
     }
 }
 
@@ -772,7 +915,17 @@ a,
 /* Lazy images — let browser native loading="lazy" handle deferral */
 
 /* ============================================
-   34. IMAGE LOADING — Prevent layout shift
+    33. FM WAVE ANIMATION — Reduce on mobile
+    ============================================ */
+@media (max-width: 768px) {
+     .ai-fm-wave span {
+          animation: none !important;
+          height: 5px !important;
+     }
+}
+
+/* ============================================
+    34. IMAGE LOADING — Prevent layout shift
    ============================================ */
 .ai-hero-art,
 .ai-playlist-art,
@@ -1060,19 +1213,6 @@ audio {
 }
 .sc-col-track {
     contain: layout style paint;
-}
-
-/* Constrained devices retain essential motion while reducing ambient repaint
-   work; device capability is detected once by ultra-perf.js. */
-html.tas-low-power .artwork-float,
-html.tas-low-power .gp-art-float,
-html.tas-low-power .ambient-glow,
-html.tas-low-power .ambient-light::after,
-html.tas-low-power .card-pulse,
-html.tas-low-power .vinyl-disc.spinning,
-html.tas-low-power .up-bottom-art.spinning,
-html.tas-low-power .up-fs-artwork.spinning {
-    animation-duration: 8s !important;
 }
 
 /* Optimize backdrop-filter - only on visible elements */

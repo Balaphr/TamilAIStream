@@ -1,8 +1,7 @@
 ﻿'use strict';
 
 // ============================================
-        const maxParticles = this.lowPowerMode ? 24 : 40;
-        const count = Math.min(Math.floor((this.canvas.width * this.canvas.height) / 20000), maxParticles);
+        const count = Math.min(Math.floor((this.canvas.width * this.canvas.height) / 20000), 40);
 // ============================================
 let db = null;
 
@@ -180,15 +179,12 @@ class ParticleSystem {
         this.ctx = this.canvas.getContext('2d');
         this.particles = [];
         this.neuralNodes = [];
-        this.lowPowerMode = Boolean(window.UltraPerf && window.UltraPerf.isLowPower());
         this.mouse = { x: null, y: null, radius: 200 };
         this.time = 0;
-        this._lastFrameTime = 0;
         this._rafId = null;
         this._resizeHandler = null;
         this._moveHandler = null;
         this._leaveHandler = null;
-        this._visibilityHandler = null;
         this._bound = [];
         this.init();
     }
@@ -245,25 +241,15 @@ class ParticleSystem {
         this._resizeHandler = () => { this.resize(); this.createParticles(); this.createNeuralNodes(); };
         this._moveHandler = (e) => { this.mouse.x = e.clientX; this.mouse.y = e.clientY; };
         this._leaveHandler = () => { this.mouse.x = null; this.mouse.y = null; };
-        this._visibilityHandler = () => {
-            if (document.hidden) {
-                if (this._rafId) cancelAnimationFrame(this._rafId);
-                this._rafId = null;
-            } else if (this._rafId === null) {
-                this.animate();
-            }
-        };
         window.addEventListener('resize', this._resizeHandler, { passive: true });
         document.addEventListener('mousemove', this._moveHandler, { passive: true });
         document.addEventListener('mouseleave', this._leaveHandler);
-        document.addEventListener('visibilitychange', this._visibilityHandler);
     }
     destroy() {
         if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
         if (this._resizeHandler) window.removeEventListener('resize', this._resizeHandler);
         if (this._moveHandler) document.removeEventListener('mousemove', this._moveHandler);
         if (this._leaveHandler) document.removeEventListener('mouseleave', this._leaveHandler);
-        if (this._visibilityHandler) document.removeEventListener('visibilitychange', this._visibilityHandler);
         this.particles = [];
         this.neuralNodes = [];
     }
@@ -294,15 +280,8 @@ class ParticleSystem {
         this.ctx.lineWidth = 0.5;
         this.ctx.stroke();
     }
-    animate(timestamp) {
+    animate() {
         if (document.hidden) { this._rafId = null; return; }
-        if (this.lowPowerMode && Number.isFinite(timestamp)) {
-            if (timestamp - this._lastFrameTime < 1000 / 30) {
-                this._rafId = requestAnimationFrame((nextTimestamp) => this.animate(nextTimestamp));
-                return;
-            }
-            this._lastFrameTime = timestamp;
-        }
         this.time += 0.01;
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.particles.forEach((p, i) => {
@@ -350,7 +329,7 @@ class ParticleSystem {
             node.connections.forEach(conn => this.drawNeuralConnection(node, conn));
             this.drawNeuralNode(node);
         });
-        if (!document.hidden) this._rafId = requestAnimationFrame((nextTimestamp) => this.animate(nextTimestamp));
+        if (!document.hidden) this._rafId = requestAnimationFrame(() => this.animate());
     }
 }
 

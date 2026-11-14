@@ -9,14 +9,6 @@ window.UltraPerf = (function() {
     const doc = document;
     const win = window;
 
-    const connection = win.navigator.connection || win.navigator.mozConnection || win.navigator.webkitConnection;
-    const lowPowerMode = Boolean(
-        (connection && connection.saveData) ||
-        (win.navigator.deviceMemory && win.navigator.deviceMemory <= 4) ||
-        (win.navigator.hardwareConcurrency && win.navigator.hardwareConcurrency <= 4)
-    );
-    if (lowPowerMode) doc.documentElement.classList.add('tas-low-power');
-
     // ---- Refresh-rate detection (120Hz / 144Hz / etc.) ----
     let _displayHz = 60;
     let _rafBudgetMs = 16.67; // ms per frame budget at 60Hz
@@ -295,7 +287,6 @@ window.UltraPerf = (function() {
         batchDOM: batchDOM,
         getDisplayHz: getDisplayHz,
         getFrameBudgetMs: getFrameBudgetMs,
-        isLowPower: function() { return lowPowerMode; },
         runIdle: runIdle,
         cancelIdle: cancelIdle,
         rafBatch: rafBatch
