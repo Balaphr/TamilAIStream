@@ -1,4 +1,4 @@
-name: Cloudflare Pages Deployment
+name: Cloudflare Worker Deployment
 
 on:
   push:
@@ -12,7 +12,6 @@ jobs:
 
     permissions:
       contents: read
-      deployments: write
 
     steps:
       - name: Checkout
@@ -30,10 +29,10 @@ jobs:
       - name: Build site
         run: npm run build
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy Worker and static assets
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=tamil-ai-stream
+          command: deploy
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
