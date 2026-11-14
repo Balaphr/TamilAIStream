@@ -1,0 +1,87 @@
+{
+  "name": "Tamil AI Stream - AI-Powered Tamil Radio",
+  "short_name": "Tamil AI Stream",
+  "description": "Listen to your favorite Tamil FM stations with AI-powered recommendations. Discover 100+ live Tamil radio stations.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#060e1a",
+  "theme_color": "#060e1a",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["music", "entertainment", "audio"],
+  "icons": [
+    {
+      "src": "/icons/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search Songs",
+      "short_name": "Search",
+      "url": "/?action=search",
+      "description": "Search Tamil songs, movies, artists",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Live Radio",
+      "short_name": "Radio",
+      "url": "/?action=radio",
+      "description": "Listen to live Tamil FM stations",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Favorites",
+      "short_name": "Favorites",
+      "url": "/?action=favorites",
+      "description": "Your favorite songs and stations",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false,
+  "protocol_handlers": [
+    {
+      "protocol": "web+tamilaistream",
+      "url": "/?action=play&track=%s"
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "window": {
+    "width": 1200,
+    "height": 800,
+    "minWidth": 800,
+    "minHeight": 600
+  }
+}

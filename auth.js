@@ -1,0 +1,402 @@
+'use strict';
+
+// ============================================================================
+// auth.js — Centralized Authentication & Route Guard for Tamil AI Stream
+// ----------------------------------------------------------------------------
+// Load this file (via <script src="auth.js"></script>) on EVERY page BEFORE
+// the page's own scripts. It exposes a global `window.Auth` object used by all
+// protected pages to:
+//
+//   * create a valid session (flag + user + random token + expiry)
+//   * validate the session on every page load (expiry + token integrity)
+//   * gate routes via requireAuth() -> redirects to login.html?redirect=...
+//   * redirect back to the originally requested page after login
+//   * fully clear all auth state (localStorage, sessionStorage & cookies)
+//
+// Works on localhost, GitHub Pages, Cloudflare Pages, desktop & mobile.
+// ============================================================================
+
+window.Auth = (function () {
+    // ----- Storage keys (must match the rest of the app) -----
+    var K = {
+        LOGGED_IN: 'tamilAIStream_loggedIn',
+        USER: 'tamilAIStream_user',
+        GUEST: 'tamilAIStream_guest',
+        REMEMBER: 'tamilAIStream_rememberMe',
+        REMEMBER_EMAIL: 'tamilAIStream_rememberEmail',
+        ADMIN: 'adminSession',
+        TOKEN: 'tamilAIStream_sessionToken'
+    };
+
+    var SESSION_DURATION = 24 * 60 * 60 * 1000;              // 24h (non-remembered)
+    var REMEMBER_DURATION = 30 * 24 * 60 * 60 * 1000;        // 30 days (remembered)
+
+    function now() { return Date.now(); }
+
+    function genToken() {
+        return 'tls-' + now().toString(36) + '-' +
+            Math.random().toString(36).slice(2, 10) + '-' +
+            Math.random().toString(36).slice(2, 8);
+    }
+
+    // ----- Guarded storage helpers (never throw, file:// safe) -----
+    function lsGet(key) {
+        try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function lsSet(key, val) {
+        try { localStorage.setItem(key, val); } catch (e) { /* ignore */ }
+    }
+    function lsRemove(key) {
+        try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
+    }
+    function ssGet(key) {
+        try { return sessionStorage.getItem(key); } catch (e) { return null; }
+    }
+    function ssSet(key, val) {
+        try { sessionStorage.setItem(key, val); } catch (e) { /* ignore */ }
+    }
+    function ssRemove(key) {
+        try { sessionStorage.removeItem(key); } catch (e) { /* ignore */ }
+    }
+
+    function getStoredUser() {
+        var raw = lsGet(K.USER);
+        if (!raw) return null;
+        try { return JSON.parse(raw); } catch (e) { return null; }
+    }
+// Store the session token in sessionStorage (tab-scoped) and, for
+    // remembered sessions, in localStorage + a long-lived cookie.
+    function storeToken(token, remember) {
+        ssSet(K.TOKEN, token);
+        try {
+            if (remember) {
+                lsSet(K.TOKEN, token);
+                document.cookie = K.TOKEN + '=' + encodeURIComponent(token) +
+                    '; max-age=' + Math.round(REMEMBER_DURATION / 1000) + '; path=/; SameSite=Lax';
+            } else {
+                lsRemove(K.TOKEN);
+                document.cookie = K.TOKEN + '=' + encodeURIComponent(token) +
+                    '; path=/; SameSite=Lax';   // session cookie - dies with the browser
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    function getToken() {
+        var t = ssGet(K.TOKEN) || lsGet(K.TOKEN);
+        if (t) return t;
+        try {
+            var match = document.cookie.match(new RegExp('(?:^|;\\s*)' + K.TOKEN + '=([^;]+)'));
+            if (match) return decodeURIComponent(match[1]);
+        } catch (e) { /* ignore */ }
+        return null;
+    }
+
+    // --------------------------------------------------------------------------
+    // Session creation
+    // --------------------------------------------------------------------------
+    async function createSession(userData, remember, isGuest) {
+        remember = !!remember;
+        isGuest = !!isGuest;
+
+        // ─── CRITICAL: Clear previous user's in-memory/session state ───
+        // This prevents User A's data from leaking into User B's session.
+        // Must happen BEFORE we write the new session to localStorage.
+        var prevUser = getStoredUser();
+        if (prevUser && prevUser.email) {
+            // Flush previous user's data to server
+            if (typeof UserDataSync !== 'undefined' && UserDataSync.onLogout) {
+                try { await UserDataSync.onLogout(); } catch(e) {}
+            }
+            // Clear in-memory caches
+            if (typeof ListeningHistory !== 'undefined' && ListeningHistory.switchUser) {
+                ListeningHistory.switchUser(null);
+            }
+            if (typeof PlaylistManager !== 'undefined' && PlaylistManager.switchUser) {
+                PlaylistManager.switchUser(null);
+            }
+            if (typeof DataStore !== 'undefined' && DataStore.switchHistoryUser) {
+                DataStore.switchHistoryUser(null);
+            }
+        }
+
+        var token = genToken();
+        var nowMs = now();
+        var duration = remember ? REMEMBER_DURATION : SESSION_DURATION;
+
+        var sessionUser = {};
+        for (var key in userData) {
+            if (Object.prototype.hasOwnProperty.call(userData, key)) {
+                sessionUser[key] = userData[key];
+            }
+        }
+        sessionUser.token = token;
+        sessionUser.loginTime = nowMs;
+        sessionUser.expiry = nowMs + duration;
+        sessionUser.isGuest = isGuest;
+
+        lsSet(K.LOGGED_IN, 'true');
+        lsSet(K.USER, JSON.stringify(sessionUser));
+        if (isGuest) { lsSet(K.GUEST, 'true'); } else { lsRemove(K.GUEST); }
+        if (remember) { lsSet(K.REMEMBER, 'true'); } else { lsRemove(K.REMEMBER); }
+
+        storeToken(token, remember);
+
+        // ─── Auto-start free trial for non-guest users ───
+        if (!isGuest && window.AccessControl) {
+            if (!AccessControl.getTrialExpiry()) {
+                AccessControl.startTrial();
+            }
+        }
+
+        // ─── Switch listening history to this user ───
+        if (typeof ListeningHistory !== 'undefined' && ListeningHistory.switchUser) {
+            ListeningHistory.switchUser(userData.uid || userData.email || null);
+        }
+        if (typeof PlaylistManager !== 'undefined' && PlaylistManager.switchUser) {
+            PlaylistManager.switchUser(userData.uid || userData.email || null);
+        }
+        if (typeof DataStore !== 'undefined' && DataStore.switchHistoryUser) {
+            DataStore.switchHistoryUser(userData.uid || userData.email || null);
+        }
+        // ─── Sync user data from server (cross-device) ───
+        if (typeof UserDataSync !== 'undefined' && !isGuest) {
+            try { await UserDataSync.onLogin(); } catch(e) {}
+        }
+
+        return sessionUser;
+    }
+
+    // --------------------------------------------------------------------------
+    // Validation — the single place every route guard should trust.
+    // Missing / expired / tampered sessions are auto-cleared here.
+    // --------------------------------------------------------------------------
+    function isAuthenticated() {
+        if (lsGet(K.LOGGED_IN) !== 'true') return false;
+
+        var user = getStoredUser();
+        if (!user || !user.email) {
+            clearAll();
+            return false;
+        }
+        if (user.expiry && user.expiry < now()) {
+            clearAll();
+            return false;
+        }
+        if (user.token) {
+            var token = getToken();
+            if (!token || token !== user.token) {
+                clearAll();
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function currentUser() {
+        if (!isAuthenticated()) return null;
+        return getStoredUser();
+    }
+
+    function isGuest() {
+        return lsGet(K.GUEST) === 'true';
+    }
+
+    function isAdmin() {
+        // Hardened admin check: requires verified + token + not expired
+        // Prevents spoofed admin access via localStorage manipulation
+        try {
+            var s = JSON.parse(lsGet(K.ADMIN) || 'null');
+            if (s && s.verified && s.token && s.expiry && s.expiry > now()) return true;
+        } catch (e) { /* ignore */ }
+        return false;
+    }
+
+    // --------------------------------------------------------------------------
+    // Route guards
+    // --------------------------------------------------------------------------
+    function currentPageName() {
+        var p = window.location.pathname.split('/').pop() || 'index.html';
+        return p.split('?')[0];
+    }
+
+    function getRedirect() {
+        var target = 'index.html';
+        try {
+            var r = new URLSearchParams(window.location.search).get('redirect');
+            if (r && decodeURIComponent(r).trim()) {
+                var decoded = decodeURIComponent(r).trim();
+                // Block open redirects / absolute URLs.
+                if (!/^(https?:)?\/\//i.test(decoded) &&
+                    !decoded.startsWith('login.html') &&
+                    !decoded.startsWith('admin-login.html')) {
+                    target = decoded;
+                }
+            }
+        } catch (e) { /* ignore */ }
+        return target;
+    }
+
+    /**
+     * If the visitor is not authenticated, clear any stale data and send them
+     * to login.html while remembering where they were headed.
+     */
+    function requireAuth() {
+        if (isAuthenticated()) return true;
+
+        var page = currentPageName();
+        if (page === 'login.html' || page === 'admin-login.html') return false;
+
+        clearAll();
+        var target = encodeURIComponent(page + window.location.hash);
+        window.location.replace('login.html?redirect=' + target);
+        return false;
+    }
+
+    /** Redirect after a successful login (home or the requested page). */
+    function afterLogin() {
+        window.location.replace(getRedirect());
+    }
+
+    // --------------------------------------------------------------------------
+    // Logout / cleanup
+    // --------------------------------------------------------------------------
+    function clearAuthCookies() {
+        try {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var name = cookies[i].split('=')[0].trim();
+                if (!name) continue;
+                // Clear anything that looks like an auth / session / token cookie.
+                if (/(session|token|auth|login|remember|firebase|tamil|google)/i.test(name)) {
+                    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+                    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax';
+                }
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    /** Remove every auth key from localStorage, sessionStorage and cookies. */
+    async function clearAll() {
+        // ─── Save user data to server before clearing ───
+        // Must complete BEFORE we wipe the session, otherwise UserDataSync
+        // won't know which user to flush data for.
+        if (typeof UserDataSync !== 'undefined' && UserDataSync.onLogout) {
+            try { await UserDataSync.onLogout(); } catch(e) {}
+        }
+        var keys = [K.LOGGED_IN, K.USER, K.GUEST, K.REMEMBER, K.REMEMBER_EMAIL, K.ADMIN, K.TOKEN];
+        for (var i = 0; i < keys.length; i++) {
+            lsRemove(keys[i]);
+            ssRemove(keys[i]);
+        }
+        clearAuthCookies();
+        // Switch listening history to guest (don't clear - history persists for user)
+        if (typeof ListeningHistory !== 'undefined' && ListeningHistory.switchUser) {
+            ListeningHistory.switchUser(null);
+        }
+        if (typeof PlaylistManager !== 'undefined' && PlaylistManager.switchUser) {
+            PlaylistManager.switchUser(null);
+        }
+        if (typeof DataStore !== 'undefined' && DataStore.switchHistoryUser) {
+            DataStore.switchHistoryUser(null);
+        }
+        // ─── Clear in-memory player state so next user starts fresh ───
+        try {
+            if (typeof currentPlaybackTrack !== 'undefined') currentPlaybackTrack = null;
+            if (typeof currentStation !== 'undefined') currentStation = null;
+            if (typeof currentPlaybackQueue !== 'undefined') currentPlaybackQueue = [];
+            if (typeof currentPlaybackQueueIndex !== 'undefined') currentPlaybackQueueIndex = -1;
+            if (typeof currentPlaylist !== 'undefined') currentPlaylist = [];
+            if (typeof currentSongIndex !== 'undefined') currentSongIndex = -1;
+            if (typeof isStreamPlaying !== 'undefined') isStreamPlaying = false;
+        } catch (e) { /* ignore — modules may not be loaded */ }
+        // ─── Remove legacy un-scoped player keys (prevent cross-user leakage) ───
+        lsRemove('tamilAIStream_player_state');
+        lsRemove('tamilAIStream_player_selection');
+    }
+
+    // --- Firebase sign-out (non-blocking, best-effort) ---
+    function firebaseSignOut() {
+        try {
+            if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                firebase.auth().signOut();
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    /**
+     * Admin route guard — checks both authentication AND admin status.
+     * If not authenticated → redirect to admin-login.html
+     * If authenticated but not admin → redirect to index.html
+     * Returns true if access is allowed.
+     */
+    function requireAdmin() {
+        var page = currentPageName();
+        if (page === 'admin-login.html' || page === 'login.html') return false;
+
+        if (!isAuthenticated()) {
+            clearAll();
+            window.location.replace('admin-login.html');
+            return false;
+        }
+        if (!isAdmin()) {
+            clearAll();
+            window.location.replace('index.html');
+            return false;
+        }
+        return true;
+    }
+
+    /** Full logout: clear everything (including Firebase) and return to the login page. */
+    function logout() {
+        firebaseSignOut();
+        clearAll();
+        window.location.href = 'login.html';
+    }
+
+    /** Admin-specific logout: clear everything and return to admin login. */
+    function adminLogout() {
+        firebaseSignOut();
+        clearAll();
+        window.location.href = 'admin-login.html';
+    }
+
+    // Public API
+    return {
+        createSession: createSession,
+        isAuthenticated: isAuthenticated,
+        currentUser: currentUser,
+        isAdmin: isAdmin,
+        isGuest: isGuest,
+        requireAuth: requireAuth,
+        requireAdmin: requireAdmin,
+        getRedirect: getRedirect,
+        afterLogin: afterLogin,
+        clearAll: clearAll,
+        logout: logout,
+        adminLogout: adminLogout,
+        firebaseSignOut: firebaseSignOut,
+        // ─── Trial/Subscription helpers (delegates to AccessControl) ───
+        getTrialInfo: function () {
+            if (window.AccessControl) return AccessControl.getAccountInfo().trial;
+            return { active: false, expired: false, startDate: 'N/A', expiryDate: 'N/A', daysRemaining: 0 };
+        },
+        getSubscriptionInfo: function () {
+            if (window.AccessControl) return AccessControl.getAccountInfo().subscription;
+            return { status: 'none', plan: 'free', active: false };
+        },
+        isTrialActive: function () { return window.AccessControl ? AccessControl.isTrialActive() : false; },
+        isSubscribed: function () { return window.AccessControl ? AccessControl.isSubscribed() : false; },
+        /** Clean up legacy un-scoped player state on page load for fresh guests */
+        cleanStalePlayerState: function () {
+            // If not authenticated or guest, remove legacy un-scoped player keys
+            // so the guest doesn't see another user's playback state.
+            if (!isAuthenticated() || isGuest()) {
+                lsRemove('tamilAIStream_player_state');
+                lsRemove('tamilAIStream_player_selection');
+            }
+        },
+    };
+
+    // Auto-clean stale player state on script load (runs once)
+    try { Auth.cleanStalePlayerState(); } catch (e) {}
+})();

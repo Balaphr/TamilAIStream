@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NTDWNFKXRE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-NTDWNFKXRE');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tamil AI Stream</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <div class="noise-overlay"></div>
+    
+    <!-- Animated Background -->
+    <div class="bg-container">
+        <div class="gradient-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+    </div>
+
+    <!-- Login Container -->
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <div class="logo-icon" data-brand-logo><i class="fas fa-microphone-alt"></i></div>
+                    <div class="logo-text">
+                        <h1 data-brand-text>Tamil AI Stream</h1>
+                        <span>Admin Panel</span>
+                    </div>
+                </div>
+                <p class="login-subtitle">Secure Content Management System</p>
+            </div>
+
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label for="username">Email</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user"></i>
+                        <input type="email" id="username" name="username" placeholder="Enter admin email" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" name="password" placeholder="Enter password" required autocomplete="current-password">
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span class="btn-text">Login</span>
+                    <i class="fas fa-spinner fa-spin" id="loginSpinner" style="display:none;"></i>
+                </button>
+
+                <div class="login-footer">
+                    <p>Protected by AI Security System</p>
+                    <div class="security-badge">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>256-bit SSL Encrypted</span>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Step 2: Verification Code -->
+            <div id="verifyStep" style="display:none;">
+                <div style="text-align:center;margin-bottom:24px;">
+                    <div style="width:64px;height:64px;border-radius:50%;background:rgba(16,185,129,0.1);border:2px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <i class="fas fa-shield-alt" style="font-size:24px;color:#34d399;"></i>
+                    </div>
+                    <h2 style="color:var(--text-primary);font-size:1.3rem;margin-bottom:8px;">Verification Required</h2>
+                    <p style="color:var(--text-secondary);font-size:0.9rem;">Enter the 6-digit code sent to</p>
+                    <p style="color:#34d399;font-size:0.9rem;font-weight:600;" id="verifyEmailDisplay"></p>
+                </div>
+
+                <div class="form-group">
+                    <label for="verifyCode">Verification Code</label>
+                    <div class="input-wrapper" style="text-align:center;">
+                        <i class="fas fa-key"></i>
+                        <input type="text" id="verifyCode" name="verifyCode" placeholder="000000" maxlength="6"
+                            style="text-align:center;font-size:1.5rem;letter-spacing:8px;font-weight:700;"
+                            autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]*">
+                    </div>
+                </div>
+
+                <button type="button" class="login-btn" id="verifyBtn">
+                    <span class="btn-text">Verify & Login</span>
+                    <i class="fas fa-spinner fa-spin" id="verifySpinner" style="display:none;"></i>
+                </button>
+
+                <div style="display:flex;justify-content:space-between;margin-top:16px;">
+                    <button type="button" id="verifyBackBtn" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:0.85rem;padding:8px;">
+                        <i class="fas fa-arrow-left"></i> Back to Login
+                    </button>
+                    <button type="button" id="verifyResendBtn" style="background:none;border:none;color:#34d399;cursor:pointer;font-size:0.85rem;padding:8px;">
+                        Resend Code
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="auth.js"></script>
+    <script src="user-data-sync.js"></script>
+    <script src="admin-login.js"></script>
+    <script src="brand-config.js"></script>
+</body>
+</html>

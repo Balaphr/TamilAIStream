@@ -1,0 +1,1 @@
+# Cloudflare Pages redirects (not used by Workers - routing handled in src/index.js)

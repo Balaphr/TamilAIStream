@@ -1,0 +1,1347 @@
+/* ============================================================
+   ULTRA PERFORMANCE — 144Hz Smooth QLED Ultra-Fast
+   TamilAI.Stream — All Devices (Desktop, Mobile, PWA, Tablet)
+   ============================================================ */
+
+/* ============================================
+   1. SMOOTH SCROLLING (144Hz-ready)
+   ============================================ */
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Allow 144Hz+ refresh rate on supported displays */
+    color-gamut: srgb;
+}
+
+/* ============================================
+   2. GPU ACCELERATION — Only for animated elements
+   ============================================ */
+.gp-mini,
+.gp-expanded,
+.gp-mini-progress,
+.premium-topnav,
+.premium-top-nav {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* ============================================
+   3. OVERSCROLL CONTAIN — Prevent scroll chaining
+   ============================================ */
+html,
+body {
+    /* Allow natural vertical page scrolling and overscroll chaining to the
+       viewport. The previous `none` value killed scroll momentum and trapped
+       every touch inside the page root. Horizontal page scroll is already
+       prevented by `overflow-x: hidden/clip` on html/body in style.css. */
+    overscroll-behavior: auto;
+}
+
+/* Horizontal scroll containers — contain *horizontal* overscroll so the page
+   never scrolls sideways when a carousel reaches its edge, but let *vertical*
+   scroll propagate to the page viewport so song sections scroll up/down freely. */
+.ytm-main-content,
+.ytm-page-home,
+.stations-track,
+.carousel-track,
+.sc-col-track,
+.home-categories,
+.ytm-sidebar,
+.premium-sidebar-content,
+.gp-exp-container,
+.fp-container,
+.gp-lyrics-content,
+.categories-grid,
+.stations-grid,
+.ai-artists-row,
+.foryou-carousel,
+.upcoming-row {
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+}
+
+/* Card elements inside scroll containers — never trap scroll.
+   These have `overflow: hidden` for clipping, but must let touch
+   gestures propagate to the parent scroll container / page. */
+.song-card,
+.station-card,
+.radio-card,
+.collection-card,
+.movie-card,
+.artist-hit-card,
+.tamil-hit-card,
+.ad-banner-card,
+.hero-ad-card,
+.foryou-slide,
+.upcoming-card {
+    overscroll-behavior: auto;
+}
+
+/* ============================================
+   4. LAYOUT CONTAINMENT — Isolate paint/layout
+   ============================================ */
+.ytm-page {
+    contain: layout style;
+}
+
+.ytm-page .section,
+.section {
+    contain: layout style;
+}
+
+.song-card,
+.station-card,
+.radio-card,
+.collection-card,
+.movie-card,
+.artist-hit-card,
+.tamil-hit-card,
+.ad-banner-card,
+.hero-ad-card,
+.foryou-slide,
+.upcoming-card {
+    contain: layout style;
+}
+/* Cards inside horizontal scroll tracks — relax paint containment so
+   touch gestures propagate correctly to the parent scroll container */
+.stations-track .song-card,
+.carousel-track .song-card {
+    contain: layout style;
+}
+
+.premium-sidebar {
+    contain: layout style;
+}
+
+.gp-mini,
+.gp-expanded,
+.mini-player,
+.full-player {
+    contain: layout style;
+}
+
+/* ============================================
+   5. CONTENT VISIBILITY — Skip off-screen rendering
+   Only for sections guaranteed to be below the fold.
+   ============================================ */
+/* content-visibility removed to prevent thumbnail pop-in during scroll */
+
+/* ============================================
+   6. SMOOTH TRANSITIONS — Replace transition: all
+   ============================================ */
+.song-card,
+.station-card,
+.radio-card,
+.collection-card,
+.movie-card,
+.artist-hit-card,
+.tamil-hit-card,
+.foryou-slide,
+.upcoming-card {
+    transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                opacity 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.song-card:hover,
+.station-card:hover,
+.radio-card:hover,
+.collection-card:hover,
+.movie-card:hover,
+.artist-hit-card:hover,
+.tamil-hit-card:hover,
+.foryou-slide:hover,
+.upcoming-card:hover {
+    transform: translateZ(0) scale(1.02);
+}
+
+/* ============================================
+   7. TOUCH OPTIMIZATIONS — Mobile/Tablet
+   ============================================ */
+@media (pointer: coarse) {
+    .station-card,
+    .radio-card,
+    .collection-card,
+    .movie-card,
+    .artist-hit-card,
+    .tamil-hit-card,
+    .home-cat-btn,
+    .slider-btn,
+    .premium-sidebar-item,
+    .premium-hamburger {
+        min-height: 44px;
+        min-width: 44px;
+        touch-action: manipulation;
+    }
+    /* song-card must NOT use manipulation — it lives inside horizontal
+       scroll tracks and native touch-scroll needs to propagate */
+    .stations-track .song-card,
+    .carousel-track .song-card {
+        touch-action: auto;
+    }
+}
+
+/* ============================================
+   8. HORIZONTAL SCROLL — GPU-accelerated
+   ============================================ */
+.stations-track,
+.carousel-track,
+.sc-col-track,
+.home-categories {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+}
+
+.stations-track > *,
+.carousel-track > *,
+.sc-col-track > * {
+    scroll-snap-align: start;
+}
+
+/* ============================================
+   9. IMAGE PERFORMANCE
+   ============================================ */
+img {
+    image-rendering: -webkit-optimize-contrast;
+}
+
+/* ============================================
+   10. CANVAS PERFORMANCE
+   ============================================ */
+canvas,
+.premium-particles-canvas,
+.hero-particles-canvas,
+.neural-bg-canvas {
+    image-rendering: optimizeSpeed;
+}
+
+/* ============================================
+   11. GLOBAL PLAYER — Smooth animations
+   ============================================ */
+.gp-mini {
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+                opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.gp-expanded {
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+                opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.premium-sidebar {
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.premium-sidebar-overlay {
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   12. EQ BAR ANIMATION — GPU-optimized
+   ============================================ */
+@keyframes ultraEq {
+    0%, 100% { transform: scaleY(0.3); }
+    50% { transform: scaleY(1); }
+}
+
+.mini-eq-bar,
+.gp-eq-bar,
+.eq-bar {
+    animation: ultraEq 0.8s ease-in-out infinite;
+    will-change: transform;
+    transform-origin: bottom center;
+}
+
+.mini-eq-bar:nth-child(1), .gp-eq-bar:nth-child(1) { animation-delay: 0s; }
+.mini-eq-bar:nth-child(2), .gp-eq-bar:nth-child(2) { animation-delay: 0.15s; }
+.mini-eq-bar:nth-child(3), .gp-eq-bar:nth-child(3) { animation-delay: 0.3s; }
+.mini-eq-bar:nth-child(4), .gp-eq-bar:nth-child(4) { animation-delay: 0.1s; }
+.mini-eq-bar:nth-child(5), .gp-eq-bar:nth-child(5) { animation-delay: 0.25s; }
+
+/* ============================================
+   13. RAINBOW LINE — GPU-optimized
+   ============================================ */
+@keyframes ultraRainbow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.mini-rainbow-line,
+.gp-rainbow-line {
+    background-size: 200% 200% !important;
+    animation: ultraRainbow 3s linear infinite;
+    will-change: background-position;
+}
+
+/* ============================================
+   14. FLOAT ANIMATION — GPU-optimized
+   ============================================ */
+@keyframes ultraFloat {
+    0%, 100% { transform: translateY(0) translateZ(0); }
+    50% { transform: translateY(-8px) translateZ(0); }
+}
+
+.artwork-float,
+.gp-art-float {
+    animation: ultraFloat 4s ease-in-out infinite;
+    will-change: transform;
+}
+
+/* ============================================
+   15. PULSE ANIMATIONS — GPU-optimized
+   ============================================ */
+@keyframes ultraPulse {
+    0%, 100% { opacity: 0.4; transform: scale(1) translateZ(0); }
+    50% { opacity: 1; transform: scale(1.05) translateZ(0); }
+}
+
+@keyframes ultraGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(52, 211, 153, 0.2); }
+    50% { box-shadow: 0 0 40px rgba(52, 211, 153, 0.4); }
+}
+
+/* ============================================
+   16. PREFERS-REDUCED-MOTION — Accessibility
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .mini-eq-bar,
+    .gp-eq-bar,
+    .eq-bar {
+        animation: none !important;
+    }
+
+    .mini-rainbow-line,
+    .gp-rainbow-line {
+        animation: none !important;
+    }
+
+    .artwork-float,
+    .gp-art-float {
+        animation: none !important;
+    }
+
+    canvas,
+    .premium-particles-canvas,
+    .hero-particles-canvas,
+    .neural-bg-canvas {
+        display: none !important;
+    }
+}
+
+/* ============================================
+   16b. HIGH REFRESH RATE — 120Hz / 144Hz
+   Tighter transition timings & reduced motion
+   on devices that support higher frame rates
+   ============================================ */
+@media (update: fast) {
+    .song-card,
+    .station-card,
+    .radio-card,
+    .collection-card,
+    .movie-card,
+    .artist-hit-card,
+    .tamil-hit-card {
+        transition-duration: 0.12s;
+    }
+
+    .gp-mini {
+        transition-duration: 0.2s;
+    }
+
+    .gp-expanded {
+        transition-duration: 0.25s;
+    }
+
+    .premium-sidebar {
+        transition-duration: 0.25s;
+    }
+}
+
+/* Reduce GPU overdraw on 120Hz+ panels — paint less often */
+@media (update: fast) and (min-width: 1025px) {
+    /* content-visibility removed to prevent thumbnail pop-in during scroll */
+}
+
+/* ============================================
+   17. LAZY LOADING — IntersectionObserver-ready
+   ============================================ */
+.lazy-section {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.lazy-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ============================================
+   18. SCROLL PERFORMANCE — Reduce paint
+   ============================================ */
+.premium-top-nav,
+.premium-topnav {
+    position: sticky;
+    top: 0;
+    z-index: 1700;
+    left: auto;
+    right: auto;
+    width: auto;
+}
+.mini-player,
+.gp-mini {
+    position: fixed;
+    z-index: 10001;
+}
+
+.section-header {
+    position: sticky;
+    z-index: 10;
+}
+
+/* ============================================
+   19. FONT PERFORMANCE
+   ============================================ */
+@font-face {
+    font-family: 'System';
+    src: local('system-ui'), local('-apple-system'), local('BlinkMacSystemFont'),
+         local('Segoe UI'), local('Roboto'), local('Helvetica Neue'), local('Arial');
+    font-display: swap;
+}
+
+/* ============================================
+   20. BUTTON/INTERACTIVE PERFORMANCE
+   ============================================ */
+button,
+a,
+.premium-sidebar-item,
+.home-cat-btn,
+.slider-btn,
+.premium-hamburger,
+.premium-kebab-btn {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* ============================================
+   21. MOBILE SCROLL SMOOTHING
+   ============================================ */
+@media (max-width: 1024px) {
+    .ytm-main-content {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .ytm-page-home {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .stations-track,
+    .carousel-track,
+    .sc-col-track {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ============================================
+   22. TABLET OPTIMIZATIONS
+   ============================================ */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .song-card {
+        contain: layout style paint;
+    }
+
+    .collection-card,
+    .movie-card {
+        contain: layout style paint;
+    }
+}
+
+/* ============================================
+   23. DESKTOP ULTRA PERFORMANCE
+   ============================================ */
+@media (min-width: 1025px) {
+    .song-card:hover {
+        transform: translateZ(0) scale(1.03);
+        transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                    box-shadow 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .slider-btn {
+        transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .premium-sidebar-item {
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+}
+
+/* ============================================
+   24. PWA SPLASH/LOADING PERFORMANCE
+   ============================================ */
+.splash-screen,
+.pwa-loading {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: #080c18;
+    will-change: opacity;
+    transform: translateZ(0);
+}
+
+/* ============================================
+   25. AD BANNER PERFORMANCE
+   ============================================ */
+.ad-banner-container,
+.hero-ad-container {
+    contain: layout style paint;
+}
+
+.ad-banner-container:empty,
+.hero-ad-container:empty {
+    display: none;
+    contain: strict;
+}
+
+/* ============================================
+   FIX: Remove old bottom nav force-hide conflicts
+   ============================================ */
+
+/* ============================================
+   FIX: Remove old bottom nav force-hide conflicts
+   ============================================ */
+.ytm-bottom-nav, .bottom-nav {
+    display: none !important;
+}
+
+/* ============================================
+   26. MOBILE PERFORMANCE — Reduce GPU/CPU Load
+   ============================================ */
+
+/* Reduce backdrop-filter blur on mobile — major GPU cost */
+@media (max-width: 1024px) {
+    .ai-sidebar,
+    .premium-topnav,
+    .premium-top-nav,
+    .gp-mini,
+    .gp-expanded,
+    .mini-player,
+    .glass-player,
+    .premium-blur,
+    .ai-panel,
+    .ai-fm-card,
+    .ai-playlist-card,
+    .ai-song-card,
+    .ai-rec-song,
+    .ai-news-card,
+    .ai-notif-panel,
+    .ai-user-menu,
+    .ai-news-detail-overlay,
+    .ai-news-detail-panel {
+        backdrop-filter: blur(12px) saturate(140%) !important;
+        -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
+    }
+}
+
+/* Further reduce on phones */
+@media (max-width: 480px) {
+    .ai-sidebar,
+    .premium-topnav,
+    .premium-top-nav,
+    .gp-mini,
+    .gp-expanded,
+    .mini-player,
+    .glass-player,
+    .premium-blur,
+    .ai-panel,
+    .ai-fm-card,
+    .ai-playlist-card,
+    .ai-song-card,
+    .ai-rec-song,
+    .ai-news-card,
+    .ai-notif-panel,
+    .ai-user-menu,
+    .ai-news-detail-overlay,
+    .ai-news-detail-panel,
+    .splash-overlay,
+    .splash-logo {
+        backdrop-filter: blur(6px) saturate(120%) !important;
+        -webkit-backdrop-filter: blur(6px) saturate(120%) !important;
+    }
+}
+
+/* Disable 3D transforms on splash for mobile */
+@media (max-width: 768px) {
+    .splash-logo-wrap {
+        perspective: none !important;
+    }
+    .splash-logo {
+        animation: splashLogoFloat 3s ease-in-out infinite !important;
+    }
+}
+
+/* ============================================
+   29. REDUCE GPU COMPOSITING LAYERS
+   ============================================ */
+/* Remove excessive will-change on mobile to reduce layer count */
+@media (max-width: 768px) {
+    .song-card,
+    .station-card,
+    .radio-card,
+    .collection-card,
+    .movie-card,
+    .artist-hit-card,
+    .tamil-hit-card,
+    .ad-banner-card,
+    .hero-ad-card {
+        will-change: auto !important;
+    }
+    img,
+    .premium-radio-art img,
+    .song-thumbnail img,
+    .movie-poster img,
+    .artist-avatar img,
+    .collection-poster img,
+    .hero-ad-image {
+        will-change: auto !important;
+    }
+    canvas {
+        will-change: auto !important;
+    }
+    .stations-track,
+    .carousel-track,
+    .sc-col-track,
+    .home-categories {
+        will-change: auto !important;
+    }
+}
+
+/* ============================================
+   30. AGGRESSIVE MOBILE / PWA PERFORMANCE
+   ============================================ */
+
+/* Keep controls responsive without globally overriding animation playback. */
+@media (max-width: 768px) {
+    .ai-playlist-card,
+    .ai-fm-card,
+    .ai-song-card,
+    .ai-rec-song,
+    .ai-news-card,
+    .ai-play-btn,
+    .ai-fm-play-btn,
+    .ai-play-now,
+    .gp-btn,
+    .splash-skip,
+    .ai-decade-card {
+        transition-duration: 0.18s !important;
+    }
+    .ai-playlist-card:active,
+    .ai-fm-card:active,
+    .ai-song-card:active,
+    .ai-rec-song:active,
+    .ai-news-card:active,
+    .ai-play-btn:active,
+    .ai-fm-play-btn:active,
+    .ai-play-now:active,
+    .ai-decade-card:active {
+        transition-duration: 0.06s !important;
+    }
+    /* Reduce will-change on interactive elements */
+    .ai-song-card,
+    .ai-fm-card,
+    .ai-playlist-card,
+    .ai-rec-song,
+    .ai-news-card,
+    .ai-decade-card {
+        will-change: auto !important;
+    }
+    /* Reduce box-shadow */
+    .ai-panel { box-shadow: 0 2px 10px rgba(0,0,0,0.15) !important; }
+}
+
+/* Preserve layout and player compositing in standalone mode; animation rules
+   are shared with browser mode above. */
+@media (display-mode: standalone) {
+    /* Preserve glassmorphism on player in PWA */
+    .gp-mini,
+    .gp-expanded {
+        backdrop-filter: blur(20px) saturate(1.8) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(1.8) !important;
+    }
+    /* Kill ALL glass/blur effects in PWA (except player) */
+    *:not(.gp-mini):not(.gp-expanded):not(.gp-mini *):not(.gp-expanded *)::before,
+    *:not(.gp-mini):not(.gp-expanded):not(.gp-mini *):not(.gp-expanded *)::after {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    /* Remove will-change from most elements */
+    .ai-panel,
+    .ai-fm-card,
+    .ai-playlist-card,
+    .ai-song-card,
+    .ai-rec-song,
+    .ai-news-card,
+    .ai-decade-card {
+        will-change: auto !important;
+    }
+    /* Keep will-change on player for smooth transforms */
+    .gp-mini,
+    .gp-expanded {
+        will-change: transform, opacity !important;
+    }
+    /* Content visibility for off-screen pages */
+    .ytm-page:not(.ytm-page-home),
+    .ytm-page-explore,
+    .ytm-page-search,
+    .ytm-page-playlists,
+    .ytm-page-stations,
+    .ytm-page-history,
+    .ytm-page-library,
+    .ytm-page-liked,
+    .ytm-page-radio,
+    .ytm-page-artists,
+    .ytm-page-dashboard {
+        content-visibility: auto;
+        contain-intrinsic-size: 0 500px;
+    }
+    /* Reduce box-shadow complexity */
+    .ai-panel,
+    .ai-fm-card,
+    .ai-playlist-card,
+    .ai-song-card,
+    .ai-news-card {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+    }
+    /* Preserve player box-shadow */
+    .gp-mini {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(34, 211, 238, 0.04) inset !important;
+    }
+    .now-playing-bar {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
+
+/* ============================================
+   31. SCROLL PERFORMANCE
+   ============================================ */
+/* GPU-accelerate scrollable containers */
+.ai-card-row,
+.ai-fm-grid,
+.ai-recent-row,
+.ai-rec-songs,
+.ai-news-list,
+.ai-sidebar-inner {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Content visibility for off-screen sections — browser skips rendering */
+@media (max-width: 768px) {
+    .ai-fm-card,
+    .ai-song-card,
+    .ai-rec-song,
+    .ai-news-card {
+        contain: layout style;
+    }
+    /* Content-visibility removed for home page sections to prevent thumbnail pop-in */
+    .ytm-page:not(.ytm-page-home) {
+        content-visibility: auto;
+        contain-intrinsic-size: 0 500px;
+    }
+    /* Reduce paint area for player elements */
+    .gp-mini {
+        contain: layout style;
+    }
+}
+
+/* Lazy images — let browser native loading="lazy" handle deferral */
+
+/* ============================================
+   34. IMAGE LOADING — Prevent layout shift
+   ============================================ */
+.ai-hero-art,
+.ai-playlist-art,
+.ai-fm-art,
+.ai-song-art,
+.ai-rec-song-art,
+.ai-news-img {
+    background-color: #0d1330;
+    overflow: hidden;
+}
+.ai-hero-art img,
+.ai-playlist-art img,
+.ai-fm-art img,
+.ai-song-art img,
+.ai-rec-song-art img,
+.ai-news-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* ============================================
+   35. PWA/MOBILE EXPANDED PLAYER — Centered Panel
+   ============================================ */
+@media (max-width: 768px) {
+    .gp-expanded {
+        inset: 0;
+        background: rgba(10, 12, 24, 0.85);
+        backdrop-filter: blur(20px) saturate(1.3);
+        -webkit-backdrop-filter: blur(20px) saturate(1.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+    .gp-expanded .gp-exp-container {
+        width: 100%;
+        max-width: 380px;
+        max-height: 78vh;
+        background: linear-gradient(165deg, rgba(20, 24, 48, 0.95) 0%, rgba(12, 14, 30, 0.98) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 40px rgba(34, 211, 238, 0.08);
+        transform: scale(0.92) translateY(20px);
+        opacity: 0;
+        transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease;
+    }
+    .gp-expanded.open .gp-exp-container {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+    .gp-expanded .gp-exp-bg {
+        display: none;
+    }
+    .gp-expanded .gp-exp-artwork-wrap {
+        width: min(260px, 65vw);
+        height: min(260px, 65vw);
+        margin: 8px 0 16px;
+    }
+    .gp-expanded .gp-exp-artwork {
+        border-radius: 16px;
+    }
+}
+@media (display-mode: standalone) and (max-width: 768px) {
+    .gp-expanded .gp-exp-container {
+        max-height: 72vh;
+        border-radius: 20px;
+    }
+}
+
+/* ============================================
+   35. THUMBNAIL BLINK FIX — Prevent scroll flicker
+   ============================================ */
+img[loading="lazy"] {
+    opacity: 1;
+    transition: opacity 0.15s ease;
+}
+img[loading="lazy"].loaded,
+img[loading="lazy"]:not([src=""]) {
+    opacity: 1;
+}
+.ai-song-art img,
+.ai-rec-song-art img,
+.ai-playlist-art img,
+.ai-fm-art img,
+.song-thumbnail img,
+.ra-card-art img,
+.ytm-song-art img,
+.dash-song-art img {
+    image-rendering: -webkit-optimize-contrast;
+}
+
+/* ============================================
+   36. 120Hz PWA PERFORMANCE — GPU acceleration
+   ============================================ */
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Smooth transitions at 120Hz */
+.gp-mini,
+.gp-expanded,
+.gp-mini-progress,
+.gp-exp-bar {
+    transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Prevent jank during scroll */
+.song-card,
+.ai-rec-song,
+.station-card,
+.slide-card,
+.ra-card {
+    contain: layout style;
+}
+.ai-song-card {
+    contain: layout style;
+    contain-intrinsic-size: 180px 260px;
+}
+
+/* Smooth image loading without blink */
+img {
+    opacity: 1;
+    transition: opacity 0.12s ease;
+}
+img:not([src]),
+img[src=""] {
+    opacity: 0;
+}
+
+/* 120Hz optimized animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ============================================
+   PERFORMANCE OPTIMIZATIONS - No Battery Drain, No Heating, No Lag
+   ============================================ */
+
+/* CSS Containment - Isolate layout for independent sections */
+.greeting-hero,
+.hero-section,
+.section-content,
+.station-grid,
+.featured-grid,
+.mood-grid,
+.decade-grid,
+.sc-col-viewport,
+.ai-radio-section,
+.bottom-nav,
+.global-player {
+    contain: layout style;
+}
+
+/* Offscreen elements don't paint */
+@media (prefers-reduced-motion: no-preference) {
+    .glass-card:not(:hover),
+    .sc-card:not(:hover),
+    .station-card:not(:hover),
+    .featured-card:not(:hover),
+    .mood-card:not(:hover),
+    .playlist-card:not(:hover),
+    .album-card:not(:hover),
+    .artist-card:not(:hover) {
+        will-change: auto;
+    }
+}
+
+/* Only animate on hover/focus - saves CPU/GPU */
+.glass-card,
+.sc-card,
+.station-card,
+.featured-card,
+.mood-card,
+.playlist-card,
+.album-card,
+.artist-card {
+    will-change: auto;
+}
+.glass-card:hover,
+.sc-card:hover,
+.station-card:hover,
+.featured-card:hover,
+.mood-card:hover,
+.playlist-card:hover,
+.album-card:hover,
+.artist-card:hover {
+    will-change: transform, box-shadow;
+}
+
+/* Force GPU acceleration only for actively animating elements */
+.gp-mini.playing .gp-mini-artwork,
+.gp-expanded.playing .gp-exp-artwork,
+.gp-expanded.playing .gp-exp-eq span {
+    will-change: transform;
+}
+
+/* Reduce paint area for large backgrounds */
+.hero-bg,
+.section-bg,
+.gp-parallax-bg {
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+/* Optimize scrolling - no layout thrashing */
+html {
+    scroll-behavior: auto; /* Let JS handle smooth scroll if needed */
+}
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Efficient image rendering — no content-visibility on <img> to prevent pop-in */
+.card-image,
+.station-image,
+.featured-image,
+.album-image,
+.artist-image,
+.track-artwork {
+    contain-intrinsic-size: 200px 200px;
+}
+
+/* Audio element optimization */
+audio {
+    content-visibility: auto;
+}
+
+/* Reduce animation frequency on low-end devices */
+@media (max-width: 480px), (max-resolution: 150dpi) {
+    .gp-expanded.playing .gp-exp-artwork {
+        animation-duration: 8s; /* Slower float */
+    }
+    .greeting-title,
+    .hero-title {
+        animation-duration: 10s;
+    }
+}
+
+/* Battery saver mode - reduce animations */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Efficient text rendering */
+.glass-card,
+.sc-card,
+.station-card,
+.featured-card {
+    text-rendering: optimizeSpeed;
+}
+
+/* Contain paint for lists */
+.station-grid,
+.featured-grid,
+.mood-grid,
+.decade-grid {
+    contain: strict;
+}
+.sc-col-track {
+    contain: layout style paint;
+}
+
+/* Constrained devices retain essential motion while reducing ambient repaint
+   work; device capability is detected once by ultra-perf.js. */
+html.tas-low-power .artwork-float,
+html.tas-low-power .gp-art-float,
+html.tas-low-power .ambient-glow,
+html.tas-low-power .ambient-light::after,
+html.tas-low-power .card-pulse,
+html.tas-low-power .vinyl-disc.spinning,
+html.tas-low-power .up-bottom-art.spinning,
+html.tas-low-power .up-fs-artwork.spinning {
+    animation-duration: 8s !important;
+}
+
+/* Optimize backdrop-filter - only on visible elements */
+.glass-card:not(:hover)::before,
+.gp-mini:not(:hover)::before,
+.gp-expanded:not(.playing)::before {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.glass-card:hover::before,
+.gp-mini:hover::before,
+.gp-expanded.playing::before {
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+}
+
+/* Efficient shadow - use drop-shadow filter for complex shapes */
+.glass-card:hover,
+.sc-card:hover {
+    filter: drop-shadow(0 16px 32px rgba(0,0,0,0.4));
+}
+
+/* Lazy load heavy effects */
+.gp-exp-particles {
+    content-visibility: auto;
+    contain-intrinsic-size: 100px 100px;
+}
+
+/* Reduce repaints on static content */
+.sidebar,
+.header,
+.bottom-nav,
+.section-header {
+    will-change: auto;
+    contain: layout style paint;
+}
+
+/* Intersection Observer helper - elements offscreen don't animate */
+.offscreen {
+    animation-play-state: paused !important;
+    transition: none !important;
+}
+
+/* Efficient transform origin */
+.gp-mini-artwork,
+.gp-exp-artwork,
+.glass-card .card-artwork,
+.sc-card-art {
+    transform-origin: center center;
+}
+
+/* Optimize keyframes - use transform only */
+@keyframes gpEfficientFloat {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -4px, 8px); }
+}
+
+/* Content visibility for deeply below-fold sections only */
+
+/* Efficient font loading */
+@font-face {
+    font-display: swap;
+}
+
+/* Reduce main thread work - defer non-critical */
+.non-critical {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 200px;
+}
+
+/* ============================================
+   BOTTOM NAVIGATION — Glassmorphism Design
+   ============================================ */
+.tamilai-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: rgba(8, 12, 22, 0.85);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 2px 0;
+    padding-bottom: calc(2px + env(safe-area-inset-bottom, 0px));
+    justify-content: space-around;
+    align-items: stretch;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.tamilai-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 7px 0 5px;
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 50px;
+    transition: color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tamilai-nav-icon,
+.tamilai-nav-icon-wrap {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border-radius: 10px;
+    transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+    transform: translateZ(0);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.tamilai-nav-item:active .tamilai-nav-icon,
+.tamilai-nav-item:active .tamilai-nav-icon-wrap {
+    transform: scale(0.85);
+}
+
+.tamilai-nav-label {
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+/* Active state */
+.tamilai-nav-item.active {
+    color: #34d399;
+}
+
+.tamilai-nav-item.active .tamilai-nav-icon,
+.tamilai-nav-item.active .tamilai-nav-icon-wrap {
+    transform: scale(1.12) translateY(-1px);
+    background: rgba(52, 211, 153, 0.15);
+    box-shadow: 0 4px 14px rgba(52, 211, 153, 0.25), 0 0 20px rgba(52, 211, 153, 0.08);
+}
+
+.tamilai-nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: linear-gradient(90deg, #34d399, #10b981);
+    box-shadow: 0 2px 10px rgba(52, 211, 153, 0.5);
+}
+
+/* LIVE badge */
+.tamilai-nav-live {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+/* Navigation indicator pill */
+.tamilai-nav-indicator {
+    position: absolute;
+    top: -2px;
+    left: 0;
+    width: 48px;
+    height: 3px;
+    background: linear-gradient(90deg, #34d399, #10b981);
+    border-radius: 0 0 4px 4px;
+    transition: left 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 2px 10px rgba(52, 211, 153, 0.5);
+    z-index: 1;
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+    .tamilai-bottom-nav {
+        display: flex;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0;
+        right: 0;
+        z-index: 9999 !important;
+    }
+    /* Add padding to main content for bottom nav + mini player */
+    .ytm-main-content {
+        padding-bottom: calc(56px + 64px + env(safe-area-inset-bottom, 0) + 12px);
+    }
+}
+
+/* Small phones */
+@media (max-width: 380px) {
+    .tamilai-bottom-nav {
+        padding: 2px 0;
+        padding-bottom: calc(2px + env(safe-area-inset-bottom, 0px));
+    }
+    .tamilai-nav-item {
+        padding: 6px 0 4px;
+    }
+    .tamilai-nav-icon,
+    .tamilai-nav-icon-wrap { font-size: 14px; width: 26px; height: 26px; }
+    .tamilai-nav-label { font-size: 8.5px; }
+}
+
+/* Hide on desktop */
+@media (min-width: 1025px) {
+    .tamilai-bottom-nav {
+        display: none !important;
+    }
+}
+
+/* Old bottom nav conflicts */
+.ytm-bottom-nav, .bottom-nav {
+    display: none !important;
+}
+
+/* PWA Safe Area */
+@media (display-mode: standalone) {
+    .tamilai-bottom-nav {
+        padding-bottom: calc(8px + env(safe-area-inset-bottom, 20px)) !important;
+        bottom: 0 !important;
+    }
+    .ytm-main-content {
+        padding-bottom: calc(56px + 64px + env(safe-area-inset-bottom, 20px) + 12px) !important;
+    }
+}
+
+/* Reduce animations on mobile */
+@media (max-width: 768px) {
+    .tamilai-bottom-nav {
+        contain: layout style;
+    }
+}
+
+/* ============================================
+   CONTENT VISIBILITY — Off-screen sections skip
+   paint/layout until near viewport (huge win).
+   For You and Upcoming are above the fold — no CV.
+   ============================================ */
+.ai-evergreen-grid,
+.ai-station-section,
+.ai-category-section,
+.ai-section-playlists,
+.ai-section-artists {
+    /* content-visibility removed to prevent thumbnail pop-in during scroll */
+}
+
+/* ============================================
+   REQUEST IDLE CALLBACK — Non-critical work
+   ============================================ */
+.defer-idle {
+    contain: layout style;
+}
+

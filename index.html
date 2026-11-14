@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Critical inline CSS: prevents layout shift from deferred stylesheets -->
+    <style>
+        .ai-song-card, .ai-playlist-card, .new-album-card, .sc-card, .eg-card { flex: 0 0 180px; width: 180px; }
+        .ai-song-art, .ai-playlist-art, .eg-card-art, .new-album-art-wrap, .sc-card-art { aspect-ratio: 1; overflow: hidden; }
+        .ai-recent-row, .ai-card-row, .ai-evergreen-grid, .new-album-row { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+        @media (max-width: 768px) { .ai-song-card, .ai-playlist-card, .new-album-card, .sc-card, .eg-card { flex: 0 0 160px; width: 160px; } }
+        @media (max-width: 480px) { .ai-song-card, .ai-playlist-card, .new-album-card, .sc-card, .eg-card { flex: 0 0 145px; width: 145px; } }
+        /* Prevent FOUC for sections below the fold */
+        .ytm-page-home { }
+        .ai-home { padding: 0 20px 32px; display: flex; flex-direction: column; gap: 18px; }
+        @media (max-width: 768px) { .ai-home { padding: 0 12px 24px; gap: 14px; } }
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tamil AI Stream</title>
+    <meta name="description" content="Listen to your favorite Tamil FM stations with AI-powered recommendations. Discover 100+ live Tamil radio stations curated by artificial intelligence.">
+    <meta name="keywords" content="Tamil FM, Tamil radio, AI radio, Tamil music, online radio, Tamil AI Stream, live radio">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="Tamil AI Stream - AI-Powered Tamil Radio">
+    <meta property="og:description" content="Listen to your favorite Tamil FM stations with AI-powered recommendations.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tamilai.stream">
+    <meta name="theme-color" content="#060e1a">
+    <!-- Resource hints: deduplicated preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <!-- DNS prefetch for services -->
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
+    <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
+    <!-- PWA manifest + icons -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tamil AI Stream">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+    <!-- Critical CSS loaded synchronously (above the fold) -->
+    <link rel="stylesheet" href="ultra-perf.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="logo-3d.css">
+    <link rel="stylesheet" href="yt-music.css">
+    <!-- Non-critical CSS deferred via media="print" onload trick -->
+    <link rel="stylesheet" href="player.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="listening-history.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="search-ui.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="responsive.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="ai-glass.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="splash.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="premium-ui.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="ads.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="pwa-install.css" media="print" onload="this.media='all'">
+    <!-- Google Fonts — async to avoid render-blocking -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"></noscript>
+    <!-- Font Awesome — async, non-blocking -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer"></noscript>
+    <!-- Google Analytics — deferred -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NTDWNFKXRE"></script>
+    <noscript>
+        <link rel="stylesheet" href="player.css">
+        <link rel="stylesheet" href="listening-history.css">
+        <link rel="stylesheet" href="search-ui.css">
+        <link rel="stylesheet" href="responsive.css">
+        <link rel="stylesheet" href="ai-glass.css">
+    <link rel="stylesheet" href="profile.css">
+        <link rel="stylesheet" href="splash.css">
+        <link rel="stylesheet" href="premium-ui.css">
+        <link rel="stylesheet" href="ads.css">
+        <link rel="stylesheet" href="pwa-install.css">
+    </noscript>
+</head>
+<body>
+    <!-- Google Analytics init -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-NTDWNFKXRE');
+    </script>
+    <!-- Builder iframe detection — disable audio in preview -->
+    <script>
+        if (window.parent !== window) {
+            window.__BUILDER_PREVIEW__ = true;
+            window.__origPlay__ = HTMLAudioElement.prototype.play;
+            HTMLAudioElement.prototype.play = function() { return Promise.resolve(); };
+            document.documentElement.classList.add('builder-preview');
+            document.documentElement.style.overflow = 'auto';
+            document.documentElement.style.visibility = 'visible';
+            document.documentElement.style.height = 'auto';
+        }
+    </script>
+    <!-- Splash Screen — single 3D animated logo, 2 seconds, no sound -->
+    <div class="splash-overlay" id="splashOverlay">
+        <div class="splash-logo-3d" data-brand-logo>
+            <svg width="80" height="80" viewBox="0 0 40 40" fill="none">
+                <circle cx="20" cy="20" r="18" fill="url(#splashGrad)"/>
+                <path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/>
+                <defs>
+                    <linearGradient id="splashGrad" x1="0" y1="0" x2="40" y2="40">
+                        <stop stop-color="#22d3ee"/>
+                        <stop offset="0.5" stop-color="#3b82f6"/>
+                        <stop offset="1" stop-color="#a855f7"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        var overlay = document.getElementById('splashOverlay');
+        if (!overlay) return;
+        /* In PWA standalone mode, pwa-splash.js handles the splash — remove HTML splash immediately */
+        var isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+        if (isStandalone || window.navigator.standalone === true) {
+            overlay.remove();
+            return;
+        }
+        var dismissed = false;
+        var _splashAudioCtx = null;
+
+        function dismissSplash() {
+            if (dismissed) return;
+            dismissed = true;
+            overlay.classList.add('splash-hide');
+            setTimeout(function() {
+                overlay.remove();
+                try { if (_splashAudioCtx) _splashAudioCtx.close(); } catch(e) {}
+                restorePlayerIfPlaying();
+            }, 400);
+        }
+
+        function restorePlayerIfPlaying() {
+            try {
+                var up = window.UnifiedPlayer;
+                if (!up) return;
+                var s = up.getState ? up.getState() : null;
+                if (!s || !s.track) return;
+                up.showBottomBar();
+                if (s.isPlaying) up.play();
+            } catch (e) {}
+        }
+
+        setTimeout(dismissSplash, 2000);
+    })();
+    </script>
+
+    <!-- Background Container -->
+    <div class="bg-container">
+    </div>
+
+    <div class="noise-overlay"></div>
+
+    <!-- AI Glassmorphism Ambient Background -->
+    <div class="ai-app-glow"></div>
+
+    <!-- YouTube Music-like App Container -->
+    <div class="ytm-app">
+
+        <!-- AI Premium Left Sidebar -->
+        <aside class="ai-sidebar" aria-label="Main navigation">
+            <div class="ai-sidebar-inner">
+                <a class="ai-sidebar-logo" id="aiSidebarLogo" href="#" aria-label="Tamil AI Stream Home">
+                    <div class="ai-sidebar-logo-icon" data-brand-logo>
+                        <svg viewBox="0 0 40 40" fill="none">
+                            <circle cx="20" cy="20" r="18" fill="url(#sidebarGrad)"/>
+                            <path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/>
+                            <defs>
+                                <linearGradient id="sidebarGrad" x1="0" y1="0" x2="40" y2="40">
+                                    <stop stop-color="#22d3ee"/>
+                                    <stop offset="0.5" stop-color="#3b82f6"/>
+                                    <stop offset="1" stop-color="#a855f7"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <div class="ai-sidebar-logo-text" data-brand-text>Tamil AI Stream</div>
+                </a>
+                <nav class="ai-sidebar-nav">
+                    <div class="ai-sidebar-label">Menu</div>
+                    <button class="ai-sidebar-item active" data-ai-page="music"><i class="fas fa-music"></i><span>Music</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="live-fm"><i class="fas fa-tower-broadcast"></i><span>Radio</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="activity"><i class="fas fa-chart-bar"></i><span>Activity</span></button>
+                    <div class="ai-sidebar-divider"></div>
+                    <button class="ai-sidebar-item" data-ai-page="explore"><i class="fas fa-compass"></i><span>Explore</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="library"><i class="fas fa-book-open"></i><span>Library</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="playlists"><i class="fas fa-list"></i><span>Playlists</span></button>
+                    <div class="ai-sidebar-divider"></div>
+                    <button class="ai-sidebar-item" data-ai-page="presets"><i class="fas fa-sliders"></i><span>Presets</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="replays"><i class="fas fa-rotate"></i><span>Replays</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="community"><i class="fas fa-users"></i><span>Community</span></button>
+                    <button class="ai-sidebar-item" data-ai-page="charts"><i class="fas fa-chart-line"></i><span>Charts</span></button>
+                    <div class="ai-sidebar-divider"></div>
+                    <button class="ai-sidebar-item" data-ai-page="settings"><i class="fas fa-gear"></i><span>Settings</span></button>
+                </nav>
+                <div class="ai-sidebar-spacer"></div>
+                <div class="ai-sidebar-profile" id="aiSidebarProfile">
+                    <div class="ai-sidebar-profile-avatar" id="aiSidebarAvatar">G</div>
+                    <div class="ai-sidebar-profile-info">
+                        <div class="ai-sidebar-profile-name" id="aiSidebarProfileName">Guest</div>
+                        <div class="ai-sidebar-profile-plan"><i class="fa-solid fa-crown"></i> Free</div>
+                    </div>
+                    <button class="ai-sidebar-profile-btn" id="aiSidebarProfileBtn" title="Profile Settings" aria-label="Profile settings">
+                        <i class="fas fa-ellipsis-vertical"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="ytm-main-content">
+            <!-- Premium Glassmorphism Top Navigation -->
+            <header class="premium-top-nav" id="premiumTopNav">
+                <div class="premium-topnav-inner">
+                    <!-- Left: Hamburger Menu (mobile/tablet only) -->
+                    <button class="premium-hamburger" id="premiumHamburger" aria-label="Open menu">
+                        <span class="premium-hamburger-line"></span>
+                        <span class="premium-hamburger-line"></span>
+                        <span class="premium-hamburger-line"></span>
+                    </button>
+
+                    <!-- Left Cluster: Primary Navigation -->
+                    <nav class="premium-topnav-left" aria-label="Main navigation">
+                        <button class="premium-nav-item premium-topnav-item active" data-page="home" title="Home">
+                            <i class="fas fa-house"></i><span>Home</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="radio" title="Radio">
+                            <i class="fas fa-radio"></i><span>Radio</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="explore" title="Explore">
+                            <i class="fas fa-compass"></i><span>Explore</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="search" title="Search">
+                            <i class="fas fa-search"></i><span>Search</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="library" title="Library">
+                            <i class="fas fa-book-open"></i><span>Library</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="playlists" title="Playlists">
+                            <i class="fas fa-list"></i><span>Playlists</span>
+                        </button>
+                        <button class="premium-nav-item premium-topnav-item" data-page="stations" title="Stations">
+                            <i class="fas fa-tower-broadcast"></i><span>Stations</span>
+                        </button>
+                    </nav>
+
+                    <!-- Center: Logo & Title -->
+                    <div class="premium-topnav-brand">
+                        <div class="premium-topnav-logo" data-brand-logo>
+                            <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+                                <circle cx="20" cy="20" r="18" fill="url(#navGrad)"/>
+                                <path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/>
+                                <defs>
+                                    <linearGradient id="navGrad" x1="0" y1="0" x2="40" y2="40">
+                                        <stop stop-color="#22d3ee"/>
+                                        <stop offset="0.5" stop-color="#3b82f6"/>
+                                        <stop offset="1" stop-color="#a855f7"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                        <span class="premium-topnav-title" data-brand-text>Tamil AI Stream</span>
+                    </div>
+
+                    <!-- Right: AI Search Bar + Account Navigation Cluster -->
+                    <div class="premium-topnav-right">
+                        <div class="premium-topnav-search hide-mobile">
+                            <div class="premium-topnav-search-box">
+                                <i class="fas fa-wand-magic-sparkles premium-search-ai-icon"></i>
+                                <input type="text" class="premium-topnav-search-input" id="ytmSearchInput" placeholder="Search songs, artists, lyrics, movies..." autocomplete="off">
+                                <button class="premium-topnav-search-clear" id="ytmSearchClear"><i class="fas fa-times"></i></button>
+                                <span class="ai-kbd">Ctrl /</span>
+                            </div>
+                        </div>
+                        <!-- AI Header Actions: Install / Notifications / User -->
+                        <div class="ai-header-actions">
+                            <button class="ai-hdr-btn ai-install-btn" id="aiInstallBtn" style="display:none;" title="Install App">
+                                <i class="fas fa-download"></i><span>Install App</span>
+                            </button>
+                            <button class="ai-hdr-btn ai-notif-btn" id="aiNotifBtn" title="Notifications" aria-label="Notifications">
+                                <i class="fas fa-bell"></i>
+                                <span class="ai-notif-dot"></span>
+                                <div class="ai-notif-panel" id="aiNotifPanel"></div>
+                            </button>
+                            <!-- 3-dot More menu -->
+                            <div class="ai-more-chip" id="aiMoreChip" tabindex="0">
+                                <button class="ai-hdr-btn ai-more-btn" id="aiMoreBtn" title="More options" aria-label="More options">
+                                    <i class="fas fa-ellipsis-vertical"></i>
+                                </button>
+                                <div class="ai-more-menu" id="aiMoreMenu">
+                                    <button class="ai-more-menu-item" id="aiMoreInstallBtn" style="display:none;" data-action="install">
+                                        <i class="fas fa-download"></i> Install App
+                                    </button>
+                                    <button class="ai-more-menu-item" data-page="history">
+                                        <i class="fas fa-clock-rotate-left"></i> Listening History
+                                    </button>
+                                    <button class="ai-more-menu-item" data-page="ai-assistant">
+                                        <i class="fas fa-robot"></i> AI Assistant
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="ai-user-chip" id="aiUserChip" tabindex="0">
+                                <div class="ai-user-avatar" id="aiUserAvatar">G</div>
+                                <div class="ai-user-meta">
+                                    <div class="ai-user-name" id="aiUserName">Hi, Guest</div>
+                                    <div class="ai-user-plan" id="aiUserPlan"><i class="fa-solid fa-crown"></i> Free</div>
+                                </div>
+                                <i class="fa-solid fa-chevron-down ai-user-caret"></i>
+                                <div class="ai-user-menu" id="aiUserMenu">
+                                    <button data-ai-menu="profile"><i class="fas fa-user"></i> Profile</button>
+                                    <button data-ai-menu="dashboard"><i class="fas fa-chart-line"></i> Music Dashboard</button>
+                                    <button data-ai-menu="settings"><i class="fas fa-gear"></i> Settings</button>
+                                    <button data-ai-menu="builder" id="aiMenuBuilder" style="display:none;"><i class="fas fa-tools"></i> Website Builder</button>
+                                    <div class="ai-user-menu-sep"></div>
+                                    <button data-ai-menu="logout" class="ai-menu-danger"><i class="fas fa-right-from-bracket"></i> Logout</button>
+                                </div>
+                            </div>
+                        </div>
+                        <nav class="premium-topnav-right-cluster" aria-label="Account navigation">
+                            <button class="premium-nav-item premium-topnav-item premium-topnav-item-account" data-page="dashboard" title="Music Dashboard">
+                                <i class="fas fa-chart-line"></i><span>Music Dashboard</span>
+                            </button>
+                            <button class="premium-nav-item premium-topnav-item premium-topnav-item-account" data-action="settings" title="Settings">
+                                <i class="fas fa-gear"></i><span>Settings</span>
+                            </button>
+                            <button class="premium-nav-item premium-topnav-item premium-topnav-item-account" data-action="profile" title="Profile">
+                                <i class="fas fa-user"></i><span>Profile</span>
+                            </button>
+                            <button class="premium-nav-item premium-topnav-item premium-topnav-item-account premium-topnav-admin" id="premiumNavBuilder" data-action="builder" style="display:none;" title="Builder">
+                                <i class="fas fa-tools"></i><span>Builder</span>
+                                <em class="premium-topnav-admin-badge">Admin</em>
+                            </button>
+                            <button class="premium-topnav-logout" id="premiumTopNavLogout" title="Logout">
+                                <i class="fas fa-right-from-bracket"></i>
+                                <span class="premium-topnav-logout-text hide-mobile">Logout</span>
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Slim Now Playing Bar (auto-updates) -->
+            <div class="slim-now-playing" id="slimNowPlaying" style="display:none;">
+                <div class="snp-inner">
+                    <span class="snp-icon">🎵</span>
+                    <span class="snp-text" id="snpText">
+                        <span class="snp-current" id="snpCurrent">Now Playing: —</span>
+                        <span class="snp-arrow">→</span>
+                        <span class="snp-next" id="snpNext">Next: —</span>
+                    </span>
+                    <button class="snp-close" id="snpClose" aria-label="Close"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <!-- Responsive Mobile/Tablet Menu (replaces old sidebar) -->
+            <div class="premium-mobile-menu-overlay" id="premiumMobileMenuOverlay"></div>
+            <aside class="premium-mobile-menu" id="premiumMobileMenu" aria-label="Responsive navigation menu">
+                <div class="premium-mobile-menu-inner">
+                    <div class="premium-mobile-menu-header">
+                        <div class="premium-mobile-menu-brand">
+                            <div class="premium-mobile-menu-logo" data-brand-logo>
+                                <svg viewBox="0 0 40 40" fill="none">
+                                    <circle cx="20" cy="20" r="18" fill="url(#mobileMenuGrad)"/>
+                                    <path d="M14 28V14l14 7-14 7z" fill="#fff" opacity=".9"/>
+                                    <defs>
+                                        <linearGradient id="mobileMenuGrad" x1="0" y1="0" x2="40" y2="40">
+                                            <stop stop-color="#22d3ee"/>
+                                            <stop offset="0.5" stop-color="#3b82f6"/>
+                                            <stop offset="1" stop-color="#a855f7"/>
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                            </div>
+                            <span class="premium-mobile-menu-title" data-brand-text>Tamil AI Stream</span>
+                        </div>
+                        <button class="premium-mobile-menu-close" id="premiumMobileMenuClose" aria-label="Close menu">
+                            <i class="fas fa-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="premium-mobile-menu-search">
+                        <div class="premium-topnav-search-box">
+                            <i class="fas fa-wand-magic-sparkles premium-search-ai-icon"></i>
+                            <input type="text" class="premium-topnav-search-input" id="ytmMobileSearchInput" placeholder="Search songs, artists, lyrics, movies..." autocomplete="off">
+                            <button class="premium-topnav-search-clear" id="ytmMobileSearchClear"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                    <div class="premium-mobile-menu-content">
+                        <div class="premium-sidebar-section">
+                            <div class="premium-sidebar-section-title">Menu</div>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item active" data-page="home">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-house"></i></div>
+                                <span>Home</span>
+                                <div class="premium-sidebar-item-indicator"></div>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="music">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-music"></i></div>
+                                <span>Music</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="radio">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-tower-broadcast"></i></div>
+                                <span>Radio</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="activity">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-chart-bar"></i></div>
+                                <span>Activity</span>
+                            </button>
+                        </div>
+
+                        <div class="premium-sidebar-divider"></div>
+
+                        <div class="premium-sidebar-section">
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="explore">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-compass"></i></div>
+                                <span>Explore</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="library">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-book-open"></i></div>
+                                <span>Library</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="playlists">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-list"></i></div>
+                                <span>Playlists</span>
+                            </button>
+                        </div>
+
+                        <div class="premium-sidebar-divider"></div>
+
+                        <div class="premium-sidebar-section">
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="presets">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-sliders"></i></div>
+                                <span>Presets</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="replays">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-rotate"></i></div>
+                                <span>Replays</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="community">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-users"></i></div>
+                                <span>Community</span>
+                            </button>
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="charts">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-chart-line"></i></div>
+                                <span>Charts</span>
+                            </button>
+                        </div>
+
+                        <div class="premium-sidebar-divider"></div>
+
+                        <div class="premium-sidebar-section">
+                            <button class="premium-nav-item premium-sidebar-item premium-mobile-menu-item" data-page="settings">
+                                <div class="premium-sidebar-item-icon"><i class="fas fa-gear"></i></div>
+                                <span>Settings</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="premium-mobile-menu-footer">
+                        <div class="premium-mobile-menu-profile" id="mobileMenuProfile">
+                            <div class="premium-mobile-menu-avatar" id="mobileMenuAvatar">G</div>
+                            <div class="premium-mobile-menu-userinfo">
+                                <div class="premium-mobile-menu-username" id="mobileMenuUserName">Guest</div>
+                                <div class="premium-mobile-menu-userplan"><i class="fa-solid fa-crown"></i> Free</div>
+                            </div>
+                        </div>
+                        <button class="premium-sidebar-logout" id="premiumMobileMenuLogout">
+                            <i class="fas fa-right-from-bracket"></i>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- ============ PAGE: HOME ============ -->
+            <div class="ytm-page ytm-page-home active" id="page-home">
+
+                <!-- AI Premium Home -->
+                <div class="ai-home">
+
+                    <!-- Futuristic Audio Visualizer (behind player area) -->
+                    <div class="premium-fm-visualizer-wrap" id="premiumFmVisualizerWrap">
+                        <canvas id="premiumVizCanvas"></canvas>
+                    </div>
+
+                    <!-- 1. Good Morning Section (top of Home) -->
+                    <div class="greeting-section" data-section="greeting"></div>
+
+                    <!-- 2. For You — Premium Trending Carousel -->
+                    <section class="ai-panel foryou-section" data-section="foryou-trending" id="foryouSection">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-fire-flame-curved"></i> For You</h2>
+                            <button class="foryou-upgrade-btn" id="foryouUpgradeBtn"><i class="fas fa-crown"></i> Upgrade</button>
+                        </div>
+                        <div class="foryou-carousel-wrap">
+                            <div class="foryou-carousel" id="foryouCarousel"></div>
+                        </div>
+                    </section>
+
+                    <!-- 3. One Tap Radio -->
+                    <section class="ai-panel one-tap-radio" data-section="ai-one-tap-radio">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-tower-cell"></i> One Tap Radio</h2>
+                            <span class="otr-now" id="otrNowChip" style="display:none;"><span class="ai-live-dot"></span><span id="otrNowText"></span></span>
+                        </div>
+                        <div class="otr-row" id="otrRow">
+                            <button class="otr-card" data-otr="love"><span class="otr-icon">&#10084;&#65039;</span><span class="otr-name">Love Radio</span></button>
+                            <button class="otr-card" data-otr="melody"><span class="otr-icon">&#127925;</span><span class="otr-name">Melody Radio</span></button>
+                            <button class="otr-card" data-otr="90s"><span class="otr-icon">&#128252;</span><span class="otr-name">90s Radio</span></button>
+                            <button class="otr-card" data-otr="evergreen"><span class="otr-icon">&#127807;</span><span class="otr-name">Evergreen Radio</span></button>
+                            <button class="otr-card" data-otr="latest"><span class="otr-icon">&#128293;</span><span class="otr-name">Latest Radio</span></button>
+                        </div>
+                    </section>
+
+                    <!-- 4. Songs Collections — Dual Vertical Scroll -->
+                    <section class="ai-panel songs-collections-section" data-section="ai-songs-collections" id="songsCollectionsSection" style="display:none;">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-layer-group"></i> Songs Collections</h2>
+                        </div>
+                        <div class="sc-wrap">
+                            <div class="sc-col sc-col-left">
+                                <div class="sc-col-viewport">
+                                    <div class="sc-col-track" id="scTrackLeft"></div>
+                                </div>
+                            </div>
+                            <div class="sc-center">
+                                <div class="sc-3d-scene">
+                                    <div class="sc-headphones">
+                                        <div class="sc-hp-band"></div>
+                                        <div class="sc-hp-cup sc-hp-cup-l">
+                                            <div class="sc-hp-cup-inner"></div>
+                                        </div>
+                                        <div class="sc-hp-cup sc-hp-cup-r">
+                                            <div class="sc-hp-cup-inner"></div>
+                                        </div>
+                                        <div class="sc-hp-pad sc-hp-pad-l"></div>
+                                        <div class="sc-hp-pad sc-hp-pad-r"></div>
+                                    </div>
+                                    <div class="sc-hp-glow"></div>
+                                    <div class="sc-hp-ring"></div>
+                                    <div class="sc-hp-ring sc-hp-ring-2"></div>
+                                </div>
+                            </div>
+                            <div class="sc-col sc-col-right">
+                                <div class="sc-col-viewport">
+                                    <div class="sc-col-track" id="scTrackRight"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 5. Music Hero -->
+                    <section class="ai-panel ai-music-hero" data-section="ai-music-hero">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-music"></i> Music</h2>
+                        </div>
+                        <div class="ai-hero-art-wrap">
+                            <div class="ai-hero-bg-layer active" id="aiHeroBgA"></div>
+                            <div class="ai-hero-bg-layer" id="aiHeroBgB"></div>
+                            <div class="ai-hero-wave"></div>
+                            <div class="ai-hero-art" id="aiHeroBackdrop"></div>
+                            <div class="ai-hero-art-ring"></div>
+                        </div>
+                        <div class="ai-hero-info-row" id="aiHeroInfoRow" style="display:none;">
+                            <div class="ai-hero-song-name" id="aiHeroSongName">—</div>
+                            <button class="ai-play-now" id="aiHeroPlayBtn"><i class="fas fa-play"></i> Play Now</button>
+                            <div class="ai-hero-movie-name" id="aiHeroMovieName">—</div>
+                        </div>
+                        <div class="ai-hero-dots" id="aiHeroDotsWrap"></div>
+                    </section>
+
+                    <!-- 6. Trending Playlists -->
+                    <section class="ai-panel ai-trending" data-section="ai-trending">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-fire"></i> Trending Playlists</h2>
+                            <button class="ai-see-all" data-ai-seeall="playlists">See All</button>
+                        </div>
+                        <div class="ai-card-row" id="aiTrendingPlaylists"></div>
+                    </section>
+
+                    <!-- 7. Live FM Stations -->
+                    <section class="ai-panel ai-live-fm" data-section="ai-live-fm">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><span class="ai-live-dot"></span> Live FM Stations</h2>
+                            <button class="ai-see-all" data-ai-seeall="live-fm">See All</button>
+                        </div>
+                        <div class="ai-fm-grid" id="aiLiveFmGrid"></div>
+                    </section>
+
+                    <!-- 8. Evergreen Classics -->
+                    <section class="ai-panel ai-evergreen" data-section="ai-evergreen">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-gem"></i> Evergreen Classics</h2>
+                            <button class="ai-see-all" data-ai-seeall="evergreen">See All</button>
+                        </div>
+                        <div class="ai-evergreen-grid" id="aiEvergreenGrid"></div>
+                    </section>
+
+                    <!-- 9. Music by Era -->
+                    <section class="ai-panel ai-decades" data-section="ai-decades">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-clock"></i> Music by Era</h2>
+                            <div class="ai-decade-bot-status" id="aiDecadeBotStatus" style="display:none;">
+                                <span class="ai-decade-bot-dot"></span>
+                                <span class="ai-decade-bot-text">Auto-Playing</span>
+                                <button class="ai-decade-bot-stop" id="aiDecadeBotStop" aria-label="Stop auto-play"><i class="fas fa-stop"></i></button>
+                            </div>
+                        </div>
+                        <div class="ai-decade-cards" id="aiDecadeCards"></div>
+                    </section>
+
+                    <!-- Hidden sections (disabled but kept in DOM for builder/VE) -->
+                    <section class="ai-panel upcoming-section" data-section="upcoming-new" id="upcomingSection" style="display:none;">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-calendar-days"></i> Upcoming</h2>
+                            <button class="ai-see-all" id="upcomingSeeAll" style="display:none;">See All</button>
+                        </div>
+                        <div class="upcoming-row" id="upcomingRow"></div>
+                    </section>
+
+                    <section class="ai-panel new-album-section" data-section="ai-new-album" id="newAlbumSection" style="display:none;">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-record-vinyl"></i> <span id="newAlbumSectionTitle">New Album</span></h2>
+                            <button class="ai-see-all" id="newAlbumSeeAll" style="display:none;">See All</button>
+                        </div>
+                        <div class="new-album-row" id="newAlbumRow"></div>
+                    </section>
+
+                    <section class="ai-panel ur-auto-section" data-section="ur-auto-slider" id="urAutoSection" style="display:none;">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-rocket"></i> Upcoming Releases</h2>
+                        </div>
+                        <div class="ur-auto-viewport" id="urAutoViewport">
+                            <div class="ur-auto-track" id="urAutoTrack"></div>
+                        </div>
+                    </section>
+
+                    <section class="ai-panel ai-ai-rec" data-section="ai-ai-rec">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-wand-magic-sparkles"></i> AI Recommendations</h2>
+                            <button class="ai-see-all" data-ai-seeall="explore">See All</button>
+                        </div>
+                        <div class="ai-rec-inner">
+                            <div class="ai-rec-intro">
+                                <div class="ai-rec-greeting" id="aiRecGreeting"></div>
+                                <p>Discover songs curated just for you by our AI engine.</p>
+                                <button class="ai-discover-btn" id="aiDiscoverBtn"><i class="fas fa-wand-magic-sparkles"></i> Discover with AI</button>
+                            </div>
+                            <div class="ai-rec-songs" id="aiRecSongs"></div>
+                        </div>
+                    </section>
+
+                    <section class="ai-panel ai-panel-favorites" data-section="ai-favorites" id="aiFavoritesSection" style="display:none;">
+                        <div class="ai-sec-head">
+                            <h2 class="ai-sec-title"><i class="fas fa-heart" style="color:#f43f5e;"></i> Favourite Songs</h2>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <button class="ai-fav-play-all-btn" id="aiFavPlayAllBtn" style="display:none;"><i class="fas fa-play" style="margin-left:2px;"></i> Play All</button>
+                                <button class="ai-fav-auto-btn" id="aiFavAutoBtn" style="display:none;"><i class="fas fa-robot"></i> Auto-Play</button>
+                            </div>
+                        </div>
+                        <div class="ai-fav-list" id="aiFavList"></div>
+                        <div class="ai-fav-bot-status" id="aiFavBotStatus" style="display:none;">
+                            <span class="ai-decade-bot-dot"></span>
+                            <span>Auto-Playing favourites</span>
+                            <button class="ai-decade-bot-stop" id="aiFavBotStop" aria-label="Stop auto-play"><i class="fas fa-stop"></i></button>
+                        </div>
+                    </section>
+
+                </div>
+
+            </div><!-- /page-home -->
+
+            <!-- Desktop Movie Sidebar Panel -->
+            <div class="movie-sidebar-panel" id="movieSidebarPanel">
+                <div class="movie-sidebar-header">
+                    <h3><i class="fas fa-film"></i> Movie Collections</h3>
+                    <button class="movie-sidebar-close" onclick="closeMovieSidebar()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="movie-sidebar-content" id="movieSidebarContent"></div>
+            </div>
+
+            <!-- Desktop Music Collections Sidebar Panel -->
+            <div class="music-sidebar-panel" id="musicSidebarPanel">
+                <div class="music-sidebar-header">
+                    <h3><i class="fas fa-folder"></i> Music Collections</h3>
+                    <button class="music-sidebar-close" onclick="closeMusicCollectionSidebar()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="music-sidebar-content" id="musicSidebarContent"></div>
+            </div>
+
+            <!-- ============ PAGE: SEARCH ============ -->
+            <div class="ytm-page ytm-page-search" id="page-search">
+                <div class="ytm-search-page-input">
+                    <div class="premium-topnav-search-box">
+                        <i class="fas fa-wand-magic-sparkles premium-search-ai-icon"></i>
+                        <input type="text" class="premium-topnav-search-input" id="ytmSearchPageInput" placeholder="Search songs, artists, lyrics, movies, or type a request like 'play Aalaporaan Thamizhan'..." autocomplete="off">
+                        <button class="premium-topnav-search-clear" id="ytmSearchPageClear"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                <div class="ytm-search-filters">
+                    <button class="ytm-search-filter active" data-filter="all" onclick="YTMusic.setSearchFilter('all')">All</button>
+                    <button class="ytm-search-filter" data-filter="stations" onclick="YTMusic.setSearchFilter('stations')">Stations</button>
+                    <button class="ytm-search-filter" data-filter="songs" onclick="YTMusic.setSearchFilter('songs')">Songs</button>
+                    <button class="ytm-search-filter" data-filter="artists" onclick="YTMusic.setSearchFilter('artists')">Artists</button>
+                </div>
+                <div class="ytm-search-results" id="ytmSearchResults"></div>
+            </div>
+
+            <!-- ============ PAGE: EXPLORE ============ -->
+            <div class="ytm-page ytm-page-explore" id="page-explore">
+                <div class="ytm-explore-content" id="ytmExploreContent"></div>
+            </div>
+
+            <!-- ============ PAGE: LIBRARY ============ -->
+            <div class="ytm-page ytm-page-library" id="page-library">
+                <div class="ytm-library-content" id="ytmLibraryContent"></div>
+            </div>
+
+            <!-- ============ PAGE: MUSIC (songs only) ============ -->
+            <div class="ytm-page ytm-page-music" id="page-music">
+                <div class="ytm-music-content" id="ytmMusicContent"></div>
+            </div>
+
+            <!-- ============ PAGE: LIKED ============ -->
+            <div class="ytm-page ytm-page-liked" id="page-liked">
+                <div class="ytm-liked-content" id="ytmLikedContent"></div>
+            </div>
+
+            <!-- ============ PAGE: PLAYLISTS ============ -->
+            <div class="ytm-page ytm-page-playlists" id="page-playlists">
+                <div class="ytm-playlists-content" id="ytmPlaylistsContent"></div>
+            </div>
+
+            <!-- ============ PAGE: HISTORY ============ -->
+            <div class="ytm-page ytm-page-history" id="page-history">
+                <div class="ytm-history-content" id="ytmHistoryContent"></div>
+            </div>
+
+            <!-- ============ PAGE: STATIONS (full list) ============ -->
+            <div class="ytm-page ytm-page-stations" id="page-stations">
+                <div class="ytm-stations-content" id="ytmStationsContent"></div>
+            </div>
+
+            <!-- ============ PAGE: RADIO (premium FM experience) ============ -->
+            <div class="ytm-page ytm-page-radio" id="page-radio">
+                <div class="premium-radio-page" id="premiumRadioPage">
+                    <header class="premium-radio-header">
+                        <div class="premium-radio-header-bg">
+                            <span class="premium-radio-orb premium-radio-orb-1"></span>
+                            <span class="premium-radio-orb premium-radio-orb-2"></span>
+                        </div>
+                        <div class="premium-radio-header-inner">
+                            <span class="premium-radio-eyebrow"><span class="premium-radio-live-dot"></span> Tamil FM · Live Radio</span>
+                            <h1 class="premium-radio-title">Radio</h1>
+                            <p class="premium-radio-sub">All your Tamil FM stations in one premium experience — tune in live, anytime.</p>
+                            <div class="premium-radio-actions">
+                                <button class="premium-radio-btn premium-radio-btn-primary" id="premiumRadioShuffle" type="button"><i class="fas fa-shuffle"></i> Play Random Station</button>
+                            </div>
+                            <div class="premium-radio-filters" id="premiumRadioFilters"></div>
+                        </div>
+                    </header>
+                    <div class="premium-radio-grid" id="premiumRadioGrid"></div>
+                    <div class="premium-radio-empty" id="premiumRadioEmpty" style="display:none;">
+                        <i class="fas fa-radio"></i>
+                        <p>No stations available right now. Add stations from the Website Builder.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ PAGE: ARTISTS ============ -->
+            <div class="ytm-page ytm-page-artists" id="page-artists">
+                <div class="ytm-artists-content" id="ytmArtistsContent"></div>
+            </div>
+
+            <!-- ============ PAGE: DASHBOARD ============ -->
+            <div class="ytm-page ytm-page-dashboard" id="page-dashboard">
+                <div class="dashboard-page" id="dashboardPage"></div>
+            </div>
+
+            <!-- ============ PAGE: ARTIST UNIVERSE ============ -->
+            <div class="ytm-page ytm-page-artist-universe" id="page-artist-universe">
+                <div class="artist-universe-page" id="artistUniversePage"></div>
+            </div>
+
+            <!-- ============ PAGE: MOVIE UNIVERSE ============ -->
+            <div class="ytm-page ytm-page-movie-universe" id="page-movie-universe">
+                <div class="movie-universe-page" id="movieUniversePage"></div>
+            </div>
+
+            <!-- ============ PAGE: SETTINGS ============ -->
+            <div class="ytm-page ytm-page-settings" id="page-settings">
+                <div class="settings-page" id="settingsPage">
+                    <div class="settings-header">
+                        <h1><i class="fas fa-gear"></i> Settings</h1>
+                        <p>Manage your app preferences and account</p>
+                    </div>
+                    <div class="settings-grid">
+                        <!-- Appearance -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-palette"></i>
+                                <h3>Appearance</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Dark Mode</div>
+                                        <div class="settings-row-desc">Switch between dark and light theme</div>
+                                    </div>
+                                    <button class="ai-dark-toggle settings-toggle" id="settingsDarkToggle" aria-label="Toggle dark mode"><span class="ai-dark-knob"></span></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Compact Mode</div>
+                                        <div class="settings-row-desc">Show more content on screen</div>
+                                    </div>
+                                    <button class="settings-toggle" id="settingsCompactToggle" data-setting="compactMode"><span class="settings-toggle-knob"></span></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-user"></i>
+                                <h3>Account</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-account-info" id="settingsAccountInfo">
+                                    <div class="settings-avatar" id="settingsAvatar">G</div>
+                                    <div class="settings-account-meta">
+                                        <div class="settings-account-name" id="settingsAccountName">Guest User</div>
+                                        <div class="settings-account-email" id="settingsAccountEmail">Not signed in</div>
+                                        <div class="settings-account-plan" id="settingsAccountPlan"><i class="fas fa-crown"></i> Free Plan</div>
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Edit Profile</div>
+                                        <div class="settings-row-desc">Update your name, photo, and bio</div>
+                                    </div>
+                                    <button class="settings-action-btn" onclick="YTMusic.navigateTo('account')"><i class="fas fa-arrow-right"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Audio -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-headphones"></i>
+                                <h3>Audio</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">High Quality Audio</div>
+                                        <div class="settings-row-desc">Stream in higher bitrate</div>
+                                    </div>
+                                    <button class="settings-toggle" id="settingsHiFiToggle" data-setting="hiFi"><span class="settings-toggle-knob"></span></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Autoplay</div>
+                                        <div class="settings-row-desc">Play next song automatically</div>
+                                    </div>
+                                    <button class="settings-toggle active" id="settingsAutoplayToggle" data-setting="autoplay"><span class="settings-toggle-knob"></span></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Crossfade</div>
+                                        <div class="settings-row-desc">Smooth transition between songs</div>
+                                    </div>
+                                    <button class="settings-toggle" id="settingsCrossfadeToggle" data-setting="crossfade"><span class="settings-toggle-knob"></span></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notifications -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-bell"></i>
+                                <h3>Notifications</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Push Notifications</div>
+                                        <div class="settings-row-desc">Get notified about new releases</div>
+                                    </div>
+                                    <button class="settings-toggle" id="settingsNotifToggle" data-setting="notifications"><span class="settings-toggle-knob"></span></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Now Playing Updates</div>
+                                        <div class="settings-row-desc">Show track change notifications</div>
+                                    </div>
+                                    <button class="settings-toggle active" id="settingsNowPlayingToggle" data-setting="nowPlayingNotif"><span class="settings-toggle-knob"></span></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Premium / Subscription -->
+                        <div class="settings-card settings-card-premium">
+                            <div class="settings-card-header">
+                                <i class="fas fa-crown"></i>
+                                <h3>Subscription</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-premium-status" id="settingsPremiumStatus">
+                                    <div class="settings-premium-badge free" id="settingsPlanBadge"><i class="fas fa-crown"></i> Free Plan</div>
+                                </div>
+                                <!-- Trial Status -->
+                                <div class="settings-trial-info" id="settingsTrialInfo" style="display:none;">
+                                    <div class="settings-trial-row">
+                                        <span class="settings-trial-label">Free Trial</span>
+                                        <span class="settings-trial-value" id="settingsTrialStatus">Active</span>
+                                    </div>
+                                    <div class="settings-trial-row">
+                                        <span class="settings-trial-label">Started</span>
+                                        <span class="settings-trial-value" id="settingsTrialStart">—</span>
+                                    </div>
+                                    <div class="settings-trial-row">
+                                        <span class="settings-trial-label">Expires</span>
+                                        <span class="settings-trial-value" id="settingsTrialExpiry">—</span>
+                                    </div>
+                                    <div class="settings-trial-row">
+                                        <span class="settings-trial-label">Days Remaining</span>
+                                        <span class="settings-trial-value settings-trial-days" id="settingsTrialDays">—</span>
+                                    </div>
+                                </div>
+                                <!-- Subscription Status -->
+                                <div class="settings-sub-info" id="settingsSubInfo" style="display:none;">
+                                    <div class="settings-trial-row">
+                                        <span class="settings-trial-label">Plan</span>
+                                        <span class="settings-trial-value" id="settingsSubPlan">—</span>
+                                    </div>
+                                    <div class="settings-trial-row">
+                                        <span class="settings-trial-label">Status</span>
+                                        <span class="settings-trial-value" id="settingsSubStatus">—</span>
+                                    </div>
+                                </div>
+                                <div class="settings-premium-features">
+                                    <div class="settings-premium-feature"><i class="fas fa-check"></i> Ad-free experience</div>
+                                    <div class="settings-premium-feature"><i class="fas fa-check"></i> Exclusive content</div>
+                                    <div class="settings-premium-feature"><i class="fas fa-check"></i> Offline downloads</div>
+                                    <div class="settings-premium-feature"><i class="fas fa-check"></i> High quality audio</div>
+                                    <div class="settings-premium-feature"><i class="fas fa-check"></i> Unlimited playlists</div>
+                                </div>
+                                <button class="settings-premium-btn" id="settingsUpgradeBtn">Upgrade to Premium</button>
+                            </div>
+                        </div>
+
+                        <!-- Language -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-language"></i>
+                                <h3>Language</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">App Language</div>
+                                        <div class="settings-row-desc">Choose your preferred language</div>
+                                    </div>
+                                    <select class="settings-select" id="settingsLanguage">
+                                        <option value="en" selected>English</option>
+                                        <option value="ta">Tamil</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- About -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-circle-info"></i>
+                                <h3>About</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Version</div>
+                                        <div class="settings-row-desc">Tamil AI Stream v2.0</div>
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Help & Support</div>
+                                        <div class="settings-row-desc">Get help with the app</div>
+                                    </div>
+                                    <button class="settings-action-btn" onclick="window.open('https://tamilaistream.com/help','_blank')"><i class="fas fa-arrow-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Privacy Policy</div>
+                                        <div class="settings-row-desc">How we handle your data</div>
+                                    </div>
+                                    <button class="settings-action-btn" onclick="window.open('https://tamilaistream.com/privacy','_blank')"><i class="fas fa-arrow-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Logout</div>
+                                        <div class="settings-row-desc">Sign out of your account</div>
+                                    </div>
+                                    <button class="settings-action-btn settings-action-danger" id="settingsLogoutBtn"><i class="fas fa-right-from-bracket"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ PAGE: ACCOUNT / MY PROFILE ============ -->
+            <div class="ytm-page ytm-page-account" id="page-account">
+                <div class="settings-page" id="accountPage">
+                    <div class="settings-header">
+                        <h1><i class="fas fa-user"></i> My Profile</h1>
+                        <p>Manage your profile and preferences</p>
+                    </div>
+                    <div class="settings-grid">
+                        <!-- Profile Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-id-badge"></i>
+                                <h3>Profile</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-account-info" id="settingsAccountInfo">
+                                    <div class="settings-avatar" id="profileAvatar">
+                                        <img src="" alt="Profile" id="profileImage" style="display:none;">
+                                        <div class="avatar-placeholder" id="avatarPlaceholder">G</div>
+                                    </div>
+                                    <div class="settings-account-meta">
+                                        <div class="settings-account-name" id="profileName">Loading...</div>
+                                        <div class="settings-account-email" id="profileEmail">loading@example.com</div>
+                                        <div style="display:flex;gap:6px;margin-top:4px;">
+                                            <span class="settings-account-plan" id="accountTypeBadge"><i class="fas fa-user"></i> User</span>
+                                            <span class="settings-account-plan" id="authStatusBadge" style="color:var(--ai-green,#34d399);"><i class="fas fa-check-circle"></i> Verified</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Change Photo</div>
+                                        <div class="settings-row-desc">Update your profile picture</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="changePhotoBtn"><i class="fas fa-camera"></i></button>
+                                    <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stats Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-chart-simple"></i>
+                                <h3>My Stats</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Favorites</div>
+                                        <div class="settings-row-desc">Songs you've liked</div>
+                                    </div>
+                                    <span class="settings-account-plan" id="favoritesCount">0</span>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Recently Played</div>
+                                        <div class="settings-row-desc">Your listening history</div>
+                                    </div>
+                                    <span class="settings-account-plan" id="recentCount">0</span>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Listening Time</div>
+                                        <div class="settings-row-desc">Total time listened</div>
+                                    </div>
+                                    <span class="settings-account-plan" id="listeningTime">0h</span>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Playlists</div>
+                                        <div class="settings-row-desc">Custom playlists created</div>
+                                    </div>
+                                    <span class="settings-account-plan" id="playlistsCount">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Settings Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-user-gear"></i>
+                                <h3>Account Settings</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Display Name</div>
+                                        <div class="settings-row-desc" id="settingDisplayName">Your public name</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="editNameBtn"><i class="fas fa-pen"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Email Address</div>
+                                        <div class="settings-row-desc" id="settingEmail">user@example.com</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="editEmailBtn"><i class="fas fa-pen"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Phone Number</div>
+                                        <div class="settings-row-desc" id="settingPhone">Not set</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="editPhoneBtn"><i class="fas fa-pen"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Bio</div>
+                                        <div class="settings-row-desc" id="settingBio">Tell us about yourself</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="editBioBtn"><i class="fas fa-pen"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Member Since</div>
+                                        <div class="settings-row-desc" id="memberSince">January 2024</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Security Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-shield-halved"></i>
+                                <h3>Security</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Change Password</div>
+                                        <div class="settings-row-desc">Update your password</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="changePasswordBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Delete Account</div>
+                                        <div class="settings-row-desc">Permanently delete your account</div>
+                                    </div>
+                                    <button class="settings-action-btn settings-action-danger" id="deleteAccountBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- My Content Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-music"></i>
+                                <h3>My Content</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Favorite Songs</div>
+                                        <div class="settings-row-desc">View your liked songs</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="favoritesBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Recently Played</div>
+                                        <div class="settings-row-desc">Your listening history</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="recentlyPlayedBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Downloads</div>
+                                        <div class="settings-row-desc">Manage offline music</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="downloadsBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Playlists</div>
+                                        <div class="settings-row-desc">Your custom playlists</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="playlistsBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Liked Artists</div>
+                                        <div class="settings-row-desc">Artists you follow</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="likedArtistsBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preferences Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-sliders"></i>
+                                <h3>Preferences</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Notifications</div>
+                                        <div class="settings-row-desc">Manage notification settings</div>
+                                    </div>
+                                    <button class="ai-dark-toggle settings-toggle" id="notificationsToggle" data-setting="notifications"><span class="ai-dark-knob"></span></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Dark Mode</div>
+                                        <div class="settings-row-desc">Switch between dark and light theme</div>
+                                    </div>
+                                    <button class="ai-dark-toggle settings-toggle" id="darkModeToggle" data-setting="darkMode"><span class="ai-dark-knob"></span></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Language</div>
+                                        <div class="settings-row-desc">Choose your preferred language</div>
+                                    </div>
+                                    <select class="settings-select" id="languageSelect">
+                                        <option value="en">English</option>
+                                        <option value="ta">தமிழ் (Tamil)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- About & Support Card -->
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <i class="fas fa-circle-info"></i>
+                                <h3>About & Support</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Help & Support</div>
+                                        <div class="settings-row-desc">Get help and contact us</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="helpBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Privacy Policy</div>
+                                        <div class="settings-row-desc">How we protect your data</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="privacyBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">Terms & Conditions</div>
+                                        <div class="settings-row-desc">Terms of service</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="termsBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label">About Tamil AI Stream</div>
+                                        <div class="settings-row-desc">Version 1.0.0</div>
+                                    </div>
+                                    <button class="settings-action-btn" id="aboutBtn"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Logout Card -->
+                        <div class="settings-card" style="grid-column: 1 / -1;">
+                            <div class="settings-card-body">
+                                <div class="settings-row" id="accountLogoutBtn" style="cursor:pointer;">
+                                    <div class="settings-row-info">
+                                        <div class="settings-row-label" style="color:#ef4444;">Logout</div>
+                                        <div class="settings-row-desc">Sign out of your account</div>
+                                    </div>
+                                    <button class="settings-action-btn settings-action-danger"><i class="fas fa-right-from-bracket"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ PAGE: PREMIUM ============ -->
+            <div class="ytm-page ytm-page-premium" id="page-premium">
+                <div class="premium-page" id="premiumPage">
+                    <div class="premium-hero">
+                        <div class="premium-hero-icon">👑</div>
+                        <h1>Tamil AI Stream Premium</h1>
+                        <p>Unlock the full music experience</p>
+                    </div>
+                    <div class="premium-plans">
+                        <div class="premium-plan-card">
+                            <div class="premium-plan-header">
+                                <h3>Free</h3>
+                                <div class="premium-plan-price">₹0<span>/month</span></div>
+                            </div>
+                            <ul class="premium-plan-features">
+                                <li><i class="fas fa-check"></i> Ad-supported listening</li>
+                                <li><i class="fas fa-check"></i> Standard audio quality</li>
+                                <li><i class="fas fa-check"></i> Limited skips</li>
+                                <li><i class="fas fa-check"></i> Basic playlists</li>
+                            </ul>
+                            <button class="premium-plan-btn" id="premiumFreeBtn">Current Plan</button>
+                        </div>
+                        <div class="premium-plan-card premium-plan-featured">
+                            <div class="premium-plan-badge">Most Popular</div>
+                            <div class="premium-plan-header">
+                                <h3>Premium</h3>
+                                <div class="premium-plan-price">₹99<span>/month</span></div>
+                            </div>
+                            <ul class="premium-plan-features">
+                                <li><i class="fas fa-check"></i> Ad-free experience</li>
+                                <li><i class="fas fa-check"></i> High quality audio (320kbps)</li>
+                                <li><i class="fas fa-check"></i> Unlimited skips</li>
+                                <li><i class="fas fa-check"></i> Offline downloads</li>
+                                <li><i class="fas fa-check"></i> Exclusive content</li>
+                                <li><i class="fas fa-check"></i> Unlimited playlists</li>
+                            </ul>
+                            <button class="premium-plan-btn premium-plan-btn-primary" id="premiumUpgradeBtn">Upgrade Now</button>
+                        </div>
+                        <div class="premium-plan-card">
+                            <div class="premium-plan-header">
+                                <h3>Family</h3>
+                                <div class="premium-plan-price">₹149<span>/month</span></div>
+                            </div>
+                            <ul class="premium-plan-features">
+                                <li><i class="fas fa-check"></i> Everything in Premium</li>
+                                <li><i class="fas fa-check"></i> Up to 6 accounts</li>
+                                <li><i class="fas fa-check"></i> Family mix playlist</li>
+                                <li><i class="fas fa-check"></i> Parental controls</li>
+                            </ul>
+                            <button class="premium-plan-btn" id="premiumFamilyBtn">Coming Soon</button>
+                        </div>
+</div>
+            </div>
+        </div>
+
+        <!-- ============ PAGE: AI ASSISTANT ============ -->
+        <div class="ytm-page ytm-page-ai-assistant" id="page-ai-assistant">
+            <div class="ai-assistant-page" id="aiAssistantPage">
+                <div class="ai-assistant-header">
+                    <h1><i class="fas fa-robot"></i> AI Assistant</h1>
+                    <p>Your personal music concierge — ask me anything!</p>
+                </div>
+
+                <!-- AI Orb — Attraction Element -->
+                <div class="ai-orb-wrap" id="aiOrbWrap">
+                    <div class="ai-orb" id="aiOrb" role="button" tabindex="0" aria-label="Ask AI for music suggestions">
+                        <div class="ai-orb-rings" aria-hidden="true">
+                            <div class="ai-orb-ring ai-orb-ring-1"></div>
+                            <div class="ai-orb-ring ai-orb-ring-2"></div>
+                            <div class="ai-orb-ring ai-orb-ring-3"></div>
+                        </div>
+                        <div class="ai-orb-glow" aria-hidden="true"></div>
+                        <div class="ai-orb-core">
+                            <div class="ai-orb-wave" aria-hidden="true">
+                                <span></span><span></span><span></span><span></span><span></span>
+                            </div>
+                            <div class="ai-orb-icon">
+                                <i class="fas fa-wand-magic-sparkles"></i>
+                            </div>
+                        </div>
+                        <div class="ai-orb-label">
+                            <span class="ai-orb-label-text">What do you want to hear?</span>
+                            <span class="ai-orb-label-sub">Tap to ask AI</span>
+                        </div>
+                    </div>
+                    <div class="ai-orb-panel" id="aiOrbPanel">
+                        <div class="ai-orb-panel-header">
+                            <div class="ai-orb-panel-title"><i class="fas fa-sparkles"></i> AI Music Assistant</div>
+                            <button class="ai-orb-panel-close" id="aiOrbPanelClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+                        </div>
+                        <div class="ai-orb-panel-body" id="aiOrbPanelBody">
+                            <div class="ai-orb-panel-messages" id="aiOrbMessages">
+                                <div class="ai-orb-msg ai-orb-msg-ai">
+                                    <div class="ai-orb-msg-avatar"><i class="fas fa-robot"></i></div>
+                                    <div class="ai-orb-msg-text">Hi! I can help you find the perfect music. Try asking me things like:<br><em>"Play relaxing Tamil songs"</em> or <em>"90s melodies"</em></div>
+                                </div>
+                            </div>
+                            <div class="ai-orb-panel-suggestions" id="aiOrbSuggestions">
+                                <button class="ai-orb-suggestion" data-q="play relaxing Tamil songs">Relaxing Tamil</button>
+                                <button class="ai-orb-suggestion" data-q="play 90s melodies">90s Melodies</button>
+                                <button class="ai-orb-suggestion" data-q="play romantic songs">Romantic</button>
+                                <button class="ai-orb-suggestion" data-q="play energy boost">Energy Boost</button>
+                                <button class="ai-orb-suggestion" data-q="play Ilaiyaraaja hits">Ilaiyaraaja</button>
+                                <button class="ai-orb-suggestion" data-q="play latest Tamil songs">Latest Hits</button>
+                            </div>
+                        </div>
+                        <div class="ai-orb-panel-input">
+                            <input type="text" id="aiOrbInput" placeholder="e.g. play A.R. Rahman songs..." autocomplete="off">
+                            <button class="ai-orb-send" id="aiOrbSend" aria-label="Send"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Assistant Quick Actions -->
+                <div class="ai-assistant-quick-actions">
+                    <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                    <div class="ai-quick-action-grid">
+                        <button class="ai-quick-action" data-action="play-radio">
+                            <i class="fas fa-radio"></i>
+                            <span>Play Radio</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="recommend">
+                            <i class="fas fa-wand-magic-sparkles"></i>
+                            <span>Recommend Songs</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="trending">
+                            <i class="fas fa-fire"></i>
+                            <span>Trending Now</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="mood">
+                            <i class="fas fa-heart"></i>
+                            <span>By Mood</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="queue">
+                            <i class="fas fa-list"></i>
+                            <span>Show Queue</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="favorites">
+                            <i class="fas fa-heart"></i>
+                            <span>Favorites</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="history">
+                            <i class="fas fa-clock-rotate-left"></i>
+                            <span>History</span>
+                        </button>
+                        <button class="ai-quick-action" data-action="equalizer">
+                            <i class="fas fa-sliders"></i>
+                            <span>Equalizer</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AI Assistant Capabilities -->
+                <div class="ai-assistant-capabilities">
+                    <h3><i class="fas fa-lightbulb"></i> What can I do?</h3>
+                    <div class="ai-capability-grid">
+                        <div class="ai-capability-card">
+                            <i class="fas fa-play-circle"></i>
+                            <h4>Play Music</h4>
+                            <p>Play any song, artist, station, or playlist by name</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-magic"></i>
+                            <h4>Smart Recommendations</h4>
+                            <p>Get personalized suggestions by mood, genre, or era</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-volume-high"></i>
+                            <h4>Control Playback</h4>
+                            <p>Pause, skip, shuffle, repeat, volume control</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-search"></i>
+                            <h4>Search & Discover</h4>
+                            <p>Find songs, artists, stations, or lyrics</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-list"></i>
+                            <h4>Manage Playlists</h4>
+                            <p>Create, view, and manage your playlists</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-sliders"></i>
+                            <h4>Equalizer Presets</h4>
+                            <p>Apply bass, treble, vocal, or genre presets</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-moon"></i>
+                            <h4>Sleep Timer</h4>
+                            <p>Set auto-stop for bedtime listening</p>
+                        </div>
+                        <div class="ai-capability-card">
+                            <i class="fas fa-microphone"></i>
+                            <h4>Voice Input</h4>
+                            <p>Speak naturally — I'll understand you</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /ytm-main-content -->
+
+    <!-- ============ UNIFIED PLAYER — Floating Mini Player (between Home & Profile) ============ -->
+    <div class="up-bottom-bar" id="upBottomBar" role="complementary" aria-label="Now Playing">
+        <div class="up-bottom-progress-bar"><div class="up-bottom-progress-fill" id="upBottomProgressFill"></div></div>
+        <div class="up-bottom-art" id="upBottomArt" aria-hidden="true"><i class="fas fa-music"></i></div>
+        <div class="up-bottom-info">
+            <div class="up-bottom-title" id="upBottomTitle">Nothing playing</div>
+            <div class="up-bottom-artist" id="upBottomArtist">Tap to browse music</div>
+            <div class="up-bottom-meta" id="upBottomMeta"></div>
+            <div class="up-bottom-seek">
+                <span class="up-bottom-time" id="upBottomCurrentTime">0:00</span>
+                <input type="range" class="up-bottom-range" id="upBottomSeek" min="0" max="1000" value="0" step="1" aria-label="Seek" tabindex="0">
+                <span class="up-bottom-time" id="upBottomDuration">0:00</span>
+            </div>
+        </div>
+        <button class="up-bottom-btn up-bottom-play" id="upBottomPlayPause" aria-label="Play / Pause"><i class="fas fa-play"></i></button>
+    </div>
+
+    <!-- ============ UNIFIED PLAYER — Full Screen ============ -->
+    <div class="up-fullscreen" id="upFullScreen" role="dialog" aria-label="Now Playing">
+        <div class="up-fs-blur-bg" id="upFsBlurBG"></div>
+        <div class="up-fs-content">
+            <!-- Minimize handle -->
+            <button class="up-fs-minimize" id="upFsMinimize" aria-label="Minimize"><i class="fas fa-chevron-down"></i></button>
+
+            <!-- ── Song Player Mode ── -->
+            <div class="up-fs-container" id="upFsContainer">
+                <div class="up-fs-artwork-wrap" id="upFsArtworkWrap">
+                    <canvas class="up-fs-ai-canvas" id="upFsAICanvas"></canvas>
+                    <div class="up-fs-artwork" id="upFsArtwork"><i class="fas fa-music up-fs-art-icon"></i></div>
+                </div>
+                <div class="up-fs-track-info">
+                    <div class="up-fs-title" id="upFsTitle">Unknown</div>
+                    <div class="up-fs-artist" id="upFsArtist">Unknown Artist</div>
+                </div>
+                <div class="up-fs-progress-wrap">
+                    <span class="up-fs-time" id="upFsCurrentTime">0:00</span>
+                    <div class="up-fs-progress" id="upFsProgress" role="slider" aria-label="Seek">
+                        <div class="up-fs-progress-fill" id="upFsProgressFill"></div>
+                    </div>
+                    <span class="up-fs-time" id="upFsDuration">0:00</span>
+                </div>
+                <div class="up-fs-controls-main">
+                    <button class="up-fs-btn up-fs-shuffle" id="upFsShuffle" aria-label="Shuffle"><i class="fas fa-shuffle"></i></button>
+                    <button class="up-fs-btn up-fs-prev" id="upFsPrev" aria-label="Previous"><i class="fas fa-backward-step"></i></button>
+                    <button class="up-fs-btn up-fs-play" id="upFsPlayPause" aria-label="Play / Pause"><i class="fas fa-play"></i></button>
+                    <button class="up-fs-btn up-fs-next" id="upFsNext" aria-label="Next"><i class="fas fa-forward-step"></i></button>
+                    <button class="up-fs-btn up-fs-repeat" id="upFsRepeat" aria-label="Repeat"><i class="fas fa-repeat"></i></button>
+                </div>
+                <div class="up-fs-controls-secondary">
+                    <button class="up-fs-btn-sm" id="upFsFav" aria-label="Favorite"><i class="fas fa-heart"></i></button>
+                    <button class="up-fs-btn-sm" id="upFsLyrics" aria-label="Lyrics"><i class="fas fa-quote-left"></i></button>
+                    <button class="up-fs-btn-sm" id="upFsEffects" aria-label="Audio Effects"><i class="fas fa-sliders"></i></button>
+                    <button class="up-fs-btn-sm" id="upFsShare" aria-label="Share"><i class="fas fa-share-nodes"></i></button>
+                    <button class="up-fs-btn-sm" id="upFsVolume" aria-label="Volume"><i class="fas fa-volume-high"></i></button>
+                    <input type="range" class="up-fs-volume-slider" id="upFsVolumeSlider" min="0" max="1" step="0.01" value="0.8">
+                    <button class="up-fs-btn-sm up-fs-ask-ai" id="upFsAskAI" aria-label="Ask AI"><i class="fas fa-robot"></i></button>
+                </div>
+
+                <!-- Up Next / Songs Queue -->
+                <div class="up-fs-upnext" id="upFsUpNext">
+                    <div class="up-fs-upnext-header">
+                        <span class="up-fs-upnext-title">Up Next</span>
+                        <span class="up-fs-upnext-count" id="upFsUpNextCount"></span>
+                    </div>
+                    <div class="up-fs-upnext-list" id="upFsUpNextList"></div>
+                </div>
+            </div>
+
+            <!-- ── FM Live Player Mode ── -->
+            <div class="up-fm-container" id="upFmContainer" style="display:none">
+                <div class="up-fm-logo-wrap">
+                    <div class="up-fm-live-badge" id="upFmLive"><i class="fas fa-circle"></i> LIVE</div>
+                    <div class="up-fm-logo" id="upFmLogo"><i class="fas fa-radio"></i></div>
+                </div>
+                <div class="up-fm-info">
+                    <div class="up-fm-name" id="upFmName">FM Station</div>
+                    <div class="up-fm-program" id="upFmProgram">Live Now</div>
+                </div>
+                <div class="up-fm-controls">
+                    <button class="up-fs-btn-sm" id="upFmFav" aria-label="Favorite"><i class="fas fa-heart"></i></button>
+                    <button class="up-fs-btn up-fm-play" id="upFmPlayPause" aria-label="Play / Pause"><i class="fas fa-play"></i></button>
+                    <button class="up-fs-btn-sm" id="upFmShare" aria-label="Share"><i class="fas fa-share-nodes"></i></button>
+                </div>
+                <div class="up-fm-bottom-controls">
+                    <button class="up-fs-btn-sm" id="upFmVolume" aria-label="Volume"><i class="fas fa-volume-high"></i></button>
+                    <input type="range" class="up-fs-volume-slider" id="upFmVolumeSlider" min="0" max="1" step="0.01" value="0.8">
+                    <button class="up-fs-btn-sm up-fs-ask-ai" id="upFmAskAI" aria-label="Ask AI"><i class="fas fa-robot"></i></button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+<!-- Premium Bottom Navigation (Mobile/PWA) — Modern AI-Inspired Design 6-Tab -->
+<nav class="tamilai-bottom-nav" id="tamilaiBottomNav" role="navigation" aria-label="Main navigation">
+    <div class="tamilai-nav-indicator" id="tamilaiNavIndicator"></div>
+    <button class="tamilai-nav-item active" data-page="home" aria-label="Home">
+        <div class="tamilai-nav-icon"><i class="fas fa-house"></i></div>
+        <span class="tamilai-nav-label">Home</span>
+    </button>
+    <button class="tamilai-nav-item" data-page="radio" aria-label="Radio">
+        <div class="tamilai-nav-icon"><i class="fas fa-radio"></i></div>
+        <span class="tamilai-nav-label">Radio</span>
+    </button>
+    <button class="tamilai-nav-item" data-page="search" aria-label="Search">
+        <div class="tamilai-nav-icon"><i class="fas fa-magnifying-glass"></i></div>
+        <span class="tamilai-nav-label">Search</span>
+    </button>
+    <button class="tamilai-nav-item" data-page="music" aria-label="Library">
+        <div class="tamilai-nav-icon"><i class="fas fa-layer-group"></i></div>
+        <span class="tamilai-nav-label">Library</span>
+    </button>
+    <button class="tamilai-nav-item" data-page="account" aria-label="Profile">
+        <div class="tamilai-nav-icon"><i class="fas fa-user"></i></div>
+        <span class="tamilai-nav-label">Profile</span>
+    </button>
+</nav>
+
+    </div><!-- /ytm-app -->
+
+    <!-- ============ LYRICS PANEL (standalone, used by GlobalPlayer) ============ -->
+    <div class="ytm-lyrics-panel" id="ytmLyricsPanel">
+        <div class="ytm-lyrics-title">Lyrics</div>
+        <div class="ytm-lyrics-content" id="ytmLyricsContent">
+            <div class="ytm-lyrics-unavailable">Lyrics not available for this track</div>
+        </div>
+    </div>
+
+    <!-- ============ SETTINGS PANEL ============ -->
+    <div class="ytm-settings-panel" id="ytmSettingsPanel">
+        <div class="ytm-settings-header">
+            <div class="ytm-settings-title">Settings</div>
+            <button class="ytm-settings-close" onclick="YTMusic.closeSettingsPanel()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ytm-settings-content" id="ytmSettingsContent"></div>
+    </div>
+
+    <!-- ============ NOTIFICATIONS PANEL ============ -->
+    <div class="ytm-notifications-panel" id="ytmNotificationsPanel">
+        <div class="ytm-notifications-header">
+            <div class="ytm-notifications-title">Notifications</div>
+            <button class="ytm-notifications-close" onclick="YTMusic.closeNotificationsPanel()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ytm-notifications-list" id="ytmNotificationsList"></div>
+    </div>
+
+    <!-- ============ PROFILE DROPDOWN ============ -->
+    <div class="ytm-profile-dropdown" id="ytmProfileDropdown"></div>
+
+    <!-- Hidden logout button (used by profile dropdown sign out) -->
+    <button class="logout-btn" id="logoutBtn" style="display:none;" aria-label="Logout"></button>
+
+    <!-- ============ CREATE PLAYLIST MODAL ============ -->
+    <div class="ytm-modal-overlay" id="ytmModalOverlay">
+        <div class="ytm-modal">
+            <div class="ytm-modal-header">
+                <h3 class="ytm-modal-title" id="ytmModalTitle">New Playlist</h3>
+                <button class="ytm-modal-close" onclick="YTMusic.closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="ytm-modal-body">
+                <input type="text" class="ytm-modal-input" id="ytmModalInput" placeholder="Playlist name" maxlength="100">
+            </div>
+            <div class="ytm-modal-footer">
+                <button class="ytm-modal-btn ytm-modal-btn-cancel" onclick="YTMusic.closeModal()">Cancel</button>
+                <button class="ytm-modal-btn ytm-modal-btn-primary" id="ytmModalConfirm" onclick="YTMusic.confirmModal()">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ TOAST CONTAINER ============ -->
+    <div class="ytm-toast-container" id="ytmToastContainer"></div>
+
+    <!-- ============ LISTENING HISTORY ============ -->
+    <!-- FAB hidden — accessible via 3-dot menu instead -->
+    <button class="lh-fab" id="lhFab" title="Listening History" style="display:none !important;">
+        <i class="fas fa-wave-square"></i>
+    </button>
+    <div class="lh-panel" id="lhPanel">
+        <div class="lh-header">
+            <div class="lh-title">
+                <i class="fas fa-wave-square"></i>
+                <span>Listening History</span>
+            </div>
+            <button class="lh-close" id="lhClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="lh-body" id="lhBody">
+            <div class="lh-section" id="lhContinueSection" style="display:none;">
+                <div class="lh-section-title"><i class="fas fa-play-circle"></i> Continue Listening</div>
+                <div class="lh-list" id="lhContinueList"></div>
+            </div>
+            <div class="lh-section" id="lhRecentSection" style="display:none;">
+                <div class="lh-section-title"><i class="fas fa-clock-rotate-left"></i> Recently Played</div>
+                <div class="lh-list" id="lhRecentList"></div>
+            </div>
+            <div class="lh-section" id="lhPicksSection" style="display:none;">
+                <div class="lh-section-title"><i class="fas fa-wand-magic-sparkles"></i> AI Picks For You</div>
+                <div class="lh-list" id="lhPicksList"></div>
+            </div>
+            <div class="lh-empty" id="lhEmpty">
+                <i class="fas fa-headphones"></i>
+                <p>Start listening to see your history here</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ AI ASSISTANT ============ -->
+    <!-- FAB hidden — accessible via 3-dot menu instead -->
+    <button class="ytm-ai-fab" id="ytmAiFab" title="AI Assistant" style="display:none !important;">
+        <i class="fas fa-robot"></i>
+    </button>
+    <div class="ytm-ai-panel" id="ytmAiPanel">
+        <div class="ytm-ai-header">
+            <div class="ytm-ai-title">
+                <i class="fas fa-robot"></i>
+                <span>AI Assistant</span>
+            </div>
+            <button class="ytm-ai-close" onclick="YTMusic.toggleAssistant()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="ytm-ai-messages" id="ytmAiMessages"></div>
+        <div class="ytm-ai-suggestions" id="ytmAiSuggestions"></div>
+        <div class="ytm-ai-input-row">
+            <input type="text" id="ytmAiInput" class="ytm-ai-input" placeholder="Ask me to play, search, or navigate...">
+            <button class="ytm-ai-send" id="ytmAiSend"><i class="fas fa-paper-plane"></i></button>
+            <button class="ytm-ai-voice" id="ytmAiVoice" title="Voice input"><i class="fas fa-microphone"></i></button>
+        </div>
+    </div>
+
+
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="site-footer" id="siteFooter">
+        <p id="footerText"></p>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script defer src="ultra-perf.js"></script>
+    <script defer src="auth.js"></script>
+    <script defer src="user-data-sync.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+    <!-- Scripts -->
+    <script defer src="firebase-config.js"></script>
+    <script defer src="firebase-init.js"></script>
+    <script defer src="data-store.js"></script>
+    <script defer src="access-control.js"></script>
+    <script defer src="upgrade-popup.js"></script>
+    <script defer src="r2-config.js"></script>
+    <script defer src="r2-upload.js"></script>
+    <script defer src="r2-content-sync.js"></script>
+    <script defer src="equalizer.js"></script>
+    <script defer src="audio-settings.js"></script>
+    <script defer src="playlist-manager.js"></script>
+    <script defer src="search-engine.js"></script>
+    <script defer src="premium-effects.js"></script>
+    <script defer src="unified-player.js"></script>
+    <script defer src="ai-music-assistant.js"></script>
+    <script defer src="search-ui.js"></script>
+    <script defer src="eq-ui.js"></script>
+    <script defer src="yt-music.js"></script>
+    <script defer src="analytics-tracker.js"></script>
+    <script defer src="perf-analytics.js"></script>
+    <script defer src="script.js"></script>
+    <script defer src="voice-ai-bot.js"></script>
+    <script defer src="listening-history.js"></script>
+    <script defer src="ai-home.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof AccessControl !== 'undefined') AccessControl.init();
+            Equalizer.loadEqSettings();
+            PlaylistManager.init();
+            SearchEngine.init();
+            PremiumEffects.init();
+            UnifiedPlayer.init();
+            AIMusicAssistant.init();
+        });
+    </script>
+    <script defer src="premium-landing.js"></script>
+    <script defer src="pwa.js"></script>
+    <script defer src="pwa-splash.js"></script>
+    <script defer src="brand-config.js"></script>
+    <script defer src="ads-display.js"></script>
+    <script>
+        // Load published global settings (site-wide CSS variables)
+        fetch('/api/global-settings').then(r => r.json()).then(data => {
+            if (!data.settings) return;
+            const gs = data.settings;
+            let css = ':root {';
+            Object.entries(gs.colors || {}).forEach(([k, v]) => { if (v) css += k + ': ' + v + '; '; });
+            Object.entries(gs.fonts || {}).forEach(([k, v]) => { if (v) css += k + ': ' + v + '; '; });
+            Object.entries(gs.spacing || {}).forEach(([k, v]) => { if (v) css += k + ': ' + v + '; '; });
+            Object.entries(gs.borderRadius || {}).forEach(([k, v]) => { if (v) css += k + ': ' + v + '; '; });
+            css += '}';
+            const s = document.createElement('style');
+            s.textContent = css;
+            document.head.appendChild(s);
+        }).catch(() => {});
+    </script>
+</body>
+</html>
+
+
+
