@@ -1,5 +1,4 @@
-
-name: Cloudflare Deployment
+name: Cloudflare Pages Deployment
 
 on:
   push:
@@ -19,10 +18,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Deploy to Cloudflare
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build site
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
         with:
-          apiToken: ${{ cfat_9uwUc956qqmyY5uibUNdH6hnIIcemtWRlKheVVfPbcf638f7 }}
-          accountId: ${{ 83d470fac07f780ab4573b8e9f82774c }}
-          command: pages deploy . --project-name=tamil-ai-stream
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=tamil-ai-stream
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
