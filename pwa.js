@@ -244,9 +244,8 @@
   }
 
   /* ============================================================
-     PWA Install Prompt — Captures beforeinstallprompt for
-     the header Install App button (ai-home.js bindInstall).
-     No custom banner or popup — uses Chrome's native flow.
+     PWA Install Prompt — Keep the install prompt available in
+     the Builder, but don't expose an install button on the app.
      ============================================================ */
   var _deferredPrompt = null;
 
@@ -257,6 +256,7 @@
 
   window.addEventListener('beforeinstallprompt', function(e) {
     e.preventDefault();
+    if (!/\/builder\.html$/.test(window.location.pathname)) return;
     _deferredPrompt = e;
     window.__pwaDeferredPrompt = e;
   });
