@@ -80,8 +80,8 @@
     flex-direction: column;
     z-index: 1500;
     background: rgba(6, 10, 24, 0.82);
-    backdrop-filter: blur(48px) saturate(2.2) brightness(1.1);
-    -webkit-backdrop-filter: blur(48px) saturate(2.2) brightness(1.1);
+    backdrop-filter: blur(16px) saturate(2.2) brightness(1.1);
+    -webkit-backdrop-filter: blur(16px) saturate(2.2) brightness(1.1);
     border-right: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: 8px 0 48px rgba(0, 0, 0, 0.45), 1px 0 0 rgba(255, 255, 255, 0.03) inset;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -387,8 +387,6 @@
     background: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid var(--ai-border) !important;
     border-radius: 16px !important;
-    backdrop-filter: var(--ai-blur);
-    -webkit-backdrop-filter: var(--ai-blur);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
 }
@@ -735,8 +733,8 @@
 .slim-now-playing {
     position: sticky; top: 0; z-index: 1600;
     background: rgba(10, 15, 30, 0.95);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     animation: snpSlideIn 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -810,8 +808,6 @@
     background: linear-gradient(150deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.022));
     border: 1px solid var(--ai-border);
     border-radius: var(--ai-radius-lg);
-    backdrop-filter: var(--ai-blur);
-    -webkit-backdrop-filter: var(--ai-blur);
     box-shadow: var(--ai-shadow);
     overflow: hidden;
     transition: border-color 0.3s, box-shadow 0.3s;
@@ -5468,8 +5464,8 @@ body.ai-playlist-detail-open { overflow: hidden; }
     min-width: 260px;
     padding: 10px 14px;
     background: rgba(10, 15, 25, 0.94);
-    backdrop-filter: blur(22px) saturate(160%);
-    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
     border: 1px solid rgba(52, 211, 153, 0.18);
     border-radius: 18px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 24px rgba(52, 211, 153, 0.10);
