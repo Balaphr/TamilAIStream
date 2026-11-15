@@ -199,6 +199,8 @@ async function handleAuthValidate(request, env) {
 
     if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD_HASH) {
       await auditLog(env, 'auth_validate_success', { email }, ip);
+      // Create admin session token (two-step verification disabled for direct access)
+      const token = await createAdminToken(email, env);
       return json({
         success: true,
         user: {
@@ -207,7 +209,8 @@ async function handleAuthValidate(request, env) {
           uid: 'admin-verified',
           photoURL: '',
           role: 'admin'
-        }
+        },
+        token: token
       });
     }
 

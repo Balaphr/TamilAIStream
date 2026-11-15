@@ -74,14 +74,35 @@ loginForm?.addEventListener('submit', async (e) => {
             return;
         }
 
-        // Credentials valid — move to step 2
+        // Credentials valid — create admin session (two-step verification disabled for direct access)
         _pendingEmail = email;
         _pendingPassword = password;
 
-        showToast('Credentials verified. Enter the code.', 'success');
-
-        // Show verification step
-        showVerificationStep(email, data.code);
+        // Use returned token to create admin session
+        if (data.token) {
+            // Store the token in sessionStorage and set loggedIn flag
+            try {
+                ssSet(K.TOKEN, data.token);
+                lsSet(K.LOGGED_IN, 'true');
+                lsSet(K.USER, JSON.stringify({
+                    uid: 'admin-verified',
+                    email: ADMIN_EMAIL,
+                    name: 'Admin',
+                    isAdmin: true,
+                    expiry: Date.now() + SESSION_DURATION
+                }));
+                showToast('Admin login successful.', 'success');
+                // Redirect to admin panel
+                window.location.replace('admin.html');
+            } catch (e) {
+                console.error('Session storage error:', e);
+                showToast('Login successful but failed to save session.', 'warn');
+            }
+        } else {
+            showToast('Credentials verified. Enter the code.', 'success');
+            // Show verification step
+            showVerificationStep(email, data.code);
+        }
 
     } catch (error) {
         console.error('Login error:', error);
