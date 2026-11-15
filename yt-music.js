@@ -557,6 +557,10 @@ const YTMusic = {
             bar.className = 'ytm-eq-bar';
             bars.appendChild(bar);
         }
+        const barsList = bars.querySelectorAll('.ytm-eq-bar');
+        const barsCount = barsList.length;
+        const lastVals = new Array(barsCount).fill(-1);
+        let lastActive = null;
         let _lastFrameTime = 0;
         const FPS_LIMIT = 24;
         const frameInterval = 1000 / FPS_LIMIT;
@@ -629,19 +633,24 @@ const YTMusic = {
                 ctx.globalAlpha = 1;
             }
 
-            const barsList = bars.querySelectorAll('.ytm-eq-bar');
-            barsList.forEach((bar, index) => {
+            const activeChanged = lastActive !== isActive;
+            lastActive = isActive;
+            for (let index = 0; index < barsCount; index++) {
+                const bar = barsList[index];
                 let amplitude;
                 if (isActive && freqData) {
-                    const idx = Math.floor((index / barsList.length) * freqData.length);
+                    const idx = Math.floor((index / barsCount) * freqData.length);
                     amplitude = freqData[idx] / 255;
                 } else {
                     amplitude = 0;
                 }
                 const value = Math.max(4, amplitude * 100);
-                bar.style.height = `${value}%`;
-                bar.style.opacity = isActive ? (0.5 + amplitude * 0.5) : 0.15;
-            });
+                if (activeChanged || Math.abs(lastVals[index] - value) > 0.5) {
+                    lastVals[index] = value;
+                    bar.style.height = `${value}%`;
+                    bar.style.opacity = isActive ? (0.5 + amplitude * 0.5) : 0.15;
+                }
+            }
 
             this.visualizerFrame = requestAnimationFrame(draw);
         };

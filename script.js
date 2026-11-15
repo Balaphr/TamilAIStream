@@ -2286,6 +2286,7 @@ document.querySelectorAll('.slide-play-btn, .category-card, .nav-icon-btn, .rece
 const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
+            observer.unobserve(entry.target);
             entry.target.getAnimations().forEach(a => a.cancel());
             entry.target.style.animation = 'fadeInUp 0.6s ease-out forwards';
         }
@@ -2554,12 +2555,27 @@ function displaySongs(songs) {
 
     // AI glow effect — track mouse position on song cards
     container.querySelectorAll('.song-card').forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 100;
-            const y = ((e.clientY - rect.top) / rect.height) * 100;
+        let _rect = null;
+        let _raf = 0;
+        let _last = null;
+        const _apply = () => {
+            _raf = 0;
+            if (!_rect || !_last) return;
+            const x = ((_last.clientX - _rect.left) / _rect.width) * 100;
+            const y = ((_last.clientY - _rect.top) / _rect.height) * 100;
             card.style.setProperty('--mouse-x', x + '%');
             card.style.setProperty('--mouse-y', y + '%');
+        };
+        card.addEventListener('mouseenter', () => { _rect = card.getBoundingClientRect(); });
+        card.addEventListener('mousemove', (e) => {
+            if (!_rect) _rect = card.getBoundingClientRect();
+            _last = e;
+            if (!_raf) _raf = requestAnimationFrame(_apply);
+        });
+        card.addEventListener('mouseleave', () => {
+            _rect = null;
+            _last = null;
+            if (_raf) { cancelAnimationFrame(_raf); _raf = 0; }
         });
     });
 }
@@ -3984,13 +4000,26 @@ function buildAdBannerHTML(ad) {
 function initAdTiltEffect(container) {
     const card = container.querySelector('.ad-banner-card');
     if (!card) return;
-    card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width - 0.5;
-        const y = (e.clientY - rect.top) / rect.height - 0.5;
+    let _rect = null;
+    let _raf = 0;
+    let _pending = null;
+    const _apply = () => {
+        _raf = 0;
+        if (!_rect || !_pending) return;
+        const x = (_pending.clientX - _rect.left) / _rect.width - 0.5;
+        const y = (_pending.clientY - _rect.top) / _rect.height - 0.5;
         card.style.transform = `perspective(800px) rotateY(${x * 6}deg) rotateX(${-y * 6}deg) scale(1.01)`;
+    };
+    card.addEventListener('mouseenter', () => { _rect = card.getBoundingClientRect(); });
+    card.addEventListener('mousemove', (e) => {
+        if (!_rect) _rect = card.getBoundingClientRect();
+        _pending = e;
+        if (!_raf) _raf = requestAnimationFrame(_apply);
     });
     card.addEventListener('mouseleave', () => {
+        _rect = null;
+        _pending = null;
+        if (_raf) { cancelAnimationFrame(_raf); _raf = 0; }
         card.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) scale(1)';
     });
 }

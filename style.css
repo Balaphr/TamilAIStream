@@ -1090,8 +1090,8 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     width: 100%;
     z-index: calc(var(--z-nav) - 1);
     background: rgba(10, 15, 30, 0.6);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border-glass);
     padding: 8px 24px;
     animation: none !important;
@@ -1320,8 +1320,8 @@ body { font-family: var(--font-family); background: var(--bg-primary); color: va
     width: 100%;
     height: 48px;
     background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-top: 1px solid var(--border-glass);
     display: flex;
     align-items: center;
@@ -2000,7 +2000,7 @@ body.builder-preview .ytm-ai-chat {
     width: 400px;
     height: 100vh;
     background: rgba(10, 10, 14, 0.95);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(12px);
     border-left: 1px solid var(--border-glass);
     z-index: 1000;
     transition: right 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);

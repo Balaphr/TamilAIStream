@@ -740,14 +740,18 @@
         if (!_root) return;
         const bar = document.querySelector('.up-bottom-bar.visible');
         const full = document.body.classList.contains('up-fullscreen-open');
-        if (full) { _root.style.display = 'none'; return; }
-        _root.style.display = '';
+        if (full) {
+            if (_root.style.display !== 'none') _root.style.display = 'none';
+            return;
+        }
+        if (_root.style.display === 'none') _root.style.display = '';
         let pad = 72;
         if (bar) {
             const r = bar.getBoundingClientRect();
             if (r.top > 0) pad = window.innerHeight - r.top + 12;
         }
-        _root.style.bottom = pad + 'px';
+        const next = pad + 'px';
+        if (_root.style.bottom !== next) _root.style.bottom = next;
     }
 
     function showTrigger() {
@@ -809,7 +813,14 @@
 
         _trigger.addEventListener('click', onTriggerTap);
         window.addEventListener('resize', reposition);
-        window.addEventListener('scroll', reposition);
+        let _posRaf = 0;
+        window.addEventListener('scroll', function () {
+            if (_posRaf) return;
+            _posRaf = requestAnimationFrame(function () {
+                _posRaf = 0;
+                reposition();
+            });
+        }, { passive: true });
         document.addEventListener('visibilitychange', onVisibilityChange);
         window.addEventListener('pagehide', abortAll);
         reposition();
