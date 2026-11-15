@@ -56,17 +56,35 @@
     }
   }
 
-  function _initVisibilityListener() {
+  function _isMobileDevice() {
+    // Detect mobile devices by screen width or touch support
+    if (global.matchMedia) {
+      var mq = global.matchMedia('(max-width: 767px)');
+      if (mq.matches) return true;
+      var mq2 = global.matchMedia('(pointer: coarse)');
+      if (mq2 && mq2.matches) return true;
+    }
+    // Check for touch support
+    try {
+      return 'ontouchstart' in global || navigator.maxTouchPoints > 0;
+    } catch (e) { return false; }
+  }
+
+function _initVisibilityListener() {
     if (!global.document) return;
-    document.addEventListener('visibilitychange', function () {
-      _setAnimationState(document.hidden);
-    });
+    // On mobile devices, always keep animations enabled (don't pause on tab switch)
+    var isMobile = _isMobileDevice();
+    if (!isMobile) {
+      document.addEventListener('visibilitychange', function () {
+        _setAnimationState(document.hidden);
+      });
+    }
     if (global.addEventListener) {
       global.addEventListener('pageshow', function () { _setAnimationState(false); });
       global.addEventListener('pagehide', function () { _setAnimationState(true); });
     }
-    /* Also honour prefers-reduced-motion */
-    if (global.matchMedia) {
+    /* Only honour prefers-reduced-motion on desktop */
+    if (!isMobile && global.matchMedia) {
       var mq = global.matchMedia('(prefers-reduced-motion: reduce)');
       if (mq.matches) _setAnimationState(true);
       if (mq.addEventListener) {
