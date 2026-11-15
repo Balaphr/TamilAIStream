@@ -693,6 +693,9 @@ const YTMusic = {
     // Navigation
     // ========================================
     navigateTo(page, opts = {}) {
+        // Skip re-render when already on the same page — prevents card blinking/flickering
+        // on repeated bottom-nav clicks while preserving back/forward navigation.
+        if (!opts._force && this.currentPage === page) return;
         // Push previous page onto back stack (unless arriving via back/popstate).
         if (!opts._fromPop && !opts._fromBack && this.currentPage && this.currentPage !== page) {
             this.historyStack.push({ page: this.currentPage, scroll: window.scrollY || 0 });

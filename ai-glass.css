@@ -465,7 +465,6 @@
     color: #fff;
     border-color: var(--ai-border-strong);
 }
-.ai-hdr-btn.ai-install-btn i { color: var(--ai-cyan); }
 .ai-notif-btn { padding: 0 11px; width: 38px; justify-content: center; }
 .ai-notif-btn i { font-size: 0.95rem; }
 .ai-notif-dot {

@@ -751,13 +751,8 @@ a,
     .ai-panel { box-shadow: 0 2px 10px rgba(0,0,0,0.15) !important; }
 }
 
-/* PWA standalone: maximum performance mode */
+/* PWA standalone: allow animations to run at natural duration (match desktop) */
 @media (display-mode: standalone) {
-    *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.12s !important;
-    }
     /* Keep Songs Collections vertical scroll animations alive in PWA */
     .sc-autoscroll-up,
     .sc-autoscroll-down {
