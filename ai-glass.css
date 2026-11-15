@@ -785,6 +785,8 @@
     position: relative;
     /* Ambient background behind all home sections (replaces the old
        greeting banner area). Static gradients only — zero animation cost. */
+    /* Prevents collapse when home sections are hidden/minimal */
+    min-height: 600px;
     background:
         radial-gradient(1100px 420px at 12% -6%, rgba(34, 211, 238, 0.10), transparent 60%),
         radial-gradient(900px 380px at 88% -4%, rgba(168, 85, 247, 0.09), transparent 62%),
